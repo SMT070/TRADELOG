@@ -931,27 +931,14 @@
     .cal-dow:last-child { display: none !important; }
     /* Hide view buttons except Month on mobile */
     #cal-view-year, #cal-view-alltime, #cal-view-week { display: none !important; }
-    /* Compact calendar cells that fill screen */
-    .cal-cell {
-      min-height: 0 !important;
-      height: auto !important;
-      padding: 3px 4px !important;
-    }
-    .cal-day-num { font-size: 9px !important; margin-bottom: 1px !important; }
-    .cal-pnl { font-size: 9px !important; margin-top: 2px !important; }
-    .cal-trades { font-size: 8px !important; }
-    #cal-grid {
-      flex: 1 !important;
-      overflow: hidden !important;
-    }
-    /* Make grid rows fill height evenly */
-    #cal-grid { align-content: stretch !important; }
-    .cal-dow { font-size: 9px !important; padding: 6px 2px !important; }
-    /* Header bar compact */
+    /* Calendar header compact */
     #page-calendar > div > div:first-child {
       padding: 8px 12px !important;
+      flex-shrink: 0 !important;
     }
-    #cal-month-label { font-size: 15px !important; min-width: unset !important; }
+    #cal-month-label { font-size: 14px !important; min-width: unset !important; }
+    /* Hide day-of-week header row and month grid on mobile - using week list view */
+    #cal-dow-row { display: none !important; }
 
     /* ── SIDEBAR: icon-only on mobile ── */
     :root { --sidebar-w: 56px; --sidebar-collapsed: 56px; }
@@ -1116,15 +1103,19 @@
       flex-shrink: 0 !important;
     }
 
-    /* ── CALENDAR PAGE: full screen, compact cells ── */
+    /* ── CALENDAR PAGE: full screen week view ── */
     #page-calendar {
       padding: 0 !important;
       height: 100vh !important;
       overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
     }
     #page-calendar.active {
       height: 100vh !important;
       overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
     }
     #page-calendar > div {
       height: 100% !important;
@@ -1132,6 +1123,20 @@
       border: none !important;
       display: flex !important;
       flex-direction: column !important;
+      flex: 1 !important;
+    }
+    /* Week view rows fill screen */
+    #cal-grid > div {
+      flex: 1 !important;
+    }
+    #cal-grid {
+      flex: 1 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow-y: auto !important;
+    }
+    #cal-grid > div > div {
+      flex: 1 !important;
     }
 
     /* ── SIDEBAR TOGGLE BTN: show on mobile as floating button ── */
@@ -3154,6 +3159,19 @@ async function initApp(user) {
   loadTheme();
   showApp();
   updateGreeting();
+
+  // Load profile + balance from Supabase first (currentUser is now set)
+  try {
+    const remoteProfile = await loadProfileFromSupabase();
+    if (remoteProfile) {
+      applyProfile(remoteProfile);
+      if (remoteProfile.balance && remoteProfile.balance > 0) {
+        localStorage.setItem(BAL_KEY, remoteProfile.balance);
+      }
+    } else {
+      loadProfile(); // fallback to localStorage
+    }
+  } catch(e) { loadProfile(); }
 
   // Load trades fresh from Supabase every time
   try {
@@ -7370,11 +7388,16 @@ function applyMobileLayout() {
   const detailPanel = document.getElementById('trade-detail-panel');
   if (detailPanel) detailPanel.style.display = 'none';
 
-  // Calendar: hide side panel, full width grid
-  const calContainer = document.querySelector('#page-calendar > div > div[style*="grid-template-columns"]');
-  if (calContainer) calContainer.style.gridTemplateColumns = '1fr';
+  // Calendar: force week view on mobile
   const calDayPanel = document.getElementById('cal-day-panel');
   if (calDayPanel) calDayPanel.style.display = 'none';
+  const calContainer = document.querySelector('#page-calendar > div > div[style*="grid-template-columns"]');
+  if (calContainer) calContainer.style.gridTemplateColumns = '1fr';
+  if (calView !== 'week') {
+    calView = 'week';
+    if (window.calWeekOffset === undefined) window.calWeekOffset = 0;
+    renderCalendar();
+  }
 
   // Mindset: stack columns
   const mindsetGrid = document.querySelector('#page-mindset [style*="grid-template-columns:1fr 300px"]');
@@ -7391,30 +7414,67 @@ window.addEventListener('load', applyMobileLayout);
 
 // ── REAL-TIME SYNC ───────────────────────────────────────────────────────────
 // Supabase Realtime: auto-reload trades when another device makes changes
+let _syncInterval = null;
+
+async function refreshAllData() {
+  if (!currentUser) return;
+  // Reload trades
+  await loadTradesFromSupabase();
+  // Reload profile + balance
+  try {
+    const remoteProfile = await loadProfileFromSupabase();
+    if (remoteProfile) {
+      applyProfile(remoteProfile);
+      if (remoteProfile.balance && remoteProfile.balance > 0) {
+        localStorage.setItem(BAL_KEY, remoteProfile.balance);
+      }
+    }
+  } catch(e) {}
+  // Refresh active page
+  const activePage = document.querySelector('.page.active');
+  if (activePage) {
+    const name = activePage.id.replace('page-', '');
+    if (name === 'dashboard') refreshDashboard();
+    else if (name === 'trades') renderTrades();
+    else if (name === 'analytics') renderAnalytics();
+    else if (name === 'calendar') renderCalendar();
+  }
+}
+
 function setupRealtimeSync() {
   if (!sb || !currentUser) return;
+
+  // ── 1. Supabase Realtime (instant) ──
   try {
-    sb.channel('trades-sync')
+    sb.channel('trades-sync-' + currentUser.id)
       .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'trades',
+        event: '*', schema: 'public', table: 'trades',
         filter: 'user_id=eq.' + currentUser.id
-      }, async () => {
-        // Another device changed data — reload silently
-        await loadTradesFromSupabase();
-        // Refresh whichever page is currently active
-        const activePage = document.querySelector('.page.active');
-        if (activePage) {
-          const name = activePage.id.replace('page-', '');
-          if (name === 'dashboard') refreshDashboard();
-          else if (name === 'trades') renderTrades();
-          else if (name === 'analytics') renderAnalytics();
-          else if (name === 'calendar') renderCalendar();
-        }
-      })
+      }, async () => { await refreshAllData(); })
       .subscribe();
-  } catch(e) { console.log('Realtime not available:', e.message); }
+
+    sb.channel('profiles-sync-' + currentUser.id)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'profiles',
+        filter: 'user_id=eq.' + currentUser.id
+      }, async () => { await refreshAllData(); })
+      .subscribe();
+  } catch(e) { console.log('Realtime not available, using polling:', e.message); }
+
+  // ── 2. Polling fallback every 30s (works even without Realtime) ──
+  if (_syncInterval) clearInterval(_syncInterval);
+  _syncInterval = setInterval(async () => {
+    if (document.visibilityState === 'visible' && currentUser) {
+      await refreshAllData();
+    }
+  }, 30000);
+
+  // ── 3. Sync immediately when tab becomes visible (switching back from phone) ──
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible' && currentUser) {
+      await refreshAllData();
+    }
+  });
 }
 
 // ── SCROLL-AWARE CHART PERFORMANCE ───────────────────────────────────────────
