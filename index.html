@@ -913,6 +913,17 @@
      PC layout is completely untouched outside this block
   ═══════════════════════════════════════════════════════════════ */
   @media (max-width: 768px) {
+    /* ── FORCE inline grid overrides via attribute selectors ── */
+    #trades-grid { grid-template-columns: 1fr !important; }
+    #trade-detail-panel { display: none !important; }
+
+    /* Calendar: hide side panel, full width grid */
+    #page-calendar > div > div[style*="grid-template-columns:1fr 300px"],
+    #page-calendar > div > div[style*="grid-template-columns: 1fr 300px"] {
+      grid-template-columns: 1fr !important;
+    }
+    #cal-day-panel { display: none !important; }
+    #cal-mobile-panel { display: block !important; }
 
     /* ── SIDEBAR: icon-only on mobile ── */
     :root { --sidebar-w: 56px; --sidebar-collapsed: 56px; }
@@ -1004,6 +1015,55 @@
 
     /* ── SHARE BUTTON: smaller ── */
     #share-today-btn { font-size: 12px !important; padding: 8px 12px !important; }
+
+    /* ── SHARE MODAL: fit to screen ── */
+    #share-modal > div { width: 92vw !important; }
+    #share-card { padding: 20px !important; border-radius: 16px !important; }
+    #share-modal { gap: 12px !important; padding: 16px !important; overflow-y: auto !important; align-items: flex-start !important; padding-top: 40px !important; }
+
+    /* ── TRADE DETAIL PANEL: hidden by default, shown as bottom sheet ── */
+    #trade-detail-panel { display: none !important; }
+    
+    /* ── TRADE DETAIL OVERLAY: full screen on mobile ── */
+    #trade-detail-overlay { padding: 0 !important; align-items: flex-end !important; }
+    #trade-detail-overlay-card {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 90vh !important;
+      max-height: 90vh !important;
+      border-radius: 20px 20px 0 0 !important;
+      transform: translateY(100%) !important;
+    }
+
+    /* ── TRADES PAGE: show detail as button instead of side panel ── */
+    #trades-table-wrap { width: 100% !important; }
+    
+    /* ── MINDSET PAGE: stack columns vertically ── */
+    #page-mindset [style*="grid-template-columns:1fr 300px 1fr"],
+    #page-mindset [style*="grid-template-columns: 1fr 300px 1fr"] {
+      grid-template-columns: 1fr !important;
+      overflow-y: auto !important;
+      height: auto !important;
+    }
+    #page-mindset { overflow-y: auto !important; height: auto !important; }
+    #page-mindset.active { height: auto !important; overflow: auto !important; }
+
+    /* ── CALENDAR PAGE: make it scrollable ── */
+    #page-calendar { overflow-y: auto !important; height: auto !important; }
+    #page-calendar.active { overflow-y: auto !important; }
+    #page-calendar [style*="grid-template-columns:repeat(7"] {
+      font-size: 11px !important;
+    }
+    .cal-day { min-height: 50px !important; padding: 4px !important; }
+
+    /* ── SIDEBAR TOGGLE BTN: show on mobile as floating button ── */
+    #sidebar-toggle-btn { display: none !important; }
+
+    /* ── STATS ROW: fix value font size ── */
+    .stat-value { font-size: 20px !important; }
+
+    /* ── HIDE trade detail expand button on mobile (open overlay instead) ── */
+    #detail-expand-btn { display: none !important; }
   }
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -2008,6 +2068,18 @@
 
   </div>
 
+  </div>
+</div>
+
+
+<!-- Mobile calendar day bottom sheet -->
+<div id="cal-mobile-sheet" onclick="if(event.target===this)closeMobileCalSheet()" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.6);align-items:flex-end;justify-content:center;">
+  <div style="width:100%;max-height:70vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:15px;font-weight:800;color:var(--text);" id="cal-mobile-sheet-title">Select a Day</div>
+      <button onclick="closeMobileCalSheet()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;">&times;</button>
+    </div>
+    <div id="cal-mobile-sheet-body"></div>
   </div>
 </div>
 
@@ -4476,7 +4548,13 @@ function renderTradeDetail(t) { showTradeDetail(t.id); }
 function selectTrade(id) {
   selectedId = id;
   renderTrades();
-  showTradeDetail(id);
+  // On mobile, open overlay directly instead of side panel
+  if (window.innerWidth <= 768) {
+    showTradeDetail(id);
+    openDetailOverlay();
+  } else {
+    showTradeDetail(id);
+  }
 }
 
 function showTradeDetail(id) {
@@ -6780,6 +6858,11 @@ function renderMindsetWeekStats(entries) {
 
 // ── CALENDAR → TRADES LINK ────────────────────────────────────────────────────
 // Override selectCalDay to also support jumping to trades filtered by that day
+function closeMobileCalSheet() {
+  const s = document.getElementById('cal-mobile-sheet');
+  if (s) s.style.display = 'none';
+}
+
 function selectCalDay(dateStr) {
   selectedCalDay = dateStr;
   document.querySelectorAll('#cal-grid .cal-cell').forEach(c => {
@@ -6832,6 +6915,18 @@ function selectCalDay(dateStr) {
     </div>
   `;
 }
+
+  // On mobile, show bottom sheet
+  if (window.innerWidth <= 768) {
+    const sheet = document.getElementById('cal-mobile-sheet');
+    const sheetTitle = document.getElementById('cal-mobile-sheet-title');
+    const sheetBody = document.getElementById('cal-mobile-sheet-body');
+    if (sheet && sheetTitle && sheetBody) {
+      sheetTitle.textContent = title.textContent;
+      sheetBody.innerHTML = body.innerHTML;
+      sheet.style.display = 'flex';
+    }
+  }
 
 function jumpToDateTrades(dateStr) {
   // Set custom date range to that specific day and switch to trades page
@@ -7080,6 +7175,40 @@ function positionTooltip(btn) {
 // ── INIT ──────────────────────────────────────────────────────────────────────
 loadProfile();
 updateCurrencyButtons();
+
+// ── MOBILE LAYOUT FIXES ──────────────────────────────────────────────────────
+function applyMobileLayout() {
+  if (window.innerWidth > 768) return;
+
+  // Trades page: hide detail panel, full width table
+  const tradesGrid = document.getElementById('trades-grid');
+  if (tradesGrid) tradesGrid.style.gridTemplateColumns = '1fr';
+  const detailPanel = document.getElementById('trade-detail-panel');
+  if (detailPanel) detailPanel.style.display = 'none';
+
+  // Calendar: hide side panel, full width grid
+  const calContainer = document.querySelector('#page-calendar > div > div[style*="grid-template-columns"]');
+  if (calContainer) calContainer.style.gridTemplateColumns = '1fr';
+  const calDayPanel = document.getElementById('cal-day-panel');
+  if (calDayPanel) calDayPanel.style.display = 'none';
+
+  // Mindset: stack columns
+  const mindsetGrid = document.querySelector('#page-mindset [style*="grid-template-columns:1fr 300px"]');
+  if (mindsetGrid) {
+    mindsetGrid.style.gridTemplateColumns = '1fr';
+    mindsetGrid.style.overflow = 'auto';
+    mindsetGrid.style.height = 'auto';
+  }
+}
+
+// Run on every page switch and resize
+const _origSwitchPage = switchPage;
+function switchPage(name) {
+  _origSwitchPage(name);
+  requestAnimationFrame(applyMobileLayout);
+}
+window.addEventListener('resize', applyMobileLayout);
+window.addEventListener('load', applyMobileLayout);
 
 // ── SCROLL-AWARE CHART PERFORMANCE ───────────────────────────────────────────
 // Disables all Chart.js mouse interaction while scrolling for smooth FPS,
