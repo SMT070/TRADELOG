@@ -913,6 +913,7 @@
 <div id="info-tooltip"></div>
 
 <!-- APP SHELL -->
+<div id="app-root" style="display:none;width:100%;height:100vh;">
 <div id="app-shell">
 
 <!-- ── SIDEBAR ── -->
@@ -2426,6 +2427,8 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
   Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
 </script>
@@ -2610,13 +2613,19 @@ function closeSupportModal() { document.getElementById('support-modal').style.di
 
 // ── LOGOUT ────────────────────────────────────────────────────────────────────
 function handleLogout() {
-  showConfirm({ icon:'🚪', title:'Log Out', message:'Your data stays saved in this browser. You can log back in anytime.', okText:'Log Out', okColor:'var(--accent)', onOk: () => {
-    toast('Logged out', '');
+  showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the cloud. You can log back in anytime.', okText:'Log Out', okColor:'var(--accent)', onOk: async () => {
+    await sb.auth.signOut();
+    trades = [];
+    showAuthScreen();
   }});
 }
 
+
 function clearAllTrades() {
-  showConfirm({ icon:'🗑️', title:'Delete All Trades', message:'This will permanently delete all your trades. This cannot be undone.', okText:'Delete All', okColor:'var(--red)', onOk: () => {
+  showConfirm({ icon:'🗑️', title:'Delete All Trades', message:'This will permanently delete all your trades. This cannot be undone.', okText:'Delete All', okColor:'var(--red)', onOk: async () => {
+    if (currentUser) {
+      await sb.from('trades').delete().eq('user_id', currentUser.id);
+    }
     trades = [];
     save();
     selectedId = null;
@@ -2681,10 +2690,134 @@ function setResult(r) {
   });
 }
 
-function updateNav() { /* no-op */ }
+// ── SUPABASE ──────────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://yuqfoasfefldenkvwyrm.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_vKIQGF50re2KA6Zorm-SmQ_fCklxpRB';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let currentUser = null;
 
-load();
-loadTheme();
+// ── AUTH UI ───────────────────────────────────────────────────────────────────
+let authMode = 'login';
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.getElementById('auth-tab-login').style.background  = mode==='login'  ? 'var(--accent)' : 'transparent';
+  document.getElementById('auth-tab-login').style.color       = mode==='login'  ? '#fff' : 'var(--muted)';
+  document.getElementById('auth-tab-signup').style.background = mode==='signup' ? 'var(--accent)' : 'transparent';
+  document.getElementById('auth-tab-signup').style.color      = mode==='signup' ? '#fff' : 'var(--muted)';
+  document.getElementById('auth-name-field').style.display    = mode==='signup' ? 'block' : 'none';
+  document.getElementById('auth-btn').textContent             = mode==='login'  ? 'Log In' : 'Create Account';
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function handleAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const btn = document.getElementById('auth-btn');
+  document.getElementById('auth-error').style.display = 'none';
+  if (!email || !password) { showAuthError('Please enter email and password.'); return; }
+  btn.textContent = '...'; btn.disabled = true;
+  try {
+    if (authMode === 'login') {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) { showAuthError(error.message); btn.textContent = 'Log In'; btn.disabled = false; return; }
+    } else {
+      const name = document.getElementById('auth-name').value.trim();
+      const { error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
+      if (error) { showAuthError(error.message); btn.textContent = 'Create Account'; btn.disabled = false; return; }
+    }
+  } catch(e) {
+    showAuthError('Something went wrong. Try again.'); btn.textContent = authMode==='login'?'Log In':'Create Account'; btn.disabled = false;
+  }
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-root').style.display = 'flex';
+}
+
+function showAuthScreen() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app-root').style.display = 'none';
+}
+
+// ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
+async function loadTradesFromSupabase() {
+  if (!currentUser) return;
+  const { data, error } = await sb.from('trades').select('*').eq('user_id', currentUser.id).order('date', { ascending: false });
+  if (error) { console.error('Load error:', error); return; }
+  trades = (data || []).map(r => ({
+    id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
+    dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
+    pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
+    result: r.result, emotion: r.emotion, confidence: r.confidence,
+    notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+  }));
+}
+
+async function saveTradeToSupabase(t) {
+  if (!currentUser) return;
+  const row = {
+    id: t.id, user_id: currentUser.id, symbol: t.symbol, date: t.date,
+    close_date: t.closeDate, dir: t.dir, lots: t.lots, entry: t.entry,
+    exit: t.exit, sl: t.sl, tp: t.tp, pnl: t.pnl, commission: t.commission,
+    net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
+    confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
+    strategies: t.strategies || []
+  };
+  const { error } = await sb.from('trades').upsert(row);
+  if (error) console.error('Save error:', error);
+}
+
+async function deleteTradeFromSupabase(id) {
+  if (!currentUser) return;
+  const { error } = await sb.from('trades').delete().eq('id', id).eq('user_id', currentUser.id);
+  if (error) console.error('Delete error:', error);
+}
+
+function load() { /* handled by Supabase */ }
+function save() {
+  // Keep localStorage as backup
+  localStorage.setItem(KEY, JSON.stringify(trades));
+  // Sync all trades to Supabase
+  if (currentUser) trades.forEach(t => saveTradeToSupabase(t));
+}
+
+// ── APP INIT ──────────────────────────────────────────────────────────────────
+async function initApp(user) {
+  currentUser = user;
+  await loadTradesFromSupabase();
+  loadTheme();
+  refreshDashboard();
+  showApp();
+  updateGreeting();
+}
+
+// ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session && session.user) {
+    await initApp(session.user);
+  } else {
+    currentUser = null;
+    trades = [];
+    showAuthScreen();
+  }
+});
+
+// Check existing session on load
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session && session.user) {
+    await initApp(session.user);
+  } else {
+    showAuthScreen();
+  }
+})();
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
@@ -3166,6 +3299,7 @@ function saveTrade() {
     trades.unshift(trade);
   }
   save();
+  saveTradeToSupabase(trade);
   clearForm();
   toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
   switchPage(editId ? 'trades' : 'dashboard');
@@ -3175,6 +3309,7 @@ function instantDelete(id) {
   showConfirm({ icon:'🗑️', title:'Delete Trade', message:'This trade will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: () => {
     trades = trades.filter(t => t.id !== id);
     save();
+    deleteTradeFromSupabase(id);
     toast('Trade deleted');
     renderTrades();
     refreshDashboard();
@@ -3186,6 +3321,7 @@ function deleteSelected() {
   if (!id) return;
   trades = trades.filter(t => t.id !== id);
   save();
+  deleteTradeFromSupabase(id);
   clearForm();
   toast('Trade deleted');
   switchPage('trades');
@@ -5014,6 +5150,7 @@ function saveInlineEdit(id) {
     t.r = risk ? +(reward / risk).toFixed(2) : 0;
   }
   save();
+  saveTradeToSupabase(t);
   collapseDetailPanel();
   renderTrades();
   refreshDashboard();
@@ -5055,6 +5192,7 @@ function deleteInlineEdit(id) {
     trades = trades.filter(t => t.id !== id);
     selectedId = null;
     save();
+    deleteTradeFromSupabase(id);
     collapseDetailPanel();
     renderTrades();
     refreshDashboard();
@@ -5435,6 +5573,8 @@ function confirmImport() {
   if (!pendingImport.length) return;
   trades = [...pendingImport, ...trades];
   save();
+  // Sync all imported trades to Supabase
+  pendingImport.forEach(t => saveTradeToSupabase(t));
   toast('✓ Imported ' + pendingImport.length + ' trades', 'success');
   pendingImport = [];
   document.getElementById('import-preview').style.display = 'none';
@@ -6728,11 +6868,11 @@ function positionTooltip(btn) {
 // ── INIT ──────────────────────────────────────────────────────────────────────
 loadProfile();
 updateCurrencyButtons();
-refreshDashboard();
 </script>
 
 </div><!-- /main-content -->
 </div><!-- /app-shell -->
+</div><!-- /app-root -->
 
 <!-- ── Custom Date Picker Dropdown (body-level to escape overflow:hidden) ── -->
 <div id="custom-cal-dropdown" style="display:none;position:fixed;z-index:9999;width:280px;
@@ -6775,6 +6915,40 @@ refreshDashboard();
     <button onclick="closeDatePicker()"
       style="padding:6px 16px;border-radius:7px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity .15s;"
       onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Done</button>
+  </div>
+</div>
+<!-- ── AUTH SCREEN ─────────────────────────────────────────────────────────── -->
+<div id="auth-screen" style="display:none;position:fixed;inset:0;z-index:99998;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;">
+  <div style="width:100%;max-width:400px;padding:0 24px;">
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:40px;">
+      <div style="font-size:36px;font-weight:900;color:var(--text);letter-spacing:-2px;">Trade<span style="color:var(--accent);">Log</span></div>
+      <div style="font-size:13px;color:var(--muted);margin-top:6px;">Your professional trading journal</div>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:4px;margin-bottom:28px;">
+      <button id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;">Log In</button>
+      <button id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;">Sign Up</button>
+    </div>
+
+    <!-- Form -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div id="auth-name-field" style="display:none;">
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Name</label>
+        <input id="auth-name" type="text" placeholder="Your name" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Email</label>
+        <input id="auth-email" type="email" placeholder="you@example.com" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
+      </div>
+      <div id="auth-error" style="display:none;padding:10px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);"></div>
+      <button id="auth-btn" onclick="handleAuth()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;transition:opacity .2s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Log In</button>
+    </div>
   </div>
 </div>
 </body>
