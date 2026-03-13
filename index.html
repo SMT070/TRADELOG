@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiM2MzY2ZjEiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjU0JSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIEJsYWNrLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjMwIiBmaWxsPSJ3aGl0ZSI+VEw8L3RleHQ+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TradeLog — Your Trading Journal</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -2647,18 +2648,15 @@ function openSupportModal()  { document.getElementById('support-modal').style.di
 function closeSupportModal() { document.getElementById('support-modal').style.display = 'none'; }
 
 // ── LOGOUT ────────────────────────────────────────────────────────────────────
-async function doLogout() {
-  closeConfirmModal();
+function handleLogout() {
+  // Use native confirm to avoid z-index/modal issues
+  if (!window.confirm('Log out? Your data is saved to the cloud.')) return;
   trades = [];
   currentUser = null;
   appInitialized = false;
   localStorage.removeItem('tradelog_v1');
   showAuthScreen();
-  try { await sb.auth.signOut(); } catch(e) { console.error('signOut error:', e); }
-}
-
-function handleLogout() {
-  showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the cloud. You can log back in anytime.', okText:'Log Out', okColor:'var(--accent)', onOk: doLogout });
+  if (sb) sb.auth.signOut().catch(e => console.error('signOut:', e));
 }
 
 
