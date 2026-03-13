@@ -940,7 +940,14 @@
     .sidebar-logo { justify-content: center; padding: 12px 0; }
     .sidebar-item { justify-content: center; padding: 12px 0; }
     #sidebar .account-card { justify-content: center; padding: 10px 0; }
-    #sidebar-settings-menu { left: 56px !important; }
+    #sidebar-settings-menu {
+      position: fixed !important;
+      bottom: 70px !important;
+      left: 8px !important;
+      right: 8px !important;
+      width: auto !important;
+      z-index: 9999 !important;
+    }
     /* hide toggle collapse button on mobile */
     #sidebar-toggle-btn { display: none !important; }
 
@@ -2822,7 +2829,10 @@ function handleLogout() {
   trades = [];
   currentUser = null;
   appInitialized = false;
-  localStorage.clear();
+  // Only clear trade data — keep profile (name/avatar) and theme
+  localStorage.removeItem('tradelog_v1');
+  localStorage.removeItem('tradelog_goals');
+  localStorage.removeItem('tradelog_mindset_v2');
   showAuthScreen();
   if (sb) sb.auth.signOut().catch(e => console.error('signOut:', e));
 }
@@ -3081,6 +3091,7 @@ function switchPage(name) {
 
   // 3. Render content on next frame — page is visible before heavy render
   requestAnimationFrame(() => {
+    applyMobileLayout();
     try {
       if (name === 'trades') renderTrades();
       else if (name === 'analytics') renderAnalytics();
@@ -5861,11 +5872,33 @@ function showImportPreview(rows, headers) {
 
 function confirmImport() {
   if (!pendingImport.length) return;
-  trades = [...pendingImport, ...trades];
-  save();
-  // Sync all imported trades to Supabase
-  pendingImport.forEach(t => saveTradeToSupabase(t));
-  toast('✓ Imported ' + pendingImport.length + ' trades', 'success');
+
+  // Deduplicate by ticket number — skip trades already in journal
+  const existingTickets = new Set(trades.map(t => t.ticket).filter(Boolean));
+  const newTrades = pendingImport.filter(t => !t.ticket || !existingTickets.has(t.ticket));
+  const skipped = pendingImport.length - newTrades.length;
+
+  if (!newTrades.length) {
+    toast('All trades already imported — no duplicates added', 'error');
+    pendingImport = [];
+    document.getElementById('import-preview').style.display = 'none';
+    return;
+  }
+
+  // Add new trades to array
+  trades = [...newTrades, ...trades];
+
+  // Save to localStorage
+  localStorage.setItem(KEY, JSON.stringify(trades));
+
+  // Sync ONLY new trades to Supabase — not all existing ones
+  newTrades.forEach(t => saveTradeToSupabase(t));
+
+  const msg = skipped > 0
+    ? `✓ Imported ${newTrades.length} trades (${skipped} duplicates skipped)`
+    : `✓ Imported ${newTrades.length} trades`;
+  toast(msg, 'success');
+
   pendingImport = [];
   document.getElementById('import-preview').style.display = 'none';
   document.getElementById('paste-csv').value = '';
@@ -7201,12 +7234,7 @@ function applyMobileLayout() {
   }
 }
 
-// Run on every page switch and resize
-const _origSwitchPage = switchPage;
-function switchPage(name) {
-  _origSwitchPage(name);
-  requestAnimationFrame(applyMobileLayout);
-}
+// Run mobile layout on resize and load only
 window.addEventListener('resize', applyMobileLayout);
 window.addEventListener('load', applyMobileLayout);
 
