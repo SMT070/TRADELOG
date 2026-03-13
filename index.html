@@ -2649,8 +2649,11 @@ function closeSupportModal() { document.getElementById('support-modal').style.di
 // ── LOGOUT ────────────────────────────────────────────────────────────────────
 function handleLogout() {
   showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the cloud. You can log back in anytime.', okText:'Log Out', okColor:'var(--accent)', onOk: async () => {
-    await sb.auth.signOut();
+    try { await sb.auth.signOut(); } catch(e) { console.error('signOut error:', e); }
     trades = [];
+    currentUser = null;
+    appInitialized = false;
+    localStorage.removeItem('tradelog_v1');
     showAuthScreen();
   }});
 }
@@ -2689,7 +2692,7 @@ function showConfirm({ icon='⚠️', title='Are you sure?', message='', okText=
   okBtn.style.background = okColor;
   okBtn.style.color = '#fff';
   okBtn.style.border = 'none';
-  _confirmCallback = () => { closeConfirmModal(); onOk(); };
+  _confirmCallback = () => { closeConfirmModal(); Promise.resolve(onOk()).catch(e => console.error('Confirm action error:', e)); };
   document.getElementById('confirm-modal').style.display = 'flex';
 }
 function closeConfirmModal() {
