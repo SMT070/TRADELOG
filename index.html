@@ -2693,7 +2693,8 @@ function setResult(r) {
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://yuqfoasfefldenkvwyrm.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_vKIQGF50re2KA6Zorm-SmQ_fCklxpRB';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const _supa = window.supabase || window.Supabase;
+const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 let currentUser = null;
 
 // ── AUTH UI ───────────────────────────────────────────────────────────────────
@@ -2799,39 +2800,33 @@ async function initApp(user) {
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (session && session.user) {
-    await initApp(session.user);
-  } else {
-    currentUser = null;
-    trades = [];
-    showAuthScreen();
-  }
-});
-
-// Check existing session on load
-(async () => {
-  try {
-    const { data: { session } } = await sb.auth.getSession();
+if (sb) {
+  sb.auth.onAuthStateChange(async (event, session) => {
     if (session && session.user) {
       await initApp(session.user);
     } else {
+      currentUser = null;
+      trades = [];
       showAuthScreen();
+    }
+  });
+}
+
+// Show auth screen immediately — don't wait for Supabase
+showAuthScreen();
+
+// Then check if already logged in
+(async () => {
+  try {
+    if (!sb) return;
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      await initApp(session.user);
     }
   } catch(e) {
     console.error('Supabase init error:', e);
-    showAuthScreen();
   }
 })();
-
-// Fallback: if nothing shows after 3s, show auth screen
-setTimeout(() => {
-  const appRoot = document.getElementById('app-root');
-  const authScreen = document.getElementById('auth-screen');
-  if (appRoot.style.display === 'none' && authScreen.style.display === 'none') {
-    showAuthScreen();
-  }
-}, 3000);
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
