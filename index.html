@@ -917,13 +917,26 @@
     #trades-grid { grid-template-columns: 1fr !important; }
     #trade-detail-panel { display: none !important; }
 
-    /* Calendar: hide side panel, full width grid */
+    /* Calendar on mobile: full width, hide side panel, hide week col */
     #page-calendar > div > div[style*="grid-template-columns:1fr 300px"],
     #page-calendar > div > div[style*="grid-template-columns: 1fr 300px"] {
       grid-template-columns: 1fr !important;
     }
     #cal-day-panel { display: none !important; }
     #cal-mobile-panel { display: block !important; }
+    /* Hide week column in month view */
+    #cal-dow-row { grid-template-columns: repeat(7, 1fr) !important; }
+    #cal-grid { grid-template-columns: repeat(7, 1fr) !important; }
+    .cal-week-col { display: none !important; }
+    .cal-dow:last-child { display: none !important; }
+    /* Hide view buttons except Month on mobile */
+    #cal-view-year, #cal-view-alltime, #cal-view-week { display: none !important; }
+    /* Smaller calendar cells */
+    .cal-cell { min-height: 48px !important; padding: 4px 3px !important; font-size: 10px !important; }
+    .cal-cell .cal-day-num { font-size: 10px !important; }
+    /* Calendar page padding */
+    #page-calendar { padding: 8px !important; }
+    #page-calendar > div { border-radius: 12px !important; }
 
     /* ── SIDEBAR: icon-only on mobile ── */
     :root { --sidebar-w: 56px; --sidebar-collapsed: 56px; }
@@ -1045,15 +1058,27 @@
     /* ── TRADES PAGE: show detail as button instead of side panel ── */
     #trades-table-wrap { width: 100% !important; }
     
-    /* ── MINDSET PAGE: stack columns vertically ── */
-    #page-mindset [style*="grid-template-columns:1fr 300px 1fr"],
-    #page-mindset [style*="grid-template-columns: 1fr 300px 1fr"] {
-      grid-template-columns: 1fr !important;
-      overflow-y: auto !important;
+    /* ── MINDSET PAGE: stack columns vertically, full scroll ── */
+    #page-mindset,
+    #page-mindset.active {
       height: auto !important;
+      min-height: 100vh !important;
+      overflow-y: auto !important;
+      overflow: visible !important;
+      padding-bottom: 40px !important;
     }
-    #page-mindset { overflow-y: auto !important; height: auto !important; }
-    #page-mindset.active { height: auto !important; overflow: auto !important; }
+    #page-mindset [style*="grid-template-columns:1fr 300px 1fr"],
+    #page-mindset [style*="grid-template-columns: 1fr 300px 1fr"],
+    #page-mindset [style*="grid-template-columns:1fr 300px"],
+    #page-mindset [style*="grid-template-columns: 1fr 300px"] {
+      display: flex !important;
+      flex-direction: column !important;
+      height: auto !important;
+      overflow: visible !important;
+      min-height: unset !important;
+    }
+    #page-mindset .panel { min-height: unset !important; height: auto !important; }
+    #page-mindset textarea { min-height: 100px !important; }
 
     /* ── CALENDAR PAGE: make it scrollable ── */
     #page-calendar { overflow-y: auto !important; height: auto !important; }
@@ -3520,6 +3545,38 @@ function openPhotoLightbox(id) {
   document.body.appendChild(lb);
 }
 
+function loadTradeIntoForm(t) {
+  // Load a trade into the Add Trade form for editing on mobile
+  clearForm();
+  document.getElementById('edit-id').value = t.id;
+  document.getElementById('f-symbol').value = t.symbol || '';
+  document.getElementById('f-dir').value = t.dir || 'BUY';
+  document.getElementById('f-lots').value = t.lots || '';
+  document.getElementById('f-entry').value = t.entry || '';
+  document.getElementById('f-exit').value = t.exit || '';
+  document.getElementById('f-sl').value = t.sl || '';
+  document.getElementById('f-tp').value = t.tp || '';
+  document.getElementById('f-pnl').value = t.pnl || '';
+  document.getElementById('f-commission').value = t.commission || '';
+  document.getElementById('f-notes').value = t.notes || '';
+  document.getElementById('f-confidence').value = t.confidence || '';
+  if (t.date) document.getElementById('f-date').value = t.date;
+  if (t.closeDate) document.getElementById('f-close-date').value = t.closeDate;
+  // Update date display buttons
+  const dateDisp = document.getElementById('f-date-display');
+  const closeDateDisp = document.getElementById('f-close-date-display');
+  if (dateDisp && t.date) { dateDisp.textContent = new Date(t.date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); dateDisp.style.color = ''; }
+  if (closeDateDisp && t.closeDate) { closeDateDisp.textContent = new Date(t.closeDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); closeDateDisp.style.color = ''; }
+  // Tags and emotion
+  strategyTags = [...(t.strategies || [])];
+  selectedEmotion = t.emotion || '';
+  selectedResult = t.result || '';
+  editingScreenshot = t.screenshot || null;
+  // Update page title to show editing
+  const pageTitle = document.querySelector('#page-add .panel-header .panel-title');
+  if (pageTitle) pageTitle.textContent = 'Edit Trade — ' + t.symbol;
+}
+
 function saveTrade() {
   const sym = document.getElementById('f-symbol').value.trim().toUpperCase();
   if (!sym) { toast('Symbol is required','error'); return; }
@@ -4557,12 +4614,17 @@ function renderTradeDetail(t) { showTradeDetail(t.id); }
 
 function selectTrade(id) {
   selectedId = id;
-  renderTrades();
-  // On mobile, open overlay directly instead of side panel
   if (window.innerWidth <= 768) {
-    showTradeDetail(id);
-    openDetailOverlay();
+    // On mobile: single tap = open edit form directly
+    const t = trades.find(x => x.id === id);
+    if (t) {
+      renderTrades();
+      // Load trade into edit form and switch to add page
+      loadTradeIntoForm(t);
+      switchPage('add');
+    }
   } else {
+    renderTrades();
     showTradeDetail(id);
   }
 }
