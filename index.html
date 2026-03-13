@@ -2946,8 +2946,8 @@ function save() {
 // ── APP INIT ──────────────────────────────────────────────────────────────────
 let appInitialized = false;
 async function initApp(user) {
-  // If same user already initialized, just show app (handles double-fire)
-  if (appInitialized && currentUser && currentUser.id === user.id) {
+  // Prevent double-init for same user only if trades already loaded
+  if (appInitialized && currentUser && currentUser.id === user.id && trades.length > 0) {
     showApp();
     return;
   }
@@ -2961,7 +2961,7 @@ async function initApp(user) {
   showApp();
   updateGreeting();
 
-  // Always reload trades fresh from Supabase
+  // Load trades fresh from Supabase every time
   try {
     await loadTradesFromSupabase();
   } catch(e) { console.error('Trade load error:', e); }
@@ -2993,14 +2993,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
-let _switchingPage = false;
 function switchPage(name) {
-  if (_switchingPage) return;
-  _switchingPage = true;
-
   // 1. Switch page visually — instant
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
+  if (!nextPage) return;
   nextPage.classList.add('active');
 
   // 2. Update sidebar highlight — instant
@@ -3010,17 +3007,16 @@ function switchPage(name) {
     btn.classList.toggle('active', map[name] === btn.getAttribute('data-label'));
   });
 
-  // 3. Render content after paint — so page appears immediately
+  // 3. Render content on next frame — page is visible before heavy render
   requestAnimationFrame(() => {
-    setTimeout(() => {
+    try {
       if (name === 'trades') renderTrades();
       else if (name === 'analytics') renderAnalytics();
       else if (name === 'dashboard') refreshDashboard();
       else if (name === 'calendar') renderCalendar();
       else if (name === 'mindset') initMindsetPage();
       else if (name === 'add') { if (!document.getElementById('edit-id').value) clearForm(); }
-      _switchingPage = false;
-    }, 16); // one frame delay — page is visible before heavy render
+    } catch(e) { console.error('switchPage render error:', e); }
   });
 }
 
