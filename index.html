@@ -2427,7 +2427,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 
 <script>
   Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
@@ -2722,19 +2722,33 @@ async function handleAuth() {
   const btn = document.getElementById('auth-btn');
   document.getElementById('auth-error').style.display = 'none';
   if (!email || !password) { showAuthError('Please enter email and password.'); return; }
-  btn.textContent = '...'; btn.disabled = true;
+
+  // Check Supabase loaded
+  if (!sb) {
+    showAuthError('Connection failed — Supabase did not load. Check your internet and refresh.');
+    return;
+  }
+
+  btn.textContent = 'Connecting...'; btn.disabled = true;
   try {
     if (authMode === 'login') {
-      const { error } = await sb.auth.signInWithPassword({ email, password });
+      btn.textContent = 'Logging in...';
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      console.log('Login result:', { data, error });
       if (error) { showAuthError(error.message); btn.textContent = 'Log In'; btn.disabled = false; return; }
+      if (!data?.session) { showAuthError('No session returned. Try again.'); btn.textContent = 'Log In'; btn.disabled = false; return; }
     } else {
+      btn.textContent = 'Creating account...';
       const name = document.getElementById('auth-name').value.trim();
-      const { error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
+      const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
+      console.log('Signup result:', { data, error });
       if (error) { showAuthError(error.message); btn.textContent = 'Create Account'; btn.disabled = false; return; }
     }
   } catch(e) {
-    showAuthError('Error: ' + (e.message || JSON.stringify(e))); btn.textContent = authMode==='login'?'Log In':'Create Account'; btn.disabled = false;
     console.error('Auth exception:', e);
+    showAuthError('Error: ' + (e.message || 'Unknown error. Check console.'));
+    btn.textContent = authMode === 'login' ? 'Log In' : 'Create Account';
+    btn.disabled = false;
   }
 }
 
