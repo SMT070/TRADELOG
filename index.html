@@ -931,12 +931,27 @@
     .cal-dow:last-child { display: none !important; }
     /* Hide view buttons except Month on mobile */
     #cal-view-year, #cal-view-alltime, #cal-view-week { display: none !important; }
-    /* Smaller calendar cells */
-    .cal-cell { min-height: 48px !important; padding: 4px 3px !important; font-size: 10px !important; }
-    .cal-cell .cal-day-num { font-size: 10px !important; }
-    /* Calendar page padding */
-    #page-calendar { padding: 8px !important; }
-    #page-calendar > div { border-radius: 12px !important; }
+    /* Compact calendar cells that fill screen */
+    .cal-cell {
+      min-height: 0 !important;
+      height: auto !important;
+      padding: 3px 4px !important;
+    }
+    .cal-day-num { font-size: 9px !important; margin-bottom: 1px !important; }
+    .cal-pnl { font-size: 9px !important; margin-top: 2px !important; }
+    .cal-trades { font-size: 8px !important; }
+    #cal-grid {
+      flex: 1 !important;
+      overflow: hidden !important;
+    }
+    /* Make grid rows fill height evenly */
+    #cal-grid { align-content: stretch !important; }
+    .cal-dow { font-size: 9px !important; padding: 6px 2px !important; }
+    /* Header bar compact */
+    #page-calendar > div > div:first-child {
+      padding: 8px 12px !important;
+    }
+    #cal-month-label { font-size: 15px !important; min-width: unset !important; }
 
     /* ── SIDEBAR: icon-only on mobile ── */
     :root { --sidebar-w: 56px; --sidebar-collapsed: 56px; }
@@ -1058,35 +1073,70 @@
     /* ── TRADES PAGE: show detail as button instead of side panel ── */
     #trades-table-wrap { width: 100% !important; }
     
-    /* ── MINDSET PAGE: stack columns vertically, full scroll ── */
-    #page-mindset,
-    #page-mindset.active {
+    /* ── MINDSET PAGE: full scroll, stacked ── */
+    #page-mindset {
+      display: block !important;
       height: auto !important;
       min-height: 100vh !important;
       overflow-y: auto !important;
-      overflow: visible !important;
-      padding-bottom: 40px !important;
+      overflow-x: hidden !important;
+      padding: 12px !important;
+      padding-bottom: 60px !important;
     }
+    #page-mindset.active {
+      display: block !important;
+      height: auto !important;
+      overflow-y: auto !important;
+    }
+    /* Stack 3-col grid vertically */
+    #page-mindset > div:last-of-type,
     #page-mindset [style*="grid-template-columns:1fr 300px 1fr"],
-    #page-mindset [style*="grid-template-columns: 1fr 300px 1fr"],
-    #page-mindset [style*="grid-template-columns:1fr 300px"],
-    #page-mindset [style*="grid-template-columns: 1fr 300px"] {
+    #page-mindset [style*="grid-template-columns: 1fr 300px 1fr"] {
       display: flex !important;
       flex-direction: column !important;
+      gap: 12px !important;
       height: auto !important;
       overflow: visible !important;
       min-height: unset !important;
+      flex: unset !important;
     }
-    #page-mindset .panel { min-height: unset !important; height: auto !important; }
-    #page-mindset textarea { min-height: 100px !important; }
+    /* Each column becomes full width */
+    #page-mindset [style*="grid-template-columns:1fr 300px 1fr"] > *,
+    #page-mindset [style*="grid-template-columns: 1fr 300px 1fr"] > * {
+      min-height: unset !important;
+      height: auto !important;
+      overflow: visible !important;
+      padding-right: 0 !important;
+    }
+    #page-mindset .panel {
+      min-height: unset !important;
+      height: auto !important;
+      flex: unset !important;
+    }
+    #page-mindset textarea { min-height: 80px !important; resize: vertical !important; }
+    /* Header row */
+    #page-mindset > div:first-child {
+      margin-bottom: 12px !important;
+      flex-shrink: 0 !important;
+    }
 
-    /* ── CALENDAR PAGE: make it scrollable ── */
-    #page-calendar { overflow-y: auto !important; height: auto !important; }
-    #page-calendar.active { overflow-y: auto !important; }
-    #page-calendar [style*="grid-template-columns:repeat(7"] {
-      font-size: 11px !important;
+    /* ── CALENDAR PAGE: full screen, compact cells ── */
+    #page-calendar {
+      padding: 0 !important;
+      height: 100vh !important;
+      overflow: hidden !important;
     }
-    .cal-day { min-height: 50px !important; padding: 4px !important; }
+    #page-calendar.active {
+      height: 100vh !important;
+      overflow: hidden !important;
+    }
+    #page-calendar > div {
+      height: 100% !important;
+      border-radius: 0 !important;
+      border: none !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
 
     /* ── SIDEBAR TOGGLE BTN: show on mobile as floating button ── */
     #sidebar-toggle-btn { display: none !important; }
@@ -3074,6 +3124,9 @@ async function initApp(user) {
   } catch(e) { console.error('Trade load error:', e); }
 
   refreshDashboard();
+
+  // Start real-time sync so changes from other devices appear instantly
+  setupRealtimeSync();
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
@@ -7298,6 +7351,34 @@ function applyMobileLayout() {
 // Run mobile layout on resize and load only
 window.addEventListener('resize', applyMobileLayout);
 window.addEventListener('load', applyMobileLayout);
+
+// ── REAL-TIME SYNC ───────────────────────────────────────────────────────────
+// Supabase Realtime: auto-reload trades when another device makes changes
+function setupRealtimeSync() {
+  if (!sb || !currentUser) return;
+  try {
+    sb.channel('trades-sync')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'trades',
+        filter: 'user_id=eq.' + currentUser.id
+      }, async () => {
+        // Another device changed data — reload silently
+        await loadTradesFromSupabase();
+        // Refresh whichever page is currently active
+        const activePage = document.querySelector('.page.active');
+        if (activePage) {
+          const name = activePage.id.replace('page-', '');
+          if (name === 'dashboard') refreshDashboard();
+          else if (name === 'trades') renderTrades();
+          else if (name === 'analytics') renderAnalytics();
+          else if (name === 'calendar') renderCalendar();
+        }
+      })
+      .subscribe();
+  } catch(e) { console.log('Realtime not available:', e.message); }
+}
 
 // ── SCROLL-AWARE CHART PERFORMANCE ───────────────────────────────────────────
 // Disables all Chart.js mouse interaction while scrolling for smooth FPS,
