@@ -2733,7 +2733,8 @@ async function handleAuth() {
       if (error) { showAuthError(error.message); btn.textContent = 'Create Account'; btn.disabled = false; return; }
     }
   } catch(e) {
-    showAuthError('Something went wrong. Try again.'); btn.textContent = authMode==='login'?'Log In':'Create Account'; btn.disabled = false;
+    showAuthError('Error: ' + (e.message || JSON.stringify(e))); btn.textContent = authMode==='login'?'Log In':'Create Account'; btn.disabled = false;
+    console.error('Auth exception:', e);
   }
 }
 
