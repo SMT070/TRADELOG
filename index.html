@@ -907,6 +907,104 @@
   }
   #info-tooltip.show { opacity: 1; transform: translateY(0); }
   #info-tooltip strong { color: var(--text); display: block; margin-bottom: 3px; font-size: 11px; font-weight: 700; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     MOBILE RESPONSIVE — max-width 768px
+     PC layout is completely untouched outside this block
+  ═══════════════════════════════════════════════════════════════ */
+  @media (max-width: 768px) {
+
+    /* ── SIDEBAR: icon-only on mobile ── */
+    :root { --sidebar-w: 56px; --sidebar-collapsed: 56px; }
+
+    #sidebar {
+      width: 56px !important;
+      min-width: 56px !important;
+      flex-shrink: 0;
+    }
+    .sidebar-label { display: none !important; }
+    .sidebar-logo-text { display: none !important; }
+    .account-card-text { display: none !important; }
+    #sidebar-account-name { display: none !important; }
+    .sidebar-logo { justify-content: center; padding: 12px 0; }
+    .sidebar-item { justify-content: center; padding: 12px 0; }
+    #sidebar .account-card { justify-content: center; padding: 10px 0; }
+    #sidebar-settings-menu { left: 56px !important; }
+    /* hide toggle collapse button on mobile */
+    #sidebar-toggle-btn { display: none !important; }
+
+    /* ── MAIN CONTENT: full width ── */
+    #main-content { padding: 0; }
+    .page-content, .container { padding: 12px !important; }
+
+    /* ── DASHBOARD STAT CARDS: 2 columns ── */
+    .stats-row {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+    }
+    .stat-card { padding: 12px 14px !important; min-height: 90px !important; }
+    .stat-value { font-size: 22px !important; }
+    .stat-label { font-size: 8px !important; }
+    .stat-sub { font-size: 10px !important; }
+
+    /* ── ANALYTICS STAT CARDS: 2 columns ── */
+    [style*="grid-template-columns:repeat(5,1fr)"],
+    [style*="grid-template-columns: repeat(5, 1fr)"] {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+    }
+    [style*="grid-template-columns:repeat(4,1fr)"],
+    [style*="grid-template-columns: repeat(4, 1fr)"] {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+    }
+    .an-stat-card { padding: 12px 14px !important; }
+    .an-stat-value { font-size: 22px !important; }
+
+    /* ── TWO-COL PANELS: stack vertically ── */
+    .two-col {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+    }
+
+    /* ── PAGE HEADER: smaller ── */
+    .page-header { padding: 12px 12px 8px !important; }
+    .page-title { font-size: 20px !important; }
+
+    /* ── TRADES TABLE: horizontal scroll ── */
+    .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+    #trades-pagination { padding: 10px 0 !important; }
+
+    /* ── ADD TRADE FORM ── */
+    .form-grid {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* ── CALENDAR ── */
+    #heatmap-grid { overflow-x: auto; }
+
+    /* ── MODALS: full width on mobile ── */
+    [style*="width:420px"], [style*="width: 420px"],
+    [style*="width:400px"], [style*="width: 400px"] {
+      width: 95vw !important;
+    }
+
+    /* ── ANALYTICS CHARTS SECTION ── */
+    [style*="grid-template-columns:1fr 1fr"],
+    [style*="grid-template-columns: 1fr 1fr"] {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* ── TODAY STATS ROW ── */
+    [style*="grid-template-columns:repeat(4"] {
+      grid-template-columns: 1fr 1fr !important;
+    }
+
+    /* ── SHARE BUTTON: smaller ── */
+    #share-today-btn { font-size: 12px !important; padding: 8px 12px !important; }
+  }
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
