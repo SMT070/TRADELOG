@@ -2757,8 +2757,10 @@ async function handleAuth() {
 function showApp() {
   const auth = document.getElementById('auth-screen');
   const app = document.getElementById('app-root');
+  console.log('[showApp] auth el:', auth, '| app el:', app);
   if (auth) auth.style.display = 'none';
   if (app) app.style.display = 'block';
+  console.log('[showApp] app display now:', app ? app.style.display : 'N/A');
 }
 
 function showAuthScreen() {
@@ -2813,26 +2815,26 @@ function save() {
 // ── APP INIT ──────────────────────────────────────────────────────────────────
 let appInitialized = false;
 async function initApp(user) {
-  if (appInitialized && currentUser && currentUser.id === user.id) return; // prevent double init
+  console.log('[initApp] called, user:', user && user.id);
+  if (appInitialized && currentUser && currentUser.id === user.id) {
+    console.log('[initApp] already initialized, skipping');
+    return;
+  }
   appInitialized = true;
   currentUser = user;
 
-  // Reset auth button in case it was stuck on '...'
-  const btn = document.getElementById('auth-btn');
-  if (btn) { btn.disabled = false; btn.textContent = 'Log In'; }
+  try { const btn = document.getElementById('auth-btn'); if (btn) { btn.disabled = false; btn.textContent = 'Log In'; } } catch(e) { console.error('[initApp] btn reset:', e); }
+  try { loadTheme(); } catch(e) { console.error('[initApp] loadTheme:', e); }
+  try { console.log('[initApp] calling showApp...'); showApp(); console.log('[initApp] showApp done'); } catch(e) { console.error('[initApp] showApp:', e); }
+  try { updateGreeting(); } catch(e) { console.error('[initApp] updateGreeting:', e); }
 
-  // Show app immediately — don't block on data load
-  loadTheme();
-  showApp();
-  updateGreeting();
-
-  // Load trades in background, then refresh UI
   try {
+    console.log('[initApp] loading trades from Supabase...');
     await loadTradesFromSupabase();
-  } catch(e) {
-    console.error('Trade load error:', e);
-  }
-  refreshDashboard();
+    console.log('[initApp] trades loaded:', trades.length);
+  } catch(e) { console.error('[initApp] loadTradesFromSupabase:', e); }
+
+  try { refreshDashboard(); console.log('[initApp] all done!'); } catch(e) { console.error('[initApp] refreshDashboard:', e); }
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
