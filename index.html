@@ -2738,13 +2738,17 @@ async function handleAuth() {
 }
 
 function showApp() {
-  document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('app-root').style.display = 'block';
+  const auth = document.getElementById('auth-screen');
+  const app = document.getElementById('app-root');
+  if (auth) auth.style.display = 'none';
+  if (app) app.style.display = 'block';
 }
 
 function showAuthScreen() {
-  document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('app-root').style.display = 'none';
+  const auth = document.getElementById('auth-screen');
+  const app = document.getElementById('app-root');
+  if (auth) auth.style.display = 'flex';
+  if (app) app.style.display = 'none';
 }
 
 // ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
@@ -2813,20 +2817,21 @@ if (sb) {
 }
 
 // Show auth screen immediately — don't wait for Supabase
-showAuthScreen();
-
-// Then check if already logged in
-(async () => {
-  try {
-    if (!sb) return;
-    const { data: { session } } = await sb.auth.getSession();
-    if (session && session.user) {
-      await initApp(session.user);
+window.addEventListener('load', () => {
+  showAuthScreen();
+  // Then check if already logged in
+  (async () => {
+    try {
+      if (!sb) return;
+      const { data: { session } } = await sb.auth.getSession();
+      if (session && session.user) {
+        await initApp(session.user);
+      }
+    } catch(e) {
+      console.error('Supabase init error:', e);
     }
-  } catch(e) {
-    console.error('Supabase init error:', e);
-  }
-})();
+  })();
+});
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
