@@ -1473,7 +1473,7 @@
         <!-- Search — grows to fill -->
         <div style="position:relative;flex:1;min-width:0;">
           <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="search-input" placeholder="Search symbol, notes..." style="width:100%;padding:7px 10px 7px 30px;font-size:12px;border-radius:var(--r-sm);" oninput="renderTrades()">
+          <input type="text" id="search-input" placeholder="Search symbol, notes..." style="width:100%;padding:7px 10px 7px 30px;font-size:12px;border-radius:var(--r-sm);" oninput="tradesPage=0;renderTrades()">
         </div>
 
         <!-- Divider -->
@@ -1557,8 +1557,8 @@
         <!-- Add Trade right next to filters -->
         <button class="btn btn-primary" onclick="switchPage('add')" style="flex-shrink:0;">+ Add Trade</button>
 
-        <select id="filter-dir"    style="display:none;" onchange="renderTrades()"><option value="">All</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
-        <select id="filter-result" style="display:none;" onchange="renderTrades()"><option value="">All Results</option><option value="win">Wins</option><option value="loss">Losses</option><option value="be">Break Even</option></select>
+        <select id="filter-dir"    style="display:none;" onchange="tradesPage=0;renderTrades()"><option value="">All</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
+        <select id="filter-result" style="display:none;" onchange="tradesPage=0;renderTrades()"><option value="">All Results</option><option value="win">Wins</option><option value="loss">Losses</option><option value="be">Break Even</option></select>
         <input  id="filter-tag"    style="display:none;" type="text" value="">
       </div>
       </div>
@@ -2769,7 +2769,6 @@ async function handleAuth() {
     if (authMode === 'login') {
       btn.textContent = 'Logging in...';
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      console.log('Login result:', { data, error });
       if (error) { showAuthError(error.message); btn.textContent = 'Log In'; btn.disabled = false; return; }
       if (!data?.session) { showAuthError('No session returned. Try again.'); btn.textContent = 'Log In'; btn.disabled = false; return; }
       // Don't wait for onAuthStateChange — call initApp directly
@@ -2778,7 +2777,6 @@ async function handleAuth() {
       btn.textContent = 'Creating account...';
       const name = document.getElementById('auth-name').value.trim();
       const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
-      console.log('Signup result:', { data, error });
       if (error) { showAuthError(error.message); btn.textContent = 'Create Account'; btn.disabled = false; return; }
     }
   } catch(e) {
@@ -2854,26 +2852,24 @@ function save() {
 let appInitialized = false;
 async function initApp(user) {
   if (appInitialized && currentUser && currentUser.id === user.id) {
-    // Already initialized for this user — just make sure app is visible
     showApp();
     return;
   }
   appInitialized = true;
   currentUser = user;
 
-  try { const btn = document.getElementById('auth-btn'); if (btn) { btn.disabled = false; btn.textContent = 'Log In'; } } catch(e) { console.error('[initApp] btn reset:', e); }
-  try { loadTheme(); } catch(e) { console.error('[initApp] loadTheme:', e); }
-  try {
- showApp();
- } catch(e) { console.error('[initApp] showApp:', e); }
-  try { updateGreeting(); } catch(e) { console.error('[initApp] updateGreeting:', e); }
+  const btn = document.getElementById('auth-btn');
+  if (btn) { btn.disabled = false; btn.textContent = 'Log In'; }
+
+  loadTheme();
+  showApp();
+  updateGreeting();
 
   try {
     await loadTradesFromSupabase();
-  } catch(e) { console.error('[initApp] loadTradesFromSupabase:', e); }
+  } catch(e) { console.error('Trade load error:', e); }
 
-  try { refreshDashboard();
- } catch(e) { console.error('[initApp] refreshDashboard:', e); }
+  refreshDashboard();
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
@@ -2897,24 +2893,35 @@ if (sb) {
 }
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
+let _switchingPage = false;
 function switchPage(name) {
-  // Pre-render trades before showing the page to avoid layout flash
-  if (name === 'trades') renderTrades();
-  if (name === 'analytics') renderAnalytics();
+  if (_switchingPage) return;
+  _switchingPage = true;
 
+  // 1. Switch page visually — instant
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
-  void nextPage.offsetWidth;
   nextPage.classList.add('active');
+
+  // 2. Update sidebar highlight — instant
   const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import MT5', mindset:'Mindset' };
   document.querySelectorAll('.sidebar-item[data-label]').forEach(btn => {
     if (btn.id === 'settings-sidebar-btn') return;
     btn.classList.toggle('active', map[name] === btn.getAttribute('data-label'));
   });
-  if (name === 'dashboard') refreshDashboard();
-  if (name === 'calendar') renderCalendar();
-  if (name === 'mindset') initMindsetPage();
-  if (name === 'add') { if (!document.getElementById('edit-id').value) clearForm(); }
+
+  // 3. Render content after paint — so page appears immediately
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      if (name === 'trades') renderTrades();
+      else if (name === 'analytics') renderAnalytics();
+      else if (name === 'dashboard') refreshDashboard();
+      else if (name === 'calendar') renderCalendar();
+      else if (name === 'mindset') initMindsetPage();
+      else if (name === 'add') { if (!document.getElementById('edit-id').value) clearForm(); }
+      _switchingPage = false;
+    }, 16); // one frame delay — page is visible before heavy render
+  });
 }
 
 
@@ -3829,6 +3836,8 @@ function refreshDashboard() {
       maintainAspectRatio: false,
       animation: { duration: window._suppressChartAnim ? 0 : 600, easing: 'easeInOutQuart' },
       interaction: { mode: 'index', intersect: false },
+      parsing: false,
+      normalized: true,
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -4004,9 +4013,12 @@ function toggleDrop(key) {
 }
 let tradesRange = 'all';
 let customFrom = '', customTo = '';
+let tradesPage = 0;
+const TRADES_PER_PAGE = 50;
 
 function setTradesRange(range) {
   tradesRange = range;
+  tradesPage = 0;
   ['today','week','month','all','custom'].forEach(r => {
     const el = document.getElementById('tbr-'+r);
     if (el) el.classList.toggle('active', r === range);
@@ -4309,8 +4321,15 @@ function renderTrades() {
   updateSortIndicators();
 
   const tbody = document.getElementById('all-tbody');
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><h3>No trades found</h3></div></td></tr>'; return; }
-  tbody.innerHTML = list.map(t => {
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><h3>No trades found</h3></div></td></tr>'; renderTradesPagination(0,0); return; }
+
+  // Paginate
+  const totalPages = Math.ceil(list.length / TRADES_PER_PAGE);
+  if (tradesPage >= totalPages) tradesPage = totalPages - 1;
+  const start = tradesPage * TRADES_PER_PAGE;
+  const pageList = list.slice(start, start + TRADES_PER_PAGE);
+
+  tbody.innerHTML = pageList.map(t => {
     const pnl = getPnl(t);
     const result = getResult(t);
     const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
@@ -4334,6 +4353,26 @@ function renderTrades() {
       <td data-col="tags" style="max-width:110px;overflow:hidden;">${renderRowTagsHTML(t.strategies)}</td>
     </tr>`;
   }).join('');
+
+  renderTradesPagination(totalPages, list.length);
+}
+
+function renderTradesPagination(totalPages, totalCount) {
+  let pg = document.getElementById('trades-pagination');
+  if (!pg) {
+    pg = document.createElement('div');
+    pg.id = 'trades-pagination';
+    pg.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 0 8px;';
+    const wrap = document.getElementById('all-tbody');
+    if (wrap && wrap.closest('table')) wrap.closest('table').after(pg);
+  }
+  if (totalPages <= 1) { pg.innerHTML = ''; return; }
+  const btnStyle = (active) => `style="padding:6px 14px;border-radius:8px;border:1px solid ${active?'var(--accent)':'var(--border2)'};background:${active?'var(--accent)':'var(--surface2)'};color:${active?'#fff':'var(--text2)'};font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);"`;
+  let html = `<span style="font-size:12px;color:var(--muted);margin-right:4px;">${totalCount} trades</span>`;
+  if (tradesPage > 0) html += `<button ${btnStyle(false)} onclick="tradesPage=${tradesPage-1};renderTrades()">‹ Prev</button>`;
+  html += `<span style="font-size:12px;color:var(--text2);padding:0 8px;">Page ${tradesPage+1} of ${totalPages}</span>`;
+  if (tradesPage < totalPages-1) html += `<button ${btnStyle(false)} onclick="tradesPage=${tradesPage+1};renderTrades()">Next ›</button>`;
+  pg.innerHTML = html;
 }
 
 function renderTradeDetail(t) { showTradeDetail(t.id); }
@@ -6945,6 +6984,62 @@ function positionTooltip(btn) {
 // ── INIT ──────────────────────────────────────────────────────────────────────
 loadProfile();
 updateCurrencyButtons();
+
+// ── SCROLL-AWARE CHART PERFORMANCE ───────────────────────────────────────────
+// Disables all Chart.js mouse interaction while scrolling for smooth FPS,
+// re-enables hover/tooltip after scrolling stops.
+(function() {
+  let scrollTimer = null;
+  let isScrolling = false;
+
+  function getAllCharts() {
+    const charts = [];
+    if (equityChartInst) charts.push(equityChartInst);
+    Object.values(chartReg || {}).forEach(c => { if (c) charts.push(c); });
+    return charts;
+  }
+
+  function disableChartInteraction() {
+    getAllCharts().forEach(chart => {
+      if (!chart.options) return;
+      chart.options.events = [];
+      // Hide any visible tooltip immediately
+      if (chart.tooltip) chart.tooltip.opacity = 0;
+      chart.update('none');
+    });
+  }
+
+  function enableChartInteraction() {
+    getAllCharts().forEach(chart => {
+      if (!chart.options) return;
+      chart.options.events = ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'];
+      chart.update('none');
+    });
+  }
+
+  // Listen on the main scrollable container
+  function attachScrollListener() {
+    const scroller = document.getElementById('main-content') || document.querySelector('.main-content') || window;
+    scroller.addEventListener('scroll', function() {
+      if (!isScrolling) {
+        isScrolling = true;
+        disableChartInteraction();
+      }
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function() {
+        isScrolling = false;
+        enableChartInteraction();
+      }, 150); // re-enable 150ms after scroll stops
+    }, { passive: true });
+  }
+
+  // Attach after DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachScrollListener);
+  } else {
+    attachScrollListener();
+  }
+})();
 </script>
 
 </div><!-- /main-content -->
