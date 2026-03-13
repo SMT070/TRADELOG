@@ -2737,6 +2737,8 @@ async function handleAuth() {
       console.log('Login result:', { data, error });
       if (error) { showAuthError(error.message); btn.textContent = 'Log In'; btn.disabled = false; return; }
       if (!data?.session) { showAuthError('No session returned. Try again.'); btn.textContent = 'Log In'; btn.disabled = false; return; }
+      // Don't wait for onAuthStateChange — call initApp directly
+      await initApp(data.session.user);
     } else {
       btn.textContent = 'Creating account...';
       const name = document.getElementById('auth-name').value.trim();
