@@ -2647,15 +2647,18 @@ function openSupportModal()  { document.getElementById('support-modal').style.di
 function closeSupportModal() { document.getElementById('support-modal').style.display = 'none'; }
 
 // ── LOGOUT ────────────────────────────────────────────────────────────────────
+async function doLogout() {
+  closeConfirmModal();
+  trades = [];
+  currentUser = null;
+  appInitialized = false;
+  localStorage.removeItem('tradelog_v1');
+  showAuthScreen();
+  try { await sb.auth.signOut(); } catch(e) { console.error('signOut error:', e); }
+}
+
 function handleLogout() {
-  showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the cloud. You can log back in anytime.', okText:'Log Out', okColor:'var(--accent)', onOk: async () => {
-    try { await sb.auth.signOut(); } catch(e) { console.error('signOut error:', e); }
-    trades = [];
-    currentUser = null;
-    appInitialized = false;
-    localStorage.removeItem('tradelog_v1');
-    showAuthScreen();
-  }});
+  showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the cloud. You can log back in anytime.', okText:'Log Out', okColor:'var(--accent)', onOk: doLogout });
 }
 
 
@@ -2791,22 +2794,17 @@ async function handleAuth() {
 }
 
 function showApp() {
-  function _show() {
-    const auth = document.getElementById('auth-screen');
-    const app  = document.getElementById('app-root');
-    if (auth) { auth.style.setProperty('display', 'none', 'important'); auth.style.setProperty('visibility', 'hidden', 'important'); }
-    if (app)  { app.style.setProperty('display', 'block', 'important'); app.style.setProperty('visibility', 'visible', 'important'); }
-  }
-  _show();
-  setTimeout(_show, 100);
-  setTimeout(_show, 300);
+  const auth = document.getElementById('auth-screen');
+  const app  = document.getElementById('app-root');
+  if (auth) { auth.style.display = 'none'; }
+  if (app)  { app.style.display  = 'block'; }
 }
 
 function showAuthScreen() {
   const auth = document.getElementById('auth-screen');
   const app  = document.getElementById('app-root');
-  if (auth) { auth.style.setProperty('display', 'flex', 'important'); auth.style.setProperty('visibility', 'visible', 'important'); }
-  if (app)  { app.style.setProperty('display', 'none', 'important'); app.style.setProperty('visibility', 'hidden', 'important'); }
+  if (auth) { auth.style.display = 'flex'; }
+  if (app)  { app.style.display  = 'none'; }
 }
 
 // ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
@@ -2854,6 +2852,7 @@ function save() {
 // ── APP INIT ──────────────────────────────────────────────────────────────────
 let appInitialized = false;
 async function initApp(user) {
+  // If same user already initialized, just show app (handles double-fire)
   if (appInitialized && currentUser && currentUser.id === user.id) {
     showApp();
     return;
@@ -2868,6 +2867,7 @@ async function initApp(user) {
   showApp();
   updateGreeting();
 
+  // Always reload trades fresh from Supabase
   try {
     await loadTradesFromSupabase();
   } catch(e) { console.error('Trade load error:', e); }
@@ -2876,11 +2876,12 @@ async function initApp(user) {
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
-// Show auth screen immediately
-document.addEventListener('DOMContentLoaded', () => { showAuthScreen(); });
+document.addEventListener('DOMContentLoaded', async () => {
+  showAuthScreen();
 
-if (sb) {
-  // onAuthStateChange is the single source of truth — getSession() not needed
+  if (!sb) return;
+
+  // onAuthStateChange handles login/logout events
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_OUT') {
       appInitialized = false;
@@ -2889,11 +2890,13 @@ if (sb) {
       showAuthScreen();
       return;
     }
-    if (session && session.user) {
-      await initApp(session.user);
+    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+      if (session && session.user) {
+        await initApp(session.user);
+      }
     }
   });
-}
+});
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 let _switchingPage = false;
