@@ -2790,17 +2790,22 @@ async function handleAuth() {
 }
 
 function showApp() {
-  const auth = document.getElementById('auth-screen');
-  const app = document.getElementById('app-root');
-  if (auth) auth.style.display = 'none';
-  if (app) app.style.display = 'block';
+  function _show() {
+    const auth = document.getElementById('auth-screen');
+    const app  = document.getElementById('app-root');
+    if (auth) { auth.style.setProperty('display', 'none', 'important'); auth.style.setProperty('visibility', 'hidden', 'important'); }
+    if (app)  { app.style.setProperty('display', 'block', 'important'); app.style.setProperty('visibility', 'visible', 'important'); }
+  }
+  _show();
+  setTimeout(_show, 100);
+  setTimeout(_show, 300);
 }
 
 function showAuthScreen() {
   const auth = document.getElementById('auth-screen');
-  const app = document.getElementById('app-root');
-  if (auth) auth.style.display = 'flex';
-  if (app) app.style.display = 'none';
+  const app  = document.getElementById('app-root');
+  if (auth) { auth.style.setProperty('display', 'flex', 'important'); auth.style.setProperty('visibility', 'visible', 'important'); }
+  if (app)  { app.style.setProperty('display', 'none', 'important'); app.style.setProperty('visibility', 'hidden', 'important'); }
 }
 
 // ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
@@ -2849,6 +2854,8 @@ function save() {
 let appInitialized = false;
 async function initApp(user) {
   if (appInitialized && currentUser && currentUser.id === user.id) {
+    // Already initialized for this user — just make sure app is visible
+    showApp();
     return;
   }
   appInitialized = true;
