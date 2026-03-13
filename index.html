@@ -2838,21 +2838,19 @@ document.addEventListener('click', function(e) {
 const PROFILE_KEY = 'tradelog_profile';
 
 // ── PROFILE SUPABASE SYNC ─────────────────────────────────────────────────────
-async function saveProfileToSupabase(name, avatar) {
+async function saveProfileToSupabase(name, avatar, balance) {
   if (!sb || !currentUser) return;
   try {
-    await sb.from('profiles').upsert({
-      user_id: currentUser.id,
-      name,
-      avatar
-    }, { onConflict: 'user_id' });
+    const row = { user_id: currentUser.id, name, avatar };
+    if (balance !== undefined) row.balance = balance;
+    await sb.from('profiles').upsert(row, { onConflict: 'user_id' });
   } catch(e) { console.log('Profile save to Supabase failed:', e.message); }
 }
 
 async function loadProfileFromSupabase() {
   if (!sb || !currentUser) return null;
   try {
-    const { data } = await sb.from('profiles').select('name, avatar').eq('user_id', currentUser.id).single();
+    const { data } = await sb.from('profiles').select('name, avatar, balance').eq('user_id', currentUser.id).single();
     return data || null;
   } catch(e) { return null; }
 }
@@ -2873,6 +2871,10 @@ function applyProfile(p) {
   const popupAv = document.getElementById('popup-avatar');
   if (avatar) { popupAv.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
   else popupAv.textContent = initial;
+  // Apply balance if present
+  if (p.balance && p.balance > 0) {
+    localStorage.setItem(BAL_KEY, p.balance);
+  }
 }
 
 function loadProfile() {
@@ -2916,10 +2918,11 @@ async function saveProfile() {
   const name = document.getElementById('profile-name-input').value.trim() || 'My Account';
   const existing = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
   const avatar = window._pendingAvatar || existing.avatar || null;
+  const balance = getBalance() || null;
   // Save locally
   localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
-  // Save to Supabase so it syncs to all devices
-  await saveProfileToSupabase(name, avatar);
+  // Save to Supabase — includes balance
+  await saveProfileToSupabase(name, avatar, balance);
   window._pendingAvatar = null;
   applyProfile({ name, avatar });
   closeProfileModal();
@@ -2984,12 +2987,15 @@ function closeConfirmModal() {
   document.getElementById('confirm-modal').style.display = 'none';
   _confirmCallback = null;
 }
-function saveBalance() {
+async function saveBalance() {
   const val = parseFloat(document.getElementById('modal-balance-input').value);
   if (!val || val <= 0) { toast('Enter a valid balance', 'error'); return; }
   localStorage.setItem(BAL_KEY, val);
+  // Sync balance to Supabase
+  const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+  await saveProfileToSupabase(p.name || 'My Account', p.avatar || null, val);
   closeBalanceModal();
-  toast('Balance saved — $' + val.toLocaleString(), 'success');
+  toast('Balance saved & synced ✓', 'success');
   refreshDashboard();
 }
 
