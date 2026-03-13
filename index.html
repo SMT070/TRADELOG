@@ -2427,7 +2427,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
 <script>
   Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
@@ -2811,13 +2811,27 @@ sb.auth.onAuthStateChange(async (event, session) => {
 
 // Check existing session on load
 (async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session && session.user) {
-    await initApp(session.user);
-  } else {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      await initApp(session.user);
+    } else {
+      showAuthScreen();
+    }
+  } catch(e) {
+    console.error('Supabase init error:', e);
     showAuthScreen();
   }
 })();
+
+// Fallback: if nothing shows after 3s, show auth screen
+setTimeout(() => {
+  const appRoot = document.getElementById('app-root');
+  const authScreen = document.getElementById('auth-screen');
+  if (appRoot.style.display === 'none' && authScreen.style.display === 'none') {
+    showAuthScreen();
+  }
+}, 3000);
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
