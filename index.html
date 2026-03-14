@@ -2844,20 +2844,23 @@ const PROFILE_KEY = 'tradelog_profile';
 
 // ── PROFILE SUPABASE SYNC ─────────────────────────────────────────────────────
 async function saveProfileToSupabase(name, avatar, balance) {
-  if (!sb || !currentUser) return;
-  try {
-    const row = { user_id: currentUser.id, name, avatar };
-    if (balance !== undefined) row.balance = balance;
-    await sb.from('profiles').upsert(row, { onConflict: 'user_id' });
-  } catch(e) { console.log('Profile save to Supabase failed:', e.message); }
+  if (!sb || !currentUser) { console.warn('saveProfile: no sb or user'); return; }
+  const row = { user_id: currentUser.id, name, avatar };
+  if (balance !== undefined) row.balance = balance;
+  const { error } = await sb.from('profiles').upsert(row, { onConflict: 'user_id' });
+  if (error) {
+    console.error('Profile save error:', error.message);
+    toast('Profile sync failed: ' + error.message, 'error');
+  } else {
+    console.log('Profile saved to Supabase OK');
+  }
 }
 
 async function loadProfileFromSupabase() {
   if (!sb || !currentUser) return null;
-  try {
-    const { data } = await sb.from('profiles').select('name, avatar, balance').eq('user_id', currentUser.id).single();
-    return data || null;
-  } catch(e) { return null; }
+  const { data, error } = await sb.from('profiles').select('name, avatar, balance').eq('user_id', currentUser.id).single();
+  if (error && error.code !== 'PGRST116') console.error('Profile load error:', error.message);
+  return data || null;
 }
 
 function applyProfile(p) {
