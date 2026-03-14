@@ -6200,53 +6200,67 @@ function renderCalendar() {
       if (data) { weekPnl += data.pnl; weekTrades += data.count; if (data.pnl >= 0) weekWins++; else weekLosses++; }
     }
     const weekPnlColor = weekPnl >= 0 ? 'var(--green)' : 'var(--red)';
-
     const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow-y:auto;">';
-    // Summary row at top
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface2);">';
-    html += '<div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Week Summary</div>';
-    html += '<div style="display:flex;gap:32px;align-items:center;">';
-    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Trades</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + weekTrades + '</div></div>';
-    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">W / L</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + weekWins + ' / ' + weekLosses + '</div></div>';
-    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Net P&L</div><div style="font-size:22px;font-weight:900;color:' + weekPnlColor + ';">' + fmt(weekPnl) + '</div></div>';
-    html += '</div></div>';
 
-    // Day rows
+    // ── WEEK SUMMARY BAR ──
+    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px 12px;background:var(--surface2);border-bottom:1px solid var(--border);flex-shrink:0;">';
+    html += '<div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Trades</div><div style="font-size:20px;font-weight:900;color:var(--text);">' + weekTrades + '</div></div>';
+    html += '<div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">W / L</div><div style="font-size:20px;font-weight:900;color:var(--text);">' + weekWins + '/' + weekLosses + '</div></div>';
+    html += '<div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Net P&L</div><div style="font-size:18px;font-weight:900;color:' + weekPnlColor + ';">' + fmt(weekPnl) + '</div></div>';
+    html += '</div>';
+
+    // ── 7 DAY BOXES GRID ──
+    html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:8px;flex:1;align-content:stretch;">';
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
       const dateStr = d.toISOString().slice(0,10);
       const isToday = dateStr === todayStr;
       const data = dayMap[dateStr];
       const isWeekend = i >= 5;
-      const dayPnlColor = data ? (data.pnl >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--muted)';
-      const rowBg = isToday ? 'var(--surface2)' : 'transparent';
-      const borderLeft = isToday ? '3px solid var(--accent)' : '3px solid transparent';
-      const maxPnl = Math.max(...Object.values(dayMap).map(d => Math.abs(d.pnl)), 1);
-      const barW = data ? Math.round(Math.abs(data.pnl) / maxPnl * 100) : 0;
-      const barColor = data ? (data.pnl >= 0 ? 'var(--green)' : 'var(--red)') : 'transparent';
+      const pnl = data ? data.pnl : null;
+      const pnlColor = pnl === null ? 'var(--muted)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
+      const bgColor = isToday ? 'var(--accent)' : data ? (pnl >= 0 ? 'var(--green-bg)' : 'var(--red-bg)') : 'var(--surface2)';
+      const borderColor = isToday ? 'var(--accent)' : data ? (pnl >= 0 ? 'var(--green-glow)' : 'var(--red-glow)') : 'var(--border)';
+      const textColor = isToday ? '#fff' : 'var(--text)';
+      const dayNumColor = isToday ? '#fff' : isWeekend ? 'var(--muted)' : 'var(--text2)';
+      const pnlTextColor = isToday ? '#fff' : pnlColor;
+      const subColor = isToday ? 'rgba(255,255,255,0.75)' : 'var(--muted)';
 
-      html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="display:flex;align-items:center;gap:20px;padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer;background:' + rowBg + ';border-left:' + borderLeft + ';transition:background .15s;" onmouseover="if(!this.style.borderLeft.includes(\'accent\'))this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'' + rowBg + '\'">';
-      // Day name + date
-      html += '<div style="width:80px;flex-shrink:0;">';
-      html += '<div style="font-size:13px;font-weight:800;color:' + (isToday ? 'var(--accent)' : isWeekend ? 'var(--muted)' : 'var(--text)') + ';">' + dayNames[i] + '</div>';
-      html += '<div style="font-size:11px;color:var(--muted);margin-top:2px;">' + d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + '</div>';
-      html += '</div>';
-      // Bar
-      html += '<div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">';
-      html += '<div style="height:100%;width:' + barW + '%;background:' + barColor + ';border-radius:3px;transition:width .3s;"></div>';
-      html += '</div>';
-      // Stats
-      if (data) {
-        html += '<div style="width:80px;text-align:right;flex-shrink:0;font-size:11px;color:var(--muted);">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
-        html += '<div style="width:100px;text-align:right;flex-shrink:0;font-size:16px;font-weight:800;color:' + dayPnlColor + ';">' + fmt(data.pnl) + '</div>';
-      } else {
-        html += '<div style="width:80px;text-align:right;flex-shrink:0;font-size:11px;color:var(--muted);">—</div>';
-        html += '<div style="width:100px;text-align:right;flex-shrink:0;font-size:14px;font-weight:600;color:var(--muted);">No trades</div>';
+      // Format PNL short
+      let pnlStr = '—';
+      if (pnl !== null) {
+        const abs = Math.abs(pnl);
+        const sym = getCurrencySymbol();
+        if (abs >= 1000) pnlStr = (pnl >= 0 ? '+' : '-') + sym + (abs/1000).toFixed(1) + 'k';
+        else pnlStr = (pnl >= 0 ? '+' : '-') + sym + abs.toFixed(0);
       }
+
+      html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="'
+        + 'border-radius:10px;border:1px solid ' + borderColor + ';background:' + bgColor + ';'
+        + 'padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:space-between;'
+        + 'min-height:80px;transition:all .15s;position:relative;overflow:hidden;">';
+
+      // Bottom color bar
+      if (data && !isToday) {
+        html += '<div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:' + pnlColor + ';opacity:0.7;border-radius:0 0 10px 10px;"></div>';
+      }
+
+      // Day name
+      html += '<div style="font-size:9px;font-weight:700;color:' + dayNumColor + ';text-transform:uppercase;letter-spacing:0.5px;">' + dayNames[i] + '</div>';
+      // Day number
+      html += '<div style="font-size:16px;font-weight:900;color:' + textColor + ';line-height:1;">' + d.getDate() + '</div>';
+      // PNL
+      html += '<div style="font-size:' + (pnl !== null ? '11px' : '10px') + ';font-weight:800;color:' + pnlTextColor + ';line-height:1;text-align:center;">' + pnlStr + '</div>';
+      // Trade count
+      if (data) html += '<div style="font-size:8px;color:' + subColor + ';font-weight:600;">' + data.count + 't</div>';
+      else html += '<div style="font-size:8px;color:' + subColor + ';"> </div>';
+
       html += '</div>';
     }
     html += '</div>';
+    html += '</div>';
+
     document.getElementById('cal-grid').innerHTML = html;
     return;
   }
@@ -7418,19 +7432,37 @@ let _syncInterval = null;
 
 async function refreshAllData() {
   if (!currentUser) return;
+
+  // Snapshot trades count+last id before reload to detect actual changes
+  const beforeCount = trades.length;
+  const beforeLast = trades[0] ? trades[0].id : null;
+
   // Reload trades
   await loadTradesFromSupabase();
+
+  const afterCount = trades.length;
+  const afterLast = trades[0] ? trades[0].id : null;
+  const tradesChanged = beforeCount !== afterCount || beforeLast !== afterLast;
+
   // Reload profile + balance
+  let profileChanged = false;
   try {
     const remoteProfile = await loadProfileFromSupabase();
     if (remoteProfile) {
-      applyProfile(remoteProfile);
-      if (remoteProfile.balance && remoteProfile.balance > 0) {
-        localStorage.setItem(BAL_KEY, remoteProfile.balance);
+      const existing = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+      if (remoteProfile.name !== existing.name || remoteProfile.balance !== getBalance()) {
+        profileChanged = true;
+        applyProfile(remoteProfile);
+        if (remoteProfile.balance && remoteProfile.balance > 0) {
+          localStorage.setItem(BAL_KEY, remoteProfile.balance);
+        }
       }
     }
   } catch(e) {}
-  // Refresh active page
+
+  // Only refresh UI if something actually changed
+  if (!tradesChanged && !profileChanged) return;
+
   const activePage = document.querySelector('.page.active');
   if (activePage) {
     const name = activePage.id.replace('page-', '');
