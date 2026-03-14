@@ -6203,15 +6203,24 @@ function renderCalendar() {
     const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
     // ── WEEK SUMMARY BAR ──
-    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">';
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px 12px;background:var(--surface2);border-bottom:1px solid var(--border);flex-shrink:0;">';
-    html += '<div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Trades</div><div style="font-size:20px;font-weight:900;color:var(--text);">' + weekTrades + '</div></div>';
-    html += '<div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">W / L</div><div style="font-size:20px;font-weight:900;color:var(--text);">' + weekWins + '/' + weekLosses + '</div></div>';
-    html += '<div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Net P&L</div><div style="font-size:18px;font-weight:900;color:' + weekPnlColor + ';">' + fmt(weekPnl) + '</div></div>';
+    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow:hidden;padding:12px;gap:12px;box-sizing:border-box;">';
+
+    // Summary pill row
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:14px;padding:12px 16px;flex-shrink:0;">';
+    html += '<div><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Net P&L</div>';
+    html += '<div style="font-size:22px;font-weight:900;color:' + weekPnlColor + ';letter-spacing:-0.5px;">' + fmt(weekPnl) + '</div></div>';
+    html += '<div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Trades</div>';
+    html += '<div style="font-size:22px;font-weight:900;color:var(--text);">' + weekTrades + '</div></div>';
+    html += '<div style="text-align:right;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">W / L</div>';
+    html += '<div style="font-size:22px;font-weight:900;color:var(--text);">'
+      + '<span style="color:var(--green);">' + weekWins + '</span>'
+      + '<span style="color:var(--muted);font-size:16px;"> / </span>'
+      + '<span style="color:var(--red);">' + weekLosses + '</span>'
+      + '</div></div>';
     html += '</div>';
 
-    // ── 7 DAY BOXES GRID ──
-    html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:8px;flex:1;align-content:stretch;">';
+    // ── 7 DAY BOXES ──
+    html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;flex:1;">';
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
       const dateStr = d.toISOString().slice(0,10);
@@ -6220,14 +6229,11 @@ function renderCalendar() {
       const isWeekend = i >= 5;
       const pnl = data ? data.pnl : null;
       const pnlColor = pnl === null ? 'var(--muted)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
-      const bgColor = isToday ? 'var(--accent)' : data ? (pnl >= 0 ? 'var(--green-bg)' : 'var(--red-bg)') : 'var(--surface2)';
-      const borderColor = isToday ? 'var(--accent)' : data ? (pnl >= 0 ? 'var(--green-glow)' : 'var(--red-glow)') : 'var(--border)';
-      const textColor = isToday ? '#fff' : 'var(--text)';
-      const dayNumColor = isToday ? '#fff' : isWeekend ? 'var(--muted)' : 'var(--text2)';
-      const pnlTextColor = isToday ? '#fff' : pnlColor;
-      const subColor = isToday ? 'rgba(255,255,255,0.75)' : 'var(--muted)';
+      const bgColor = isToday ? 'var(--accent)' : data ? (pnl >= 0 ? 'var(--green-bg)' : 'var(--red-bg)') : 'var(--surface)';
+      const borderColor = isToday ? 'var(--accent)' : data ? (pnl >= 0 ? 'rgba(0,255,187,0.3)' : 'rgba(255,59,92,0.3)') : 'var(--border)';
+      const topBar = data && !isToday ? (pnl >= 0 ? 'var(--green)' : 'var(--red)') : isToday ? 'rgba(255,255,255,0.3)' : 'transparent';
 
-      // Format PNL short
+      // Format PNL
       let pnlStr = '—';
       if (pnl !== null) {
         const abs = Math.abs(pnl);
@@ -6236,25 +6242,29 @@ function renderCalendar() {
         else pnlStr = (pnl >= 0 ? '+' : '-') + sym + abs.toFixed(0);
       }
 
-      html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="'
-        + 'border-radius:10px;border:1px solid ' + borderColor + ';background:' + bgColor + ';'
-        + 'padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:space-between;'
-        + 'min-height:80px;transition:all .15s;position:relative;overflow:hidden;">';
+      const white = isToday ? '#fff' : null;
+      const dayColor = white || (isWeekend ? 'var(--muted)' : 'var(--text2)');
+      const numColor = white || 'var(--text)';
+      const pnlTextColor = white || pnlColor;
+      const countColor = white ? 'rgba(255,255,255,0.7)' : 'var(--muted)';
 
-      // Bottom color bar
-      if (data && !isToday) {
-        html += '<div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:' + pnlColor + ';opacity:0.7;border-radius:0 0 10px 10px;"></div>';
-      }
+      html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="'
+        + 'border-radius:12px;border:1px solid ' + borderColor + ';background:' + bgColor + ';'
+        + 'display:flex;flex-direction:column;align-items:center;justify-content:space-between;'
+        + 'padding:10px 4px 8px;cursor:pointer;transition:transform .15s;position:relative;overflow:hidden;" '
+        + 'onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform=''" ontouchstart="this.style.transform='scale(0.95)'" ontouchend="this.style.transform=''">';
+
+      // Top accent bar
+      html += '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:' + topBar + ';border-radius:12px 12px 0 0;"></div>';
 
       // Day name
-      html += '<div style="font-size:9px;font-weight:700;color:' + dayNumColor + ';text-transform:uppercase;letter-spacing:0.5px;">' + dayNames[i] + '</div>';
+      html += '<div style="font-size:9px;font-weight:800;color:' + dayColor + ';text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">' + dayNames[i] + '</div>';
       // Day number
-      html += '<div style="font-size:16px;font-weight:900;color:' + textColor + ';line-height:1;">' + d.getDate() + '</div>';
+      html += '<div style="font-size:22px;font-weight:900;color:' + numColor + ';line-height:1;margin:4px 0;">' + d.getDate() + '</div>';
       // PNL
-      html += '<div style="font-size:' + (pnl !== null ? '11px' : '10px') + ';font-weight:800;color:' + pnlTextColor + ';line-height:1;text-align:center;">' + pnlStr + '</div>';
+      html += '<div style="font-size:10px;font-weight:900;color:' + pnlTextColor + ';line-height:1;text-align:center;letter-spacing:-0.3px;">' + pnlStr + '</div>';
       // Trade count
-      if (data) html += '<div style="font-size:8px;color:' + subColor + ';font-weight:600;">' + data.count + 't</div>';
-      else html += '<div style="font-size:8px;color:' + subColor + ';"> </div>';
+      html += '<div style="font-size:8px;color:' + countColor + ';font-weight:600;margin-top:3px;">' + (data ? data.count + 't' : '') + '</div>';
 
       html += '</div>';
     }
