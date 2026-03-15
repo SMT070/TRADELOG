@@ -4122,28 +4122,52 @@ function refreshDashboard() {
     filteredSorted = s.sorted.filter(t => new Date(t.date) >= rangeCutoff);
   }
 
-  // Build equity curve for filtered trades
-  let runningEq = 0;
-  const filteredEquity = filteredSorted.map(t => { runningEq += getPnl(t); return +runningEq.toFixed(2); });
+  // Build equity curve — starting from balance, adding cumulative P&L
+  const startBalance = getBalance();
+  let runningEq = startBalance;
+  const filteredEquity = [+startBalance.toFixed(2), ...filteredSorted.map(t => {
+    runningEq += getPnl(t);
+    return +runningEq.toFixed(2);
+  })];
+  const filteredLabels = ['Start', ...filteredSorted.map(t => {
+    const d = new Date(t.date);
+    return isNaN(d) ? t.date.slice(0,10) : d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+  })];
 
-  // Update trend label for filtered range
-  const filteredLast = filteredEquity[filteredEquity.length - 1] || 0;
-  const filteredColor = filteredLast >= 0 ? 'var(--green)' : 'var(--red)';
-  const filteredSign = filteredLast >= 0 ? '+' : '';
-  trendEl.innerHTML = `<span style="font-family:var(--sans);font-size:13px;font-weight:700;color:${filteredColor};">${filteredSign}$${Math.abs(filteredLast).toFixed(2)}</span> <span style="font-size:10px;color:var(--muted);">${filteredSorted.length} trades</span>`;
+  // Update trend label
+  const filteredLast = filteredEquity[filteredEquity.length - 1] || startBalance;
+  const filteredPnl = filteredLast - startBalance;
+  const filteredColor = filteredPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const filteredSign = filteredPnl >= 0 ? '+' : '';
+  trendEl.innerHTML = `<span style="font-family:var(--sans);font-size:13px;font-weight:700;color:${filteredColor};">${filteredSign}$${Math.abs(filteredPnl).toFixed(2)}</span> <span style="font-size:10px;color:var(--muted);">${filteredSorted.length} trades</span>`;
+
+  // Downsample to max 300 points for performance
+  function downsample(arr, lbls, maxPts) {
+    if (arr.length <= maxPts) return { arr, lbls };
+    const step = Math.ceil(arr.length / maxPts);
+    const outArr = [], outLbls = [];
+    for (let i = 0; i < arr.length; i += step) {
+      outArr.push(arr[i]);
+      outLbls.push(lbls[i]);
+    }
+    // Always include last point
+    if (outArr[outArr.length-1] !== arr[arr.length-1]) {
+      outArr.push(arr[arr.length-1]);
+      outLbls.push(lbls[lbls.length-1]);
+    }
+    return { arr: outArr, lbls: outLbls };
+  }
+  const { arr: eqDs, lbls: labelsDs } = downsample(filteredEquity, filteredLabels, 300);
 
   // Equity chart
   const ctx = document.getElementById('equity-chart').getContext('2d');
-  const eq = filteredEquity.length ? filteredEquity : [0];
-  const labels = filteredSorted.map(t => {
-    const d = new Date(t.date);
-    return isNaN(d) ? t.date.slice(0,10) : d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
-  });
+  const eq = eqDs.length ? eqDs : [startBalance];
+  const labels = labelsDs;
 
-  // Y axis scale — always based on actual data range
-  const eqMin = Math.min(0, ...eq);
-  const eqMax = Math.max(0, ...eq);
-  const dataRange = Math.max(Math.abs(eqMin), Math.abs(eqMax), 1);
+  // Y axis scale based on actual data range
+  const eqMin = Math.min(...eq);
+  const eqMax = Math.max(...eq);
+  const dataRange = Math.max(Math.abs(eqMax - eqMin), 1);
 
   function calcCleanStep(range, targetTicks) {
     const raw = range / targetTicks;
@@ -4155,17 +4179,16 @@ function refreshDashboard() {
     return s;
   }
 
-  // Always fit ~6 ticks to actual data range — ignore balance
   const stepSize = calcCleanStep(dataRange, 5);
 
-  // Tight min/max around actual data
-  const yMin = eqMin < 0 ? (Math.floor(eqMin / stepSize) - 1) * stepSize : -stepSize;
-  const yMax = (Math.ceil(eqMax / stepSize) + 1) * stepSize;
+  // Tight min/max around actual data values (not zero-based)
+  const yMin = Math.floor(eqMin / stepSize) * stepSize - stepSize;
+  const yMax = Math.ceil(eqMax / stepSize) * stepSize + stepSize;
 
-  // Per-point colors: red only if below 0
-  const pointColors = eq.map(v => v >= 0 ? gc() : rc());
+  // Per-point colors: red if below starting balance
+  const pointColors = eq.map(v => v >= startBalance ? gc() : rc());
 
-  const eqSnap = eq.slice();
+  const eqSnap = eq.slice(); // downsampled equity for segment plugin
 
   const segmentPlugin = {
     id: 'segmentColor_' + Date.now(),
@@ -4173,13 +4196,13 @@ function refreshDashboard() {
       const { ctx: c, chartArea, scales } = chart;
       const points = chart.getDatasetMeta(0).data;
       if (points.length < 2) return;
-      const baseline = scales.y.getPixelForValue(0);
+      const baseline = scales.y.getPixelForValue(startBalance);
 
       c.save();
       c.lineJoin = 'round';
       c.lineCap = 'round';
 
-      // Draw zero baseline
+      // Draw baseline at starting balance
       c.beginPath();
       c.strokeStyle = 'rgba(148,163,184,0.5)';
       c.lineWidth = 1.5;
@@ -4189,24 +4212,24 @@ function refreshDashboard() {
       c.stroke();
       c.setLineDash([]);
 
-      // Draw colored segments
+      // Draw colored segments — green above startBalance, red below
       for (let i = 1; i < points.length; i++) {
         const v0 = eqSnap[i-1];
         const v1 = eqSnap[i];
         const x0 = points[i-1].x, y0 = points[i-1].y;
         const x1 = points[i].x,   y1 = points[i].y;
 
-        // If segment crosses zero, find the crossing X
+        // If segment crosses startBalance, find the crossing X
         let crossX = null;
-        if ((v0 >= 0 && v1 < 0) || (v0 < 0 && v1 >= 0)) {
-          const t = Math.abs(v0) / (Math.abs(v0) + Math.abs(v1));
+        if ((v0 >= startBalance && v1 < startBalance) || (v0 < startBalance && v1 >= startBalance)) {
+          const t = Math.abs(v0 - startBalance) / (Math.abs(v0 - startBalance) + Math.abs(v1 - startBalance));
           crossX = x0 + t * (x1 - x0);
         }
 
         const segments = crossX !== null
-          ? [{ x0, y0, x1: crossX, yc: baseline, color: v0 >= 0 ? gc() : rc() },
-             { x0: crossX, y0: baseline, x1, yc: y1, color: v1 >= 0 ? gc() : rc() }]
-          : [{ x0, y0, x1, yc: y1, color: v1 >= 0 ? gc() : rc() }];
+          ? [{ x0, y0, x1: crossX, yc: baseline, color: v0 >= startBalance ? gc() : rc() },
+             { x0: crossX, y0: baseline, x1, yc: y1, color: v1 >= startBalance ? gc() : rc() }]
+          : [{ x0, y0, x1, yc: y1, color: v1 >= startBalance ? gc() : rc() }];
 
         for (const seg of segments) {
           const inLoss = seg.color === rc();
@@ -4323,26 +4346,29 @@ function refreshDashboard() {
           callbacks: {
             title: c => {
               const i = c[0].dataIndex;
-              const t = filteredSorted[i];
+              if (i === 0) return 'Starting Balance';
+              const t = filteredSorted[i - 1]; // offset by 1 because eq starts with startBalance
               if (!t) return '';
               const d = new Date(t.date);
               return isNaN(d) ? t.date : d.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
             },
             label: c => {
               const i = c.dataIndex;
-              const t = filteredSorted[i];
               const v = c.raw;
-              const tradePnl = i > 0 ? (v - eq[i-1]) : v;
-              const eqStr = v >= 0 ? `+$${v.toFixed(2)}` : `-$${Math.abs(v).toFixed(2)}`;
-              // Sum all trades on same date
+              const pnl = v - startBalance;
+              const balStr = `$${v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+              const pnlStr = pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
+              if (i === 0) return [`Balance  ${balStr}`];
+              const t = filteredSorted[i - 1];
               const dateKey = (t?.date||'').slice(0,10);
               const dayPnl = filteredSorted
                 .filter(x => (x.date||'').slice(0,10) === dateKey)
                 .reduce((sum, x) => sum + getPnl(x), 0);
               const dayStr = dayPnl >= 0 ? `+$${dayPnl.toFixed(2)}` : `-$${Math.abs(dayPnl).toFixed(2)}`;
               return [
+                `Balance  ${balStr}`,
+                `Total P&L  ${pnlStr}`,
                 `Day P&L   ${dayStr}`,
-                `Equity    ${eqStr}`,
               ];
             }
           }
