@@ -4132,13 +4132,12 @@ function refreshDashboard() {
 
   // Filter sorted trades by selected range
   const now = new Date();
-  // 1D = today only, 1W = this calendar week (Mon-Sun), others = rolling days
   const todayStr = now.toISOString().slice(0,10);
-  const dow = (now.getDay() + 6) % 7; // Mon=0
+  const dow = (now.getDay() + 6) % 7;
   const weekStart = new Date(now); weekStart.setHours(0,0,0,0); weekStart.setDate(now.getDate() - dow);
   const rangeCutoff = {
-    '1D': todayStr,   // string compare for today
-    '1W': weekStart,  // date compare for this week
+    '1D': todayStr,
+    '1W': weekStart,
     '1M': new Date(now - 30 * 24 * 60 * 60 * 1000),
     '3M': new Date(now - 90 * 24 * 60 * 60 * 1000),
     'ALL': null
@@ -4153,25 +4152,27 @@ function refreshDashboard() {
     }
   }
 
-  // Build equity curve — continuous P&L, sliced to range
-  // P&L at the START of the selected window (sum of all trades BEFORE the window)
-  const tradesBeforeWindow = equityRange === 'ALL'
-    ? []
-    : s.sorted.filter(t => !filteredSorted.includes(t));
+  // Build full cumulative P&L for ALL trades (this is the true running total)
+  const allEquityMap = new Map();
+  let allRunning = 0;
+  for (const t of s.sorted) {
+    allRunning += getPnl(t);
+    allEquityMap.set(t.id, +allRunning.toFixed(2));
+  }
+  const totalPnlNow = allRunning; // the final end point — never changes
+
+  // For the window: find P&L value just before the window starts
+  const tradesBeforeWindow = equityRange === 'ALL' ? [] : s.sorted.filter(t => !filteredSorted.includes(t));
   const startBalance = +tradesBeforeWindow.reduce((sum, t) => sum + getPnl(t), 0).toFixed(2);
 
-  // Build curve starting from that P&L value
-  let runningEq = startBalance;
-  const filteredEquity = filteredSorted.map(t => {
-    runningEq += getPnl(t);
-    return +runningEq.toFixed(2);
-  });
+  // Build curve using the true running total (not reset per window)
+  const filteredEquity = filteredSorted.map(t => allEquityMap.get(t.id) ?? 0);
   const filteredLabels = filteredSorted.map(t => {
     const d = new Date(t.date);
     return isNaN(d) ? t.date.slice(0,10) : d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
   });
 
-  // Trend label: show P&L change within the window only
+  // Trend label: P&L change within the window
   const windowPnl = filteredEquity.length
     ? +(filteredEquity[filteredEquity.length-1] - startBalance).toFixed(2)
     : 0;
@@ -6083,17 +6084,22 @@ function renderAnalytics() {
     filteredEq = sorted.filter(t => new Date(t.date||0) >= cutoff);
   }
 
-  // Analytics equity = real account balance, continuous across timeframes
-  // P&L accumulated BEFORE the window = the starting point for this window
+  // Build true running balance map for ALL trades
   const baseBalance = getBalance();
-  const tradesBeforeAnWindow = analyticsEquityRange === 'ALL'
-    ? []
-    : sorted.filter(t => !filteredEq.includes(t));
-  const pnlBeforeWindow = tradesBeforeAnWindow.reduce((sum, t) => sum + getPnl(t), 0);
-  const anStartBal = +(baseBalance + pnlBeforeWindow).toFixed(2);
+  const anEquityMap = new Map();
+  let anRunning = baseBalance;
+  for (const t of sorted) {
+    anRunning += getPnl(t);
+    anEquityMap.set(t.id, +anRunning.toFixed(2));
+  }
 
-  let eqRunning = anStartBal;
-  const eqPoints = [anStartBal, ...filteredEq.map(t => { eqRunning += getPnl(t); return +eqRunning.toFixed(2); })];
+  // Starting balance for this window = balance just before the window
+  const anTradesBefore = analyticsEquityRange === 'ALL' ? [] : sorted.filter(t => !filteredEq.includes(t));
+  const anPnlBefore = anTradesBefore.reduce((sum, t) => sum + getPnl(t), 0);
+  const anStartBal = +(baseBalance + anPnlBefore).toFixed(2);
+
+  // Use true running values (end point never changes)
+  const eqPoints = [anStartBal, ...filteredEq.map(t => anEquityMap.get(t.id) ?? anStartBal)];
   const eqLabels = ['Start', ...filteredEq.map(t => { const d=new Date(t.date); return isNaN(d)?'':(t.date||'').slice(0,10); })];
   const eqFinal = eqPoints[eqPoints.length-1];
   const eqColor = eqFinal >= anStartBal ? GB : RB;
