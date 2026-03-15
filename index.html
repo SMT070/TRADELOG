@@ -6766,10 +6766,13 @@ async function saveGoals() {
     weekly:  parseFloat(document.getElementById('goal-input-weekly').value)  || 0,
     monthly: parseFloat(document.getElementById('goal-input-monthly').value) || 0,
   };
+  console.log('[GOALS] saving:', JSON.stringify(g));
   localStorage.setItem(GOALS_KEY, JSON.stringify(g));
+  console.log('[GOALS] localStorage now:', localStorage.getItem(GOALS_KEY));
   closeGoalsModal();
   renderGoals();
   await saveAllSettingsToSupabase();
+  console.log('[GOALS] after sync, localStorage:', localStorage.getItem(GOALS_KEY));
   toast('Goals saved ✓', 'success');
 }
 
