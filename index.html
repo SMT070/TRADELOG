@@ -3964,6 +3964,7 @@ function saveTrade() {
   }
   save();
   saveTradeToSupabase(trade);
+  refreshDashboard(); // update goals/stats immediately
   clearForm();
   toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
   switchPage(editId ? 'trades' : 'dashboard');
@@ -4426,7 +4427,21 @@ function refreshDashboard() {
     }
   };
 
-  if (equityChartInst) equityChartInst.destroy();
+  // Update existing chart instead of destroy+recreate to avoid visual flash
+  if (equityChartInst) {
+    equityChartInst.data.labels = labels;
+    equityChartInst.data.datasets[0].data = eq;
+    equityChartInst.options.scales.y.min = yMin;
+    equityChartInst.options.scales.y.max = yMax;
+    equityChartInst.options.animation.duration = window._suppressChartAnim ? 0 : 400;
+    equityChartInst.update('none');
+    renderRecentTable();
+    updateEmptyState();
+    renderGoals();
+    try { loadJournal(); } catch(e) {}
+    try { updateGreeting(); } catch(e) {}
+    return;
+  }
   equityChartInst = new Chart(ctx, {
     type: 'line',
     data: {
@@ -7034,9 +7049,10 @@ function renderGoals() {
   const sym = getCurrencySymbol();
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
+  // Use LOCAL date not UTC (toISOString gives UTC which can be wrong date)
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
 
-  // Daily
+  // Daily — match by local date string
   const dailyTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
   const dailyPnl = dailyTrades.reduce((s,t) => s + getPnl(t), 0);
 
@@ -7046,8 +7062,8 @@ function renderGoals() {
   const weekEnd2 = new Date(weekStart2); weekEnd2.setDate(weekStart2.getDate() + 6); weekEnd2.setHours(23,59,59,999);
   const weeklyPnl = trades.filter(t => {
     const dateStr = (t.date||'').slice(0,10);
-    const d = new Date(dateStr + 'T12:00:00'); // noon to avoid DST issues
-    return !isNaN(d) && d >= weekStart2 && d <= weekEnd2;
+    if (!dateStr) return false;
+    return dateStr >= weekStart2.toISOString().slice(0,10) && dateStr <= weekEnd2.toISOString().slice(0,10);
   }).reduce((s,t) => s + getPnl(t), 0);
 
   // Monthly
