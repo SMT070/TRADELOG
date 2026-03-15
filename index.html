@@ -3824,14 +3824,84 @@ function loadTradeIntoForm(t) {
   if (pageTitle) pageTitle.textContent = 'Edit Trade — ' + t.symbol;
 }
 
+// ── TRADE VALIDATION ─────────────────────────────────────────────────────────
+function highlightField(id, valid) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = valid ? '' : 'var(--red)';
+  el.style.boxShadow   = valid ? '' : '0 0 0 2px rgba(255,59,92,.25)';
+}
+
+function validateTradeFields({ sym, openDate, closeDate, entry, exit, pnl, result, prefix }) {
+  const now = new Date();
+  const errors = [];
+  let ok = true;
+
+  // Symbol
+  const symOk = !!sym;
+  if (prefix) highlightField(prefix + 'symbol', symOk);
+  if (!symOk) { errors.push('Symbol'); ok = false; }
+
+  // Open date
+  const openOk = !!openDate && !isNaN(new Date(openDate)) && new Date(openDate) <= now;
+  if (prefix) {
+    const el = document.getElementById(prefix + 'date-display') || document.getElementById(prefix + 'date');
+    if (el) { el.style.color = openOk ? '' : 'var(--red)'; }
+  }
+  if (!openDate || isNaN(new Date(openDate))) { errors.push('Open Date'); ok = false; }
+  else if (new Date(openDate) > now) { errors.push('Open Date cannot be in the future'); ok = false; }
+
+  // Close date
+  if (closeDate) {
+    const closeOk = !isNaN(new Date(closeDate)) && new Date(closeDate) <= now;
+    if (!closeOk) { errors.push('Close Date cannot be in the future'); ok = false; }
+    if (!isNaN(new Date(openDate)) && !isNaN(new Date(closeDate)) && new Date(closeDate) < new Date(openDate)) {
+      errors.push('Close Date cannot be before Open Date'); ok = false;
+    }
+  }
+
+  // Entry
+  const entryOk = entry !== '' && entry !== null && !isNaN(parseFloat(entry)) && parseFloat(entry) > 0;
+  if (prefix) highlightField(prefix + 'entry', entryOk);
+  if (!entryOk) { errors.push('Entry Price'); ok = false; }
+
+  // Exit
+  const exitOk = exit !== '' && exit !== null && !isNaN(parseFloat(exit)) && parseFloat(exit) > 0;
+  if (prefix) highlightField(prefix + 'exit', exitOk);
+  if (!exitOk) { errors.push('Exit Price'); ok = false; }
+
+  // PnL
+  const pnlOk = pnl !== '' && pnl !== null && pnl !== undefined && !isNaN(parseFloat(pnl));
+  if (prefix) highlightField(prefix + 'pnl', pnlOk);
+  if (!pnlOk) { errors.push('P&L'); ok = false; }
+
+  // Result
+  const resultOk = !!result && ['win','loss','be'].includes(result);
+  if (!resultOk) { errors.push('Result (Win/Loss/BE)'); ok = false; }
+
+  if (!ok) {
+    const msg = errors.length === 1
+      ? `⚠️ ${errors[0]} is required`
+      : `⚠️ Required: ${errors.join(', ')}`;
+    toast(msg, 'error');
+  }
+  return ok;
+}
+
 function saveTrade() {
-  const sym = document.getElementById('f-symbol').value.trim().toUpperCase();
-  if (!sym) { toast('⚠️ Symbol is required','error'); return; }
-  const pnlRaw = document.getElementById('f-pnl').value;
-  if (pnlRaw === '' || pnlRaw === undefined) { toast('⚠️ P&L is required','error'); return; }
-  const pnl = parseFloat(pnlRaw) || 0;
-  const entry = parseFloat(document.getElementById('f-entry').value) || 0;
-  const exit = parseFloat(document.getElementById('f-exit').value) || 0;
+  const sym    = document.getElementById('f-symbol').value.trim().toUpperCase();
+  const openDate  = document.getElementById('f-date').value;
+  const closeDate = document.getElementById('f-close-date').value || null;
+  const entryRaw  = document.getElementById('f-entry').value;
+  const exitRaw   = document.getElementById('f-exit').value;
+  const pnlRaw    = document.getElementById('f-pnl').value;
+  const result    = selectedResult || (parseFloat(pnlRaw) > 0 ? 'win' : parseFloat(pnlRaw) < 0 ? 'loss' : 'be');
+
+  if (!validateTradeFields({ sym, openDate, closeDate, entry: entryRaw, exit: exitRaw, pnl: pnlRaw, result, prefix: 'f-' })) return;
+
+  const pnl   = parseFloat(pnlRaw);
+  const entry = parseFloat(entryRaw);
+  const exit  = parseFloat(exitRaw);
   const sl = parseFloat(document.getElementById('f-sl').value) || 0;
   let r = 0;
   if (sl && entry && exit) {
@@ -5691,11 +5761,38 @@ function updateAddTime(hiddenId, timeId, dispId, btnId) {
   const dispEl = document.getElementById(dispId);
   const btnEl  = document.getElementById(btnId);
   if (!hidden || !timeEl) return;
+
+  // Auto-format and clamp
+  let raw = timeEl.value.replace(/[^0-9:]/g,'');
+  if (raw.length === 2 && !raw.includes(':')) raw = raw + ':';
+  if (raw.includes(':')) {
+    let [hh, mm] = raw.split(':');
+    hh = hh.slice(0,2); mm = (mm||'').slice(0,2);
+    let h = parseInt(hh,10), m = parseInt(mm,10);
+    if (!isNaN(h) && h > 23) { hh = '23'; timeEl.style.borderColor='var(--red)'; }
+    else timeEl.style.borderColor = '';
+    if (!isNaN(m) && m > 59) { mm = '59'; timeEl.style.borderColor='var(--red)'; }
+    raw = hh + ':' + mm;
+  }
+  timeEl.value = raw;
+
   const datePart = (hidden.value || '').split('T')[0];
-  if (!datePart) return; // no date picked yet
+  if (!datePart) return;
   const t = timeEl.value.trim();
-  if (!/^\d{1,2}:\d{2}$/.test(t)) return; // incomplete
-  hidden.value = datePart + 'T' + t.padStart(5,'0');
+  if (!/^\d{1,2}:\d{2}$/.test(t)) return;
+  const [hStr, mStr] = t.split(':');
+  const h = parseInt(hStr,10), m = parseInt(mStr,10);
+  if (h > 23 || m > 59) return;
+  const timeStr = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  hidden.value = datePart + 'T' + timeStr;
+
+  // Block future datetime
+  if (new Date(hidden.value) > new Date()) {
+    timeEl.style.borderColor = 'var(--red)';
+    toast('⚠️ Date/time cannot be in the future','error');
+    return;
+  }
+  timeEl.style.borderColor = '';
   const d = new Date(hidden.value);
   if (isNaN(d)) return;
   const label = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
@@ -5808,11 +5905,17 @@ function saveInlineEdit(id) {
   const idx = trades.findIndex(x => x.id === id);
   if (idx === -1) return;
   const t = trades[idx];
-  const sym = (document.getElementById('ie-symbol').value||'').trim().toUpperCase();
-  if (!sym) { toast('⚠️ Symbol is required','error'); return; }
-  const pnlVal = document.getElementById('ie-pnl').value;
-  if (pnlVal === '' || pnlVal === null || pnlVal === undefined) { toast('⚠️ P&L is required','error'); return; }
-  if (!window._ieResult && pnlVal === '') { toast('⚠️ Result is required','error'); return; }
+
+  const sym       = (document.getElementById('ie-symbol').value||'').trim().toUpperCase();
+  const openDate  = document.getElementById('ie-date').value;
+  const closeDate = document.getElementById('ie-close-date').value || null;
+  const entryRaw  = document.getElementById('ie-entry').value;
+  const exitRaw   = document.getElementById('ie-exit').value;
+  const pnlVal    = document.getElementById('ie-pnl').value;
+  const result    = window._ieResult || (parseFloat(pnlVal) > 0 ? 'win' : parseFloat(pnlVal) < 0 ? 'loss' : 'be');
+
+  if (!validateTradeFields({ sym, openDate, closeDate, entry: entryRaw, exit: exitRaw, pnl: pnlVal, result, prefix: 'ie-' })) return;
+
   t.symbol     = sym;
   t.date       = document.getElementById('ie-date').value;
   t.closeDate  = document.getElementById('ie-close-date').value || null;
