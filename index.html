@@ -2916,18 +2916,17 @@ async function loadProfileFromSupabase() {
   if (error && error.code !== 'PGRST116') console.error('Profile load error:', error.message);
   if (!data) return null;
 
-  // Apply settings from the JSON blob
+  // Apply settings from Supabase — remote wins (this is the sync source of truth)
   if (data.settings) {
     try {
       const s = typeof data.settings === 'string' ? JSON.parse(data.settings) : data.settings;
-      // Only apply if remote value is non-empty (don't overwrite with blanks)
-      if (s.currency) localStorage.setItem(CUR_KEY, s.currency);
+      if (s.currency) { localStorage.setItem(CUR_KEY, s.currency); updateCurrencyButtons(); }
       if (s.theme)    { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
       if (s.balance)  localStorage.setItem(BAL_KEY, s.balance);
-      if (s.goals && s.goals !== '{}')   localStorage.setItem(GOALS_KEY, s.goals);
+      if (s.goals && s.goals !== '{}')     localStorage.setItem(GOALS_KEY, s.goals);
       if (s.journal && s.journal !== '{}') localStorage.setItem(JOURNAL_KEY, s.journal);
       if (s.mindset && s.mindset !== '{}') localStorage.setItem(MINDSET_KEY, s.mindset);
-      if (s.tags && s.tags !== '[]')     localStorage.setItem(TAGS_KEY, s.tags);
+      if (s.tags && s.tags !== '[]')       localStorage.setItem(TAGS_KEY, s.tags);
     } catch(e) { console.error('Settings parse error:', e); }
   }
 
@@ -3292,6 +3291,8 @@ async function initApp(user) {
   appInitialized = true;
   appInitializing = false;
   refreshDashboard();
+  // Re-render goals after remote settings loaded
+  try { renderGoals(); } catch(e) {}
   hideLoadingOverlay();
 
   // Start real-time sync so changes from other devices appear instantly
@@ -6750,17 +6751,17 @@ function closeGoalsModal() {
   document.getElementById('goals-modal').style.display = 'none';
 }
 
-function saveGoals() {
+async function saveGoals() {
   const g = {
     daily:   parseFloat(document.getElementById('goal-input-daily').value)   || 0,
     weekly:  parseFloat(document.getElementById('goal-input-weekly').value)  || 0,
     monthly: parseFloat(document.getElementById('goal-input-monthly').value) || 0,
   };
   localStorage.setItem(GOALS_KEY, JSON.stringify(g));
-  saveAllSettingsToSupabase();
   closeGoalsModal();
   renderGoals();
-  toast('Goals saved & synced ✓', 'success');
+  await saveAllSettingsToSupabase();
+  toast('Goals saved ✓', 'success');
 }
 
 function renderGoals() {
