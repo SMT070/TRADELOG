@@ -4130,7 +4130,7 @@ function refreshDashboard() {
     return isNaN(d) ? t.date.slice(0,10) : d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
   });
 
-  // Y axis scale — smart step that adapts to actual data range
+  // Y axis scale — always based on actual data range
   const eqMin = Math.min(0, ...eq);
   const eqMax = Math.max(0, ...eq);
   const dataRange = Math.max(Math.abs(eqMin), Math.abs(eqMax), 1);
@@ -4141,26 +4141,14 @@ function refreshDashboard() {
     const norm = raw / mag;
     const clean = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10;
     let s = clean * mag;
-    // Always end in 0 or 5
     if (s >= 10) s = Math.ceil(s / 5) * 5;
     return s;
   }
 
-  // Try balance-based step first, fall back to data-range-based
-  const eqBal = getBalance();
-  let stepSize;
-  if (eqBal) {
-    const balStep = calcCleanStep(eqBal * 0.005 * 10, 1); // 0.5% of balance
-    // Only use balance step if it gives 4-10 ticks on the data range
-    const ticks = Math.ceil(dataRange / balStep) * 2;
-    if (ticks >= 3 && ticks <= 12) {
-      stepSize = balStep;
-    }
-  }
-  // Fallback: fit ~6 ticks to actual data
-  if (!stepSize) stepSize = calcCleanStep(dataRange, 5);
+  // Always fit ~6 ticks to actual data range — ignore balance
+  const stepSize = calcCleanStep(dataRange, 5);
 
-  // Snap min/max tightly to step
+  // Tight min/max around actual data
   const yMin = eqMin < 0 ? (Math.floor(eqMin / stepSize) - 1) * stepSize : -stepSize;
   const yMax = (Math.ceil(eqMax / stepSize) + 1) * stepSize;
 
@@ -7611,40 +7599,39 @@ async function refreshAllData() {
   }
 }
 
+let _realtimeSetup = false;
 function setupRealtimeSync() {
   if (!sb || !currentUser) return;
+  if (_realtimeSetup) return; // only setup once
+  _realtimeSetup = true;
 
-  // ── 1. Supabase Realtime (instant) ──
+  // ── Supabase Realtime — only refresh when OTHER device changes data ──
   try {
     sb.channel('trades-sync-' + currentUser.id)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'trades',
         filter: 'user_id=eq.' + currentUser.id
-      }, async () => { await refreshAllData(); })
+      }, async () => {
+        // Debounce — wait 2s so rapid saves don't cause multiple refreshes
+        clearTimeout(window._realtimeDebounce);
+        window._realtimeDebounce = setTimeout(() => refreshAllData(), 2000);
+      })
       .subscribe();
+  } catch(e) { console.log('Realtime not available:', e.message); }
 
-    sb.channel('profiles-sync-' + currentUser.id)
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'profiles',
-        filter: 'id=eq.' + currentUser.id
-      }, async () => { await refreshAllData(); })
-      .subscribe();
-  } catch(e) { console.log('Realtime not available, using polling:', e.message); }
-
-  // ── 2. Polling fallback every 30s (works even without Realtime) ──
+  // ── Poll every 2 minutes only — just a safety net ──
   if (_syncInterval) clearInterval(_syncInterval);
   _syncInterval = setInterval(async () => {
     if (document.visibilityState === 'visible' && currentUser) {
       await refreshAllData();
     }
-  }, 60000);
+  }, 120000);
 
-  // ── 3. Sync when tab becomes visible (with debounce to avoid rapid refires) ──
-  let _visibilityDebounce = null;
+  // ── Sync once when tab becomes visible after being hidden ──
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && currentUser) {
-      clearTimeout(_visibilityDebounce);
-      _visibilityDebounce = setTimeout(() => refreshAllData(), 1000);
+      clearTimeout(window._visDebounce);
+      window._visDebounce = setTimeout(() => refreshAllData(), 2000);
     }
   });
 }
