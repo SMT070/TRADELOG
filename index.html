@@ -3147,13 +3147,18 @@ function save() {
 
 // ── APP INIT ──────────────────────────────────────────────────────────────────
 let appInitialized = false;
+let appInitializing = false; // prevent concurrent inits
+
 async function initApp(user) {
-  // Prevent double-init for same user only if trades already loaded
+  // Skip if same user already fully loaded
   if (appInitialized && currentUser && currentUser.id === user.id && trades.length > 0) {
     showApp();
     return;
   }
-  appInitialized = true;
+  // Skip if already in progress
+  if (appInitializing) return;
+  appInitializing = true;
+  appInitialized = false;
   currentUser = user;
 
   const btn = document.getElementById('auth-btn');
@@ -3163,24 +3168,25 @@ async function initApp(user) {
   showApp();
   updateGreeting();
 
-  // Load profile + balance from Supabase first (currentUser is now set)
+  // Load profile from localStorage immediately (instant)
+  loadProfile();
+
+  // Load trades + profile from Supabase in parallel
   try {
-    const remoteProfile = await loadProfileFromSupabase();
+    const [_, remoteProfile] = await Promise.all([
+      loadTradesFromSupabase(),
+      loadProfileFromSupabase()
+    ]);
     if (remoteProfile) {
       applyProfile(remoteProfile);
       if (remoteProfile.balance && remoteProfile.balance > 0) {
         localStorage.setItem(BAL_KEY, remoteProfile.balance);
       }
-    } else {
-      loadProfile(); // fallback to localStorage
     }
-  } catch(e) { loadProfile(); }
+  } catch(e) { console.error('Load error:', e); }
 
-  // Load trades fresh from Supabase every time
-  try {
-    await loadTradesFromSupabase();
-  } catch(e) { console.error('Trade load error:', e); }
-
+  appInitialized = true;
+  appInitializing = false;
   refreshDashboard();
 
   // Start real-time sync so changes from other devices appear instantly
@@ -7511,12 +7517,14 @@ function setupRealtimeSync() {
     if (document.visibilityState === 'visible' && currentUser) {
       await refreshAllData();
     }
-  }, 30000);
+  }, 60000);
 
-  // ── 3. Sync immediately when tab becomes visible (switching back from phone) ──
-  document.addEventListener('visibilitychange', async () => {
+  // ── 3. Sync when tab becomes visible (with debounce to avoid rapid refires) ──
+  let _visibilityDebounce = null;
+  document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && currentUser) {
-      await refreshAllData();
+      clearTimeout(_visibilityDebounce);
+      _visibilityDebounce = setTimeout(() => refreshAllData(), 1000);
     }
   });
 }
