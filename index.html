@@ -7827,9 +7827,13 @@ window.addEventListener('load', applyMobileLayout);
 async function refreshAllData() {
   if (!currentUser) return;
 
-  // Snapshot trades count+last id before reload to detect actual changes
+  // Snapshot EVERYTHING before reload to detect any changes
   const beforeCount = trades.length;
   const beforeLast = trades[0] ? trades[0].id : null;
+  const beforeGoals   = localStorage.getItem(GOALS_KEY)   || '{}';
+  const beforeJournal = localStorage.getItem(JOURNAL_KEY) || '{}';
+  const beforeMindset = localStorage.getItem(MINDSET_KEY) || '{}';
+  const beforeBalance = localStorage.getItem(BAL_KEY) || '0';
 
   // Reload trades
   await loadTradesFromSupabase();
@@ -7838,24 +7842,31 @@ async function refreshAllData() {
   const afterLast = trades[0] ? trades[0].id : null;
   const tradesChanged = beforeCount !== afterCount || beforeLast !== afterLast;
 
-  // Reload profile + balance
-  let profileChanged = false;
+  // Reload profile + ALL settings (goals, journal, mindset, tags)
+  let settingsChanged = false;
   try {
     const remoteProfile = await loadProfileFromSupabase();
     if (remoteProfile) {
-      const existing = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-      if (remoteProfile.name !== existing.name || remoteProfile.balance !== getBalance()) {
-        profileChanged = true;
-        applyProfile(remoteProfile);
-        if (remoteProfile.balance && remoteProfile.balance > 0) {
-          localStorage.setItem(BAL_KEY, remoteProfile.balance);
-        }
+      applyProfile(remoteProfile);
+      if (remoteProfile.balance && remoteProfile.balance > 0) {
+        localStorage.setItem(BAL_KEY, remoteProfile.balance);
       }
     }
+    // Detect if any settings changed after loading from Supabase
+    const afterGoals   = localStorage.getItem(GOALS_KEY)   || '{}';
+    const afterJournal = localStorage.getItem(JOURNAL_KEY) || '{}';
+    const afterMindset = localStorage.getItem(MINDSET_KEY) || '{}';
+    const afterBalance = localStorage.getItem(BAL_KEY) || '0';
+    settingsChanged = (
+      afterGoals   !== beforeGoals   ||
+      afterJournal !== beforeJournal ||
+      afterMindset !== beforeMindset ||
+      afterBalance !== beforeBalance
+    );
   } catch(e) {}
 
-  // Only refresh UI if something actually changed
-  if (!tradesChanged && !profileChanged) return;
+  // Refresh UI if anything changed
+  if (!tradesChanged && !settingsChanged) return;
 
   const activePage = document.querySelector('.page.active');
   if (activePage) {
@@ -7864,6 +7875,14 @@ async function refreshAllData() {
     else if (name === 'trades') renderTrades();
     else if (name === 'analytics') renderAnalytics();
     else if (name === 'calendar') renderCalendar();
+    else if (name === 'mindset') initMindsetPage();
+  }
+  // Always re-render goals and journal in case user is on dashboard
+  // and settings changed from another device
+  if (settingsChanged) {
+    try { renderGoals(); } catch(e) {}
+    try { loadJournal(); } catch(e) {}
+    if (activePage && activePage.id === 'page-dashboard') refreshDashboard();
   }
 }
 
@@ -7872,16 +7891,27 @@ function setupRealtimeSync() {
   if (_realtimeSetup) return; // only setup once
   _realtimeSetup = true;
 
-  // ── Supabase Realtime — only refresh when OTHER device changes data ──
+  // ── Supabase Realtime — listen to BOTH trades AND profiles tables ──
   try {
+    // Trades changes (new/edited/deleted trades)
     sb.channel('trades-sync-' + currentUser.id)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'trades',
         filter: 'user_id=eq.' + currentUser.id
       }, async () => {
-        // Debounce — wait 2s so rapid saves don't cause multiple refreshes
         clearTimeout(window._realtimeDebounce);
         window._realtimeDebounce = setTimeout(() => refreshAllData(), 2000);
+      })
+      .subscribe();
+
+    // Profile/settings changes (goals, journal, mindset, balance, currency)
+    sb.channel('profile-sync-' + currentUser.id)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'profiles',
+        filter: 'id=eq.' + currentUser.id
+      }, async () => {
+        clearTimeout(window._profileDebounce);
+        window._profileDebounce = setTimeout(() => refreshAllData(), 2000);
       })
       .subscribe();
   } catch(e) { console.log('Realtime not available:', e.message); }
