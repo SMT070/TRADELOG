@@ -913,15 +913,41 @@
      PC layout is completely untouched outside this block
   ═══════════════════════════════════════════════════════════════ */
   @media (max-width: 768px) {
+    /* ── FORCE inline grid overrides via attribute selectors ── */
+    #trades-grid { grid-template-columns: 1fr !important; }
+    #trade-detail-panel { display: none !important; }
 
-    /* ── CRITICAL: Only active page shows — pages never bleed ── */
-    #app-shell { overflow: hidden !important; }
-    #main-content { overflow: hidden !important; }
-    /* pages hidden via inline style set by switchPage() */
+    /* Calendar on mobile: full width, hide side panel, hide week col */
+    #page-calendar > div > div[style*="grid-template-columns:1fr 300px"],
+    #page-calendar > div > div[style*="grid-template-columns: 1fr 300px"] {
+      grid-template-columns: 1fr !important;
+    }
+    #cal-day-panel { display: none !important; }
+    #cal-mobile-panel { display: block !important; }
+    /* Hide week column in month view */
+    #cal-dow-row { grid-template-columns: repeat(7, 1fr) !important; }
+    #cal-grid { grid-template-columns: repeat(7, 1fr) !important; }
+    .cal-week-col { display: none !important; }
+    .cal-dow:last-child { display: none !important; }
+    /* Hide view buttons except Month on mobile */
+    #cal-view-year, #cal-view-alltime, #cal-view-week { display: none !important; }
+    /* Calendar header compact */
+    #page-calendar > div > div:first-child {
+      padding: 8px 12px !important;
+      flex-shrink: 0 !important;
+    }
+    #cal-month-label { font-size: 14px !important; min-width: unset !important; }
+    /* Hide day-of-week header row and month grid on mobile - using week list view */
+    #cal-dow-row { display: none !important; }
 
-    /* ── SIDEBAR: icon-only ── */
+    /* ── SIDEBAR: icon-only on mobile ── */
     :root { --sidebar-w: 56px; --sidebar-collapsed: 56px; }
-    #sidebar { width: 56px !important; min-width: 56px !important; flex-shrink: 0; }
+
+    #sidebar {
+      width: 56px !important;
+      min-width: 56px !important;
+      flex-shrink: 0;
+    }
     .sidebar-label { display: none !important; }
     .sidebar-logo-text { display: none !important; }
     .account-card-text { display: none !important; }
@@ -937,18 +963,22 @@
       width: auto !important;
       z-index: 9999 !important;
     }
+    /* hide toggle collapse button, chevron and collapse arrow on mobile */
     #sidebar-toggle-btn { display: none !important; }
     #account-chevron { display: none !important; }
     #sidebar-collapse-tab { display: none !important; }
 
-    /* ── MAIN CONTENT ── */
+    /* ── MAIN CONTENT: full width ── */
     #main-content { padding: 0; }
     .page-content, .container { padding: 12px !important; }
 
     /* ── DASHBOARD STAT CARDS: 2 columns ── */
-    .stats-row { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+    .stats-row {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+    }
     .stat-card { padding: 12px 14px !important; min-height: 90px !important; }
-    .stat-value { font-size: 20px !important; }
+    .stat-value { font-size: 22px !important; }
     .stat-label { font-size: 8px !important; }
     .stat-sub { font-size: 10px !important; }
 
@@ -968,121 +998,57 @@
     .an-stat-card { padding: 12px 14px !important; }
     .an-stat-value { font-size: 22px !important; }
 
-    /* ── TWO-COL PANELS: stack ── */
-    .two-col { grid-template-columns: 1fr !important; gap: 8px !important; }
-
-    /* ══════════════════════════════════════
-       TRADES PAGE — full mobile overhaul
-    ══════════════════════════════════════ */
-    #page-trades { padding: 6px !important; box-sizing: border-box !important; }
-
-    /* Hide the big summary stats bar — too wide for mobile */
-    #trades-summary-row { display: none !important; }
-
-    /* Filter bar: 2 clean rows */
-    #trades-filter-row2 {
-      flex-wrap: wrap !important;
-      gap: 5px !important;
-      padding: 6px !important;
-      align-items: center !important;
+    /* ── TWO-COL PANELS: stack vertically ── */
+    .two-col {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
     }
 
-    /* Row A: search + Add button */
-    #trades-filter-row2 > div:first-child {
-      flex: 1 1 0 !important;
-      min-width: 0 !important;
-      order: 1 !important;
-    }
-    #trades-filter-row2 > .btn-primary {
-      order: 2 !important;
-      flex-shrink: 0 !important;
-      padding: 8px 14px !important;
-      font-size: 12px !important;
-    }
+    /* ── PAGE HEADER: smaller ── */
+    .page-header { padding: 12px 12px 8px !important; }
+    .page-title { font-size: 20px !important; }
 
-    /* Hide desktop dividers */
-    #trades-filter-row2 > div[style*="width:1px"] {
-      display: none !important;
-    }
-
-    /* Timeframe segment — full width row B */
-    #trades-filter-row2 > div:nth-child(4) {
-      order: 3 !important;
-      flex: 1 !important;
-      width: 100% !important;
-    }
-    #trades-filter-row2 > div:nth-child(4) > .tb-range-btn {
-      flex: 1 !important;
-      padding: 5px 4px !important;
-      font-size: 10px !important;
-      text-align: center !important;
-    }
-
-    /* Filters: dir, result, tag — row B alongside timeframe */
-    #drop-dir, #drop-result, #drop-tag {
-      order: 4 !important;
-      flex-shrink: 0 !important;
-    }
-    .filter-drop-btn { padding: 0 8px !important; height: 30px !important; font-size: 11px !important; }
-
-    /* Hide custom date picker on mobile */
-    #custom-range-picker { display: none !important; }
-
-    /* Trades grid: full width, no detail panel */
-    #trades-grid { grid-template-columns: 1fr !important; }
-    #trade-detail-panel { display: none !important; }
-    #detail-expand-btn { display: none !important; }
+    /* ── TRADES TABLE: horizontal scroll ── */
     .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
     #trades-pagination { padding: 10px 0 !important; }
 
-    /* ══════════════════════════════════════
-       CALENDAR PAGE
-    ══════════════════════════════════════ */
-    #page-calendar > div {
-      height: 100% !important;
-      border-radius: 0 !important;
-      border: none !important;
-      display: flex !important;
-      flex-direction: column !important;
-      flex: 1 !important;
-    }
-    #page-calendar > div > div:first-child {
-      padding: 8px 12px !important;
-      flex-shrink: 0 !important;
-    }
-    #cal-month-label { font-size: 13px !important; min-width: unset !important; }
-    #cal-view-year, #cal-view-alltime { display: none !important; }
-    #cal-dow-row { display: none !important; }
-    #cal-day-panel { display: none !important; }
-    #page-calendar > div > div[style*="grid-template-columns:1fr 300px"],
-    #page-calendar > div > div[style*="grid-template-columns: 1fr 300px"] {
+    /* ── ADD TRADE FORM ── */
+    .form-grid {
       grid-template-columns: 1fr !important;
-      flex: 1 !important;
-      min-height: 0 !important;
     }
-    #cal-grid { flex: 1 !important; overflow: hidden !important; min-height: 0 !important; }
-    #cal-grid > div { height: 100% !important; box-sizing: border-box !important; }
 
-    /* ── FORMS ── */
-    .form-grid { grid-template-columns: 1fr !important; }
-    .form-grid .full { grid-column: 1 !important; }
-
-    /* ── MODALS ── */
-    [style*="width:420px"], [style*="width: 420px"],
-    [style*="width:400px"], [style*="width: 400px"] { width: 95vw !important; }
-
-    /* ── ANALYTICS CHARTS ── */
-    [style*="grid-template-columns:1fr 1fr"],
-    [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
-    [style*="grid-template-columns:repeat(4"] { grid-template-columns: 1fr 1fr !important; }
+    /* ── CALENDAR ── */
     #heatmap-grid { overflow-x: auto; }
 
-    /* ── SHARE ── */
+    /* ── MODALS: full width on mobile ── */
+    [style*="width:420px"], [style*="width: 420px"],
+    [style*="width:400px"], [style*="width: 400px"] {
+      width: 95vw !important;
+    }
+
+    /* ── ANALYTICS CHARTS SECTION ── */
+    [style*="grid-template-columns:1fr 1fr"],
+    [style*="grid-template-columns: 1fr 1fr"] {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* ── TODAY STATS ROW ── */
+    [style*="grid-template-columns:repeat(4"] {
+      grid-template-columns: 1fr 1fr !important;
+    }
+
+    /* ── SHARE BUTTON: smaller ── */
+    #share-today-btn { font-size: 12px !important; padding: 8px 12px !important; }
+
+    /* ── SHARE MODAL: fit to screen ── */
     #share-modal > div { width: 92vw !important; }
     #share-card { padding: 20px !important; border-radius: 16px !important; }
     #share-modal { gap: 12px !important; padding: 16px !important; overflow-y: auto !important; align-items: flex-start !important; padding-top: 40px !important; }
 
-    /* ── TRADE DETAIL OVERLAY ── */
+    /* ── TRADE DETAIL PANEL: hidden by default, shown as bottom sheet ── */
+    #trade-detail-panel { display: none !important; }
+    
+    /* ── TRADE DETAIL OVERLAY: full screen on mobile ── */
     #trade-detail-overlay { padding: 0 !important; align-items: flex-end !important; }
     #trade-detail-overlay-card {
       width: 100% !important;
@@ -1093,7 +1059,21 @@
       transform: translateY(100%) !important;
     }
 
-    /* ── MINDSET: stack columns ── */
+    /* ── TRADES PAGE: show detail as button instead of side panel ── */
+    #trades-table-wrap { width: 100% !important; }
+    
+    /* ── MINDSET PAGE: full scroll, stacked ── */
+    #page-mindset.active {
+      display: block !important;
+      height: auto !important;
+      min-height: 100vh !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      padding: 12px !important;
+      padding-bottom: 60px !important;
+    }
+    /* Stack 3-col grid vertically */
+    #page-mindset > div:last-of-type,
     #page-mindset [style*="grid-template-columns:1fr 300px 1fr"],
     #page-mindset [style*="grid-template-columns: 1fr 300px 1fr"] {
       display: flex !important;
@@ -1104,17 +1084,69 @@
       min-height: unset !important;
       flex: unset !important;
     }
+    /* Each column becomes full width */
     #page-mindset [style*="grid-template-columns:1fr 300px 1fr"] > *,
     #page-mindset [style*="grid-template-columns: 1fr 300px 1fr"] > * {
-      min-height: unset !important; height: auto !important;
-      overflow: visible !important; padding-right: 0 !important;
+      min-height: unset !important;
+      height: auto !important;
+      overflow: visible !important;
+      padding-right: 0 !important;
     }
-    #page-mindset .panel { min-height: unset !important; height: auto !important; flex: unset !important; }
+    #page-mindset .panel {
+      min-height: unset !important;
+      height: auto !important;
+      flex: unset !important;
+    }
     #page-mindset textarea { min-height: 80px !important; resize: vertical !important; }
-    #page-mindset > div:first-child { margin-bottom: 12px !important; flex-shrink: 0 !important; }
+    /* Header row */
+    #page-mindset > div:first-child {
+      margin-bottom: 12px !important;
+      flex-shrink: 0 !important;
+    }
 
-    /* ── MISC ── */
+    /* ── CALENDAR PAGE: full screen week view ── */
+    #page-calendar {
+      padding: 0 !important;
+      height: 100vh !important;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    #page-calendar.active {
+      height: 100vh !important;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    #page-calendar > div {
+      height: 100% !important;
+      border-radius: 0 !important;
+      border: none !important;
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 !important;
+    }
+    /* Week view rows fill screen */
+    #cal-grid > div {
+      flex: 1 !important;
+    }
+    #cal-grid {
+      flex: 1 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow-y: auto !important;
+    }
+    #cal-grid > div > div {
+      flex: 1 !important;
+    }
+
+    /* ── SIDEBAR TOGGLE BTN: show on mobile as floating button ── */
+    #sidebar-toggle-btn { display: none !important; }
+
+    /* ── STATS ROW: fix value font size ── */
     .stat-value { font-size: 20px !important; }
+
+    /* ── HIDE trade detail expand button on mobile (open overlay instead) ── */
     #detail-expand-btn { display: none !important; }
   }
 </style>
@@ -1648,12 +1680,12 @@
   </div> <!-- /dashboard-content -->
 </div>
 <!-- ══════════════════════════════════════════ -->
-<div class="page" id="page-trades" style="display:none;padding:var(--page-py) var(--page-px);box-sizing:border-box;">
+<div class="page" id="page-trades" style="padding:var(--page-py) var(--page-px);box-sizing:border-box;">
     <!-- Trades top bar -->
     <div style="flex-shrink:0;margin-bottom:12px;display:flex;flex-direction:column;gap:10px;">
 
       <!-- Row 1: Summary stats -->
-      <div id="trades-summary-row" style="display:flex;align-items:center;gap:24px;padding:14px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);">
+      <div style="display:flex;align-items:center;gap:24px;padding:14px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);">
 
         <div style="display:flex;flex-direction:column;gap:2px;">
           <span style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Total Trades</span>
@@ -1698,7 +1730,7 @@
       </div>
 
       <!-- Row 2: Search + segmented timeframe + filters + add (all one bar) -->
-      <div id="trades-filter-row2" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);">
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);">
 
         <!-- Search — grows to fill -->
         <div style="position:relative;flex:1;min-width:0;">
@@ -2081,7 +2113,7 @@
   </div>
 </div>
 
-<div class="page" id="page-calendar" style="display:none;flex-direction:column;padding:20px 24px;box-sizing:border-box;">
+<div class="page" id="page-calendar" style="flex-direction:column;padding:20px 24px;box-sizing:border-box;">
   <div style="display:flex;flex-direction:column;flex:1;border-radius:16px;overflow:hidden;border:1px solid var(--border);min-height:0;">
 
   <!-- Header bar -->
@@ -2744,8 +2776,6 @@ function updateCurrencyButtons() {
 const THEME_KEY = 'tradelog_theme';
 let trades = [];
 let selectedId = null;
-let _realtimeSetup = false;
-let _syncInterval = null;
 let strategyTags = [];
 let selectedEmotion = '';
 let selectedResult = '';
@@ -3324,15 +3354,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
   // 1. Switch page visually — instant
-  document.querySelectorAll('.page').forEach(p => {
-    p.classList.remove('active');
-    p.style.display = 'none';
-  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
   if (!nextPage) return;
   nextPage.classList.add('active');
-  // Clear inline display so CSS .page.active rules take over
-  nextPage.style.display = '';
 
   // 2. Update sidebar highlight — instant
   const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import MT5', mindset:'Mindset' };
@@ -6522,9 +6547,6 @@ function setCalView(v) {
 }
 
 function renderCalendar() {
-  // Only render when calendar page is actually visible
-  const calPage = document.getElementById('page-calendar');
-  if (!calPage || !calPage.classList.contains('active')) return;
   const fmt = v => { const s=getCurrencySymbol(); return (v>=0?'+'+s:'-'+s)+Math.abs(v).toFixed(2); };
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
@@ -6559,32 +6581,24 @@ function renderCalendar() {
     const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
     // ── WEEK SUMMARY BAR ──
-    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow:hidden;padding:10px;gap:10px;box-sizing:border-box;">';
+    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow:hidden;padding:12px;gap:12px;box-sizing:border-box;">';
 
-    // Summary pill row — compact
-    html += '<div style="display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:12px;padding:10px 14px;flex-shrink:0;border:1px solid var(--border);">';
-    // P&L
-    html += '<div style="flex:1;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:1px;">Net P&L</div>';
-    html += '<div style="font-size:20px;font-weight:900;color:' + weekPnlColor + ';letter-spacing:-0.5px;line-height:1;">' + fmt(weekPnl) + '</div></div>';
-    // Divider
-    html += '<div style="width:1px;height:32px;background:var(--border);flex-shrink:0;"></div>';
-    // Trades
-    html += '<div style="text-align:center;flex-shrink:0;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:1px;">Trades</div>';
-    html += '<div style="font-size:20px;font-weight:900;color:var(--text);line-height:1;">' + weekTrades + '</div></div>';
-    // Divider
-    html += '<div style="width:1px;height:32px;background:var(--border);flex-shrink:0;"></div>';
-    // W/L
-    html += '<div style="text-align:center;flex-shrink:0;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:1px;">W / L</div>';
-    html += '<div style="font-size:20px;font-weight:900;line-height:1;">'
+    // Summary pill row
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:14px;padding:12px 16px;flex-shrink:0;">';
+    html += '<div><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Net P&L</div>';
+    html += '<div style="font-size:22px;font-weight:900;color:' + weekPnlColor + ';letter-spacing:-0.5px;">' + fmt(weekPnl) + '</div></div>';
+    html += '<div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Trades</div>';
+    html += '<div style="font-size:22px;font-weight:900;color:var(--text);">' + weekTrades + '</div></div>';
+    html += '<div style="text-align:right;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">W / L</div>';
+    html += '<div style="font-size:22px;font-weight:900;color:var(--text);">'
       + '<span style="color:var(--green);">' + weekWins + '</span>'
-      + '<span style="color:var(--border2);font-size:14px;"> / </span>'
+      + '<span style="color:var(--muted);font-size:16px;"> / </span>'
       + '<span style="color:var(--red);">' + weekLosses + '</span>'
       + '</div></div>';
     html += '</div>';
 
     // ── 7 DAY BOXES ──
-    // Grid: equal columns, fills available height
-    html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;flex:1;min-height:0;">';
+    html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;flex:1;">';
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
       const dateStr = d.toISOString().slice(0,10);
@@ -6594,11 +6608,11 @@ function renderCalendar() {
       const pnl = data ? data.pnl : null;
       const pnlColor = pnl === null ? 'var(--muted)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
       const bgColor = isToday ? 'var(--accent)' : data ? (pnl >= 0 ? 'var(--green-bg)' : 'var(--red-bg)') : 'var(--surface)';
-      const borderColor = isToday ? 'var(--accent)' : data ? (pnl >= 0 ? 'rgba(0,255,187,0.4)' : 'rgba(255,59,92,0.4)') : 'var(--border)';
-      const accentBar = isToday ? 'rgba(255,255,255,0.35)' : data ? pnlColor : 'transparent';
+      const borderColor = isToday ? 'var(--accent)' : data ? (pnl >= 0 ? 'rgba(0,255,187,0.3)' : 'rgba(255,59,92,0.3)') : 'var(--border)';
+      const topBar = data && !isToday ? (pnl >= 0 ? 'var(--green)' : 'var(--red)') : isToday ? 'rgba(255,255,255,0.3)' : 'transparent';
 
       // Format PNL
-      let pnlStr = '';
+      let pnlStr = '—';
       if (pnl !== null) {
         const abs = Math.abs(pnl);
         const sym = getCurrencySymbol();
@@ -6606,39 +6620,28 @@ function renderCalendar() {
         else pnlStr = (pnl >= 0 ? '+' : '-') + sym + abs.toFixed(0);
       }
 
-      const txtWhite = isToday ? '#fff' : null;
-      const dayLabelColor = txtWhite || (isWeekend ? 'var(--muted)' : 'var(--text2)');
-      const numColor = txtWhite || 'var(--text)';
-      const pnlTxtColor = txtWhite || pnlColor;
-      const tradeTxtColor = txtWhite ? 'rgba(255,255,255,0.7)' : 'var(--muted)';
+      const white = isToday ? '#fff' : null;
+      const dayColor = white || (isWeekend ? 'var(--muted)' : 'var(--text2)');
+      const numColor = white || 'var(--text)';
+      const pnlTextColor = white || pnlColor;
+      const countColor = white ? 'rgba(255,255,255,0.7)' : 'var(--muted)';
 
-      html += '<div onclick="selectCalDay(\'' + dateStr + '\')"'
-        + ' style="border-radius:12px;border:1px solid ' + borderColor + ';background:' + bgColor + ';'
-        + 'display:flex;flex-direction:column;align-items:center;justify-content:flex-start;'
-        + 'padding:10px 4px 10px;cursor:pointer;transition:all .15s;position:relative;'
-        + 'overflow:hidden;box-sizing:border-box;height:100%;">';
+      html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="'
+        + 'border-radius:12px;border:1px solid ' + borderColor + ';background:' + bgColor + ';'
+        + 'display:flex;flex-direction:column;align-items:center;justify-content:space-between;'
+        + 'padding:10px 4px 8px;cursor:pointer;transition:transform .15s;position:relative;overflow:hidden;">';
 
-      // Top color bar
-      html += '<div style="position:absolute;top:0;left:0;right:0;height:4px;background:' + accentBar + ';border-radius:12px 12px 0 0;"></div>';
+      // Top accent bar
+      html += '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:' + topBar + ';border-radius:12px 12px 0 0;"></div>';
 
       // Day name
-      html += '<div style="font-size:10px;font-weight:800;color:' + dayLabelColor + ';text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">' + dayNames[i] + '</div>';
-
-      // Date number — big, prominent
-      html += '<div style="font-size:28px;font-weight:900;color:' + numColor + ';line-height:1;margin:8px 0 6px;">' + d.getDate() + '</div>';
-
-      // P&L
-      if (pnlStr) {
-        html += '<div style="font-size:12px;font-weight:800;color:' + pnlTxtColor + ';text-align:center;line-height:1.2;">' + pnlStr + '</div>';
-      } else {
-        html += '<div style="font-size:12px;color:transparent;">—</div>';
-      }
-
+      html += '<div style="font-size:9px;font-weight:800;color:' + dayColor + ';text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">' + dayNames[i] + '</div>';
+      // Day number
+      html += '<div style="font-size:22px;font-weight:900;color:' + numColor + ';line-height:1;margin:4px 0;">' + d.getDate() + '</div>';
+      // PNL
+      html += '<div style="font-size:10px;font-weight:900;color:' + pnlTextColor + ';line-height:1;text-align:center;letter-spacing:-0.3px;">' + pnlStr + '</div>';
       // Trade count
-      if (data && data.count) {
-        html += '<div style="margin-top:5px;font-size:9px;font-weight:700;color:' + tradeTxtColor + ';">'
-          + data.count + (data.count === 1 ? ' trade' : ' trades') + '</div>';
-      }
+      html += '<div style="font-size:8px;color:' + countColor + ';font-weight:600;margin-top:3px;">' + (data ? data.count + 't' : '') + '</div>';
 
       html += '</div>';
     }
@@ -7478,11 +7481,9 @@ function selectCalDay(dateStr) {
 
   const dayTrades = trades.filter(t => (t.date||'').slice(0,10) === dateStr);
   const panel = document.getElementById('cal-day-panel');
-  const calDayTitle = document.getElementById('cal-day-panel-title');
-  const calDayBody  = document.getElementById('cal-day-body');
+  const title = document.getElementById('cal-day-panel-title');
+  const body  = document.getElementById('cal-day-body');
   if (!panel) return;
-  const title = calDayTitle;
-  const body  = calDayBody;
 
   const d = new Date(dateStr);
   title.textContent = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'long'});
@@ -7522,21 +7523,19 @@ function selectCalDay(dateStr) {
       <button class="btn btn-ghost" style="width:100%;margin-top:14px;font-size:11px;" onclick="jumpToDateTrades('${dateStr}')">View in Trades →</button>
     </div>
   `;
+}
 
   // On mobile, show bottom sheet
   if (window.innerWidth <= 768) {
     const sheet = document.getElementById('cal-mobile-sheet');
     const sheetTitle = document.getElementById('cal-mobile-sheet-title');
     const sheetBody = document.getElementById('cal-mobile-sheet-body');
-    const calTitleEl = document.getElementById('cal-day-panel-title');
-    const calBodyEl  = document.getElementById('cal-day-body');
     if (sheet && sheetTitle && sheetBody) {
-      sheetTitle.textContent = calTitleEl ? calTitleEl.textContent : dateStr;
-      sheetBody.innerHTML = calBodyEl ? calBodyEl.innerHTML : '';
+      sheetTitle.textContent = title.textContent;
+      sheetBody.innerHTML = body.innerHTML;
       sheet.style.display = 'flex';
     }
   }
-}
 
 function jumpToDateTrades(dateStr) {
   // Set custom date range to that specific day and switch to trades page
@@ -7804,9 +7803,7 @@ function applyMobileLayout() {
   if (calView !== 'week') {
     calView = 'week';
     if (window.calWeekOffset === undefined) window.calWeekOffset = 0;
-    // Only call renderCalendar if calendar page is active
-    const calPage = document.getElementById('page-calendar');
-    if (calPage && calPage.classList.contains('active')) renderCalendar();
+    renderCalendar();
   }
 
   // Mindset: stack columns
@@ -7824,16 +7821,14 @@ window.addEventListener('load', applyMobileLayout);
 
 // ── REAL-TIME SYNC ───────────────────────────────────────────────────────────
 // Supabase Realtime: auto-reload trades when another device makes changes
+let _syncInterval = null;
+
 async function refreshAllData() {
   if (!currentUser) return;
 
-  // Snapshot EVERYTHING before reload to detect any changes
+  // Snapshot trades count+last id before reload to detect actual changes
   const beforeCount = trades.length;
   const beforeLast = trades[0] ? trades[0].id : null;
-  const beforeGoals   = localStorage.getItem(GOALS_KEY)   || '{}';
-  const beforeJournal = localStorage.getItem(JOURNAL_KEY) || '{}';
-  const beforeMindset = localStorage.getItem(MINDSET_KEY) || '{}';
-  const beforeBalance = localStorage.getItem(BAL_KEY) || '0';
 
   // Reload trades
   await loadTradesFromSupabase();
@@ -7842,31 +7837,24 @@ async function refreshAllData() {
   const afterLast = trades[0] ? trades[0].id : null;
   const tradesChanged = beforeCount !== afterCount || beforeLast !== afterLast;
 
-  // Reload profile + ALL settings (goals, journal, mindset, tags)
-  let settingsChanged = false;
+  // Reload profile + balance
+  let profileChanged = false;
   try {
     const remoteProfile = await loadProfileFromSupabase();
     if (remoteProfile) {
-      applyProfile(remoteProfile);
-      if (remoteProfile.balance && remoteProfile.balance > 0) {
-        localStorage.setItem(BAL_KEY, remoteProfile.balance);
+      const existing = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+      if (remoteProfile.name !== existing.name || remoteProfile.balance !== getBalance()) {
+        profileChanged = true;
+        applyProfile(remoteProfile);
+        if (remoteProfile.balance && remoteProfile.balance > 0) {
+          localStorage.setItem(BAL_KEY, remoteProfile.balance);
+        }
       }
     }
-    // Detect if any settings changed after loading from Supabase
-    const afterGoals   = localStorage.getItem(GOALS_KEY)   || '{}';
-    const afterJournal = localStorage.getItem(JOURNAL_KEY) || '{}';
-    const afterMindset = localStorage.getItem(MINDSET_KEY) || '{}';
-    const afterBalance = localStorage.getItem(BAL_KEY) || '0';
-    settingsChanged = (
-      afterGoals   !== beforeGoals   ||
-      afterJournal !== beforeJournal ||
-      afterMindset !== beforeMindset ||
-      afterBalance !== beforeBalance
-    );
   } catch(e) {}
 
-  // Refresh UI if anything changed
-  if (!tradesChanged && !settingsChanged) return;
+  // Only refresh UI if something actually changed
+  if (!tradesChanged && !profileChanged) return;
 
   const activePage = document.querySelector('.page.active');
   if (activePage) {
@@ -7875,43 +7863,25 @@ async function refreshAllData() {
     else if (name === 'trades') renderTrades();
     else if (name === 'analytics') renderAnalytics();
     else if (name === 'calendar') renderCalendar();
-    else if (name === 'mindset') initMindsetPage();
-  }
-  // Always re-render goals and journal in case user is on dashboard
-  // and settings changed from another device
-  if (settingsChanged) {
-    try { renderGoals(); } catch(e) {}
-    try { loadJournal(); } catch(e) {}
-    if (activePage && activePage.id === 'page-dashboard') refreshDashboard();
   }
 }
 
+let _realtimeSetup = false;
 function setupRealtimeSync() {
   if (!sb || !currentUser) return;
   if (_realtimeSetup) return; // only setup once
   _realtimeSetup = true;
 
-  // ── Supabase Realtime — listen to BOTH trades AND profiles tables ──
+  // ── Supabase Realtime — only refresh when OTHER device changes data ──
   try {
-    // Trades changes (new/edited/deleted trades)
     sb.channel('trades-sync-' + currentUser.id)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'trades',
         filter: 'user_id=eq.' + currentUser.id
       }, async () => {
+        // Debounce — wait 2s so rapid saves don't cause multiple refreshes
         clearTimeout(window._realtimeDebounce);
         window._realtimeDebounce = setTimeout(() => refreshAllData(), 2000);
-      })
-      .subscribe();
-
-    // Profile/settings changes (goals, journal, mindset, balance, currency)
-    sb.channel('profile-sync-' + currentUser.id)
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'profiles',
-        filter: 'id=eq.' + currentUser.id
-      }, async () => {
-        clearTimeout(window._profileDebounce);
-        window._profileDebounce = setTimeout(() => refreshAllData(), 2000);
       })
       .subscribe();
   } catch(e) { console.log('Realtime not available:', e.message); }
