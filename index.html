@@ -1191,6 +1191,23 @@
 </div>
 
 <div id="app-root" style="display:none;width:100%;height:100%;position:fixed;inset:0;">
+
+<!-- Loading overlay — shown while data fetches from Supabase -->
+<div id="loading-overlay" style="
+  display:none;position:fixed;inset:0;z-index:99999;
+  background:var(--bg);
+  align-items:center;justify-content:center;flex-direction:column;gap:16px;
+">
+  <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#818cf8);display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px var(--accent-glow);">
+    <svg width="20" height="20" viewBox="0 0 28 28"><polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/><polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/><polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/><rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/></svg>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+    <div style="font-size:15px;font-weight:700;color:var(--text);">Loading your trades…</div>
+    <div style="width:120px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;">
+      <div id="loading-bar" style="height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width 0.4s ease;"></div>
+    </div>
+  </div>
+</div>
 <div id="app-shell">
 
 <!-- ── SIDEBAR ── -->
@@ -2862,16 +2879,19 @@ async function saveAllSettingsToSupabase() {
     tags:     localStorage.getItem(TAGS_KEY) || '[]',
   };
   const row = {
-    user_id:  currentUser.id,
+    id:       currentUser.id,
     name:     p.name || 'My Account',
     avatar:   p.avatar || null,
     balance:  parseFloat(settings.balance) || 0,
     settings: JSON.stringify(settings)
   };
-  const { error } = await sb.from('profiles').upsert(row, { onConflict: 'user_id' });
+  console.log('[SYNC] Saving to Supabase, user:', currentUser.id, 'row:', JSON.stringify({...row, avatar: row.avatar ? '[has avatar]' : null, settings: '[settings]'}));
+  const { data: upsertData, error } = await sb.from('profiles').upsert(row, { onConflict: 'id' });
   if (error) {
-    console.error('Settings sync error:', error.message);
+    console.error('[SYNC] FAILED:', error.message, error.code, error.details, error.hint);
     toast('Sync failed: ' + error.message, 'error');
+  } else {
+    console.log('[SYNC] SUCCESS');
   }
 }
 
@@ -2888,9 +2908,11 @@ async function saveProfileToSupabase(name, avatar, balance) {
 
 async function loadProfileFromSupabase() {
   if (!sb || !currentUser) return null;
+  console.log('[LOAD] Loading profile for user:', currentUser.id);
   const { data, error } = await sb.from('profiles')
     .select('name, avatar, balance, settings')
-    .eq('user_id', currentUser.id).single();
+    .eq('id', currentUser.id).single();
+  console.log('[LOAD] Result:', data ? 'got data' : 'no data', error ? error.message : 'no error');
   if (error && error.code !== 'PGRST116') console.error('Profile load error:', error.message);
   if (!data) return null;
 
@@ -3145,6 +3167,36 @@ function showApp() {
   if (app)  { app.style.display  = 'block'; }
 }
 
+function showLoadingOverlay() {
+  const ov = document.getElementById('loading-overlay');
+  if (!ov) return;
+  ov.style.display = 'flex';
+  // Animate progress bar
+  const bar = document.getElementById('loading-bar');
+  if (bar) {
+    bar.style.width = '0%';
+    requestAnimationFrame(() => {
+      setTimeout(() => { bar.style.width = '70%'; }, 50);
+    });
+  }
+}
+
+function hideLoadingOverlay() {
+  const ov = document.getElementById('loading-overlay');
+  const bar = document.getElementById('loading-bar');
+  if (!ov) return;
+  if (bar) bar.style.width = '100%';
+  setTimeout(() => {
+    ov.style.opacity = '0';
+    ov.style.transition = 'opacity 0.25s';
+    setTimeout(() => {
+      ov.style.display = 'none';
+      ov.style.opacity = '1';
+      ov.style.transition = '';
+    }, 250);
+  }, 150);
+}
+
 function showAuthScreen() {
   const auth = document.getElementById('auth-screen');
   const app  = document.getElementById('app-root');
@@ -3220,6 +3272,9 @@ async function initApp(user) {
   // Load profile from localStorage immediately (instant)
   loadProfile();
 
+  // Show loading overlay while fetching data
+  showLoadingOverlay();
+
   // Load trades + profile from Supabase in parallel
   try {
     const [_, remoteProfile] = await Promise.all([
@@ -3237,6 +3292,7 @@ async function initApp(user) {
   appInitialized = true;
   appInitializing = false;
   refreshDashboard();
+  hideLoadingOverlay();
 
   // Start real-time sync so changes from other devices appear instantly
   setupRealtimeSync();
@@ -4334,6 +4390,19 @@ function refreshDashboard() {
     },
     plugins: [segmentPlugin]
   });
+
+  // Fix stuck tooltip — clear on mouse leave
+  const equityCanvas = document.getElementById('equity-chart');
+  if (equityCanvas) {
+    equityCanvas.addEventListener('mouseleave', () => {
+      if (equityChartInst) {
+        equityChartInst.tooltip.setActiveElements([], {x:0,y:0});
+        equityChartInst.setDatasetVisibility(0, true);
+        equityChartInst.update('none');
+      }
+    });
+  }
+
   renderRecentTable();
   // New dashboard features
   try { updateEmptyState(); } catch(e) {}
@@ -7557,7 +7626,7 @@ function setupRealtimeSync() {
     sb.channel('profiles-sync-' + currentUser.id)
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'profiles',
-        filter: 'user_id=eq.' + currentUser.id
+        filter: 'id=eq.' + currentUser.id
       }, async () => { await refreshAllData(); })
       .subscribe();
   } catch(e) { console.log('Realtime not available, using polling:', e.message); }
