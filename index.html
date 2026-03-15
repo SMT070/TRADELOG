@@ -3316,14 +3316,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // onAuthStateChange handles login/logout events
   sb.auth.onAuthStateChange(async (event, session) => {
+    console.log('[AUTH] event:', event, 'user:', session?.user?.email || 'none');
+
     if (event === 'SIGNED_OUT') {
-      appInitialized = false;
-      currentUser = null;
-      trades = [];
-      showAuthScreen();
+      // Only log out if we were actually logged in (not a spurious event on load)
+      if (currentUser) {
+        appInitialized = false;
+        appInitializing = false;
+        currentUser = null;
+        trades = [];
+        showAuthScreen();
+      }
       return;
     }
-    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+
+    if (event === 'TOKEN_REFRESHED') {
+      // Just update the user, don't re-init everything
+      if (session && session.user && currentUser && currentUser.id === session.user.id) {
+        currentUser = session.user;
+        return;
+      }
+    }
+
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
       if (session && session.user) {
         await initApp(session.user);
       }
@@ -3865,6 +3880,12 @@ function instantDelete(id) {
     save();
     deleteTradeFromSupabase(id);
     toast('Trade deleted');
+    // Clear detail panel
+    selectedId = null;
+    const body = document.getElementById('trade-detail-body');
+    if (body) body.innerHTML = '<div class="empty-state"><h3>Select a trade</h3><p>Click any row to see details</p></div>';
+    const grid = document.getElementById('trades-grid');
+    if (grid) grid.style.gridTemplateColumns = '1fr 300px';
     renderTrades();
     refreshDashboard();
   }});
