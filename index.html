@@ -2866,68 +2866,77 @@ const PROFILE_KEY = 'tradelog_profile';
 // Saves ALL user settings (profile, balance, currency, theme, goals, mindset, tags, journal)
 // into a single 'settings' JSON column in the profiles table
 
-async function saveAllSettingsToSupabase() {
-  if (!sb || !currentUser) return;
+// ── SINGLE SOURCE OF TRUTH: everything in one Supabase row ──────────────────
+
+function buildSettingsSnapshot() {
+  // Grab everything from localStorage into one object
   const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-  const settings = {
-    balance:  localStorage.getItem(BAL_KEY) || '',
-    currency: localStorage.getItem(CUR_KEY) || 'USD',
-    theme:    localStorage.getItem(THEME_KEY) || 'dark',
-    goals:    localStorage.getItem(GOALS_KEY) || '{}',
-    journal:  localStorage.getItem(JOURNAL_KEY) || '{}',
-    mindset:  localStorage.getItem(MINDSET_KEY) || '{}',
-    tags:     localStorage.getItem(TAGS_KEY) || '[]',
-  };
-  const row = {
+  return {
     id:       currentUser.id,
     name:     p.name || 'My Account',
     avatar:   p.avatar || null,
-    balance:  parseFloat(settings.balance) || 0,
-    settings: JSON.stringify(settings)
+    balance:  parseFloat(localStorage.getItem(BAL_KEY)) || 0,
+    currency: localStorage.getItem(CUR_KEY) || 'USD',
+    settings: JSON.stringify({
+      theme:   localStorage.getItem(THEME_KEY)   || 'dark',
+      goals:   localStorage.getItem(GOALS_KEY)   || '{}',
+      journal: localStorage.getItem(JOURNAL_KEY) || '{}',
+      mindset: localStorage.getItem(MINDSET_KEY) || '{}',
+      tags:    localStorage.getItem(TAGS_KEY)    || '[]',
+    })
   };
-  console.log('[SYNC] Saving to Supabase, user:', currentUser.id, 'row:', JSON.stringify({...row, avatar: row.avatar ? '[has avatar]' : null, settings: '[settings]'}));
-  const { data: upsertData, error } = await sb.from('profiles').upsert(row, { onConflict: 'id' });
+}
+
+async function saveAllSettingsToSupabase() {
+  if (!sb || !currentUser) { console.warn('[SYNC] no sb or user'); return; }
+  const row = buildSettingsSnapshot();
+  console.log('[SYNC] upserting row id:', row.id, 'name:', row.name, 'balance:', row.balance);
+  const { error } = await sb.from('profiles').upsert(row, { onConflict: 'id' });
   if (error) {
-    console.error('[SYNC] FAILED:', error.message, error.code, error.details, error.hint);
-    toast('Sync failed: ' + error.message, 'error');
+    console.error('[SYNC] FAILED:', error.message, '| code:', error.code, '| hint:', error.hint);
+    toast('⚠️ Sync failed: ' + error.message, 'error');
   } else {
-    console.log('[SYNC] SUCCESS');
+    console.log('[SYNC] SUCCESS ✓');
   }
 }
 
 async function saveProfileToSupabase(name, avatar, balance) {
   if (!sb || !currentUser) return;
-  // Piggyback full settings save
-  if (name !== undefined) {
-    const p = { name, avatar };
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
-  }
+  if (name !== undefined) localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
   if (balance !== undefined) localStorage.setItem(BAL_KEY, balance);
   await saveAllSettingsToSupabase();
 }
 
 async function loadProfileFromSupabase() {
   if (!sb || !currentUser) return null;
-  console.log('[LOAD] Loading profile for user:', currentUser.id);
-  const { data, error } = await sb.from('profiles')
-    .select('name, avatar, balance, settings')
-    .eq('id', currentUser.id).single();
-  console.log('[LOAD] Result:', data ? 'got data' : 'no data', error ? error.message : 'no error');
-  if (error && error.code !== 'PGRST116') console.error('Profile load error:', error.message);
-  if (!data) return null;
+  console.log('[LOAD] fetching profile for:', currentUser.id);
+  const { data, error } = await sb
+    .from('profiles')
+    .select('id, name, avatar, balance, currency, settings')
+    .eq('id', currentUser.id)
+    .single();
 
-  // Apply settings from Supabase — remote wins (this is the sync source of truth)
+  if (error) {
+    console.error('[LOAD] error:', error.message, '| code:', error.code);
+    if (error.code !== 'PGRST116') toast('⚠️ Load failed: ' + error.message, 'error');
+    return null;
+  }
+  console.log('[LOAD] got row:', JSON.stringify({ name: data.name, balance: data.balance, hasSettings: !!data.settings }));
+
+  // Apply top-level columns
+  if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
+  if (data.balance)  localStorage.setItem(BAL_KEY, String(data.balance));
+
+  // Apply nested settings blob
   if (data.settings) {
     try {
       const s = typeof data.settings === 'string' ? JSON.parse(data.settings) : data.settings;
-      if (s.currency) { localStorage.setItem(CUR_KEY, s.currency); updateCurrencyButtons(); }
-      if (s.theme)    { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
-      if (s.balance)  localStorage.setItem(BAL_KEY, s.balance);
-      if (s.goals && s.goals !== '{}')     localStorage.setItem(GOALS_KEY, s.goals);
+      if (s.theme)                         { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
+      if (s.goals   && s.goals   !== '{}') localStorage.setItem(GOALS_KEY,   s.goals);
       if (s.journal && s.journal !== '{}') localStorage.setItem(JOURNAL_KEY, s.journal);
       if (s.mindset && s.mindset !== '{}') localStorage.setItem(MINDSET_KEY, s.mindset);
-      if (s.tags && s.tags !== '[]')       localStorage.setItem(TAGS_KEY, s.tags);
-    } catch(e) { console.error('Settings parse error:', e); }
+      if (s.tags    && s.tags    !== '[]') localStorage.setItem(TAGS_KEY,    s.tags);
+    } catch(e) { console.error('[LOAD] settings parse error:', e); }
   }
 
   return { name: data.name, avatar: data.avatar, balance: data.balance };
