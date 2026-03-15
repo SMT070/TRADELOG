@@ -3088,6 +3088,10 @@ async function saveBalance() {
 
 // ── RESULT BUTTONS ───────────────────────────────────────────────────────────
 function setResult(r) {
+  ['win','loss','be'].forEach(k => {
+    const btn = document.getElementById('res-' + k);
+    if (btn) btn.style.boxShadow = '';
+  });
   selectedResult = r;
   document.getElementById('f-result').value = r;
   const colors = { win: 'var(--green)', loss: 'var(--red)', be: 'var(--yellow)' };
@@ -3829,70 +3833,80 @@ function markField(el, valid) {
   if (!el) return;
   el.style.borderColor = valid ? '' : 'var(--red)';
   el.style.boxShadow   = valid ? '' : '0 0 0 2px rgba(255,59,92,.25)';
-  el.style.transition  = 'border-color .2s, box-shadow .2s';
 }
 
 function validateTradeFields(prefix) {
-  // prefix = 'f-' for Add Trade form, 'ie-' for inline edit panel
   const now = new Date();
   const errors = [];
 
+  // Helper: get element value safely
+  const val = id => (document.getElementById(id)?.value ?? '').trim();
+  const mark = (id, ok) => markField(document.getElementById(id), ok);
+
   // ── Symbol ──
-  const symEl = document.getElementById(prefix + 'symbol');
-  const sym = (symEl?.value || '').trim();
-  markField(symEl, !!sym);
+  const sym = val(prefix + 'symbol');
+  mark(prefix + 'symbol', !!sym);
   if (!sym) errors.push('Symbol');
 
   // ── Open Date ──
-  const openHidden = document.getElementById(prefix + 'date');
-  const openDisplay = document.getElementById(prefix + 'date-display') || document.getElementById(prefix + 'date-btn');
-  const openDate = openHidden?.value || '';
-  const openDt = new Date(openDate);
-  const openOk = !!openDate && !isNaN(openDt);
-  const openFuture = openOk && openDt > now;
-  if (openDisplay) openDisplay.style.color = (openOk && !openFuture) ? '' : 'var(--red)';
-  if (!openDate || isNaN(openDt)) errors.push('Open Date');
-  else if (openFuture) errors.push('Open Date cannot be in the future');
+  const openDate = val(prefix + 'date');
+  const openDt = openDate ? new Date(openDate) : null;
+  const openOk = openDt && !isNaN(openDt) && openDt <= now;
+  const openBtn = document.getElementById(prefix + 'date-btn');
+  const openDisp = document.getElementById(prefix + 'date-display');
+  if (openBtn) openBtn.style.borderColor = openOk ? '' : 'var(--red)';
+  if (openDisp) openDisp.style.color = openOk ? '' : 'var(--red)';
+  if (!openDate) errors.push('Open Date');
+  else if (!openDt || isNaN(openDt)) errors.push('Open Date (invalid)');
+  else if (openDt > now) errors.push('Open Date (future not allowed)');
 
-  // ── Close Date (required) ──
-  const closeHidden = document.getElementById(prefix + 'close-date');
-  const closeDisplay = document.getElementById(prefix + 'close-date-display') || document.getElementById(prefix + 'close-date-btn');
-  const closeDate = closeHidden?.value || '';
-  const closeDt = new Date(closeDate);
-  const closeOk = !!closeDate && !isNaN(closeDt);
-  if (closeDisplay) closeDisplay.style.color = closeOk ? '' : 'var(--red)';
-  if (!closeDate || isNaN(closeDt)) errors.push('Close Date');
-  else if (closeDt > now) errors.push('Close Date cannot be in the future');
-  else if (openOk && closeDt < openDt) errors.push('Close Date before Open Date');
+  // ── Close Date ──
+  const closeDate = val(prefix + 'close-date');
+  const closeDt = closeDate ? new Date(closeDate) : null;
+  const closeOk = closeDt && !isNaN(closeDt) && closeDt <= now;
+  const closeBtn = document.getElementById(prefix + 'close-date-btn');
+  const closeDisp = document.getElementById(prefix + 'close-date-display');
+  if (closeBtn) closeBtn.style.borderColor = closeOk ? '' : 'var(--red)';
+  if (closeDisp) closeDisp.style.color = closeOk ? '' : 'var(--red)';
+  if (!closeDate) errors.push('Close Date');
+  else if (!closeDt || isNaN(closeDt)) errors.push('Close Date (invalid)');
+  else if (closeDt > now) errors.push('Close Date (future not allowed)');
+  else if (openDt && closeDate.slice(0,10) < openDate.slice(0,10)) errors.push('Close Date is before Open Date');
 
   // ── Entry ──
-  const entryEl = document.getElementById(prefix + 'entry');
-  const entryVal = entryEl?.value ?? '';
+  const entryVal = val(prefix + 'entry');
   const entryOk = entryVal !== '' && parseFloat(entryVal) > 0;
-  markField(entryEl, entryOk);
+  mark(prefix + 'entry', entryOk);
   if (!entryOk) errors.push('Entry Price');
 
   // ── Exit ──
-  const exitEl = document.getElementById(prefix + 'exit');
-  const exitVal = exitEl?.value ?? '';
+  const exitVal = val(prefix + 'exit');
   const exitOk = exitVal !== '' && parseFloat(exitVal) > 0;
-  markField(exitEl, exitOk);
+  mark(prefix + 'exit', exitOk);
   if (!exitOk) errors.push('Exit Price');
 
   // ── P&L ──
-  const pnlEl = document.getElementById(prefix + 'pnl');
-  const pnlVal = pnlEl?.value ?? '';
+  const pnlVal = val(prefix + 'pnl');
   const pnlOk = pnlVal !== '' && !isNaN(parseFloat(pnlVal));
-  markField(pnlEl, pnlOk);
+  mark(prefix + 'pnl', pnlOk);
   if (!pnlOk) errors.push('P&L');
 
-  // ── Result ──
-  const result = prefix === 'f-' ? selectedResult : window._ieResult;
-  const resultOk = !!result && ['win','loss','be'].includes(result);
-  if (!resultOk) errors.push('Result (Win / Loss / BE)');
+  // ── Result — check both the variable AND the hidden input ──
+  const resultVar = prefix === 'f-' ? selectedResult : window._ieResult;
+  const resultHidden = val(prefix + 'result');
+  const result = resultVar || resultHidden;
+  const resultOk = ['win','loss','be'].includes(result);
+  // Highlight result buttons if missing
+  if (!resultOk) {
+    ['win','loss','be'].forEach(r => {
+      const btn = document.getElementById((prefix === 'f-' ? 'res-' : 'ie-res-') + r);
+      if (btn) btn.style.boxShadow = '0 0 0 2px var(--red)';
+    });
+    errors.push('Result');
+  }
 
   if (errors.length > 0) {
-    toast('⚠️ Required: ' + errors.join(' · '), 'error');
+    toast('⚠️ Missing: ' + errors.join(' · '), 'error');
     return false;
   }
   return true;
