@@ -3825,79 +3825,89 @@ function loadTradeIntoForm(t) {
 }
 
 // ── TRADE VALIDATION ─────────────────────────────────────────────────────────
-function highlightField(id, valid) {
-  const el = document.getElementById(id);
+function markField(el, valid) {
   if (!el) return;
   el.style.borderColor = valid ? '' : 'var(--red)';
   el.style.boxShadow   = valid ? '' : '0 0 0 2px rgba(255,59,92,.25)';
+  el.style.transition  = 'border-color .2s, box-shadow .2s';
 }
 
-function validateTradeFields({ sym, openDate, closeDate, entry, exit, pnl, result, prefix }) {
+function validateTradeFields(prefix) {
+  // prefix = 'f-' for Add Trade form, 'ie-' for inline edit panel
   const now = new Date();
   const errors = [];
-  let ok = true;
 
-  // Symbol
-  const symOk = !!sym;
-  if (prefix) highlightField(prefix + 'symbol', symOk);
-  if (!symOk) { errors.push('Symbol'); ok = false; }
+  // ── Symbol ──
+  const symEl = document.getElementById(prefix + 'symbol');
+  const sym = (symEl?.value || '').trim();
+  markField(symEl, !!sym);
+  if (!sym) errors.push('Symbol');
 
-  // Open date
-  const openOk = !!openDate && !isNaN(new Date(openDate)) && new Date(openDate) <= now;
-  if (prefix) {
-    const el = document.getElementById(prefix + 'date-display') || document.getElementById(prefix + 'date');
-    if (el) { el.style.color = openOk ? '' : 'var(--red)'; }
-  }
-  if (!openDate || isNaN(new Date(openDate))) { errors.push('Open Date'); ok = false; }
-  else if (new Date(openDate) > now) { errors.push('Open Date cannot be in the future'); ok = false; }
+  // ── Open Date ──
+  const openHidden = document.getElementById(prefix + 'date');
+  const openDisplay = document.getElementById(prefix + 'date-display') || document.getElementById(prefix + 'date-btn');
+  const openDate = openHidden?.value || '';
+  const openDt = new Date(openDate);
+  const openOk = !!openDate && !isNaN(openDt);
+  const openFuture = openOk && openDt > now;
+  if (openDisplay) openDisplay.style.color = (openOk && !openFuture) ? '' : 'var(--red)';
+  if (!openDate || isNaN(openDt)) errors.push('Open Date');
+  else if (openFuture) errors.push('Open Date cannot be in the future');
 
-  // Close date
-  if (closeDate) {
-    const closeOk = !isNaN(new Date(closeDate)) && new Date(closeDate) <= now;
-    if (!closeOk) { errors.push('Close Date cannot be in the future'); ok = false; }
-    if (!isNaN(new Date(openDate)) && !isNaN(new Date(closeDate)) && new Date(closeDate) < new Date(openDate)) {
-      errors.push('Close Date cannot be before Open Date'); ok = false;
-    }
-  }
+  // ── Close Date (required) ──
+  const closeHidden = document.getElementById(prefix + 'close-date');
+  const closeDisplay = document.getElementById(prefix + 'close-date-display') || document.getElementById(prefix + 'close-date-btn');
+  const closeDate = closeHidden?.value || '';
+  const closeDt = new Date(closeDate);
+  const closeOk = !!closeDate && !isNaN(closeDt);
+  if (closeDisplay) closeDisplay.style.color = closeOk ? '' : 'var(--red)';
+  if (!closeDate || isNaN(closeDt)) errors.push('Close Date');
+  else if (closeDt > now) errors.push('Close Date cannot be in the future');
+  else if (openOk && closeDt < openDt) errors.push('Close Date before Open Date');
 
-  // Entry
-  const entryOk = entry !== '' && entry !== null && !isNaN(parseFloat(entry)) && parseFloat(entry) > 0;
-  if (prefix) highlightField(prefix + 'entry', entryOk);
-  if (!entryOk) { errors.push('Entry Price'); ok = false; }
+  // ── Entry ──
+  const entryEl = document.getElementById(prefix + 'entry');
+  const entryVal = entryEl?.value ?? '';
+  const entryOk = entryVal !== '' && parseFloat(entryVal) > 0;
+  markField(entryEl, entryOk);
+  if (!entryOk) errors.push('Entry Price');
 
-  // Exit
-  const exitOk = exit !== '' && exit !== null && !isNaN(parseFloat(exit)) && parseFloat(exit) > 0;
-  if (prefix) highlightField(prefix + 'exit', exitOk);
-  if (!exitOk) { errors.push('Exit Price'); ok = false; }
+  // ── Exit ──
+  const exitEl = document.getElementById(prefix + 'exit');
+  const exitVal = exitEl?.value ?? '';
+  const exitOk = exitVal !== '' && parseFloat(exitVal) > 0;
+  markField(exitEl, exitOk);
+  if (!exitOk) errors.push('Exit Price');
 
-  // PnL
-  const pnlOk = pnl !== '' && pnl !== null && pnl !== undefined && !isNaN(parseFloat(pnl));
-  if (prefix) highlightField(prefix + 'pnl', pnlOk);
-  if (!pnlOk) { errors.push('P&L'); ok = false; }
+  // ── P&L ──
+  const pnlEl = document.getElementById(prefix + 'pnl');
+  const pnlVal = pnlEl?.value ?? '';
+  const pnlOk = pnlVal !== '' && !isNaN(parseFloat(pnlVal));
+  markField(pnlEl, pnlOk);
+  if (!pnlOk) errors.push('P&L');
 
-  // Result
+  // ── Result ──
+  const result = prefix === 'f-' ? selectedResult : window._ieResult;
   const resultOk = !!result && ['win','loss','be'].includes(result);
-  if (!resultOk) { errors.push('Result (Win/Loss/BE)'); ok = false; }
+  if (!resultOk) errors.push('Result (Win / Loss / BE)');
 
-  if (!ok) {
-    const msg = errors.length === 1
-      ? `⚠️ ${errors[0]} is required`
-      : `⚠️ Required: ${errors.join(', ')}`;
-    toast(msg, 'error');
+  if (errors.length > 0) {
+    toast('⚠️ Required: ' + errors.join(' · '), 'error');
+    return false;
   }
-  return ok;
+  return true;
 }
 
 function saveTrade() {
-  const sym    = document.getElementById('f-symbol').value.trim().toUpperCase();
+  if (!validateTradeFields('f-')) return;
+
+  const sym       = document.getElementById('f-symbol').value.trim().toUpperCase();
   const openDate  = document.getElementById('f-date').value;
   const closeDate = document.getElementById('f-close-date').value || null;
   const entryRaw  = document.getElementById('f-entry').value;
   const exitRaw   = document.getElementById('f-exit').value;
   const pnlRaw    = document.getElementById('f-pnl').value;
   const result    = selectedResult || (parseFloat(pnlRaw) > 0 ? 'win' : parseFloat(pnlRaw) < 0 ? 'loss' : 'be');
-
-  if (!validateTradeFields({ sym, openDate, closeDate, entry: entryRaw, exit: exitRaw, pnl: pnlRaw, result, prefix: 'f-' })) return;
 
   const pnl   = parseFloat(pnlRaw);
   const entry = parseFloat(entryRaw);
@@ -5904,17 +5914,14 @@ function ieAddNewTag() {
 function saveInlineEdit(id) {
   const idx = trades.findIndex(x => x.id === id);
   if (idx === -1) return;
-  const t = trades[idx];
 
+  if (!validateTradeFields('ie-')) return;
+
+  const t = trades[idx];
   const sym       = (document.getElementById('ie-symbol').value||'').trim().toUpperCase();
   const openDate  = document.getElementById('ie-date').value;
   const closeDate = document.getElementById('ie-close-date').value || null;
-  const entryRaw  = document.getElementById('ie-entry').value;
-  const exitRaw   = document.getElementById('ie-exit').value;
   const pnlVal    = document.getElementById('ie-pnl').value;
-  const result    = window._ieResult || (parseFloat(pnlVal) > 0 ? 'win' : parseFloat(pnlVal) < 0 ? 'loss' : 'be');
-
-  if (!validateTradeFields({ sym, openDate, closeDate, entry: entryRaw, exit: exitRaw, pnl: pnlVal, result, prefix: 'ie-' })) return;
 
   t.symbol     = sym;
   t.date       = document.getElementById('ie-date').value;
