@@ -7236,10 +7236,34 @@ function selectCalDay(dateStr) {
 }
 
 function jumpToDateTrades(dateStr) {
-  // Set custom date range to that specific day and switch to trades page
+  // Close any open calendar sheets
+  const calSheet = document.getElementById('cal-day-sheet');
+  if (calSheet) calSheet.style.display = 'none';
+
+  // Set filter to that exact day
   customFrom = dateStr;
   customTo   = dateStr;
   tradesRange = 'custom';
+
+  // Update the custom range hidden inputs and labels
+  const fromEl = document.getElementById('custom-from');
+  const toEl   = document.getElementById('custom-to');
+  const fromLabel = document.getElementById('from-label');
+  const toLabel   = document.getElementById('to-label');
+  if (fromEl) fromEl.value = dateStr;
+  if (toEl)   toEl.value   = dateStr;
+  const d = new Date(dateStr);
+  const label = d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+  if (fromLabel) { fromLabel.textContent = label; fromLabel.style.color = 'var(--text)'; }
+  if (toLabel)   { toLabel.textContent   = label; toLabel.style.color   = 'var(--text)'; }
+
+  // Show custom range picker and activate custom button
+  const picker = document.getElementById('custom-range-picker');
+  if (picker) picker.style.display = 'flex';
+  document.querySelectorAll('.tb-range-btn').forEach(b => b.classList.remove('active'));
+  const customBtn = document.getElementById('tbr-custom');
+  if (customBtn) customBtn.classList.add('active');
+
   switchPage('trades');
 }
 
