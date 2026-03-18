@@ -2725,8 +2725,10 @@ async function handleAuth() {
   btn.textContent = '...'; btn.disabled = true;
   try {
     if (authMode === 'login') {
-      const { error } = await sb.auth.signInWithPassword({ email, password });
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
       if (error) { showAuthError(error.message); btn.textContent = 'Log In'; btn.disabled = false; return; }
+      // Immediately init app without waiting for onAuthStateChange
+      if (data && data.user) await initApp(data.user);
     } else {
       const name = document.getElementById('auth-name').value.trim();
       const { error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
@@ -2794,43 +2796,57 @@ function save() {
 }
 
 // ── APP INIT ──────────────────────────────────────────────────────────────────
+let _appInitialized = false;
+
 async function initApp(user) {
+  if (_appInitialized && currentUser && currentUser.id === user.id) {
+    showApp();
+    return;
+  }
+  _appInitialized = true;
   currentUser = user;
-  await loadTradesFromSupabase();
+
+  // Show app immediately — don't wait for data
   loadTheme();
-  refreshDashboard();
   showApp();
   updateGreeting();
+
+  // Reset auth button
+  const btn = document.getElementById('auth-btn');
+  if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
+
+  // Load data in background
+  try {
+    await loadTradesFromSupabase();
+  } catch(e) { console.error('Trade load error:', e); }
+
+  refreshDashboard();
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
-if (sb) {
-  sb.auth.onAuthStateChange(async (event, session) => {
+window.addEventListener('load', () => {
+  if (!sb) { showAuthScreen(); return; }
+
+  // Check existing session first
+  sb.auth.getSession().then(({ data: { session } }) => {
     if (session && session.user) {
-      await initApp(session.user);
+      initApp(session.user);
     } else {
+      showAuthScreen();
+    }
+  }).catch(() => showAuthScreen());
+
+  // Listen for auth changes
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session && session.user) {
+      await initApp(session.user);
+    } else if (event === 'SIGNED_OUT') {
+      _appInitialized = false;
       currentUser = null;
       trades = [];
       showAuthScreen();
     }
   });
-}
-
-// Show auth screen immediately — don't wait for Supabase
-window.addEventListener('load', () => {
-  showAuthScreen();
-  // Then check if already logged in
-  (async () => {
-    try {
-      if (!sb) return;
-      const { data: { session } } = await sb.auth.getSession();
-      if (session && session.user) {
-        await initApp(session.user);
-      }
-    } catch(e) {
-      console.error('Supabase init error:', e);
-    }
-  })();
 });
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
