@@ -975,6 +975,84 @@
     /* ── SHARE BUTTON ── */
     .dash-header button { font-size: 11px !important; padding: 7px 12px !important; }
 
+    /* ══ TRADES PAGE ══ */
+    #page-trades {
+      padding: 6px 6px !important;
+    }
+
+    /* Hide detail panel completely on mobile - use overlay instead */
+    #trade-detail-panel { display: none !important; }
+
+    /* Trades grid: full width, no side panel */
+    #trades-grid {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* Top summary bar: compact */
+    #page-trades > div:first-child > div:first-child {
+      padding: 10px 12px !important;
+      gap: 12px !important;
+      flex-wrap: wrap;
+    }
+    #tb-count, #tb-pnl, #tb-wr {
+      font-size: 16px !important;
+    }
+    /* Hide wins/losses/be strip on mobile */
+    #page-trades > div:first-child > div:first-child > div:last-child {
+      display: none !important;
+    }
+
+    /* Search + filter bar: wrap nicely */
+    #page-trades > div:first-child > div:last-child {
+      flex-wrap: wrap !important;
+      gap: 6px !important;
+      padding: 8px !important;
+    }
+    /* Search takes full width */
+    #search-input { font-size: 13px !important; }
+
+    /* Hide less-used filters on mobile */
+    #drop-tag { display: none !important; }
+
+    /* Table: keep Date, Symbol, Type, P&L, Result — hide Lots, Entry, Exit, Comm, Tags */
+    #page-trades .trades-table th:nth-child(4),
+    #page-trades .trades-table td:nth-child(4),
+    #page-trades .trades-table th:nth-child(5),
+    #page-trades .trades-table td:nth-child(5),
+    #page-trades .trades-table th:nth-child(6),
+    #page-trades .trades-table td:nth-child(6),
+    #page-trades .trades-table th:nth-child(8),
+    #page-trades .trades-table td:nth-child(8),
+    #page-trades .trades-table th:nth-child(10),
+    #page-trades .trades-table td:nth-child(10) { display: none !important; }
+    /* Make table text smaller */
+    #page-trades .trades-table td { font-size: 11px !important; padding: 10px 8px !important; }
+    #page-trades .trades-table th { font-size: 9px !important; padding: 8px 8px !important; }
+
+    /* Trade detail overlay: full screen bottom sheet */
+    #trade-detail-overlay {
+      padding: 0 !important;
+      align-items: flex-end !important;
+    }
+    #trade-detail-overlay-card {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 90vh !important;
+      border-radius: 20px 20px 0 0 !important;
+      transform: translateY(0) !important;
+      opacity: 1 !important;
+    }
+    /* In overlay: hide all info, show only photo */
+    #trade-detail-overlay-body > div > div:first-child {
+      border-right: none !important;
+    }
+    #trade-detail-overlay-body > div > div:last-child {
+      display: none !important;
+    }
+    #trade-detail-overlay-body > div {
+      grid-template-columns: 1fr !important;
+    }
+
     /* Settings popup becomes a fixed bottom sheet on mobile */
     #sidebar-settings-menu.settings-popup {
       position: fixed !important;
