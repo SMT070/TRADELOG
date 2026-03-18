@@ -1039,13 +1039,13 @@
     .dash-header button { font-size: 11px !important; padding: 7px 12px !important; }
 
     /* ══ CALENDAR PAGE ══ */
-    #page-calendar {
+    #page-calendar.active {
       padding: 0 !important;
       height: 100vh !important;
       display: flex !important;
       flex-direction: column !important;
     }
-    #page-calendar > div {
+    #page-calendar.active > div {
       border-radius: 0 !important;
       border-left: none !important;
       border-right: none !important;
@@ -7236,9 +7236,11 @@ function selectCalDay(dateStr) {
 }
 
 function jumpToDateTrades(dateStr) {
-  // Close any open calendar sheets
-  const calSheet = document.getElementById('cal-day-sheet');
-  if (calSheet) calSheet.style.display = 'none';
+  // Close ALL calendar popups immediately
+  ['cal-day-sheet'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
 
   // Set filter to that exact day
   customFrom = dateStr;
@@ -7264,7 +7266,8 @@ function jumpToDateTrades(dateStr) {
   const customBtn = document.getElementById('tbr-custom');
   if (customBtn) customBtn.classList.add('active');
 
-  switchPage('trades');
+  // Small delay so sheet fully closes before switching page
+  setTimeout(() => switchPage('trades'), 50);
 }
 
 // ── SHARE ─────────────────────────────────────────────────────────────────────
