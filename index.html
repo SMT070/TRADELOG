@@ -4544,52 +4544,128 @@ function openMobileTradeSheet(id) {
   selectedId = id;
   const sym = getCurrencySymbol();
   const pnl = getPnl(t);
+  const grossPnl = t.pnl || 0;
+  const comm = t.commission || 0;
   const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
   const pnlStr = (pnl >= 0 ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
+  const grossStr = (grossPnl >= 0 ? '+' : '-') + sym + Math.abs(grossPnl).toFixed(2);
   const result = getResult(t);
-  const badge = result === 'win'
-    ? `<span style="padding:3px 10px;border-radius:6px;background:var(--green-bg);color:var(--green);font-size:11px;font-weight:700;">WIN</span>`
+  const resultBadge = result === 'win'
+    ? `<span style="padding:4px 14px;border-radius:8px;background:var(--green-bg);color:var(--green);font-size:11px;font-weight:800;border:1px solid var(--green-glow);">WIN</span>`
     : result === 'loss'
-    ? `<span style="padding:3px 10px;border-radius:6px;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:700;">LOSS</span>`
-    : `<span style="padding:3px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:var(--yellow);font-size:11px;font-weight:700;">BE</span>`;
+    ? `<span style="padding:4px 14px;border-radius:8px;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:800;border:1px solid var(--red-glow);">LOSS</span>`
+    : `<span style="padding:4px 14px;border-radius:8px;background:rgba(245,158,11,.15);color:var(--yellow);font-size:11px;font-weight:800;">BE</span>`;
 
-  document.getElementById('mobile-sheet-title').innerHTML = `${t.symbol} <span style="font-size:13px;color:var(--muted);font-weight:600;">${t.date ? t.date.slice(0,10) : ''}</span>`;
-
-  let photoHTML = '';
-  if (t.screenshot) {
-    photoHTML = `<div style="margin-bottom:16px;border-radius:12px;overflow:hidden;border:1px solid var(--border);">
-      <img src="${t.screenshot}" style="width:100%;display:block;cursor:zoom-in;" onclick="openPhotoLightbox('${t.id}')">
-      <div style="text-align:center;padding:6px;font-size:10px;color:var(--muted);">Tap to fullscreen</div>
-    </div>`;
+  // Duration
+  let duration = '—';
+  if (t.date && t.closeDate) {
+    const ms = new Date(t.closeDate) - new Date(t.date);
+    if (!isNaN(ms) && ms >= 0) {
+      const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000);
+      duration = h > 0 ? h+'h '+m+'m' : m+'m';
+    }
   }
 
+  // Points moved
+  let points = '—';
+  if (t.entry && t.exit) points = Math.abs(t.exit - t.entry).toFixed(2);
+
+  document.getElementById('mobile-sheet-title').innerHTML =
+    `${t.symbol} <span style="font-size:12px;color:var(--muted);font-weight:600;">${t.date ? t.date.slice(0,10) : ''}</span>`;
+
+  // Photo section at bottom
+  const photoHTML = t.screenshot
+    ? `<div style="margin-top:20px;">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Chart Photo</div>
+        <div style="border-radius:12px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in;" onclick="openMobilePhotoFullscreen('${t.id}')">
+          <img src="${t.screenshot}" style="width:100%;display:block;">
+          <div style="text-align:center;padding:6px;font-size:10px;color:var(--muted);">Tap to fullscreen</div>
+        </div>
+      </div>`
+    : '';
+
   document.getElementById('mobile-sheet-body').innerHTML = `
-    ${photoHTML}
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <!-- Header: Symbol + P&L -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
       <div>
-        <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="margin-right:6px;">${t.dir}</span>
-        ${badge}
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span>
+          ${resultBadge}
+        </div>
+        ${t.emotion ? `<div style="font-size:20px;margin-top:8px;">${t.emotion}</div>` : ''}
       </div>
-      <div style="font-size:26px;font-weight:900;color:${pnlColor};">${pnlStr}</div>
+      <div style="text-align:right;">
+        <div style="font-size:30px;font-weight:900;color:${pnlColor};letter-spacing:-1px;">${pnlStr}</div>
+        ${t.r ? `<div style="font-size:13px;font-weight:700;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}${t.r}R</div>` : ''}
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+
+    <!-- Grid info -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
       ${[
         ['Entry', t.entry || '—'],
         ['Exit', t.exit || '—'],
         ['Lots', t.lots || '—'],
-        ['Commission', t.commission ? sym+t.commission : '—'],
-        ['Open', t.date ? t.date.slice(11,16) : '—'],
-        ['Close', t.closeDate ? t.closeDate.slice(11,16) : '—'],
+        ['Points', points],
+        ['Open Date', t.date ? t.date.slice(0,16).replace('T',' ') : '—'],
+        ['Close Date', t.closeDate ? t.closeDate.slice(0,16).replace('T',' ') : '—'],
+        ['Duration', duration],
+        ['Commission', comm ? sym+comm.toFixed(2) : '—'],
       ].map(([l,v]) => `<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;">
-        <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">${l}</div>
-        <div style="font-size:15px;font-weight:700;color:var(--text);">${v}</div>
+        <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">${l}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);">${v}</div>
       </div>`).join('')}
     </div>
-    ${t.notes ? `<div style="background:var(--surface2);border-radius:10px;padding:12px;font-size:12px;color:var(--text2);line-height:1.6;border-left:3px solid var(--accent);">${t.notes}</div>` : ''}
+
+    <!-- P&L Breakdown -->
+    <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;">P&L Breakdown</div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;">
+        <span style="font-size:12px;color:var(--muted);">Gross P&L</span>
+        <span style="font-size:13px;font-weight:700;color:${grossPnl>=0?'var(--green)':'var(--red)'};">${grossStr}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;">
+        <span style="font-size:12px;color:var(--muted);">Commission</span>
+        <span style="font-size:13px;font-weight:700;color:${comm?'var(--red)':'var(--muted)'};">${comm?'-'+sym+comm.toFixed(2):'—'}</span>
+      </div>
+      <div style="height:1px;background:var(--border);margin:6px 0;"></div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="font-size:13px;font-weight:700;color:var(--text);">Net P&L</span>
+        <span style="font-size:16px;font-weight:800;color:${pnlColor};">${pnlStr}</span>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    ${t.notes ? `<div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:12px;border-left:3px solid var(--accent);">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Notes</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;">${t.notes}</div>
+    </div>` : ''}
+
+    <!-- Tags -->
+    ${t.strategies && t.strategies.length ? `<div style="margin-bottom:12px;">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Tags</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">${t.strategies.map(s=>`<span class="trade-tag">${s}</span>`).join('')}</div>
+    </div>` : ''}
+
+    <!-- Photo at bottom -->
+    ${photoHTML}
   `;
 
   const sheet = document.getElementById('mobile-trade-sheet');
   sheet.style.display = 'flex';
+}
+
+function openMobilePhotoFullscreen(id) {
+  const t = trades.find(x => x.id === id);
+  if (!t || !t.screenshot) return;
+  const lb = document.createElement('div');
+  lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;';
+  lb.innerHTML = `
+    <button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1;">×</button>
+    <img src="${t.screenshot}" style="max-width:100%;max-height:100vh;object-fit:contain;">
+  `;
+  lb.onclick = e => { if (e.target === lb) lb.remove(); };
+  document.body.appendChild(lb);
 }
 
 function closeMobileTradeSheet() {
@@ -7292,7 +7368,7 @@ updateCurrencyButtons();
 
 <!-- ── MOBILE TRADE DETAIL SHEET ── -->
 <div id="mobile-trade-sheet" onclick="if(event.target===this)closeMobileTradeSheet()" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.5);align-items:flex-end;">
-  <div style="width:100%;max-height:75vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:0 0 30px;">
+  <div style="width:100%;max-height:90vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:0 0 40px;">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;">
       <div style="font-size:16px;font-weight:800;color:var(--text);" id="mobile-sheet-title">Trade</div>
       <div style="display:flex;gap:8px;">
