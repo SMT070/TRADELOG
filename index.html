@@ -4652,6 +4652,7 @@ function openMobileTradeSheet(id) {
   `;
 
   const sheet = document.getElementById('mobile-trade-sheet');
+  sheet.dataset.tradeId = id; // store id directly on sheet
   sheet.style.display = 'flex';
 }
 
@@ -4673,11 +4674,68 @@ function closeMobileTradeSheet() {
 }
 
 function openMobileSheetEdit() {
-  const t = trades.find(x => x.id === selectedId);
+  const sheet = document.getElementById('mobile-trade-sheet');
+  const id = sheet.dataset.tradeId || selectedId;
+  const t = trades.find(x => x.id === id);
+  if (t) selectedId = t.id; // make sure selectedId is in sync
   if (!t) return;
   closeMobileTradeSheet();
-  // Load into edit form
+
+  // Populate every field in the Add Trade form
   document.getElementById('edit-id').value = t.id;
+  document.getElementById('f-symbol').value = t.symbol || '';
+  document.getElementById('f-dir').value = t.dir || 'BUY';
+  document.getElementById('f-lots').value = t.lots || '';
+  document.getElementById('f-entry').value = t.entry || '';
+  document.getElementById('f-exit').value = t.exit || '';
+  document.getElementById('f-sl').value = t.sl || '';
+  document.getElementById('f-tp').value = t.tp || '';
+  document.getElementById('f-pnl').value = t.pnl || '';
+  document.getElementById('f-commission').value = t.commission || '';
+  document.getElementById('f-notes').value = t.notes || '';
+  document.getElementById('f-confidence').value = t.confidence || '';
+
+  // Dates
+  if (t.date) {
+    document.getElementById('f-date').value = t.date;
+    const d = new Date(t.date);
+    const disp = document.getElementById('f-date-display');
+    if (disp && !isNaN(d)) { disp.textContent = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); disp.style.color='var(--text)'; }
+    const tEl = document.getElementById('f-date-time');
+    if (tEl && t.date.includes('T')) tEl.value = t.date.slice(11,16);
+  }
+  if (t.closeDate) {
+    document.getElementById('f-close-date').value = t.closeDate;
+    const d = new Date(t.closeDate);
+    const disp = document.getElementById('f-close-date-display');
+    if (disp && !isNaN(d)) { disp.textContent = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); disp.style.color='var(--text)'; }
+    const tEl = document.getElementById('f-close-date-time');
+    if (tEl && t.closeDate.includes('T')) tEl.value = t.closeDate.slice(11,16);
+  }
+
+  // Result buttons
+  selectedResult = t.result || '';
+  setResult(selectedResult);
+
+  // Tags
+  strategyTags = [...(t.strategies || [])];
+  renderStrategyTags();
+
+  // Screenshot
+  if (t.screenshot) {
+    editingScreenshot = t.screenshot;
+    const prev = document.getElementById('screenshot-preview');
+    const ph = document.getElementById('screenshot-placeholder');
+    if (prev) { prev.src = t.screenshot; prev.style.display = 'block'; }
+    if (ph) ph.style.display = 'none';
+  }
+
+  // Page title
+  const title = document.getElementById('add-title');
+  if (title) title.textContent = 'Edit Trade';
+  const delBtn = document.getElementById('delete-btn');
+  if (delBtn) delBtn.style.display = 'inline-block';
+
   switchPage('add');
 }
 
