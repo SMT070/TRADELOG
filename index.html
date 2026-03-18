@@ -909,6 +909,72 @@
 
   /* ── MOBILE ── */
   @media (max-width: 768px) {
+    /* ── GENERAL ── */
+    .container { padding: 10px !important; }
+    #main-content { overflow-x: hidden; }
+
+    /* ── DASHBOARD HEADER ── */
+    .dash-header { margin-bottom: 12px !important; flex-wrap: wrap; gap: 8px; }
+    .dash-title { font-size: 18px !important; }
+    .dash-subtitle { font-size: 11px !important; }
+
+    /* ── TOP 5 STAT CARDS: 2 cols ── */
+    .stats-row {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+      margin-bottom: 10px !important;
+    }
+    /* Last card full width */
+    .stats-row .stat-card:last-child {
+      grid-column: 1 / -1;
+    }
+    .stat-card {
+      padding: 12px 12px !important;
+      min-height: unset !important;
+    }
+    .stat-value { font-size: 20px !important; letter-spacing: -0.5px !important; }
+    .stat-label { font-size: 8px !important; }
+    .stat-sub { font-size: 10px !important; }
+    /* Hide the balance row inside P&L card on mobile */
+    .stat-card > div > div[style*="Current Balance"] { display: none !important; }
+    /* Hide gauge SVGs on mobile to save space */
+    .stat-card svg.ring-like { display: none; }
+
+    /* ── GOALS + JOURNAL: stack vertically ── */
+    #dashboard-content > div:first-child {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+    }
+
+    /* ── GOALS PANEL ── */
+    .panel-header { padding: 10px 14px !important; }
+    .panel-title { font-size: 10px !important; }
+
+    /* ── JOURNAL: smaller textareas ── */
+    #journal-plan, #journal-review {
+      font-size: 12px !important;
+      rows: 2 !important;
+      min-height: 60px !important;
+    }
+
+    /* ── EQUITY + PERFORMANCE: stack ── */
+    .two-col {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+    }
+
+    /* ── RECENT TRADES TABLE: minimal columns ── */
+    /* Hide less important columns */
+    .trades-table th:nth-child(4),
+    .trades-table td:nth-child(4),
+    .trades-table th:nth-child(5),
+    .trades-table td:nth-child(5),
+    .trades-table th:nth-child(6),
+    .trades-table td:nth-child(6) { display: none !important; }
+
+    /* ── SHARE BUTTON ── */
+    .dash-header button { font-size: 11px !important; padding: 7px 12px !important; }
+
     /* Settings popup becomes a fixed bottom sheet on mobile */
     #sidebar-settings-menu.settings-popup {
       position: fixed !important;
