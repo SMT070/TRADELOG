@@ -7531,8 +7531,11 @@ document.getElementById('share-modal').addEventListener('click', function(e) {
 function updateGreeting() {
   const h = new Date().getHours();
   const greet = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Up late, trader 🌙';
+  // Get name from profile
+  const profile = JSON.parse(localStorage.getItem('tradelog_profile') || '{}');
+  const name = profile.name && profile.name !== 'My Account' ? ', ' + profile.name.split(' ')[0] : '';
   const el = document.getElementById('dash-greeting');
-  if (el) el.textContent = greet;
+  if (el) el.textContent = greet + name;
   const sub = document.getElementById('dash-date-sub');
   if (sub) {
     const d = new Date();
