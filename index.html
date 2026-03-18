@@ -972,6 +972,8 @@
     .trades-table th:nth-child(6),
     .trades-table td:nth-child(6) { display: none !important; }
 
+    #mobile-tap-hint { display: inline !important; }
+
     /* ── SHARE BUTTON ── */
     .dash-header button { font-size: 11px !important; padding: 7px 12px !important; }
 
@@ -1747,6 +1749,7 @@
 
         <!-- Add Trade right next to filters -->
         <button class="btn btn-primary" onclick="switchPage('add')" style="flex-shrink:0;">+ Add Trade</button>
+        <span id="mobile-tap-hint" style="font-size:10px;color:var(--muted);font-weight:600;display:none;">Double tap to view</span>
 
         <select id="filter-dir"    style="display:none;" onchange="renderTrades()"><option value="">All</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
         <select id="filter-result" style="display:none;" onchange="renderTrades()"><option value="">All Results</option><option value="win">Wins</option><option value="loss">Losses</option><option value="be">Break Even</option></select>
