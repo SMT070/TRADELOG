@@ -1102,6 +1102,70 @@
     }
     .cal-dow { padding: 8px 0 6px !important; font-size: 10px !important; }
 
+    /* ══ MINDSET PAGE ══ */
+    #page-mindset {
+      padding: 10px 10px 0 !important;
+      display: block !important;
+      height: auto !important;
+      min-height: 100vh !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      padding-bottom: 40px !important;
+    }
+    #page-mindset.active {
+      display: block !important;
+      height: auto !important;
+      overflow-y: auto !important;
+    }
+    /* Header */
+    #page-mindset > div:first-child {
+      margin-bottom: 12px !important;
+    }
+    #page-mindset > div:first-child > div > div:first-child {
+      font-size: 18px !important;
+    }
+    /* 3-col grid → single column */
+    #page-mindset > div:last-of-type,
+    #page-mindset > div[style*="grid-template-columns:1fr 300px 1fr"],
+    #page-mindset > div[style*="grid-template-columns: 1fr 300px 1fr"] {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      height: auto !important;
+      min-height: unset !important;
+      overflow: visible !important;
+      flex: unset !important;
+      padding-bottom: 20px !important;
+    }
+    /* Each col full width, no fixed height */
+    #page-mindset > div[style*="grid-template-columns:1fr 300px 1fr"] > *,
+    #page-mindset > div[style*="grid-template-columns: 1fr 300px 1fr"] > * {
+      min-height: unset !important;
+      height: auto !important;
+      overflow: visible !important;
+      padding-right: 0 !important;
+    }
+    #page-mindset .panel {
+      min-height: unset !important;
+      height: auto !important;
+      flex: unset !important;
+    }
+    /* Textareas reasonable height */
+    #mindset-plan, #mindset-review {
+      min-height: 80px !important;
+      resize: vertical !important;
+    }
+    /* Confidence pills: wrap */
+    #mindset-conf-pills {
+      grid-template-columns: repeat(5, 1fr) !important;
+      gap: 5px !important;
+    }
+    /* Past entries scrollable */
+    #mindset-past-entries {
+      max-height: 300px !important;
+      overflow-y: auto !important;
+    }
+
     /* ══ TRADES PAGE ══ */
     #page-trades {
       padding: 6px 6px !important;
