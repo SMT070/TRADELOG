@@ -1030,19 +1030,43 @@
     #page-trades .trades-table th { font-size: 9px !important; padding: 8px 8px !important; }
     /* No horizontal scroll - truncate date */
     #page-trades .trades-table { table-layout: fixed !important; width: 100% !important; }
+    /* Column widths — balanced */
+    /* Date: narrow, Symbol: flex, Type: badge, P&L: right, Result: badge */
     #page-trades .trades-table th:nth-child(1),
-    #page-trades .trades-table td:nth-child(1) { width: 90px !important; font-size: 10px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #page-trades .trades-table td:nth-child(1) {
+      width: 72px !important; font-size: 9px !important;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      padding-left: 12px !important; color: var(--muted) !important;
+    }
     #page-trades .trades-table th:nth-child(2),
-    #page-trades .trades-table td:nth-child(2) { width: auto !important; }
+    #page-trades .trades-table td:nth-child(2) {
+      width: 80px !important; font-size: 13px !important; font-weight: 700 !important;
+      padding-left: 8px !important;
+    }
     #page-trades .trades-table th:nth-child(3),
-    #page-trades .trades-table td:nth-child(3) { width: 48px !important; }
+    #page-trades .trades-table td:nth-child(3) {
+      width: 52px !important; text-align: center !important;
+    }
     #page-trades .trades-table th:nth-child(7),
-    #page-trades .trades-table td:nth-child(7) { width: 72px !important; }
+    #page-trades .trades-table td:nth-child(7) {
+      width: 72px !important; text-align: right !important;
+      padding-right: 8px !important; font-size: 12px !important;
+    }
     #page-trades .trades-table th:nth-child(9),
-    #page-trades .trades-table td:nth-child(9) { width: 48px !important; }
+    #page-trades .trades-table td:nth-child(9) {
+      width: 50px !important; text-align: center !important;
+      padding-right: 12px !important;
+    }
     /* No horizontal overflow */
     #page-trades .panel { overflow: hidden !important; }
     #page-trades .panel > div { overflow-x: hidden !important; }
+    /* Row height & spacing */
+    #page-trades .trades-table td { padding: 13px 4px !important; vertical-align: middle !important; }
+    #page-trades .trades-table th { padding: 10px 4px !important; letter-spacing: 0.5px; }
+    /* Badge smaller */
+    #page-trades .trades-table .badge { padding: 3px 7px !important; font-size: 9px !important; }
+    /* Subtle row separators */
+    #page-trades .trades-table tbody tr { border-bottom: 1px solid var(--border) !important; }
 
     /* Trade detail overlay: full screen bottom sheet */
     #trade-detail-overlay {
