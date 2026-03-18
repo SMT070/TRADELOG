@@ -1028,6 +1028,21 @@
     /* Make table text smaller */
     #page-trades .trades-table td { font-size: 11px !important; padding: 10px 8px !important; }
     #page-trades .trades-table th { font-size: 9px !important; padding: 8px 8px !important; }
+    /* No horizontal scroll - truncate date */
+    #page-trades .trades-table { table-layout: fixed !important; width: 100% !important; }
+    #page-trades .trades-table th:nth-child(1),
+    #page-trades .trades-table td:nth-child(1) { width: 90px !important; font-size: 10px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #page-trades .trades-table th:nth-child(2),
+    #page-trades .trades-table td:nth-child(2) { width: auto !important; }
+    #page-trades .trades-table th:nth-child(3),
+    #page-trades .trades-table td:nth-child(3) { width: 48px !important; }
+    #page-trades .trades-table th:nth-child(7),
+    #page-trades .trades-table td:nth-child(7) { width: 72px !important; }
+    #page-trades .trades-table th:nth-child(9),
+    #page-trades .trades-table td:nth-child(9) { width: 48px !important; }
+    /* No horizontal overflow */
+    #page-trades .panel { overflow: hidden !important; }
+    #page-trades .panel > div { overflow-x: hidden !important; }
 
     /* Trade detail overlay: full screen bottom sheet */
     #trade-detail-overlay {
@@ -4479,10 +4494,91 @@ function renderTrades() {
 
 function renderTradeDetail(t) { showTradeDetail(t.id); }
 
+// Mobile double-tap detection
+let _lastTap = 0, _lastTapId = '';
 function selectTrade(id) {
   selectedId = id;
+  if (window.innerWidth <= 768) {
+    const now = Date.now();
+    if (now - _lastTap < 350 && _lastTapId === id) {
+      // Double tap — show detail sheet
+      openMobileTradeSheet(id);
+      _lastTap = 0; _lastTapId = '';
+    } else {
+      _lastTap = now; _lastTapId = id;
+      renderTrades(); // just highlight row
+    }
+    return;
+  }
   renderTrades();
   showTradeDetail(id);
+}
+
+function openMobileTradeSheet(id) {
+  const t = trades.find(x => x.id === id);
+  if (!t) return;
+  selectedId = id;
+  const sym = getCurrencySymbol();
+  const pnl = getPnl(t);
+  const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const pnlStr = (pnl >= 0 ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
+  const result = getResult(t);
+  const badge = result === 'win'
+    ? `<span style="padding:3px 10px;border-radius:6px;background:var(--green-bg);color:var(--green);font-size:11px;font-weight:700;">WIN</span>`
+    : result === 'loss'
+    ? `<span style="padding:3px 10px;border-radius:6px;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:700;">LOSS</span>`
+    : `<span style="padding:3px 10px;border-radius:6px;background:rgba(245,158,11,.15);color:var(--yellow);font-size:11px;font-weight:700;">BE</span>`;
+
+  document.getElementById('mobile-sheet-title').innerHTML = `${t.symbol} <span style="font-size:13px;color:var(--muted);font-weight:600;">${t.date ? t.date.slice(0,10) : ''}</span>`;
+
+  let photoHTML = '';
+  if (t.screenshot) {
+    photoHTML = `<div style="margin-bottom:16px;border-radius:12px;overflow:hidden;border:1px solid var(--border);">
+      <img src="${t.screenshot}" style="width:100%;display:block;cursor:zoom-in;" onclick="openPhotoLightbox('${t.id}')">
+      <div style="text-align:center;padding:6px;font-size:10px;color:var(--muted);">Tap to fullscreen</div>
+    </div>`;
+  }
+
+  document.getElementById('mobile-sheet-body').innerHTML = `
+    ${photoHTML}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div>
+        <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="margin-right:6px;">${t.dir}</span>
+        ${badge}
+      </div>
+      <div style="font-size:26px;font-weight:900;color:${pnlColor};">${pnlStr}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      ${[
+        ['Entry', t.entry || '—'],
+        ['Exit', t.exit || '—'],
+        ['Lots', t.lots || '—'],
+        ['Commission', t.commission ? sym+t.commission : '—'],
+        ['Open', t.date ? t.date.slice(11,16) : '—'],
+        ['Close', t.closeDate ? t.closeDate.slice(11,16) : '—'],
+      ].map(([l,v]) => `<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;">
+        <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">${l}</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);">${v}</div>
+      </div>`).join('')}
+    </div>
+    ${t.notes ? `<div style="background:var(--surface2);border-radius:10px;padding:12px;font-size:12px;color:var(--text2);line-height:1.6;border-left:3px solid var(--accent);">${t.notes}</div>` : ''}
+  `;
+
+  const sheet = document.getElementById('mobile-trade-sheet');
+  sheet.style.display = 'flex';
+}
+
+function closeMobileTradeSheet() {
+  document.getElementById('mobile-trade-sheet').style.display = 'none';
+}
+
+function openMobileSheetEdit() {
+  const t = trades.find(x => x.id === selectedId);
+  if (!t) return;
+  closeMobileTradeSheet();
+  // Load into edit form
+  document.getElementById('edit-id').value = t.id;
+  switchPage('add');
 }
 
 function showTradeDetail(id) {
@@ -7167,6 +7263,20 @@ updateCurrencyButtons();
       <div id="auth-error" style="display:none;padding:10px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);"></div>
       <button id="auth-btn" onclick="handleAuth()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;transition:opacity .2s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Log In</button>
     </div>
+  </div>
+</div>
+
+<!-- ── MOBILE TRADE DETAIL SHEET ── -->
+<div id="mobile-trade-sheet" onclick="if(event.target===this)closeMobileTradeSheet()" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.5);align-items:flex-end;">
+  <div style="width:100%;max-height:75vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:0 0 30px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;">
+      <div style="font-size:16px;font-weight:800;color:var(--text);" id="mobile-sheet-title">Trade</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="openMobileSheetEdit()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:rgba(99,102,241,.1);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Edit</button>
+        <button onclick="closeMobileTradeSheet()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>
+      </div>
+    </div>
+    <div id="mobile-sheet-body" style="padding:16px 20px;"></div>
   </div>
 </div>
 </body>
