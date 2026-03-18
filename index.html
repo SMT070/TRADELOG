@@ -974,6 +974,67 @@
 
     #mobile-tap-hint { display: inline !important; }
 
+    /* ══ ANALYTICS PAGE ══ */
+    #page-analytics .container { padding: 10px !important; }
+
+    /* Top 5 stat cards: 2 cols */
+    #page-analytics > div > div[style*="repeat(5"] {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+    }
+    /* Last card full width */
+    #page-analytics > div > div[style*="repeat(5"] > div:last-child {
+      grid-column: 1 / -1 !important;
+    }
+
+    /* Second row 4 cards: 2 cols */
+    #page-analytics > div > div[style*="repeat(4"] {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+    }
+
+    /* Stat card sizing */
+    .an-stat-card { padding: 12px 12px !important; }
+    .an-stat-value { font-size: 20px !important; }
+    .an-stat-label { font-size: 8px !important; }
+    .an-mini-val { font-size: 11px !important; }
+    .an-mini-label { font-size: 8px !important; }
+
+    /* Today strip: 2x2 grid */
+    #page-analytics .panel > div[style*="repeat(5"] {
+      grid-template-columns: 1fr 1fr !important;
+    }
+    #page-analytics .panel > div[style*="repeat(5"] > div {
+      border-right: none !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
+
+    /* Charts grid: stack all */
+    #page-analytics > div > div[style*="1fr 1fr 1fr"],
+    #page-analytics > div > div[style*="1fr 1fr"] {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+    }
+
+    /* Chart panels: fixed height */
+    #page-analytics .panel > div[style*="height:220px"] { height: 180px !important; }
+    #page-analytics .panel > div[style*="height:260px"] { height: 200px !important; }
+
+    /* Equity curve range buttons */
+    #analytics-equity-range-btns { gap: 2px !important; }
+
+    /* Heatmap: scrollable */
+    #heatmap-grid { overflow-x: auto !important; }
+
+    /* Distribution chart: stack */
+    #page-analytics .panel > div[style*="flex;align-items:center;justify-content:center"] {
+      flex-direction: column !important;
+      height: auto !important;
+      padding: 12px !important;
+    }
+    #dist-chart { max-width: 120px !important; max-height: 120px !important; }
+    #dist-legend { flex-direction: row !important; flex-wrap: wrap !important; gap: 8px !important; justify-content: center; }
+
     /* ── SHARE BUTTON ── */
     .dash-header button { font-size: 11px !important; padding: 7px 12px !important; }
 
