@@ -5549,6 +5549,27 @@ function openInlineEdit() {
           style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;line-height:1.6;font-family:var(--sans);resize:vertical;box-sizing:border-box;outline:none;"
           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">${t.notes||''}</textarea>
       </div>
+
+      <!-- Photo -->
+      <div style="margin-top:14px;">
+        <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
+        <input type="file" id="ie-photo-input" accept="image/*" style="display:none;" onchange="uploadTradePhoto(event,'${t.id}');openInlineEdit();">
+        ${t.screenshot
+          ? `<div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoLightbox('${t.id}')">
+               <img src="${t.screenshot}" style="width:100%;display:block;border-radius:10px;">
+               <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
+                 <button onclick="event.stopPropagation();document.getElementById('ie-photo-input').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
+                 <button onclick="event.stopPropagation();removeTradePhoto('${t.id}');openInlineEdit();" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
+               </div>
+             </div>`
+          : `<div onclick="document.getElementById('ie-photo-input').click()"
+               style="border:2px dashed var(--border2);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .15s;"
+               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
+               <div style="font-size:22px;margin-bottom:6px;">📸</div>
+               <div style="font-size:12px;color:var(--muted);">Click to add chart screenshot</div>
+             </div>`
+        }
+      </div>
     </div>
   `;
   window._ieResult = t.result || '';
