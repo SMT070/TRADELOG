@@ -2861,6 +2861,7 @@ function getCurrency() { return localStorage.getItem(CUR_KEY) || 'USD'; }
 function getCurrencySymbol() { return CURRENCIES[getCurrency()] || '$'; }
 function setCurrency(c) {
   localStorage.setItem(CUR_KEY, c);
+  saveProfileToSupabase();
   window._suppressChartAnim = true;
   refreshDashboard();
   renderTrades();
@@ -2903,9 +2904,10 @@ const THEMES = ['dark','gray','black','light'];
 const THEME_LABELS = { dark:'Dark', gray:'Gray', black:'Black', light:'Light' };
 
 function setTheme(t) {
-  document.documentElement.setAttribute('data-theme', t);
+document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem(THEME_KEY, t);
   updateThemeButtons(t);
+  saveProfileToSupabase();
   if (equityChartInst) refreshDashboard();
 }
 
@@ -3014,9 +3016,10 @@ function saveProfile() {
   const name = document.getElementById('profile-name-input').value.trim() || 'My Account';
   const existing = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
   const avatar = window._pendingAvatar || existing.avatar || null;
-  localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
+localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
   window._pendingAvatar = null;
   loadProfile();
+  saveProfileToSupabase();
   closeProfileModal();
   toast('Profile saved', 'success');
 }
@@ -3078,7 +3081,8 @@ function closeConfirmModal() {
 function saveBalance() {
   const val = parseFloat(document.getElementById('modal-balance-input').value);
   if (!val || val <= 0) { toast('Enter a valid balance', 'error'); return; }
-  localStorage.setItem(BAL_KEY, val);
+ localStorage.setItem(BAL_KEY, val);
+  saveProfileToSupabase();
   closeBalanceModal();
   toast('Balance saved — $' + val.toLocaleString(), 'success');
   refreshDashboard();
@@ -3167,7 +3171,38 @@ function showAuthScreen() {
   if (app) app.style.display = 'none';
 }
 
-// ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
+async function loadProfileFromSupabase() {
+  if (!currentUser) return;
+  const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (error || !data) return;
+  if (data.name) {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: data.name, avatar: data.avatar || null }));
+  }
+  if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
+  if (data.balance) localStorage.setItem(BAL_KEY, data.balance);
+  if (data.settings) {
+    try {
+      const s = JSON.parse(data.settings);
+      if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
+    } catch(e) {}
+  }
+  loadProfile();
+  updateCurrencyButtons();
+}
+
+async function saveProfileToSupabase() {
+  if (!currentUser) return;
+  const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+  const settings = JSON.stringify({ theme: localStorage.getItem(THEME_KEY) || 'dark' });
+  await sb.from('profiles').upsert({
+    id: currentUser.id,
+    name: p.name || '',
+    avatar: p.avatar || null,
+    currency: getCurrency(),
+    balance: getBalance(),
+    settings
+  });
+}// ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
 async function loadTradesFromSupabase() {
   if (!currentUser) return;
   const { data, error } = await sb.from('trades').select('*').eq('user_id', currentUser.id).order('date', { ascending: false });
@@ -3240,7 +3275,8 @@ async function initApp(user) {
   } catch(e) {}
 
   // Then load from Supabase and refresh again
-  try {
+ try {
+    await loadProfileFromSupabase();
     await loadTradesFromSupabase();
     localStorage.setItem(KEY, JSON.stringify(trades));
   } catch(e) { console.error('Trade load error:', e); }
