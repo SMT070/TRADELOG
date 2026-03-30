@@ -3030,9 +3030,12 @@ function closeSupportModal() { document.getElementById('support-modal').style.di
 
 // ── LOGOUT ────────────────────────────────────────────────────────────────────
 function handleLogout() {
-  showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the cloud. You can log back in anytime.', okText:'Log Out', okColor:'var(--accent)', onOk: async () => {
+showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the cloud. You can log back in anytime.', okText:'Log Out', okColor:'var(--accent)', onOk: async () => {
     await sb.auth.signOut();
     trades = [];
+    _appInitialized = false;
+    currentUser = null;
+    localStorage.clear();
     showAuthScreen();
   }});
 }
