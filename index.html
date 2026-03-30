@@ -3179,6 +3179,7 @@ async function loadTradesFromSupabase() {
     result: r.result, emotion: r.emotion, confidence: r.confidence,
     notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
   }));
+  localStorage.setItem(KEY, JSON.stringify(trades));
 }
 
 async function saveTradeToSupabase(t) {
