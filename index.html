@@ -3229,12 +3229,23 @@ async function initApp(user) {
   const btn = document.getElementById('auth-btn');
   if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
 
-  // Load data in background
+// Show cached localStorage data instantly
+  try {
+    const cached = JSON.parse(localStorage.getItem(KEY));
+    if (cached && cached.length) {
+      trades = cached;
+      refreshDashboard();
+    }
+  } catch(e) {}
+
+  // Then load from Supabase and refresh again
   try {
     await loadTradesFromSupabase();
+    localStorage.setItem(KEY, JSON.stringify(trades));
   } catch(e) { console.error('Trade load error:', e); }
 
   refreshDashboard();
+  renderTrades();
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
