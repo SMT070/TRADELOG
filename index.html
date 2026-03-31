@@ -11,12 +11,27 @@
     <meta name="theme-color" content="#0b0f1a">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-  // Apply theme instantly before any rendering to prevent flash
+  // Keep your theme loader
   (function() {
     const t = localStorage.getItem('tradelog_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', t);
   })();
+
+  // THE DATA FIX
+  // Go to Supabase > Settings > API to get these two values:
+  const SUPABASE_URL = 'https://your-project.supabase.co'; 
+  const SUPABASE_ANON_KEY = 'your-anon-key';
+
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  });
 </script>
 <style>
   :root {
