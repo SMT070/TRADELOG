@@ -2859,6 +2859,36 @@ function rc() { return cssVar('--red'); }    // red color
 function getPnlColor(v) { return v >= 0 ? gc() : rc(); }
 
 const KEY = 'tradelog_v1';
+
+setInterval(async () => {
+  if (currentUser) {
+    await loadTradesFromSupabase();
+    refreshDashboard();
+    renderTrades();
+    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+  }
+}, 30000);
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && currentUser) {
+    await loadTradesFromSupabase();
+    refreshDashboard();
+    renderTrades();
+    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+  }
+});
+
+window.addEventListener('focus', async () => {
+  if (currentUser) {
+    await loadTradesFromSupabase();
+    refreshDashboard();
+    renderTrades();
+    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+  }
+});
 const BAL_KEY = 'tradelog_balance';
 const CUR_KEY = 'tradelog_currency';
 const TAGS_KEY = 'tradelog_custom_tags';
