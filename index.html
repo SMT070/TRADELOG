@@ -2932,7 +2932,7 @@ function getResult(t) {
 function getBalance() { return parseFloat(localStorage.getItem(BAL_KEY)) || 0; }
 
 function load() { try { trades = JSON.parse(localStorage.getItem(KEY)) || []; } catch { trades = []; } }
-function save() { localStorage.setItem(KEY, JSON.stringify(trades)); }
+function save() { localStorage.setItem(KEY, JSON.stringify(trades)); if (currentUser) trades.forEach(t => saveTradeToSupabase(t)); }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
 // ── THEME ────────────────────────────────────────────────────────────────────
@@ -3286,10 +3286,7 @@ async function deleteTradeFromSupabase(id) {
 
 function load() { /* handled by Supabase */ }
 function save() {
-  // Keep localStorage as backup
   localStorage.setItem(KEY, JSON.stringify(trades));
-  // Sync all trades to Supabase
-  if (currentUser) trades.forEach(t => saveTradeToSupabase(t));
 }
 
 // ── APP INIT ──────────────────────────────────────────────────────────────────
