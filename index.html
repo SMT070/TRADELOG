@@ -7776,5 +7776,16 @@ updateCurrencyButtons();
     <div id="mobile-sheet-body" style="padding:16px 20px;"></div>
   </div>
 </div>
+  <script>
+    // This tells the phone: "Every time the user looks at me, get the latest data."
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            // This runs your existing function to pull data from Supabase
+            if (typeof fetchTrades === "function") {
+                fetchTrades(); 
+            }
+        }
+    });
+</script>
 </body>
 </html>
