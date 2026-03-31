@@ -7778,20 +7778,24 @@ updateCurrencyButtons();
 </div>
   <script>
  // ── AUTO-SYNC SENSOR ──────────────────────────────────────────────────────────
-    // This tells the phone: "Every time the user looks at me, get the latest data."
+    // Refreshes your Nasdaq logs and Equity Curve whenever you switch to the app.
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
-            console.log("App became visible - refreshing data...");
-            // These are the specific functions in your file that pull and show data
+            console.log("TradeLog: App active - refreshing data...");
+            
+            // These match the exact function names in your index gem.html file
             if (typeof renderTrades === "function") renderTrades();
             if (typeof refreshDashboard === "function") refreshDashboard();
             if (typeof renderCalendar === "function") renderCalendar();
+            if (typeof loadJournal === "function") loadJournal();
         }
     });
 
-    // ── INIT ──────────────────────────────────────────────────────────────────────
+    // ── INITIALIZATION ────────────────────────────────────────────────────────────
+    // These start the app when it first loads
     loadProfile();
     updateCurrencyButtons();
     
+</script>
 </body>
 </html>
