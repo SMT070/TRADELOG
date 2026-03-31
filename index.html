@@ -2,9 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiM2MzY2ZjEiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjU0JSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsIEJsYWNrLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iOTAwIiBmb250LXNpemU9IjMwIiBmaWxsPSJ3aGl0ZSI+VEw8L3RleHQ+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TradeLog — Your Trading Journal</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TradeLog">
+    <link rel="apple-touch-icon" href="logo.png?v=1">
+    <meta name="theme-color" content="#0b0f1a">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
   // Apply theme instantly before any rendering to prevent flash
@@ -908,185 +913,234 @@
   #info-tooltip.show { opacity: 1; transform: translateY(0); }
   #info-tooltip strong { color: var(--text); display: block; margin-bottom: 3px; font-size: 11px; font-weight: 700; }
 
-  /* ═══════════════════════════════════════════════════════════════
-     MOBILE RESPONSIVE — max-width 768px
-     PC layout is completely untouched outside this block
-  ═══════════════════════════════════════════════════════════════ */
+  /* ── MOBILE ── */
   @media (max-width: 768px) {
-    /* ── FORCE inline grid overrides via attribute selectors ── */
-    #trades-grid { grid-template-columns: 1fr !important; }
-    #trade-detail-panel { display: none !important; }
+    /* ── GENERAL ── */
+    .container { padding: 10px !important; }
+    #main-content { overflow-x: hidden; }
 
-    /* Calendar on mobile: full width, hide side panel, hide week col */
-    #page-calendar > div > div[style*="grid-template-columns:1fr 300px"],
-    #page-calendar > div > div[style*="grid-template-columns: 1fr 300px"] {
-      grid-template-columns: 1fr !important;
-    }
-    #cal-day-panel { display: none !important; }
-    #cal-mobile-panel { display: block !important; }
-    /* Hide week column in month view */
-    #cal-dow-row { grid-template-columns: repeat(7, 1fr) !important; }
-    #cal-grid { grid-template-columns: repeat(7, 1fr) !important; }
-    .cal-week-col { display: none !important; }
-    .cal-dow:last-child { display: none !important; }
-    /* Hide view buttons except Month on mobile */
-    #cal-view-year, #cal-view-alltime, #cal-view-week { display: none !important; }
-    /* Calendar header compact */
-    #page-calendar > div > div:first-child {
-      padding: 8px 12px !important;
-      flex-shrink: 0 !important;
-    }
-    #cal-month-label { font-size: 14px !important; min-width: unset !important; }
-    /* Hide day-of-week header row and month grid on mobile - using week list view */
-    #cal-dow-row { display: none !important; }
+    /* ── DASHBOARD HEADER ── */
+    .dash-header { margin-bottom: 12px !important; flex-wrap: wrap; gap: 8px; }
+    .dash-title { font-size: 18px !important; }
+    .dash-subtitle { font-size: 11px !important; }
 
-    /* ── SIDEBAR: icon-only on mobile ── */
-    :root { --sidebar-w: 56px; --sidebar-collapsed: 56px; }
-
-    #sidebar {
-      width: 56px !important;
-      min-width: 56px !important;
-      flex-shrink: 0;
-    }
-    .sidebar-label { display: none !important; }
-    .sidebar-logo-text { display: none !important; }
-    .account-card-text { display: none !important; }
-    #sidebar-account-name { display: none !important; }
-    .sidebar-logo { justify-content: center; padding: 12px 0; }
-    .sidebar-item { justify-content: center; padding: 12px 0; }
-    #sidebar .account-card { justify-content: center; padding: 10px 0; }
-    #sidebar-settings-menu {
-      position: fixed !important;
-      bottom: 70px !important;
-      left: 8px !important;
-      right: 8px !important;
-      width: auto !important;
-      z-index: 9999 !important;
-    }
-    /* hide toggle collapse button, chevron and collapse arrow on mobile */
-    #sidebar-toggle-btn { display: none !important; }
-    #account-chevron { display: none !important; }
-    #sidebar-collapse-tab { display: none !important; }
-
-    /* ── MAIN CONTENT: full width ── */
-    #main-content { padding: 0; }
-    .page-content, .container { padding: 12px !important; }
-
-    /* ── DASHBOARD STAT CARDS: 2 columns ── */
+    /* ── TOP 5 STAT CARDS: 2 cols ── */
     .stats-row {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
+      margin-bottom: 10px !important;
     }
-    .stat-card { padding: 12px 14px !important; min-height: 90px !important; }
-    .stat-value { font-size: 22px !important; }
+    /* Last card full width */
+    .stats-row .stat-card:last-child {
+      grid-column: 1 / -1;
+    }
+    .stat-card {
+      padding: 12px 12px !important;
+      min-height: unset !important;
+    }
+    .stat-value { font-size: 20px !important; letter-spacing: -0.5px !important; }
     .stat-label { font-size: 8px !important; }
     .stat-sub { font-size: 10px !important; }
+    /* Hide the balance row inside P&L card on mobile */
+    .stat-card > div > div[style*="Current Balance"] { display: none !important; }
+    /* Hide gauge SVGs on mobile to save space */
+    .stat-card svg.ring-like { display: none; }
 
-    /* ── ANALYTICS STAT CARDS: 2 columns ── */
-    [style*="grid-template-columns:repeat(5,1fr)"],
-    [style*="grid-template-columns: repeat(5, 1fr)"] {
-      display: grid !important;
-      grid-template-columns: 1fr 1fr !important;
+    /* ── GOALS + JOURNAL: stack vertically ── */
+    #dashboard-content > div:first-child {
+      grid-template-columns: 1fr !important;
       gap: 8px !important;
     }
-    [style*="grid-template-columns:repeat(4,1fr)"],
-    [style*="grid-template-columns: repeat(4, 1fr)"] {
-      display: grid !important;
-      grid-template-columns: 1fr 1fr !important;
-      gap: 8px !important;
-    }
-    .an-stat-card { padding: 12px 14px !important; }
-    .an-stat-value { font-size: 22px !important; }
 
-    /* ── TWO-COL PANELS: stack vertically ── */
+    /* ── GOALS PANEL ── */
+    .panel-header { padding: 10px 14px !important; }
+    .panel-title { font-size: 10px !important; }
+
+    /* ── JOURNAL: smaller textareas ── */
+    #journal-plan, #journal-review {
+      font-size: 12px !important;
+      rows: 2 !important;
+      min-height: 60px !important;
+    }
+
+    /* ── EQUITY + PERFORMANCE: stack ── */
     .two-col {
       grid-template-columns: 1fr !important;
       gap: 8px !important;
     }
 
-    /* ── PAGE HEADER: smaller ── */
-    .page-header { padding: 12px 12px 8px !important; }
-    .page-title { font-size: 20px !important; }
+    /* ── RECENT TRADES TABLE: minimal columns ── */
+    /* Hide less important columns */
+    .trades-table th:nth-child(4),
+    .trades-table td:nth-child(4),
+    .trades-table th:nth-child(5),
+    .trades-table td:nth-child(5),
+    .trades-table th:nth-child(6),
+    .trades-table td:nth-child(6) { display: none !important; }
 
-    /* ── TRADES TABLE: horizontal scroll ── */
-    .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
-    #trades-pagination { padding: 10px 0 !important; }
+    #mobile-tap-hint { display: inline !important; }
 
-    /* ── ADD TRADE FORM ── */
-    .form-grid {
-      grid-template-columns: 1fr !important;
+    /* ══ ANALYTICS PAGE ══ */
+    #page-analytics .container { padding: 10px !important; }
+
+    /* Top 5 stat cards: 2 cols */
+    #page-analytics > div > div[style*="repeat(5"] {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+    }
+    /* Last card full width */
+    #page-analytics > div > div[style*="repeat(5"] > div:last-child {
+      grid-column: 1 / -1 !important;
     }
 
-    /* ── CALENDAR ── */
-    #heatmap-grid { overflow-x: auto; }
-
-    /* ── MODALS: full width on mobile ── */
-    [style*="width:420px"], [style*="width: 420px"],
-    [style*="width:400px"], [style*="width: 400px"] {
-      width: 95vw !important;
+    /* Second row 4 cards: 2 cols */
+    #page-analytics > div > div[style*="repeat(4"] {
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
     }
 
-    /* ── ANALYTICS CHARTS SECTION ── */
-    [style*="grid-template-columns:1fr 1fr"],
-    [style*="grid-template-columns: 1fr 1fr"] {
-      grid-template-columns: 1fr !important;
-    }
+    /* Stat card sizing */
+    .an-stat-card { padding: 12px 12px !important; }
+    .an-stat-value { font-size: 20px !important; }
+    .an-stat-label { font-size: 8px !important; }
+    .an-mini-val { font-size: 11px !important; }
+    .an-mini-label { font-size: 8px !important; }
 
-    /* ── TODAY STATS ROW ── */
-    [style*="grid-template-columns:repeat(4"] {
+    /* Today strip: 2x2 grid */
+    #page-analytics .panel > div[style*="repeat(5"] {
       grid-template-columns: 1fr 1fr !important;
     }
-
-    /* ── SHARE BUTTON: smaller ── */
-    #share-today-btn { font-size: 12px !important; padding: 8px 12px !important; }
-
-    /* ── SHARE MODAL: fit to screen ── */
-    #share-modal > div { width: 92vw !important; }
-    #share-card { padding: 20px !important; border-radius: 16px !important; }
-    #share-modal { gap: 12px !important; padding: 16px !important; overflow-y: auto !important; align-items: flex-start !important; padding-top: 40px !important; }
-
-    /* ── TRADE DETAIL PANEL: hidden by default, shown as bottom sheet ── */
-    #trade-detail-panel { display: none !important; }
-    
-    /* ── TRADE DETAIL OVERLAY: full screen on mobile ── */
-    #trade-detail-overlay { padding: 0 !important; align-items: flex-end !important; }
-    #trade-detail-overlay-card {
-      width: 100% !important;
-      max-width: 100% !important;
-      height: 90vh !important;
-      max-height: 90vh !important;
-      border-radius: 20px 20px 0 0 !important;
-      transform: translateY(100%) !important;
+    #page-analytics .panel > div[style*="repeat(5"] > div {
+      border-right: none !important;
+      border-bottom: 1px solid var(--border) !important;
     }
 
-    /* ── TRADES PAGE: show detail as button instead of side panel ── */
-    #trades-table-wrap { width: 100% !important; }
-    
-    /* ── MINDSET PAGE: full scroll, stacked ── */
-    #page-mindset.active {
-      display: block !important;
+    /* Charts grid: stack all */
+    #page-analytics > div > div[style*="1fr 1fr 1fr"],
+    #page-analytics > div > div[style*="1fr 1fr"] {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+    }
+
+    /* Chart panels: fixed height */
+    #page-analytics .panel > div[style*="height:220px"] { height: 180px !important; }
+    #page-analytics .panel > div[style*="height:260px"] { height: 200px !important; }
+
+    /* Equity curve range buttons */
+    #analytics-equity-range-btns { gap: 2px !important; }
+
+    /* Heatmap: scrollable */
+    #heatmap-grid { overflow-x: auto !important; }
+
+    /* Distribution chart: stack */
+    #page-analytics .panel > div[style*="flex;align-items:center;justify-content:center"] {
+      flex-direction: column !important;
       height: auto !important;
-      min-height: 100vh !important;
-      overflow-y: auto !important;
-      overflow-x: hidden !important;
       padding: 12px !important;
-      padding-bottom: 60px !important;
     }
-    /* Stack 3-col grid vertically */
-    #page-mindset > div:last-of-type,
-    #page-mindset [style*="grid-template-columns:1fr 300px 1fr"],
-    #page-mindset [style*="grid-template-columns: 1fr 300px 1fr"] {
+    #dist-chart { max-width: 120px !important; max-height: 120px !important; }
+    #dist-legend { flex-direction: row !important; flex-wrap: wrap !important; gap: 8px !important; justify-content: center; }
+
+    /* ── SHARE BUTTON ── */
+    .dash-header button { font-size: 11px !important; padding: 7px 12px !important; }
+
+    /* ══ CALENDAR PAGE ══ */
+    #page-calendar.active {
+      padding: 0 !important;
+      height: 100vh !important;
       display: flex !important;
       flex-direction: column !important;
-      gap: 12px !important;
-      height: auto !important;
-      overflow: visible !important;
-      min-height: unset !important;
-      flex: unset !important;
     }
-    /* Each column becomes full width */
-    #page-mindset [style*="grid-template-columns:1fr 300px 1fr"] > *,
-    #page-mindset [style*="grid-template-columns: 1fr 300px 1fr"] > * {
+    #page-calendar.active > div {
+      border-radius: 0 !important;
+      border-left: none !important;
+      border-right: none !important;
+      flex: 1 !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    /* Hide side panel on mobile */
+    #cal-day-panel { display: none !important; }
+    /* Calendar grid takes full width */
+    #page-calendar > div > div[style*="grid-template-columns:1fr 300px"],
+    #page-calendar > div > div[style*="grid-template-columns: 1fr 300px"] {
+      grid-template-columns: 1fr !important;
+      flex: 1 !important;
+      overflow: hidden !important;
+    }
+    /* Hide week column header + cells */
+    #cal-dow-row > div:last-child { display: none !important; }
+    /* Cal grid: 7 cols only */
+    #cal-grid { grid-template-columns: repeat(7, 1fr) !important; }
+    /* Remove week totals (every 8th cell) */
+    #cal-grid > div:nth-child(8n) { display: none !important; }
+    /* Header: compact */
+    #page-calendar > div > div:first-child { padding: 10px 12px !important; }
+    #cal-month-label { font-size: 16px !important; }
+    /* Hide year/alltime view buttons */
+    #cal-view-year, #cal-view-alltime { display: none !important; }
+    /* Cal cells */
+    .cal-cell {
+      min-height: 60px !important;
+      padding: 4px 2px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+      border-radius: 6px !important;
+    }
+    .cal-day-num { font-size: 10px !important; margin-bottom: 2px !important; }
+    .cal-pnl { font-size: 10px !important; margin-top: 0 !important; margin-bottom: 0 !important; }
+    .cal-trades { font-size: 8px !important; }
+    .cal-cell-bar { display: none !important; }
+    /* Grid aligned with header */
+    #cal-grid {
+      gap: 2px !important;
+      background: var(--border) !important;
+      padding: 0 !important;
+      grid-template-columns: repeat(7, 1fr) !important;
+    }
+    #cal-dow-row {
+      grid-template-columns: repeat(7, 1fr) !important;
+      gap: 2px !important;
+      padding: 0 !important;
+    }
+    .cal-dow { padding: 8px 0 6px !important; font-size: 10px !important; }
+
+    /* ══ MINDSET PAGE ══ */
+   #page-mindset.active {
+  padding: 10px 10px 0 !important;
+  display: block !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-bottom: 40px !important;
+}
+    /* Header */
+    #page-mindset > div:first-child {
+      margin-bottom: 12px !important;
+    }
+    #page-mindset > div:first-child > div > div:first-child {
+      font-size: 18px !important;
+    }
+    /* 3-col grid → single column */
+    #page-mindset > div:last-of-type,
+    #page-mindset > div[style*="grid-template-columns:1fr 300px 1fr"],
+    #page-mindset > div[style*="grid-template-columns: 1fr 300px 1fr"] {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      height: auto !important;
+      min-height: unset !important;
+      overflow: visible !important;
+      flex: unset !important;
+      padding-bottom: 20px !important;
+    }
+    /* Each col full width, no fixed height */
+    #page-mindset > div[style*="grid-template-columns:1fr 300px 1fr"] > *,
+    #page-mindset > div[style*="grid-template-columns: 1fr 300px 1fr"] > * {
       min-height: unset !important;
       height: auto !important;
       overflow: visible !important;
@@ -1097,57 +1151,178 @@
       height: auto !important;
       flex: unset !important;
     }
-    #page-mindset textarea { min-height: 80px !important; resize: vertical !important; }
-    /* Header row */
-    #page-mindset > div:first-child {
-      margin-bottom: 12px !important;
-      flex-shrink: 0 !important;
+    /* Textareas reasonable height */
+    #mindset-plan, #mindset-review {
+      min-height: 80px !important;
+      resize: vertical !important;
     }
-
-    /* ── CALENDAR PAGE: full screen week view ── */
-    #page-calendar {
-      padding: 0 !important;
-      height: 100vh !important;
-      overflow: hidden !important;
-      display: flex !important;
-      flex-direction: column !important;
+    /* Confidence pills: wrap */
+    #mindset-conf-pills {
+      grid-template-columns: repeat(5, 1fr) !important;
+      gap: 5px !important;
     }
-    #page-calendar.active {
-      height: 100vh !important;
-      overflow: hidden !important;
-      display: flex !important;
-      flex-direction: column !important;
-    }
-    #page-calendar > div {
-      height: 100% !important;
-      border-radius: 0 !important;
-      border: none !important;
-      display: flex !important;
-      flex-direction: column !important;
-      flex: 1 !important;
-    }
-    /* Week view rows fill screen */
-    #cal-grid > div {
-      flex: 1 !important;
-    }
-    #cal-grid {
-      flex: 1 !important;
-      display: flex !important;
-      flex-direction: column !important;
+    /* Past entries scrollable */
+    #mindset-past-entries {
+      max-height: 300px !important;
       overflow-y: auto !important;
     }
-    #cal-grid > div > div {
-      flex: 1 !important;
+
+    /* ══ TRADES PAGE ══ */
+    #page-trades {
+      padding: 6px 6px !important;
     }
 
-    /* ── SIDEBAR TOGGLE BTN: show on mobile as floating button ── */
-    #sidebar-toggle-btn { display: none !important; }
+    /* Hide detail panel completely on mobile - use overlay instead */
+    #trade-detail-panel { display: none !important; }
 
-    /* ── STATS ROW: fix value font size ── */
-    .stat-value { font-size: 20px !important; }
+    /* Trades grid: full width, no side panel */
+    #trades-grid {
+      grid-template-columns: 1fr !important;
+    }
 
-    /* ── HIDE trade detail expand button on mobile (open overlay instead) ── */
-    #detail-expand-btn { display: none !important; }
+    /* Top summary bar: compact */
+    #page-trades > div:first-child > div:first-child {
+      padding: 10px 12px !important;
+      gap: 12px !important;
+      flex-wrap: wrap;
+    }
+    #tb-count, #tb-pnl, #tb-wr {
+      font-size: 16px !important;
+    }
+    /* Hide wins/losses/be strip on mobile */
+    #page-trades > div:first-child > div:first-child > div:last-child {
+      display: none !important;
+    }
+
+    /* Search + filter bar: wrap nicely */
+    #page-trades > div:first-child > div:last-child {
+      flex-wrap: wrap !important;
+      gap: 6px !important;
+      padding: 8px !important;
+    }
+    /* Search takes full width */
+    #search-input { font-size: 13px !important; }
+
+    /* Hide less-used filters on mobile */
+    #drop-tag { display: none !important; }
+
+    /* Table: keep Date, Symbol, Type, P&L, Result — hide Lots, Entry, Exit, Comm, Tags */
+    #page-trades .trades-table th:nth-child(4),
+    #page-trades .trades-table td:nth-child(4),
+    #page-trades .trades-table th:nth-child(5),
+    #page-trades .trades-table td:nth-child(5),
+    #page-trades .trades-table th:nth-child(6),
+    #page-trades .trades-table td:nth-child(6),
+    #page-trades .trades-table th:nth-child(8),
+    #page-trades .trades-table td:nth-child(8),
+    #page-trades .trades-table th:nth-child(10),
+    #page-trades .trades-table td:nth-child(10) { display: none !important; }
+    /* Make table text smaller */
+    #page-trades .trades-table td { font-size: 11px !important; padding: 10px 8px !important; }
+    #page-trades .trades-table th { font-size: 9px !important; padding: 8px 8px !important; }
+    /* No horizontal scroll - truncate date */
+    #page-trades .trades-table { table-layout: fixed !important; width: 100% !important; }
+    /* Column widths — balanced */
+    /* Date: narrow, Symbol: flex, Type: badge, P&L: right, Result: badge */
+    #page-trades .trades-table th:nth-child(1),
+    #page-trades .trades-table td:nth-child(1) {
+      width: 72px !important; font-size: 9px !important;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      padding-left: 12px !important; color: var(--muted) !important;
+    }
+    #page-trades .trades-table th:nth-child(2),
+    #page-trades .trades-table td:nth-child(2) {
+      width: 80px !important; font-size: 13px !important; font-weight: 700 !important;
+      padding-left: 8px !important;
+    }
+    #page-trades .trades-table th:nth-child(3),
+    #page-trades .trades-table td:nth-child(3) {
+      width: 52px !important; text-align: center !important;
+    }
+    #page-trades .trades-table th:nth-child(7),
+    #page-trades .trades-table td:nth-child(7) {
+      width: 72px !important; text-align: right !important;
+      padding-right: 8px !important; font-size: 12px !important;
+    }
+    #page-trades .trades-table th:nth-child(9),
+    #page-trades .trades-table td:nth-child(9) {
+      width: 50px !important; text-align: center !important;
+      padding-right: 12px !important;
+    }
+    /* No horizontal overflow */
+    #page-trades .panel { overflow: hidden !important; }
+    #page-trades .panel > div { overflow-x: hidden !important; }
+    /* Row height & spacing */
+    #page-trades .trades-table td { padding: 13px 4px !important; vertical-align: middle !important; }
+    #page-trades .trades-table th { padding: 10px 4px !important; letter-spacing: 0.5px; }
+    /* Badge smaller */
+    #page-trades .trades-table .badge { padding: 3px 7px !important; font-size: 9px !important; }
+    /* Subtle row separators */
+    #page-trades .trades-table tbody tr { border-bottom: 1px solid var(--border) !important; }
+
+    /* Trade detail overlay: full screen bottom sheet */
+    #trade-detail-overlay {
+      padding: 0 !important;
+      align-items: flex-end !important;
+    }
+    #trade-detail-overlay-card {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: 90vh !important;
+      border-radius: 20px 20px 0 0 !important;
+      transform: translateY(0) !important;
+      opacity: 1 !important;
+    }
+    /* In overlay: hide all info, show only photo */
+    #trade-detail-overlay-body > div > div:first-child {
+      border-right: none !important;
+    }
+    #trade-detail-overlay-body > div > div:last-child {
+      display: none !important;
+    }
+    #trade-detail-overlay-body > div {
+      grid-template-columns: 1fr !important;
+    }
+
+    /* Settings popup becomes a fixed bottom sheet on mobile */
+    #sidebar-settings-menu.settings-popup {
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      top: auto !important;
+      width: 100% !important;
+      max-height: 80vh !important;
+      overflow-y: auto !important;
+      border-radius: 20px 20px 0 0 !important;
+      border-bottom: none !important;
+      padding: 16px !important;
+      z-index: 9999 !important;
+      box-shadow: 0 -8px 40px rgba(0,0,0,.6) !important;
+    }
+    /* Dark backdrop when settings open */
+
+
+    /* Hide collapse arrow completely */
+    #sidebar-collapse-tab { display: none !important; }
+
+    /* Sidebar stays icon-only, cannot be expanded */
+    #sidebar {
+      width: 56px !important;
+      min-width: 56px !important;
+    }
+    #sidebar.collapsed {
+      width: 56px !important;
+      min-width: 56px !important;
+    }
+    /* Hide all text labels */
+    .sidebar-label { display: none !important; }
+    .sidebar-logo-text { display: none !important; }
+    .account-card-text { display: none !important; }
+    #account-chevron { display: none !important; }
+    .sidebar-logo { justify-content: center; padding: 12px 0; }
+    .sidebar-item { justify-content: center; padding: 12px 0; }
+    #sidebar .account-card { justify-content: center; padding: 10px 0; }
   }
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1156,59 +1331,7 @@
 <div id="info-tooltip"></div>
 
 <!-- APP SHELL -->
-<!-- ── AUTH SCREEN ─────────────────────────────────────────────────────────── -->
-<div id="auth-screen" style="display:none;position:fixed;inset:0;z-index:99998;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;">
-  <div style="width:100%;max-width:400px;padding:0 24px;">
-    <!-- Logo -->
-    <div style="text-align:center;margin-bottom:40px;">
-      <div style="font-size:36px;font-weight:900;color:var(--text);letter-spacing:-2px;">Trade<span style="color:var(--accent);">Log</span></div>
-      <div style="font-size:13px;color:var(--muted);margin-top:6px;">Your professional trading journal</div>
-    </div>
-
-    <!-- Tabs -->
-    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:4px;margin-bottom:28px;">
-      <button id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;">Log In</button>
-      <button id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;">Sign Up</button>
-    </div>
-
-    <!-- Form -->
-    <div style="display:flex;flex-direction:column;gap:14px;">
-      <div id="auth-name-field" style="display:none;">
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Name</label>
-        <input id="auth-name" type="text" placeholder="Your name" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Email</label>
-        <input id="auth-email" type="email" placeholder="you@example.com" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
-      </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Password</label>
-        <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
-      </div>
-      <div id="auth-error" style="display:none;padding:10px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);"></div>
-      <button id="auth-btn" onclick="handleAuth()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;transition:opacity .2s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Log In</button>
-    </div>
-  </div>
-</div>
-
 <div id="app-root" style="display:none;width:100%;height:100%;position:fixed;inset:0;">
-
-<!-- Loading overlay — shown while data fetches from Supabase -->
-<div id="loading-overlay" style="
-  display:none;position:fixed;inset:0;z-index:99999;
-  background:var(--bg);
-  align-items:center;justify-content:center;flex-direction:column;gap:16px;
-">
-  <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#818cf8);display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px var(--accent-glow);">
-    <svg width="20" height="20" viewBox="0 0 28 28"><polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/><polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/><polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/><rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/></svg>
-  </div>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
-    <div style="font-size:15px;font-weight:700;color:var(--text);">Loading your trades…</div>
-    <div style="width:120px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;">
-      <div id="loading-bar" style="height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width 0.4s ease;"></div>
-    </div>
-  </div>
-</div>
 <div id="app-shell">
 
 <!-- ── SIDEBAR ── -->
@@ -1286,13 +1409,11 @@
         <!-- Profile section -->
         <div class="settings-section-label">Account</div>
         <div style="display:flex;align-items:center;gap:10px;padding:8px 10px 10px;">
-          <div class="account-avatar" id="popup-avatar" style="width:38px;height:38px;font-size:15px;flex-shrink:0;">T</div>
-          <div style="flex:1;min-width:0;overflow:hidden;">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:2px;">
-              <button class="btn btn-ghost" style="font-size:10px;padding:3px 8px;flex-shrink:0;" onclick="openProfileModal();closeSidebarSettings();">Edit</button>
-            </div>
-            <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="popup-account-name">My Account</div>
+          <div class="account-avatar" id="popup-avatar" style="width:38px;height:38px;font-size:15px;">T</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:var(--text);" id="popup-account-name">My Account</div>
           </div>
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="openProfileModal();closeSidebarSettings();">Edit</button>
         </div>
 
         <div style="height:1px;background:var(--border);margin:2px 0 6px;"></div>
@@ -1338,7 +1459,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
           Clear All Trades
         </div>
-        <div class="menu-item danger" onclick="handleLogout();">
+        <div class="menu-item danger" onclick="handleLogout();closeSidebarSettings();">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           Log Out
         </div>
@@ -1735,7 +1856,7 @@
         <!-- Search — grows to fill -->
         <div style="position:relative;flex:1;min-width:0;">
           <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="search-input" placeholder="Search symbol, notes..." style="width:100%;padding:7px 10px 7px 30px;font-size:12px;border-radius:var(--r-sm);" oninput="tradesPage=0;renderTrades()">
+          <input type="text" id="search-input" placeholder="Search symbol, notes..." style="width:100%;padding:7px 10px 7px 30px;font-size:12px;border-radius:var(--r-sm);" oninput="renderTrades()">
         </div>
 
         <!-- Divider -->
@@ -1818,9 +1939,10 @@
 
         <!-- Add Trade right next to filters -->
         <button class="btn btn-primary" onclick="switchPage('add')" style="flex-shrink:0;">+ Add Trade</button>
+        <span id="mobile-tap-hint" style="font-size:10px;color:var(--muted);font-weight:600;display:none;">Double tap to view</span>
 
-        <select id="filter-dir"    style="display:none;" onchange="tradesPage=0;renderTrades()"><option value="">All</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
-        <select id="filter-result" style="display:none;" onchange="tradesPage=0;renderTrades()"><option value="">All Results</option><option value="win">Wins</option><option value="loss">Losses</option><option value="be">Break Even</option></select>
+        <select id="filter-dir"    style="display:none;" onchange="renderTrades()"><option value="">All</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
+        <select id="filter-result" style="display:none;" onchange="renderTrades()"><option value="">All Results</option><option value="win">Wins</option><option value="loss">Losses</option><option value="be">Break Even</option></select>
         <input  id="filter-tag"    style="display:none;" type="text" value="">
       </div>
       </div>
@@ -2113,7 +2235,7 @@
   </div>
 </div>
 
-<div class="page" id="page-calendar" style="flex-direction:column;padding:20px 24px;box-sizing:border-box;">
+<div class="page" id="page-calendar" style="padding:20px 24px;box-sizing:border-box;">
   <div style="display:flex;flex-direction:column;flex:1;border-radius:16px;overflow:hidden;border:1px solid var(--border);min-height:0;">
 
   <!-- Header bar -->
@@ -2171,18 +2293,6 @@
 
   </div>
 
-  </div>
-</div>
-
-
-<!-- Mobile calendar day bottom sheet -->
-<div id="cal-mobile-sheet" onclick="if(event.target===this)closeMobileCalSheet()" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.6);align-items:flex-end;justify-content:center;">
-  <div style="width:100%;max-height:70vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:20px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="font-size:15px;font-weight:800;color:var(--text);" id="cal-mobile-sheet-title">Select a Day</div>
-      <button onclick="closeMobileCalSheet()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px;">&times;</button>
-    </div>
-    <div id="cal-mobile-sheet-body"></div>
   </div>
 </div>
 
@@ -2736,7 +2846,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
 <script>
   Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
@@ -2749,6 +2859,36 @@ function rc() { return cssVar('--red'); }    // red color
 function getPnlColor(v) { return v >= 0 ? gc() : rc(); }
 
 const KEY = 'tradelog_v1';
+
+setInterval(async () => {
+  if (currentUser) {
+    await loadTradesFromSupabase();
+    refreshDashboard();
+    renderTrades();
+    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+  }
+}, 30000);
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && currentUser) {
+    await loadTradesFromSupabase();
+    refreshDashboard();
+    renderTrades();
+    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+  }
+});
+
+window.addEventListener('focus', async () => {
+  if (currentUser) {
+    await loadTradesFromSupabase();
+    refreshDashboard();
+    renderTrades();
+    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+  }
+});
 const BAL_KEY = 'tradelog_balance';
 const CUR_KEY = 'tradelog_currency';
 const TAGS_KEY = 'tradelog_custom_tags';
@@ -2757,7 +2897,7 @@ function getCurrency() { return localStorage.getItem(CUR_KEY) || 'USD'; }
 function getCurrencySymbol() { return CURRENCIES[getCurrency()] || '$'; }
 function setCurrency(c) {
   localStorage.setItem(CUR_KEY, c);
-  saveAllSettingsToSupabase();
+  saveProfileToSupabase();
   window._suppressChartAnim = true;
   refreshDashboard();
   renderTrades();
@@ -2782,7 +2922,7 @@ let selectedResult = '';
 let pendingImport = [];
 let editingScreenshot = null;
 
-function getPnl(t) { return (t.netPnl !== undefined && t.netPnl !== null) ? t.netPnl : (t.pnl || 0); }
+function getPnl(t) { return t.netPnl !== undefined ? t.netPnl : (t.pnl || 0); }
 function getResult(t) {
   const pnl = getPnl(t);
   if (t.result) return t.result;
@@ -2800,11 +2940,11 @@ const THEMES = ['dark','gray','black','light'];
 const THEME_LABELS = { dark:'Dark', gray:'Gray', black:'Black', light:'Light' };
 
 function setTheme(t) {
-  document.documentElement.setAttribute('data-theme', t);
+document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem(THEME_KEY, t);
   updateThemeButtons(t);
+  saveProfileToSupabase();
   if (equityChartInst) refreshDashboard();
-  saveAllSettingsToSupabase();
 }
 
 function updateThemeButtons(t) {
@@ -2832,6 +2972,7 @@ function toggleTheme() {
 // ── SIDEBAR ──────────────────────────────────────────────────────────────────
 let sidebarCollapsed = false;
 function toggleSidebar() {
+  if (window.innerWidth <= 768) return; // disabled on mobile
   sidebarCollapsed = !sidebarCollapsed;
   const sb = document.getElementById('sidebar');
   const icon = document.getElementById('toggle-icon');
@@ -2862,121 +3003,25 @@ document.addEventListener('click', function(e) {
 // ── PROFILE ──────────────────────────────────────────────────────────────────
 const PROFILE_KEY = 'tradelog_profile';
 
-// ── PROFILE SUPABASE SYNC ─────────────────────────────────────────────────────
-// ── FULL SETTINGS SYNC TO SUPABASE ───────────────────────────────────────────
-// Saves ALL user settings (profile, balance, currency, theme, goals, mindset, tags, journal)
-// into a single 'settings' JSON column in the profiles table
-
-// ── SINGLE SOURCE OF TRUTH: everything in one Supabase row ──────────────────
-
-function buildSettingsSnapshot() {
-  // Grab everything from localStorage into one object
-  const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-  return {
-    id:       currentUser.id,
-    name:     p.name || 'My Account',
-    avatar:   p.avatar || null,
-    balance:  parseFloat(localStorage.getItem(BAL_KEY)) || 0,
-    currency: localStorage.getItem(CUR_KEY) || 'USD',
-    settings: JSON.stringify({
-      theme:   localStorage.getItem(THEME_KEY)   || 'dark',
-      goals:   localStorage.getItem(GOALS_KEY)   || '{}',
-      journal: localStorage.getItem(JOURNAL_KEY) || '{}',
-      mindset: localStorage.getItem(MINDSET_KEY) || '{}',
-      tags:    localStorage.getItem(TAGS_KEY)    || '[]',
-    })
-  };
-}
-
-async function saveAllSettingsToSupabase() {
-  const user = await ensureCurrentUser({ silent: true, requireSession: true });
-  if (!sb || !user) { console.warn('[SYNC] no sb or user'); return; }
-  const row = buildSettingsSnapshot();
-  console.log('[SYNC] upserting row id:', row.id, 'name:', row.name, 'balance:', row.balance);
-  const { error } = await sb.from('profiles').upsert(row, { onConflict: 'id' });
-  if (error) {
-    console.error('[SYNC] FAILED:', error.message, '| code:', error.code, '| hint:', error.hint);
-    toast('⚠️ Sync failed: ' + error.message, 'error');
-  } else {
-    console.log('[SYNC] SUCCESS ✓');
-  }
-}
-
-async function saveProfileToSupabase(name, avatar, balance) {
-  if (!sb || !currentUser) return;
-  if (name !== undefined) localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
-  if (balance !== undefined) localStorage.setItem(BAL_KEY, balance);
-  await saveAllSettingsToSupabase();
-}
-
-async function loadProfileFromSupabase() {
-  if (!sb || !currentUser) return null;
-  console.log('[LOAD] fetching profile for:', currentUser.id);
-  const { data, error } = await sb
-    .from('profiles')
-    .select('id, name, avatar, balance, currency, settings')
-    .eq('id', currentUser.id)
-    .single();
-
-  if (error) {
-    console.error('[LOAD] error:', error.message, '| code:', error.code);
-    if (error.code !== 'PGRST116') toast('⚠️ Load failed: ' + error.message, 'error');
-    return null;
-  }
-  console.log('[LOAD] got row:', JSON.stringify({ name: data.name, balance: data.balance, hasSettings: !!data.settings }));
-
-  // Apply top-level columns
-  if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
-  if (data.balance)  localStorage.setItem(BAL_KEY, String(data.balance));
-
-  // Apply nested settings blob
-  if (data.settings) {
-    try {
-      const s = typeof data.settings === 'string' ? JSON.parse(data.settings) : data.settings;
-      if (s.theme)                         { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
-      if (s.goals   && s.goals   !== '{}') localStorage.setItem(GOALS_KEY,   s.goals);
-      if (s.journal && s.journal !== '{}') localStorage.setItem(JOURNAL_KEY, s.journal);
-      if (s.mindset && s.mindset !== '{}') localStorage.setItem(MINDSET_KEY, s.mindset);
-      if (s.tags    && s.tags    !== '[]') localStorage.setItem(TAGS_KEY,    s.tags);
-    } catch(e) { console.error('[LOAD] settings parse error:', e); }
-  }
-
-  return { name: data.name, avatar: data.avatar, balance: data.balance };
-}
-
-function applyProfile(p) {
-  if (!p) return;
-  const name = p.name || 'My Account';
-  const initial = name.trim().charAt(0).toUpperCase();
-  const avatar = p.avatar || null;
-  // Save to localStorage as cache
-  localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
-  // Update UI
-  document.getElementById('sidebar-account-name').textContent = name;
-  const sidebarAv = document.getElementById('sidebar-avatar');
-  if (avatar) { sidebarAv.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
-  else sidebarAv.textContent = initial;
-  document.getElementById('popup-account-name').textContent = name;
-  const popupAv = document.getElementById('popup-avatar');
-  if (avatar) { popupAv.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
-  else popupAv.textContent = initial;
-  // Apply balance if present
-  if (p.balance && p.balance > 0) {
-    localStorage.setItem(BAL_KEY, p.balance);
-  }
-}
-
 function loadProfile() {
   try {
-    // Load from localStorage immediately (fast)
     const p = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
-    applyProfile(p);
-    // Then sync from Supabase in background
-    if (currentUser) {
-      loadProfileFromSupabase().then(remote => {
-        if (remote) applyProfile(remote);
-      });
-    }
+    const name = p.name || 'My Account';
+    const initial = name.trim().charAt(0).toUpperCase();
+    const avatar = p.avatar || null;
+
+    // Sidebar card
+    document.getElementById('sidebar-account-name').textContent = name;
+    const sidebarAv = document.getElementById('sidebar-avatar');
+    sidebarAv.textContent = avatar ? '' : initial;
+    if (avatar) { sidebarAv.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
+    else sidebarAv.textContent = initial;
+
+    // Popup
+    document.getElementById('popup-account-name').textContent = name;
+    const popupAv = document.getElementById('popup-avatar');
+    if (avatar) { popupAv.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
+    else { popupAv.textContent = initial; }
   } catch(e) {}
 }
 
@@ -3003,19 +3048,16 @@ function previewProfileAvatar(ev) {
   r.readAsDataURL(file);
 }
 
-async function saveProfile() {
+function saveProfile() {
   const name = document.getElementById('profile-name-input').value.trim() || 'My Account';
   const existing = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
   const avatar = window._pendingAvatar || existing.avatar || null;
-  const balance = getBalance() || null;
-  // Save locally
-  localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
-  // Save to Supabase — includes balance
-  await saveProfileToSupabase(name, avatar, balance);
+localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
   window._pendingAvatar = null;
-  applyProfile({ name, avatar });
+  loadProfile();
+  saveProfileToSupabase();
   closeProfileModal();
-  toast('Profile saved & synced ✓', 'success');
+  toast('Profile saved', 'success');
 }
 
 // ── SUPPORT ───────────────────────────────────────────────────────────────────
@@ -3024,24 +3066,24 @@ function closeSupportModal() { document.getElementById('support-modal').style.di
 
 // ── LOGOUT ────────────────────────────────────────────────────────────────────
 function handleLogout() {
-  trades = [];
-  currentUser = null;
-  appInitialized = false;
-  // Only clear trade data — keep profile (name/avatar) and theme
-  localStorage.removeItem('tradelog_v1');
-  localStorage.removeItem('tradelog_goals');
-  localStorage.removeItem('tradelog_mindset_v2');
-  localStorage.removeItem(TRADE_SYNC_QUEUE_KEY);
-  showAuthScreen();
-  if (sb) sb.auth.signOut().catch(e => console.error('signOut:', e));
+showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the cloud. You can log back in anytime.', okText:'Log Out', okColor:'var(--accent)', onOk: async () => {
+    await sb.auth.signOut();
+    trades = [];
+    _appInitialized = false;
+    currentUser = null;
+    localStorage.clear();
+    showAuthScreen();
+  }});
 }
 
 
 function clearAllTrades() {
   showConfirm({ icon:'🗑️', title:'Delete All Trades', message:'This will permanently delete all your trades. This cannot be undone.', okText:'Delete All', okColor:'var(--red)', onOk: async () => {
+    if (currentUser) {
+      await sb.from('trades').delete().eq('user_id', currentUser.id);
+    }
     trades = [];
     save();
-    await deleteAllTradesFromSupabase({ silent: true, immediate: true });
     selectedId = null;
     sortCol = 'date'; sortDir = -1;
     toast('All trades cleared', 'success');
@@ -3068,31 +3110,25 @@ function showConfirm({ icon='⚠️', title='Are you sure?', message='', okText=
   okBtn.style.background = okColor;
   okBtn.style.color = '#fff';
   okBtn.style.border = 'none';
-  _confirmCallback = () => { closeConfirmModal(); Promise.resolve(onOk()).catch(e => console.error('Confirm action error:', e)); };
+  _confirmCallback = () => { closeConfirmModal(); onOk(); };
   document.getElementById('confirm-modal').style.display = 'flex';
 }
 function closeConfirmModal() {
   document.getElementById('confirm-modal').style.display = 'none';
   _confirmCallback = null;
 }
-async function saveBalance() {
+function saveBalance() {
   const val = parseFloat(document.getElementById('modal-balance-input').value);
   if (!val || val <= 0) { toast('Enter a valid balance', 'error'); return; }
-  localStorage.setItem(BAL_KEY, val);
-  // Sync balance to Supabase
-  const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-  await saveProfileToSupabase(p.name || 'My Account', p.avatar || null, val);
+ localStorage.setItem(BAL_KEY, val);
+  saveProfileToSupabase();
   closeBalanceModal();
-  toast('Balance saved & synced ✓', 'success');
+  toast('Balance saved — $' + val.toLocaleString(), 'success');
   refreshDashboard();
 }
 
 // ── RESULT BUTTONS ───────────────────────────────────────────────────────────
 function setResult(r) {
-  ['win','loss','be'].forEach(k => {
-    const btn = document.getElementById('res-' + k);
-    if (btn) btn.style.boxShadow = '';
-  });
   selectedResult = r;
   document.getElementById('f-result').value = r;
   const colors = { win: 'var(--green)', loss: 'var(--red)', be: 'var(--yellow)' };
@@ -3113,210 +3149,10 @@ function setResult(r) {
 
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://yuqfoasfefldenkvwyrm.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_vKIQGF50re2KA6Zorm-SmQ_fCklxpRB';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cWZvYXNmZWZsZGVua3Z3eXJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTI1MDEsImV4cCI6MjA4ODk4ODUwMX0.lTbdFJ6DPDfSQLNXiQbAH2lxo9mzi9DUyjz9IpHoNNE';
 const _supa = window.supabase || window.Supabase;
 const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 let currentUser = null;
-let _restoreUserPromise = null;
-const TRADE_SYNC_QUEUE_KEY = 'tradelog_trade_sync_queue_v1';
-let _tradeSyncFlushPromise = null;
-let _tradeSyncFlushTimer = null;
-
-function buildTradeRow(t, userId) {
-  return {
-    id: t.id,
-    user_id: userId,
-    symbol: t.symbol,
-    date: t.date,
-    close_date: t.closeDate,
-    dir: t.dir,
-    lots: t.lots,
-    entry: t.entry,
-    exit: t.exit,
-    sl: t.sl,
-    tp: t.tp,
-    pnl: t.pnl,
-    commission: t.commission,
-    net_pnl: t.netPnl,
-    r: t.r,
-    result: t.result,
-    emotion: t.emotion,
-    confidence: t.confidence,
-    notes: t.notes,
-    screenshot: t.screenshot,
-    strategies: t.strategies || []
-  };
-}
-
-function cloneTradeForQueue(t) {
-  try {
-    return JSON.parse(JSON.stringify(t));
-  } catch {
-    return { ...t };
-  }
-}
-
-function getTradeSyncQueue() {
-  try {
-    const queue = JSON.parse(localStorage.getItem(TRADE_SYNC_QUEUE_KEY) || '[]');
-    return Array.isArray(queue) ? queue : [];
-  } catch {
-    return [];
-  }
-}
-
-function setTradeSyncQueue(queue) {
-  if (!queue || !queue.length) {
-    localStorage.removeItem(TRADE_SYNC_QUEUE_KEY);
-    return;
-  }
-  localStorage.setItem(TRADE_SYNC_QUEUE_KEY, JSON.stringify(queue));
-}
-
-function enqueueTradeSync(op) {
-  const queue = getTradeSyncQueue();
-  if (op.type === 'delete_all') {
-    setTradeSyncQueue([{ type: 'delete_all', ts: Date.now() }]);
-    return;
-  }
-
-  const deleteAllOps = queue.filter(item => item.type === 'delete_all');
-  const otherOps = queue.filter(item => item.type !== 'delete_all' && item.id !== op.id);
-  otherOps.push({ ...op, ts: Date.now() });
-  setTradeSyncQueue([...deleteAllOps, ...otherOps]);
-}
-
-function mergeRemoteTradesWithPending(remoteTrades) {
-  const queue = getTradeSyncQueue();
-  if (!queue.length) return remoteTrades;
-
-  const map = new Map((remoteTrades || []).map(t => [t.id, t]));
-  queue.forEach(op => {
-    if (op.type === 'delete_all') {
-      map.clear();
-      return;
-    }
-    if (op.type === 'delete') {
-      map.delete(op.id);
-      return;
-    }
-    if (op.type === 'upsert' && op.trade && op.trade.id) {
-      map.set(op.trade.id, op.trade);
-    }
-  });
-
-  return [...map.values()].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-}
-
-function scheduleTradeSyncFlush(options = {}) {
-  const { silent = true, delay = 350 } = options;
-  clearTimeout(_tradeSyncFlushTimer);
-  _tradeSyncFlushTimer = setTimeout(() => {
-    flushTradeSyncQueue({ silent });
-  }, delay);
-}
-
-async function flushTradeSyncQueue(options = {}) {
-  const { silent = true } = options;
-  if (!sb) return false;
-  if (_tradeSyncFlushPromise) return _tradeSyncFlushPromise;
-
-  _tradeSyncFlushPromise = (async () => {
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;
-
-    const user = await ensureCurrentUser({ silent, requireSession: true });
-    if (!user) return false;
-
-    let queue = getTradeSyncQueue();
-    if (!queue.length) return true;
-
-    while (queue.length) {
-      const op = queue[0];
-      let error = null;
-
-      if (op.type === 'delete_all') {
-        ({ error } = await sb.from('trades').delete().eq('user_id', user.id));
-      } else if (op.type === 'delete') {
-        ({ error } = await sb.from('trades').delete().eq('id', op.id).eq('user_id', user.id));
-      } else if (op.type === 'upsert' && op.trade) {
-        ({ error } = await sb.from('trades').upsert(buildTradeRow(op.trade, user.id)));
-      }
-
-      if (error) {
-        console.error('[SYNC] queue operation failed:', op, error);
-        if (!silent) {
-          toast('Cloud sync is pending. Your changes are saved on this device.', 'error');
-        }
-        return false;
-      }
-
-      queue.shift();
-      setTradeSyncQueue(queue);
-    }
-
-    return true;
-  })().finally(() => {
-    _tradeSyncFlushPromise = null;
-  });
-
-  return _tradeSyncFlushPromise;
-}
-
-async function ensureCurrentUser(options = {}) {
-  const { silent = false, requireSession = false } = options;
-  if (!sb) return null;
-  if (!requireSession && currentUser && currentUser.id) return currentUser;
-  if (_restoreUserPromise) return _restoreUserPromise;
-
-  _restoreUserPromise = (async () => {
-    try {
-      const { data: sessionData, error: sessionError } = await sb.auth.getSession();
-      if (sessionError) {
-        console.error('[AUTH] getSession failed:', sessionError);
-      }
-      const sessionUser = sessionData?.session?.user || null;
-      if (sessionUser) {
-        currentUser = sessionUser;
-        return sessionUser;
-      }
-
-      const { data: userData, error: userError } = await sb.auth.getUser();
-      if (userError) {
-        console.error('[AUTH] getUser failed:', userError);
-      }
-      const user = userData?.user || null;
-      if (user) {
-        currentUser = user;
-        return user;
-      }
-
-      if (!silent) {
-        toast('Session missing on this device. Log in again to sync.', 'error');
-      }
-      return null;
-    } catch (e) {
-      console.error('[AUTH] restore failed:', e);
-      if (!silent) {
-        toast('Could not restore your session on this device.', 'error');
-      }
-      return null;
-    } finally {
-      _restoreUserPromise = null;
-    }
-  })();
-
-  return _restoreUserPromise;
-}
-
-async function restoreSessionIfNeeded() {
-  const user = await ensureCurrentUser({ silent: true, requireSession: true });
-  if (user && (!appInitialized || !currentUser || currentUser.id !== user.id)) {
-    await initApp(user);
-  }
-  if (user) {
-    await flushTradeSyncQueue({ silent: true });
-  }
-}
 
 // ── AUTH UI ───────────────────────────────────────────────────────────────────
 let authMode = 'login';
@@ -3343,138 +3179,109 @@ async function handleAuth() {
   const btn = document.getElementById('auth-btn');
   document.getElementById('auth-error').style.display = 'none';
   if (!email || !password) { showAuthError('Please enter email and password.'); return; }
-
-  // Check Supabase loaded
-  if (!sb) {
-    showAuthError('Connection failed — Supabase did not load. Check your internet and refresh.');
-    return;
-  }
-
-  btn.textContent = 'Connecting...'; btn.disabled = true;
+  btn.textContent = '...'; btn.disabled = true;
   try {
     if (authMode === 'login') {
-      btn.textContent = 'Logging in...';
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
       if (error) { showAuthError(error.message); btn.textContent = 'Log In'; btn.disabled = false; return; }
-      if (!data?.session) { showAuthError('No session returned. Try again.'); btn.textContent = 'Log In'; btn.disabled = false; return; }
-      // Don't wait for onAuthStateChange — call initApp directly
-      await initApp(data.session.user);
+      // Immediately init app without waiting for onAuthStateChange
+      if (data && data.user) await initApp(data.user);
     } else {
-      btn.textContent = 'Creating account...';
       const name = document.getElementById('auth-name').value.trim();
-      const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
+      const { error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
       if (error) { showAuthError(error.message); btn.textContent = 'Create Account'; btn.disabled = false; return; }
     }
   } catch(e) {
-    console.error('Auth exception:', e);
-    showAuthError('Error: ' + (e.message || 'Unknown error. Check console.'));
-    btn.textContent = authMode === 'login' ? 'Log In' : 'Create Account';
-    btn.disabled = false;
+    showAuthError('Something went wrong. Try again.'); btn.textContent = authMode==='login'?'Log In':'Create Account'; btn.disabled = false;
   }
 }
 
 function showApp() {
   const auth = document.getElementById('auth-screen');
-  const app  = document.getElementById('app-root');
-  if (auth) { auth.style.display = 'none'; }
-  if (app)  { app.style.display  = 'block'; }
-}
-
-function showLoadingOverlay() {
-  const ov = document.getElementById('loading-overlay');
-  if (!ov) return;
-  ov.style.display = 'flex';
-  // Animate progress bar
-  const bar = document.getElementById('loading-bar');
-  if (bar) {
-    bar.style.width = '0%';
-    requestAnimationFrame(() => {
-      setTimeout(() => { bar.style.width = '70%'; }, 50);
-    });
-  }
-}
-
-function hideLoadingOverlay() {
-  const ov = document.getElementById('loading-overlay');
-  const bar = document.getElementById('loading-bar');
-  if (!ov) return;
-  if (bar) bar.style.width = '100%';
-  setTimeout(() => {
-    ov.style.opacity = '0';
-    ov.style.transition = 'opacity 0.25s';
-    setTimeout(() => {
-      ov.style.display = 'none';
-      ov.style.opacity = '1';
-      ov.style.transition = '';
-    }, 250);
-  }, 150);
+  const app = document.getElementById('app-root');
+  if (auth) auth.style.display = 'none';
+  if (app) app.style.display = 'block';
 }
 
 function showAuthScreen() {
   const auth = document.getElementById('auth-screen');
-  const app  = document.getElementById('app-root');
-  if (auth) { auth.style.display = 'flex'; }
-  if (app)  { app.style.display  = 'none'; }
+  const app = document.getElementById('app-root');
+  if (auth) auth.style.display = 'flex';
+  if (app) app.style.display = 'none';
 }
 
-// ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
+async function loadProfileFromSupabase() {
+  if (!currentUser) return;
+  const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (error || !data) return;
+  if (data.name) {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: data.name, avatar: data.avatar || null }));
+  }
+  if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
+  if (data.balance) localStorage.setItem(BAL_KEY, data.balance);
+  if (data.settings) {
+    try {
+      const s = JSON.parse(data.settings);
+      if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
+    } catch(e) {}
+  }
+  loadProfile();
+  updateCurrencyButtons();
+}
+
+async function saveProfileToSupabase() {
+  if (!currentUser) return;
+  const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+  const settings = JSON.stringify({ theme: localStorage.getItem(THEME_KEY) || 'dark' });
+  await sb.from('profiles').upsert({
+    id: currentUser.id,
+    name: p.name || '',
+    avatar: p.avatar || null,
+    currency: getCurrency(),
+    balance: getBalance(),
+    settings
+  });
+}// ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
 async function loadTradesFromSupabase() {
-  const user = await ensureCurrentUser({ silent: true, requireSession: true });
-  if (!user) {
-    trades = mergeRemoteTradesWithPending(trades);
-    return;
-  }
-
-  await flushTradeSyncQueue({ silent: true });
-
-  const { data, error } = await sb.from('trades').select('*').eq('user_id', user.id).order('date', { ascending: false });
-  if (error) {
-    console.error('Load error:', error);
-    trades = mergeRemoteTradesWithPending(trades);
-    return;
-  }
-
-  const remoteTrades = (data || []).map(r => ({
+  if (!currentUser) return;
+  const { data, error } = await sb.from('trades').select('*').eq('user_id', currentUser.id).order('date', { ascending: false });
+  if (error) { console.error('Load error:', error); return; }
+  trades = (data || []).map(r => ({
     id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
     dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
     pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
     result: r.result, emotion: r.emotion, confidence: r.confidence,
     notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
   }));
-  trades = mergeRemoteTradesWithPending(remoteTrades);
   localStorage.setItem(KEY, JSON.stringify(trades));
 }
 
-async function saveTradeToSupabase(t, options = {}) {
-  const { silent = true, immediate = false } = options;
-  if (!t || !t.id) return false;
-  enqueueTradeSync({ type: 'upsert', id: t.id, trade: cloneTradeForQueue(t) });
-  if (immediate) {
-    return flushTradeSyncQueue({ silent });
+async function saveTradeToSupabase(t) {
+  if (!currentUser) return;
+  try {
+    const row = {
+      id: t.id, user_id: currentUser.id, symbol: t.symbol, date: t.date,
+      close_date: t.closeDate, dir: t.dir, lots: t.lots, entry: t.entry,
+      exit: t.exit, sl: t.sl, tp: t.tp, pnl: t.pnl, commission: t.commission,
+      net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
+      confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
+      strategies: t.strategies || []
+    };
+    const { error } = await sb.from('trades').upsert(row);
+    if (error) console.error('Save error:', error);
+  } catch(e) {
+    console.error('Save failed:', e);
   }
-  scheduleTradeSyncFlush({ silent });
-  return true;
 }
 
-async function deleteTradeFromSupabase(id, options = {}) {
-  const { silent = true, immediate = false } = options;
-  if (!id) return false;
-  enqueueTradeSync({ type: 'delete', id });
-  if (immediate) {
-    return flushTradeSyncQueue({ silent });
+async function deleteTradeFromSupabase(id) {
+  if (!currentUser) return;
+  try {
+    const { error } = await sb.from('trades').delete().eq('id', id).eq('user_id', currentUser.id);
+    if (error) console.error('Delete error:', error);
+  } catch(e) {
+    console.error('Delete failed:', e);
   }
-  scheduleTradeSyncFlush({ silent });
-  return true;
-}
-
-async function deleteAllTradesFromSupabase(options = {}) {
-  const { silent = true, immediate = false } = options;
-  enqueueTradeSync({ type: 'delete_all' });
-  if (immediate) {
-    return flushTradeSyncQueue({ silent });
-  }
-  scheduleTradeSyncFlush({ silent });
-  return true;
 }
 
 function load() { /* handled by Supabase */ }
@@ -3483,143 +3290,90 @@ function save() {
 }
 
 // ── APP INIT ──────────────────────────────────────────────────────────────────
-let appInitialized = false;
-let appInitializing = false; // prevent concurrent inits
+let _appInitialized = false;
 
 async function initApp(user) {
-  // Skip if same user already fully loaded
-  if (appInitialized && currentUser && currentUser.id === user.id && trades.length > 0) {
+  if (_appInitialized && currentUser && currentUser.id === user.id) {
     showApp();
     return;
   }
-  // Skip if already in progress
-  if (appInitializing) return;
-  appInitializing = true;
-  appInitialized = false;
+  _appInitialized = true;
   currentUser = user;
 
-  const btn = document.getElementById('auth-btn');
-  if (btn) { btn.disabled = false; btn.textContent = 'Log In'; }
-
+  // Show app immediately — don't wait for data
   loadTheme();
   showApp();
   updateGreeting();
 
-  // Load profile from localStorage immediately (instant)
-  loadProfile();
+  // Reset auth button
+  const btn = document.getElementById('auth-btn');
+  if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
+
+// Show cached localStorage data instantly
   try {
-    const cachedTrades = JSON.parse(localStorage.getItem(KEY) || '[]');
-    if (Array.isArray(cachedTrades)) {
-      trades = cachedTrades;
+    const cached = JSON.parse(localStorage.getItem(KEY));
+    if (cached && cached.length) {
+      trades = cached;
+      refreshDashboard();
     }
-  } catch {}
+  } catch(e) {}
+
+  // Then load from Supabase and refresh again
+ try {
+    await loadProfileFromSupabase();
+    await loadTradesFromSupabase();
+    localStorage.setItem(KEY, JSON.stringify(trades));
+  } catch(e) { console.error('Trade load error:', e); }
+
   refreshDashboard();
-
-  // Show loading overlay while fetching data
-  showLoadingOverlay();
-
-  // Load trades + profile from Supabase in parallel
-  try {
-    const [_, remoteProfile] = await Promise.all([
-      loadTradesFromSupabase(),
-      loadProfileFromSupabase()
-    ]);
-    if (remoteProfile) {
-      applyProfile(remoteProfile);
-      if (remoteProfile.balance && remoteProfile.balance > 0) {
-        localStorage.setItem(BAL_KEY, remoteProfile.balance);
-      }
-    }
-  } catch(e) { console.error('Load error:', e); }
-
-  appInitialized = true;
-  appInitializing = false;
-  refreshDashboard();
-  // Re-render goals after remote settings loaded
-  try { renderGoals(); } catch(e) {}
-  hideLoadingOverlay();
-
-  // Start real-time sync so changes from other devices appear instantly
-  setupRealtimeSync();
+  renderTrades();
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  showAuthScreen();
+window.addEventListener('load', () => {
+  if (!sb) { showAuthScreen(); return; }
 
-  if (!sb) return;
+  // Check existing session first
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session && session.user) {
+      initApp(session.user);
+    } else {
+      showAuthScreen();
+    }
+  }).catch(() => showAuthScreen());
 
-  // onAuthStateChange handles login/logout events
+  // Listen for auth changes
   sb.auth.onAuthStateChange(async (event, session) => {
-    console.log('[AUTH] event:', event, 'user:', session?.user?.email || 'none');
-
-    if (event === 'SIGNED_OUT') {
-      // Only log out if we were actually logged in (not a spurious event on load)
-      if (currentUser) {
-        appInitialized = false;
-        appInitializing = false;
-        currentUser = null;
-        trades = [];
-        showAuthScreen();
-      }
-      return;
-    }
-
-    if (event === 'TOKEN_REFRESHED') {
-      // Just update the user, don't re-init everything
-      if (session && session.user && currentUser && currentUser.id === session.user.id) {
-        currentUser = session.user;
-        return;
-      }
-    }
-
-    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-      if (session && session.user) {
-        await initApp(session.user);
-      }
+    if (event === 'SIGNED_IN' && session && session.user) {
+      await initApp(session.user);
+    } else if (event === 'SIGNED_OUT') {
+      _appInitialized = false;
+      currentUser = null;
+      trades = [];
+      showAuthScreen();
     }
   });
-
-  await restoreSessionIfNeeded();
-});
-
-window.addEventListener('focus', () => { restoreSessionIfNeeded(); });
-window.addEventListener('pageshow', () => { restoreSessionIfNeeded(); });
-window.addEventListener('online', () => {
-  restoreSessionIfNeeded();
-  flushTradeSyncQueue({ silent: true });
-});
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) restoreSessionIfNeeded();
 });
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
-  // 1. Switch page visually — instant
+  // Pre-render trades before showing the page to avoid layout flash
+  if (name === 'trades') renderTrades();
+  if (name === 'analytics') renderAnalytics();
+
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
-  if (!nextPage) return;
+  void nextPage.offsetWidth;
   nextPage.classList.add('active');
-
-  // 2. Update sidebar highlight — instant
   const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import MT5', mindset:'Mindset' };
   document.querySelectorAll('.sidebar-item[data-label]').forEach(btn => {
     if (btn.id === 'settings-sidebar-btn') return;
     btn.classList.toggle('active', map[name] === btn.getAttribute('data-label'));
   });
-
-  // 3. Render content on next frame — page is visible before heavy render
-  requestAnimationFrame(() => {
-    applyMobileLayout();
-    try {
-      if (name === 'trades') renderTrades();
-      else if (name === 'analytics') renderAnalytics();
-      else if (name === 'dashboard') refreshDashboard();
-      else if (name === 'calendar') renderCalendar();
-      else if (name === 'mindset') initMindsetPage();
-      else if (name === 'add') { if (!document.getElementById('edit-id').value) clearForm(); }
-    } catch(e) { console.error('switchPage render error:', e); }
-  });
+  if (name === 'dashboard') refreshDashboard();
+  if (name === 'calendar') renderCalendar();
+  if (name === 'mindset') initMindsetPage();
+  if (name === 'add') { if (!document.getElementById('edit-id').value) clearForm(); }
 }
 
 
@@ -3831,7 +3585,6 @@ function permanentDeleteTag(tag) {
     if (t.strategies) t.strategies = t.strategies.filter(s => s !== tag);
   });
   save();
-  trades.forEach(t => saveTradeToSupabase(t, { silent: true }));
   rebuildTagDropdown();
   renderTrades();
   if (selectedId) showTradeDetail(selectedId);
@@ -3842,7 +3595,6 @@ function removeDetailTag(tid, tag) {
   if (!trade) return;
   trade.strategies = (trade.strategies || []).filter(s => s !== tag);
   save();
-  saveTradeToSupabase(trade, { silent: true });
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
   rebuildTagDropdown();
@@ -3854,7 +3606,6 @@ function addDetailTag2(tid, tag) {
   if (!trade.strategies) trade.strategies = [];
   if (!trade.strategies.includes(tag)) trade.strategies.push(tag);
   save();
-  saveTradeToSupabase(trade, { silent: true });
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
   rebuildTagDropdown();
@@ -3946,7 +3697,6 @@ function toggleDetailTag(tid, tag) {
     saveCustomTag(tag);
   }
   save();
-  saveTradeToSupabase(trade, { silent: true });
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
 }
@@ -3965,7 +3715,6 @@ function addDetailTag(tid) {
   }
   saveCustomTag(tag);
   save();
-  saveTradeToSupabase(trade, { silent: true });
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
   rebuildTagDropdown();
@@ -3998,7 +3747,6 @@ function saveTradePhoto(file, id) {
     if (idx === -1) return;
     trades[idx].screenshot = e.target.result;
     save();
-    saveTradeToSupabase(trades[idx], { silent: true });
     showTradeDetail(id);
     if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
     toast('Photo saved', 'success');
@@ -4030,7 +3778,6 @@ function removeTradePhoto(id) {
   if (idx === -1) return;
   trades[idx].screenshot = null;
   save();
-  saveTradeToSupabase(trades[idx], { silent: true });
   showTradeDetail(id);
   if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
   toast('Photo removed', '');
@@ -4046,136 +3793,12 @@ function openPhotoLightbox(id) {
   document.body.appendChild(lb);
 }
 
-function loadTradeIntoForm(t) {
-  // Load a trade into the Add Trade form for editing on mobile
-  clearForm();
-  document.getElementById('edit-id').value = t.id;
-  document.getElementById('f-symbol').value = t.symbol || '';
-  document.getElementById('f-dir').value = t.dir || 'BUY';
-  document.getElementById('f-lots').value = t.lots || '';
-  document.getElementById('f-entry').value = t.entry || '';
-  document.getElementById('f-exit').value = t.exit || '';
-  document.getElementById('f-sl').value = t.sl || '';
-  document.getElementById('f-tp').value = t.tp || '';
-  document.getElementById('f-pnl').value = t.pnl || '';
-  document.getElementById('f-commission').value = t.commission || '';
-  document.getElementById('f-notes').value = t.notes || '';
-  document.getElementById('f-confidence').value = t.confidence || '';
-  if (t.date) document.getElementById('f-date').value = t.date;
-  if (t.closeDate) document.getElementById('f-close-date').value = t.closeDate;
-  // Update date display buttons
-  const dateDisp = document.getElementById('f-date-display');
-  const closeDateDisp = document.getElementById('f-close-date-display');
-  if (dateDisp && t.date) { dateDisp.textContent = new Date(t.date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); dateDisp.style.color = ''; }
-  if (closeDateDisp && t.closeDate) { closeDateDisp.textContent = new Date(t.closeDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); closeDateDisp.style.color = ''; }
-  // Tags and emotion
-  strategyTags = [...(t.strategies || [])];
-  selectedEmotion = t.emotion || '';
-  selectedResult = t.result || '';
-  editingScreenshot = t.screenshot || null;
-  // Update page title to show editing
-  const pageTitle = document.querySelector('#page-add .panel-header .panel-title');
-  if (pageTitle) pageTitle.textContent = 'Edit Trade — ' + t.symbol;
-}
-
-// ── TRADE VALIDATION ─────────────────────────────────────────────────────────
-function markField(el, valid) {
-  if (!el) return;
-  el.style.borderColor = valid ? '' : 'var(--red)';
-  el.style.boxShadow   = valid ? '' : '0 0 0 2px rgba(255,59,92,.25)';
-}
-
-function validateTradeFields(prefix) {
-  const now = new Date();
-  const errors = [];
-
-  // Helper: get element value safely
-  const val = id => (document.getElementById(id)?.value ?? '').trim();
-  const mark = (id, ok) => markField(document.getElementById(id), ok);
-
-  // ── Symbol ──
-  const sym = val(prefix + 'symbol');
-  mark(prefix + 'symbol', !!sym);
-  if (!sym) errors.push('Symbol');
-
-  // ── Open Date ──
-  const openDate = val(prefix + 'date');
-  const openDt = openDate ? new Date(openDate) : null;
-  const openOk = openDt && !isNaN(openDt) && openDt <= now;
-  const openBtn = document.getElementById(prefix + 'date-btn');
-  const openDisp = document.getElementById(prefix + 'date-display');
-  if (openBtn) openBtn.style.borderColor = openOk ? '' : 'var(--red)';
-  if (openDisp) openDisp.style.color = openOk ? '' : 'var(--red)';
-  if (!openDate) errors.push('Open Date');
-  else if (!openDt || isNaN(openDt)) errors.push('Open Date (invalid)');
-  else if (openDt > now) errors.push('Open Date (future not allowed)');
-
-  // ── Close Date ──
-  const closeDate = val(prefix + 'close-date');
-  const closeDt = closeDate ? new Date(closeDate) : null;
-  const closeOk = closeDt && !isNaN(closeDt) && closeDt <= now;
-  const closeBtn = document.getElementById(prefix + 'close-date-btn');
-  const closeDisp = document.getElementById(prefix + 'close-date-display');
-  if (closeBtn) closeBtn.style.borderColor = closeOk ? '' : 'var(--red)';
-  if (closeDisp) closeDisp.style.color = closeOk ? '' : 'var(--red)';
-  if (!closeDate) errors.push('Close Date');
-  else if (!closeDt || isNaN(closeDt)) errors.push('Close Date (invalid)');
-  else if (closeDt > now) errors.push('Close Date (future not allowed)');
-  else if (openDt && closeDate.slice(0,10) < openDate.slice(0,10)) errors.push('Close Date is before Open Date');
-
-  // ── Entry ──
-  const entryVal = val(prefix + 'entry');
-  const entryOk = entryVal !== '' && parseFloat(entryVal) > 0;
-  mark(prefix + 'entry', entryOk);
-  if (!entryOk) errors.push('Entry Price');
-
-  // ── Exit ──
-  const exitVal = val(prefix + 'exit');
-  const exitOk = exitVal !== '' && parseFloat(exitVal) > 0;
-  mark(prefix + 'exit', exitOk);
-  if (!exitOk) errors.push('Exit Price');
-
-  // ── P&L ──
-  const pnlVal = val(prefix + 'pnl');
-  const pnlOk = pnlVal !== '' && !isNaN(parseFloat(pnlVal));
-  mark(prefix + 'pnl', pnlOk);
-  if (!pnlOk) errors.push('P&L');
-
-  // ── Result — check both the variable AND the hidden input ──
-  const resultVar = prefix === 'f-' ? selectedResult : window._ieResult;
-  const resultHidden = val(prefix + 'result');
-  const result = resultVar || resultHidden;
-  const resultOk = ['win','loss','be'].includes(result);
-  // Highlight result buttons if missing
-  if (!resultOk) {
-    ['win','loss','be'].forEach(r => {
-      const btn = document.getElementById((prefix === 'f-' ? 'res-' : 'ie-res-') + r);
-      if (btn) btn.style.boxShadow = '0 0 0 2px var(--red)';
-    });
-    errors.push('Result');
-  }
-
-  if (errors.length > 0) {
-    toast('⚠️ Missing: ' + errors.join(' · '), 'error');
-    return false;
-  }
-  return true;
-}
-
 function saveTrade() {
-  if (!validateTradeFields('f-')) return;
-
-  const sym       = document.getElementById('f-symbol').value.trim().toUpperCase();
-  const openDate  = document.getElementById('f-date').value;
-  const closeDate = document.getElementById('f-close-date').value || null;
-  const entryRaw  = document.getElementById('f-entry').value;
-  const exitRaw   = document.getElementById('f-exit').value;
-  const pnlRaw    = document.getElementById('f-pnl').value;
-  const result    = selectedResult || (parseFloat(pnlRaw) > 0 ? 'win' : parseFloat(pnlRaw) < 0 ? 'loss' : 'be');
-
-  const pnl   = parseFloat(pnlRaw);
-  const entry = parseFloat(entryRaw);
-  const exit  = parseFloat(exitRaw);
+  const sym = document.getElementById('f-symbol').value.trim().toUpperCase();
+  if (!sym) { toast('Symbol is required','error'); return; }
+  const pnl = parseFloat(document.getElementById('f-pnl').value) || 0;
+  const entry = parseFloat(document.getElementById('f-entry').value) || 0;
+  const exit = parseFloat(document.getElementById('f-exit').value) || 0;
   const sl = parseFloat(document.getElementById('f-sl').value) || 0;
   let r = 0;
   if (sl && entry && exit) {
@@ -4211,8 +3834,14 @@ function saveTrade() {
   } else {
     trades.unshift(trade);
   }
-  save();
-  saveTradeToSupabase(trade, { silent: true, immediate: true });
+ save();
+if (currentUser) {
+  saveTradeToSupabase(trade);
+} else {
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) { currentUser = session.user; saveTradeToSupabase(trade); }
+  });
+}
   clearForm();
   toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
   switchPage(editId ? 'trades' : 'dashboard');
@@ -4222,14 +3851,8 @@ function instantDelete(id) {
   showConfirm({ icon:'🗑️', title:'Delete Trade', message:'This trade will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: () => {
     trades = trades.filter(t => t.id !== id);
     save();
-    deleteTradeFromSupabase(id, { silent: true, immediate: true });
+    deleteTradeFromSupabase(id);
     toast('Trade deleted');
-    // Clear detail panel
-    selectedId = null;
-    const body = document.getElementById('trade-detail-body');
-    if (body) body.innerHTML = '<div class="empty-state"><h3>Select a trade</h3><p>Click any row to see details</p></div>';
-    const grid = document.getElementById('trades-grid');
-    if (grid) grid.style.gridTemplateColumns = '1fr 300px';
     renderTrades();
     refreshDashboard();
   }});
@@ -4240,7 +3863,7 @@ function deleteSelected() {
   if (!id) return;
   trades = trades.filter(t => t.id !== id);
   save();
-  deleteTradeFromSupabase(id, { silent: true, immediate: true });
+  deleteTradeFromSupabase(id);
   clearForm();
   toast('Trade deleted');
   switchPage('trades');
@@ -4476,12 +4099,9 @@ function refreshDashboard() {
 
   // Filter sorted trades by selected range
   const now = new Date();
-  const todayStr = now.toISOString().slice(0,10);
-  const dow = (now.getDay() + 6) % 7;
-  const weekStart = new Date(now); weekStart.setHours(0,0,0,0); weekStart.setDate(now.getDate() - dow);
   const rangeCutoff = {
-    '1D': todayStr,
-    '1W': weekStart,
+    '1D': new Date(now - 1 * 24 * 60 * 60 * 1000),
+    '1W': new Date(now - 7 * 24 * 60 * 60 * 1000),
     '1M': new Date(now - 30 * 24 * 60 * 60 * 1000),
     '3M': new Date(now - 90 * 24 * 60 * 60 * 1000),
     'ALL': null
@@ -4489,68 +4109,31 @@ function refreshDashboard() {
 
   let filteredSorted = s.sorted;
   if (rangeCutoff) {
-    if (equityRange === '1D') {
-      filteredSorted = s.sorted.filter(t => (t.date||'').slice(0,10) === todayStr);
-    } else {
-      filteredSorted = s.sorted.filter(t => new Date(t.date) >= rangeCutoff);
-    }
+    filteredSorted = s.sorted.filter(t => new Date(t.date) >= rangeCutoff);
   }
 
-  // Build full cumulative P&L for ALL trades (this is the true running total)
-  const allEquityMap = new Map();
-  let allRunning = 0;
-  for (const t of s.sorted) {
-    allRunning += getPnl(t);
-    allEquityMap.set(t.id, +allRunning.toFixed(2));
-  }
-  const totalPnlNow = allRunning; // the final end point — never changes
+  // Build equity curve for filtered trades
+  let runningEq = 0;
+  const filteredEquity = filteredSorted.map(t => { runningEq += getPnl(t); return +runningEq.toFixed(2); });
 
-  // For the window: find P&L value just before the window starts
-  const tradesBeforeWindow = equityRange === 'ALL' ? [] : s.sorted.filter(t => !filteredSorted.includes(t));
-  const startBalance = +tradesBeforeWindow.reduce((sum, t) => sum + getPnl(t), 0).toFixed(2);
+  // Update trend label for filtered range
+  const filteredLast = filteredEquity[filteredEquity.length - 1] || 0;
+  const filteredColor = filteredLast >= 0 ? 'var(--green)' : 'var(--red)';
+  const filteredSign = filteredLast >= 0 ? '+' : '';
+  trendEl.innerHTML = `<span style="font-family:var(--sans);font-size:13px;font-weight:700;color:${filteredColor};">${filteredSign}$${Math.abs(filteredLast).toFixed(2)}</span> <span style="font-size:10px;color:var(--muted);">${filteredSorted.length} trades</span>`;
 
-  // Build curve using the true running total (not reset per window)
-  const filteredEquity = filteredSorted.map(t => allEquityMap.get(t.id) ?? 0);
-  const filteredLabels = filteredSorted.map(t => {
+  // Equity chart
+  const ctx = document.getElementById('equity-chart').getContext('2d');
+  const eq = filteredEquity.length ? filteredEquity : [0];
+  const labels = filteredSorted.map(t => {
     const d = new Date(t.date);
     return isNaN(d) ? t.date.slice(0,10) : d.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
   });
 
-  // Trend label: P&L change within the window
-  const windowPnl = filteredEquity.length
-    ? +(filteredEquity[filteredEquity.length-1] - startBalance).toFixed(2)
-    : 0;
-  const filteredColor = windowPnl >= 0 ? 'var(--green)' : 'var(--red)';
-  const filteredSign = windowPnl >= 0 ? '+' : '';
-  trendEl.innerHTML = `<span style="font-family:var(--sans);font-size:13px;font-weight:700;color:${filteredColor};">${filteredSign}$${Math.abs(windowPnl).toFixed(2)}</span> <span style="font-size:10px;color:var(--muted);">${filteredSorted.length} trades</span>`;
-
-  // Downsample to max 300 points for performance
-  function downsample(arr, lbls, maxPts) {
-    if (arr.length <= maxPts) return { arr, lbls };
-    const step = Math.ceil(arr.length / maxPts);
-    const outArr = [], outLbls = [];
-    for (let i = 0; i < arr.length; i += step) {
-      outArr.push(arr[i]);
-      outLbls.push(lbls[i]);
-    }
-    // Always include last point
-    if (outArr[outArr.length-1] !== arr[arr.length-1]) {
-      outArr.push(arr[arr.length-1]);
-      outLbls.push(lbls[lbls.length-1]);
-    }
-    return { arr: outArr, lbls: outLbls };
-  }
-  const { arr: eqDs, lbls: labelsDs } = downsample(filteredEquity, filteredLabels, 300);
-
-  // Equity chart
-  const ctx = document.getElementById('equity-chart').getContext('2d');
-  const eq = eqDs.length ? eqDs : [startBalance];
-  const labels = labelsDs;
-
-  // Y axis scale — centered around startBalance (the entry P&L for this window)
-  const eqMin = Math.min(startBalance, ...eq);
-  const eqMax = Math.max(startBalance, ...eq);
-  const dataRange = Math.max(Math.abs(eqMax - eqMin), 1);
+  // Y axis scale — smart step that adapts to actual data range
+  const eqMin = Math.min(0, ...eq);
+  const eqMax = Math.max(0, ...eq);
+  const dataRange = Math.max(Math.abs(eqMin), Math.abs(eqMax), 1);
 
   function calcCleanStep(range, targetTicks) {
     const raw = range / targetTicks;
@@ -4558,20 +4141,33 @@ function refreshDashboard() {
     const norm = raw / mag;
     const clean = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10;
     let s = clean * mag;
+    // Always end in 0 or 5
     if (s >= 10) s = Math.ceil(s / 5) * 5;
     return s;
   }
 
-  const stepSize = calcCleanStep(dataRange, 5);
+  // Try balance-based step first, fall back to data-range-based
+  const eqBal = getBalance();
+  let stepSize;
+  if (eqBal) {
+    const balStep = calcCleanStep(eqBal * 0.005 * 10, 1); // 0.5% of balance
+    // Only use balance step if it gives 4-10 ticks on the data range
+    const ticks = Math.ceil(dataRange / balStep) * 2;
+    if (ticks >= 3 && ticks <= 12) {
+      stepSize = balStep;
+    }
+  }
+  // Fallback: fit ~6 ticks to actual data
+  if (!stepSize) stepSize = calcCleanStep(dataRange, 5);
 
-  // Tight min/max around actual data values (not zero-based)
-  const yMin = Math.floor(eqMin / stepSize) * stepSize - stepSize;
-  const yMax = Math.ceil(eqMax / stepSize) * stepSize + stepSize;
+  // Snap min/max tightly to step
+  const yMin = eqMin < 0 ? (Math.floor(eqMin / stepSize) - 1) * stepSize : -stepSize;
+  const yMax = (Math.ceil(eqMax / stepSize) + 1) * stepSize;
 
-  // Per-point colors: green above startBalance, red below
-  const pointColors = eq.map(v => v >= startBalance ? gc() : rc());
+  // Per-point colors: red only if below 0
+  const pointColors = eq.map(v => v >= 0 ? gc() : rc());
 
-  const eqSnap = eq.slice(); // downsampled equity for segment plugin
+  const eqSnap = eq.slice();
 
   const segmentPlugin = {
     id: 'segmentColor_' + Date.now(),
@@ -4579,13 +4175,13 @@ function refreshDashboard() {
       const { ctx: c, chartArea, scales } = chart;
       const points = chart.getDatasetMeta(0).data;
       if (points.length < 2) return;
-      const baseline = scales.y.getPixelForValue(startBalance);
+      const baseline = scales.y.getPixelForValue(0);
 
       c.save();
       c.lineJoin = 'round';
       c.lineCap = 'round';
 
-      // Draw baseline at starting balance
+      // Draw zero baseline
       c.beginPath();
       c.strokeStyle = 'rgba(148,163,184,0.5)';
       c.lineWidth = 1.5;
@@ -4595,24 +4191,24 @@ function refreshDashboard() {
       c.stroke();
       c.setLineDash([]);
 
-      // Draw colored segments — green above startBalance, red below
+      // Draw colored segments
       for (let i = 1; i < points.length; i++) {
         const v0 = eqSnap[i-1];
         const v1 = eqSnap[i];
         const x0 = points[i-1].x, y0 = points[i-1].y;
         const x1 = points[i].x,   y1 = points[i].y;
 
-        // If segment crosses startBalance, find the crossing X
+        // If segment crosses zero, find the crossing X
         let crossX = null;
-        if ((v0 >= startBalance && v1 < startBalance) || (v0 < startBalance && v1 >= startBalance)) {
-          const tCross = Math.abs(v0 - startBalance) / (Math.abs(v0 - startBalance) + Math.abs(v1 - startBalance));
-          crossX = x0 + tCross * (x1 - x0);
+        if ((v0 >= 0 && v1 < 0) || (v0 < 0 && v1 >= 0)) {
+          const t = Math.abs(v0) / (Math.abs(v0) + Math.abs(v1));
+          crossX = x0 + t * (x1 - x0);
         }
 
         const segments = crossX !== null
-          ? [{ x0, y0, x1: crossX, yc: baseline, color: v0 >= startBalance ? gc() : rc() },
-             { x0: crossX, y0: baseline, x1, yc: y1, color: v1 >= startBalance ? gc() : rc() }]
-          : [{ x0, y0, x1, yc: y1, color: v1 >= startBalance ? gc() : rc() }];
+          ? [{ x0, y0, x1: crossX, yc: baseline, color: v0 >= 0 ? gc() : rc() },
+             { x0: crossX, y0: baseline, x1, yc: y1, color: v1 >= 0 ? gc() : rc() }]
+          : [{ x0, y0, x1, yc: y1, color: v1 >= 0 ? gc() : rc() }];
 
         for (const seg of segments) {
           const inLoss = seg.color === rc();
@@ -4642,11 +4238,10 @@ function refreshDashboard() {
         }
       }
 
-      // Redraw points on top — color matches segment (green above 0, red below)
+      // Redraw points on top
       for (let i = 0; i < points.length; i++) {
-        const inLoss = eqSnap[i] < startBalance;
-        const r = (i === 0 || i === points.length - 1) ? 3 : 0; // hide intermediate dots
-        if (r === 0) continue;
+        const inLoss = eqSnap[i] < 0;
+        const r = (i === 0 || i === points.length - 1) ? 3 : 1.5;
         c.beginPath();
         c.arc(points[i].x, points[i].y, r, 0, Math.PI * 2);
         c.fillStyle = inLoss ? rc() : gc();
@@ -4687,6 +4282,9 @@ function refreshDashboard() {
         borderWidth: 0,
         pointRadius: 0,
         pointHoverRadius: 0,
+        pointBackgroundColor: pointColors,
+        pointBorderColor: pointColors,
+        pointBorderWidth: 2,
         fill: false,
         tension: 0.35
       }]
@@ -4696,7 +4294,6 @@ function refreshDashboard() {
       maintainAspectRatio: false,
       animation: { duration: window._suppressChartAnim ? 0 : 600, easing: 'easeInOutQuart' },
       interaction: { mode: 'index', intersect: false },
-
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -4734,22 +4331,19 @@ function refreshDashboard() {
             },
             label: c => {
               const i = c.dataIndex;
-              const v = c.raw;
-              const totalPnl = v;
-              const windowPnlAtPoint = +(v - startBalance).toFixed(2);
-              const totalStr = totalPnl >= 0 ? `+$${totalPnl.toFixed(2)}` : `-$${Math.abs(totalPnl).toFixed(2)}`;
-              const windowStr = windowPnlAtPoint >= 0 ? `+$${windowPnlAtPoint.toFixed(2)}` : `-$${Math.abs(windowPnlAtPoint).toFixed(2)}`;
               const t = filteredSorted[i];
-              if (!t) return [`P&L  ${totalStr}`];
-              const dateKey = (t.date||'').slice(0,10);
+              const v = c.raw;
+              const tradePnl = i > 0 ? (v - eq[i-1]) : v;
+              const eqStr = v >= 0 ? `+$${v.toFixed(2)}` : `-$${Math.abs(v).toFixed(2)}`;
+              // Sum all trades on same date
+              const dateKey = (t?.date||'').slice(0,10);
               const dayPnl = filteredSorted
                 .filter(x => (x.date||'').slice(0,10) === dateKey)
                 .reduce((sum, x) => sum + getPnl(x), 0);
               const dayStr = dayPnl >= 0 ? `+$${dayPnl.toFixed(2)}` : `-$${Math.abs(dayPnl).toFixed(2)}`;
               return [
-                `Total P&L  ${totalStr}`,
-                `${equityRange} P&L  ${windowStr}`,
                 `Day P&L   ${dayStr}`,
+                `Equity    ${eqStr}`,
               ];
             }
           }
@@ -4795,22 +4389,10 @@ function refreshDashboard() {
     },
     plugins: [segmentPlugin]
   });
-
-  // Fix stuck tooltip — clear on mouse leave
-  const equityCanvas = document.getElementById('equity-chart');
-  if (equityCanvas) {
-    equityCanvas.addEventListener('mouseleave', () => {
-      if (equityChartInst) {
-        equityChartInst.tooltip.setActiveElements([], {x:0,y:0});
-        equityChartInst.setDatasetVisibility(0, true);
-        equityChartInst.update('none');
-      }
-    });
-  }
-
   renderRecentTable();
-  updateEmptyState();
-  renderGoals();
+  // New dashboard features
+  try { updateEmptyState(); } catch(e) {}
+  try { renderGoals(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
   try { updateGreeting(); } catch(e) {}
 }
@@ -4887,12 +4469,9 @@ function toggleDrop(key) {
 }
 let tradesRange = 'all';
 let customFrom = '', customTo = '';
-let tradesPage = 0;
-const TRADES_PER_PAGE = 50;
 
 function setTradesRange(range) {
   tradesRange = range;
-  tradesPage = 0;
   ['today','week','month','all','custom'].forEach(r => {
     const el = document.getElementById('tbr-'+r);
     if (el) el.classList.toggle('active', r === range);
@@ -4989,8 +4568,6 @@ function calPickerNav(dir) {
 }
 
 function renderCalPicker() {
-  // Safety: ensure month/year are always valid numbers
-  if (typeof calPickerMonth !== 'number' || isNaN(calPickerMonth)) { const n=new Date(); calPickerMonth=n.getMonth(); calPickerYear=n.getFullYear(); }
   document.getElementById('cal-picker-title').textContent = calPickerMonths[calPickerMonth] + ' ' + calPickerYear;
   const grid = document.getElementById('cal-picker-grid');
 
@@ -5197,15 +4774,8 @@ function renderTrades() {
   updateSortIndicators();
 
   const tbody = document.getElementById('all-tbody');
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><h3>No trades found</h3></div></td></tr>'; renderTradesPagination(0,0); return; }
-
-  // Paginate
-  const totalPages = Math.ceil(list.length / TRADES_PER_PAGE);
-  if (tradesPage >= totalPages) tradesPage = totalPages - 1;
-  const start = tradesPage * TRADES_PER_PAGE;
-  const pageList = list.slice(start, start + TRADES_PER_PAGE);
-
-  tbody.innerHTML = pageList.map(t => {
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><h3>No trades found</h3></div></td></tr>'; return; }
+  tbody.innerHTML = list.map(t => {
     const pnl = getPnl(t);
     const result = getResult(t);
     const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
@@ -5229,45 +4799,229 @@ function renderTrades() {
       <td data-col="tags" style="max-width:110px;overflow:hidden;">${renderRowTagsHTML(t.strategies)}</td>
     </tr>`;
   }).join('');
-
-  renderTradesPagination(totalPages, list.length);
-}
-
-function renderTradesPagination(totalPages, totalCount) {
-  let pg = document.getElementById('trades-pagination');
-  if (!pg) {
-    pg = document.createElement('div');
-    pg.id = 'trades-pagination';
-    pg.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 0 8px;';
-    const wrap = document.getElementById('all-tbody');
-    if (wrap && wrap.closest('table')) wrap.closest('table').after(pg);
-  }
-  if (totalPages <= 1) { pg.innerHTML = ''; return; }
-  const btnStyle = (active) => `style="padding:6px 14px;border-radius:8px;border:1px solid ${active?'var(--accent)':'var(--border2)'};background:${active?'var(--accent)':'var(--surface2)'};color:${active?'#fff':'var(--text2)'};font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);"`;
-  let html = `<span style="font-size:12px;color:var(--muted);margin-right:4px;">${totalCount} trades</span>`;
-  if (tradesPage > 0) html += `<button ${btnStyle(false)} onclick="tradesPage=${tradesPage-1};renderTrades()">‹ Prev</button>`;
-  html += `<span style="font-size:12px;color:var(--text2);padding:0 8px;">Page ${tradesPage+1} of ${totalPages}</span>`;
-  if (tradesPage < totalPages-1) html += `<button ${btnStyle(false)} onclick="tradesPage=${tradesPage+1};renderTrades()">Next ›</button>`;
-  pg.innerHTML = html;
 }
 
 function renderTradeDetail(t) { showTradeDetail(t.id); }
 
+// Mobile double-tap detection
+let _lastTap = 0, _lastTapId = '';
 function selectTrade(id) {
   selectedId = id;
   if (window.innerWidth <= 768) {
-    // On mobile: single tap = open edit form directly
-    const t = trades.find(x => x.id === id);
-    if (t) {
-      renderTrades();
-      // Load trade into edit form and switch to add page
-      loadTradeIntoForm(t);
-      switchPage('add');
+    const now = Date.now();
+    if (now - _lastTap < 350 && _lastTapId === id) {
+      // Double tap — show detail sheet
+      openMobileTradeSheet(id);
+      _lastTap = 0; _lastTapId = '';
+    } else {
+      _lastTap = now; _lastTapId = id;
+      renderTrades(); // just highlight row
     }
-  } else {
-    renderTrades();
-    showTradeDetail(id);
+    return;
   }
+  renderTrades();
+  showTradeDetail(id);
+}
+
+function openMobileTradeSheet(id) {
+  const t = trades.find(x => x.id === id);
+  if (!t) return;
+  selectedId = id;
+  const sym = getCurrencySymbol();
+  const pnl = getPnl(t);
+  const grossPnl = t.pnl || 0;
+  const comm = t.commission || 0;
+  const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const pnlStr = (pnl >= 0 ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
+  const grossStr = (grossPnl >= 0 ? '+' : '-') + sym + Math.abs(grossPnl).toFixed(2);
+  const result = getResult(t);
+  const resultBadge = result === 'win'
+    ? `<span style="padding:4px 14px;border-radius:8px;background:var(--green-bg);color:var(--green);font-size:11px;font-weight:800;border:1px solid var(--green-glow);">WIN</span>`
+    : result === 'loss'
+    ? `<span style="padding:4px 14px;border-radius:8px;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:800;border:1px solid var(--red-glow);">LOSS</span>`
+    : `<span style="padding:4px 14px;border-radius:8px;background:rgba(245,158,11,.15);color:var(--yellow);font-size:11px;font-weight:800;">BE</span>`;
+
+  // Duration
+  let duration = '—';
+  if (t.date && t.closeDate) {
+    const ms = new Date(t.closeDate) - new Date(t.date);
+    if (!isNaN(ms) && ms >= 0) {
+      const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000);
+      duration = h > 0 ? h+'h '+m+'m' : m+'m';
+    }
+  }
+
+  // Points moved
+  let points = '—';
+  if (t.entry && t.exit) points = Math.abs(t.exit - t.entry).toFixed(2);
+
+  document.getElementById('mobile-sheet-title').innerHTML =
+    `${t.symbol} <span style="font-size:12px;color:var(--muted);font-weight:600;">${t.date ? t.date.slice(0,10) : ''}</span>`;
+
+  // Photo section at bottom
+  const photoHTML = t.screenshot
+    ? `<div style="margin-top:20px;">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Chart Photo</div>
+        <div style="border-radius:12px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in;" onclick="openMobilePhotoFullscreen('${t.id}')">
+          <img src="${t.screenshot}" style="width:100%;display:block;">
+          <div style="text-align:center;padding:6px;font-size:10px;color:var(--muted);">Tap to fullscreen</div>
+        </div>
+      </div>`
+    : '';
+
+  document.getElementById('mobile-sheet-body').innerHTML = `
+    <!-- Header: Symbol + P&L -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+      <div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span>
+          ${resultBadge}
+        </div>
+        ${t.emotion ? `<div style="font-size:20px;margin-top:8px;">${t.emotion}</div>` : ''}
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:30px;font-weight:900;color:${pnlColor};letter-spacing:-1px;">${pnlStr}</div>
+        ${t.r ? `<div style="font-size:13px;font-weight:700;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}${t.r}R</div>` : ''}
+      </div>
+    </div>
+
+    <!-- Grid info -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      ${[
+        ['Entry', t.entry || '—'],
+        ['Exit', t.exit || '—'],
+        ['Lots', t.lots || '—'],
+        ['Points', points],
+        ['Open Date', t.date ? t.date.slice(0,16).replace('T',' ') : '—'],
+        ['Close Date', t.closeDate ? t.closeDate.slice(0,16).replace('T',' ') : '—'],
+        ['Duration', duration],
+        ['Commission', comm ? sym+comm.toFixed(2) : '—'],
+      ].map(([l,v]) => `<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;">
+        <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px;">${l}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);">${v}</div>
+      </div>`).join('')}
+    </div>
+
+    <!-- P&L Breakdown -->
+    <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;">P&L Breakdown</div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;">
+        <span style="font-size:12px;color:var(--muted);">Gross P&L</span>
+        <span style="font-size:13px;font-weight:700;color:${grossPnl>=0?'var(--green)':'var(--red)'};">${grossStr}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;">
+        <span style="font-size:12px;color:var(--muted);">Commission</span>
+        <span style="font-size:13px;font-weight:700;color:${comm?'var(--red)':'var(--muted)'};">${comm?'-'+sym+comm.toFixed(2):'—'}</span>
+      </div>
+      <div style="height:1px;background:var(--border);margin:6px 0;"></div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="font-size:13px;font-weight:700;color:var(--text);">Net P&L</span>
+        <span style="font-size:16px;font-weight:800;color:${pnlColor};">${pnlStr}</span>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    ${t.notes ? `<div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:12px;border-left:3px solid var(--accent);">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Notes</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6;">${t.notes}</div>
+    </div>` : ''}
+
+    <!-- Tags -->
+    ${t.strategies && t.strategies.length ? `<div style="margin-bottom:12px;">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Tags</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">${t.strategies.map(s=>`<span class="trade-tag">${s}</span>`).join('')}</div>
+    </div>` : ''}
+
+    <!-- Photo at bottom -->
+    ${photoHTML}
+  `;
+
+  const sheet = document.getElementById('mobile-trade-sheet');
+  sheet.dataset.tradeId = id; // store id directly on sheet
+  sheet.style.display = 'flex';
+}
+
+function openMobilePhotoFullscreen(id) {
+  const t = trades.find(x => x.id === id);
+  if (!t || !t.screenshot) return;
+  const lb = document.createElement('div');
+  lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;';
+  lb.innerHTML = `
+    <button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1;">×</button>
+    <img src="${t.screenshot}" style="max-width:100%;max-height:100vh;object-fit:contain;">
+  `;
+  lb.onclick = e => { if (e.target === lb) lb.remove(); };
+  document.body.appendChild(lb);
+}
+
+function closeMobileTradeSheet() {
+  document.getElementById('mobile-trade-sheet').style.display = 'none';
+}
+
+function openMobileSheetEdit() {
+  const sheet = document.getElementById('mobile-trade-sheet');
+  const id = sheet.dataset.tradeId || selectedId;
+  const t = trades.find(x => x.id === id);
+  if (t) selectedId = t.id; // make sure selectedId is in sync
+  if (!t) return;
+  closeMobileTradeSheet();
+
+  // Populate every field in the Add Trade form
+  document.getElementById('edit-id').value = t.id;
+  document.getElementById('f-symbol').value = t.symbol || '';
+  document.getElementById('f-dir').value = t.dir || 'BUY';
+  document.getElementById('f-lots').value = t.lots || '';
+  document.getElementById('f-entry').value = t.entry || '';
+  document.getElementById('f-exit').value = t.exit || '';
+  document.getElementById('f-sl').value = t.sl || '';
+  document.getElementById('f-tp').value = t.tp || '';
+  document.getElementById('f-pnl').value = t.pnl || '';
+  document.getElementById('f-commission').value = t.commission || '';
+  document.getElementById('f-notes').value = t.notes || '';
+  document.getElementById('f-confidence').value = t.confidence || '';
+
+  // Dates
+  if (t.date) {
+    document.getElementById('f-date').value = t.date;
+    const d = new Date(t.date);
+    const disp = document.getElementById('f-date-display');
+    if (disp && !isNaN(d)) { disp.textContent = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); disp.style.color='var(--text)'; }
+    const tEl = document.getElementById('f-date-time');
+    if (tEl && t.date.includes('T')) tEl.value = t.date.slice(11,16);
+  }
+  if (t.closeDate) {
+    document.getElementById('f-close-date').value = t.closeDate;
+    const d = new Date(t.closeDate);
+    const disp = document.getElementById('f-close-date-display');
+    if (disp && !isNaN(d)) { disp.textContent = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); disp.style.color='var(--text)'; }
+    const tEl = document.getElementById('f-close-date-time');
+    if (tEl && t.closeDate.includes('T')) tEl.value = t.closeDate.slice(11,16);
+  }
+
+  // Result buttons
+  selectedResult = t.result || '';
+  setResult(selectedResult);
+
+  // Tags
+  strategyTags = [...(t.strategies || [])];
+  renderStrategyTags();
+
+  // Screenshot
+  if (t.screenshot) {
+    editingScreenshot = t.screenshot;
+    const prev = document.getElementById('screenshot-preview');
+    const ph = document.getElementById('screenshot-placeholder');
+    if (prev) { prev.src = t.screenshot; prev.style.display = 'block'; }
+    if (ph) ph.style.display = 'none';
+  }
+
+  // Page title
+  const title = document.getElementById('add-title');
+  if (title) title.textContent = 'Edit Trade';
+  const delBtn = document.getElementById('delete-btn');
+  if (delBtn) delBtn.style.display = 'inline-block';
+
+  switchPage('add');
 }
 
 function showTradeDetail(id) {
@@ -5706,7 +5460,6 @@ function saveOverlayNotes(id, val) {
   if (!t) return;
   t.notes = val;
   save();
-  saveTradeToSupabase(t, { silent: true });
   // Update the static notes display in the side detail panel
   const clamp = document.querySelector('.notes-clamp');
   if (clamp) clamp.textContent = val || 'No notes added.';
@@ -5889,6 +5642,27 @@ function openInlineEdit() {
           style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;line-height:1.6;font-family:var(--sans);resize:vertical;box-sizing:border-box;outline:none;"
           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">${t.notes||''}</textarea>
       </div>
+
+      <!-- Photo -->
+      <div style="margin-top:14px;">
+        <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
+        <input type="file" id="ie-photo-input" accept="image/*" style="display:none;" onchange="uploadTradePhoto(event,'${t.id}');openInlineEdit();">
+        ${t.screenshot
+          ? `<div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoLightbox('${t.id}')">
+               <img src="${t.screenshot}" style="width:100%;display:block;border-radius:10px;">
+               <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
+                 <button onclick="event.stopPropagation();document.getElementById('ie-photo-input').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
+                 <button onclick="event.stopPropagation();removeTradePhoto('${t.id}');openInlineEdit();" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
+               </div>
+             </div>`
+          : `<div onclick="document.getElementById('ie-photo-input').click()"
+               style="border:2px dashed var(--border2);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .15s;"
+               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
+               <div style="font-size:22px;margin-bottom:6px;">📸</div>
+               <div style="font-size:12px;color:var(--muted);">Click to add chart screenshot</div>
+             </div>`
+        }
+      </div>
     </div>
   `;
   window._ieResult = t.result || '';
@@ -5910,34 +5684,11 @@ function ieUpdateTime(hiddenId) {
   const hidden  = document.getElementById(hiddenId);
   const timeEl  = document.getElementById(hiddenId + '-time');
   if (!hidden || !timeEl) return;
-
-  // Auto-format and clamp as user types
-  let raw = timeEl.value.replace(/[^0-9:]/g,'');
-
-  // Auto-insert colon after 2 digits
-  if (raw.length === 2 && !raw.includes(':')) raw = raw + ':';
-
-  // Clamp hours
-  if (raw.includes(':')) {
-    let [hh, mm] = raw.split(':');
-    hh = hh.slice(0,2);
-    mm = (mm||'').slice(0,2);
-    let h = parseInt(hh,10);
-    let m = parseInt(mm,10);
-    if (!isNaN(h) && h > 23) { hh = '23'; timeEl.style.borderColor='var(--red)'; } else { timeEl.style.borderColor='var(--border2)'; }
-    if (!isNaN(m) && m > 59) { mm = '59'; timeEl.style.borderColor='var(--red)'; } else if (timeEl.style.borderColor==='var(--red)') { timeEl.style.borderColor='var(--border2)'; }
-    raw = hh + ':' + mm;
-  }
-
-  timeEl.value = raw;
   const datePart = (hidden.value || '').split('T')[0];
   if (!datePart) return;
   const t = timeEl.value.trim();
   if (!/^\d{1,2}:\d{2}$/.test(t)) return;
-  const [hStr, mStr] = t.split(':');
-  const h = parseInt(hStr,10), m = parseInt(mStr,10);
-  if (h>23||m>59) return;
-  hidden.value = datePart + 'T' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  hidden.value = datePart + 'T' + t.padStart(5,'0');
 }
 
 function ieSetConf(n) {
@@ -6035,38 +5786,11 @@ function updateAddTime(hiddenId, timeId, dispId, btnId) {
   const dispEl = document.getElementById(dispId);
   const btnEl  = document.getElementById(btnId);
   if (!hidden || !timeEl) return;
-
-  // Auto-format and clamp
-  let raw = timeEl.value.replace(/[^0-9:]/g,'');
-  if (raw.length === 2 && !raw.includes(':')) raw = raw + ':';
-  if (raw.includes(':')) {
-    let [hh, mm] = raw.split(':');
-    hh = hh.slice(0,2); mm = (mm||'').slice(0,2);
-    let h = parseInt(hh,10), m = parseInt(mm,10);
-    if (!isNaN(h) && h > 23) { hh = '23'; timeEl.style.borderColor='var(--red)'; }
-    else timeEl.style.borderColor = '';
-    if (!isNaN(m) && m > 59) { mm = '59'; timeEl.style.borderColor='var(--red)'; }
-    raw = hh + ':' + mm;
-  }
-  timeEl.value = raw;
-
   const datePart = (hidden.value || '').split('T')[0];
-  if (!datePart) return;
+  if (!datePart) return; // no date picked yet
   const t = timeEl.value.trim();
-  if (!/^\d{1,2}:\d{2}$/.test(t)) return;
-  const [hStr, mStr] = t.split(':');
-  const h = parseInt(hStr,10), m = parseInt(mStr,10);
-  if (h > 23 || m > 59) return;
-  const timeStr = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
-  hidden.value = datePart + 'T' + timeStr;
-
-  // Block future datetime
-  if (new Date(hidden.value) > new Date()) {
-    timeEl.style.borderColor = 'var(--red)';
-    toast('⚠️ Date/time cannot be in the future','error');
-    return;
-  }
-  timeEl.style.borderColor = '';
+  if (!/^\d{1,2}:\d{2}$/.test(t)) return; // incomplete
+  hidden.value = datePart + 'T' + t.padStart(5,'0');
   const d = new Date(hidden.value);
   if (isNaN(d)) return;
   const label = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
@@ -6178,15 +5902,9 @@ function ieAddNewTag() {
 function saveInlineEdit(id) {
   const idx = trades.findIndex(x => x.id === id);
   if (idx === -1) return;
-
-  if (!validateTradeFields('ie-')) return;
-
   const t = trades[idx];
-  const sym       = (document.getElementById('ie-symbol').value||'').trim().toUpperCase();
-  const openDate  = document.getElementById('ie-date').value;
-  const closeDate = document.getElementById('ie-close-date').value || null;
-  const pnlVal    = document.getElementById('ie-pnl').value;
-
+  const sym = (document.getElementById('ie-symbol').value||'').trim().toUpperCase();
+  if (!sym) { toast('Symbol is required','error'); return; }
   t.symbol     = sym;
   t.date       = document.getElementById('ie-date').value;
   t.closeDate  = document.getElementById('ie-close-date').value || null;
@@ -6210,7 +5928,7 @@ function saveInlineEdit(id) {
     t.r = risk ? +(reward / risk).toFixed(2) : 0;
   }
   save();
-  saveTradeToSupabase(t, { silent: true, immediate: true });
+  saveTradeToSupabase(t);
   collapseDetailPanel();
   renderTrades();
   refreshDashboard();
@@ -6252,7 +5970,13 @@ function deleteInlineEdit(id) {
     trades = trades.filter(t => t.id !== id);
     selectedId = null;
     save();
-    deleteTradeFromSupabase(id, { silent: true, immediate: true });
+if (currentUser) {
+  deleteTradeFromSupabase(id);
+} else {
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) { currentUser = session.user; deleteTradeFromSupabase(id); }
+  });
+}
     collapseDetailPanel();
     renderTrades();
     refreshDashboard();
@@ -6457,26 +6181,10 @@ function renderAnalytics() {
     const cutoff = new Date(now2); cutoff.setDate(now2.getDate() - ({'1M':30,'3M':90,'6M':180}[analyticsEquityRange]||90));
     filteredEq = sorted.filter(t => new Date(t.date||0) >= cutoff);
   }
-
-  // Build true running balance map for ALL trades
-  const baseBalance = getBalance();
-  const anEquityMap = new Map();
-  let anRunning = baseBalance;
-  for (const t of sorted) {
-    anRunning += getPnl(t);
-    anEquityMap.set(t.id, +anRunning.toFixed(2));
-  }
-
-  // Starting balance for this window = balance just before the window
-  const anTradesBefore = analyticsEquityRange === 'ALL' ? [] : sorted.filter(t => !filteredEq.includes(t));
-  const anPnlBefore = anTradesBefore.reduce((sum, t) => sum + getPnl(t), 0);
-  const anStartBal = +(baseBalance + anPnlBefore).toFixed(2);
-
-  // Use true running values (end point never changes)
-  const eqPoints = [anStartBal, ...filteredEq.map(t => anEquityMap.get(t.id) ?? anStartBal)];
-  const eqLabels = ['Start', ...filteredEq.map(t => { const d=new Date(t.date); return isNaN(d)?'':(t.date||'').slice(0,10); })];
-  const eqFinal = eqPoints[eqPoints.length-1];
-  const eqColor = eqFinal >= anStartBal ? GB : RB;
+  let eqRunning = 0;
+  const eqPoints = filteredEq.map(t => { eqRunning += getPnl(t); return +eqRunning.toFixed(2); });
+  const eqLabels = filteredEq.map(t => { const d=new Date(t.date); return isNaN(d)?'':(t.date||'').slice(0,10); });
+  const eqColor = eqRunning >= 0 ? GB : RB;
   if (document.getElementById('an-equity-chart')) {
     if (chartReg['an-equity-chart']) chartReg['an-equity-chart'].destroy();
     const ectx = document.getElementById('an-equity-chart').getContext('2d');
@@ -6485,29 +6193,7 @@ function renderAnalytics() {
     chartReg['an-equity-chart'] = new Chart(ectx, {
       type:'line',
       data:{labels:eqLabels,datasets:[{data:eqPoints,borderColor:eqColor,backgroundColor:grad,borderWidth:2.5,pointRadius:0,pointHoverRadius:5,fill:true,tension:0.3}]},
-      options:{
-        responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{
-          label: v => {
-            const bal = v.raw;
-            const sym = getCurrencySymbol();
-            const windowPnl = +(bal - anStartBal).toFixed(2);
-            const totalPnl = +(bal - baseBalance).toFixed(2);
-            const balStr = sym + bal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-            const windowStr = (windowPnl>=0?'+':'-') + sym + Math.abs(windowPnl).toFixed(2);
-            const totalStr = (totalPnl>=0?'+':'-') + sym + Math.abs(totalPnl).toFixed(2);
-            return [`Balance: ${balStr}`, `${analyticsEquityRange} P&L: ${windowStr}`, `Total P&L: ${totalStr}`];
-          }
-        }}},
-        scales:{
-          x:{ticks:{color:'#475569',font:{size:9},maxTicksLimit:14},grid:{display:false}},
-          y:{
-            grid:{color:'rgba(30,41,59,.4)'},
-            ticks:{color:'#475569',font:{size:9},callback:v=>{ const abs=Math.abs(v); return getCurrencySymbol()+(abs>=1000?(abs/1000).toFixed(1)+'k':abs.toFixed(0)); }},
-            border:{display:false}
-          }
-        }
-      }
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>getCurrencySymbol()+v.raw.toFixed(2)}}},scales:{x:{ticks:{color:'#475569',font:{size:9},maxTicksLimit:14},grid:{display:false}},y:{grid:{color:'rgba(30,41,59,.4)'},ticks:{color:'#475569',font:{size:9},callback:v=>{ const abs=Math.abs(v); return (v<0?'-':'')+getCurrencySymbol()+(abs>=1000?(abs/1000).toFixed(1)+'k':abs); }},border:{display:false}}}}
     });
   }
 
@@ -6669,33 +6355,11 @@ function showImportPreview(rows, headers) {
 
 function confirmImport() {
   if (!pendingImport.length) return;
-
-  // Deduplicate by ticket number — skip trades already in journal
-  const existingTickets = new Set(trades.map(t => t.ticket).filter(Boolean));
-  const newTrades = pendingImport.filter(t => !t.ticket || !existingTickets.has(t.ticket));
-  const skipped = pendingImport.length - newTrades.length;
-
-  if (!newTrades.length) {
-    toast('All trades already imported — no duplicates added', 'error');
-    pendingImport = [];
-    document.getElementById('import-preview').style.display = 'none';
-    return;
-  }
-
-  // Add new trades to array
-  trades = [...newTrades, ...trades];
-
-  // Save to localStorage
-  localStorage.setItem(KEY, JSON.stringify(trades));
-
-  // Sync ONLY new trades to Supabase — not all existing ones
-  newTrades.forEach(t => saveTradeToSupabase(t, { silent: true }));
-
-  const msg = skipped > 0
-    ? `✓ Imported ${newTrades.length} trades (${skipped} duplicates skipped)`
-    : `✓ Imported ${newTrades.length} trades`;
-  toast(msg, 'success');
-
+  trades = [...pendingImport, ...trades];
+  save();
+  // Sync all imported trades to Supabase
+  pendingImport.forEach(t => saveTradeToSupabase(t));
+  toast('✓ Imported ' + pendingImport.length + ' trades', 'success');
   pendingImport = [];
   document.getElementById('import-preview').style.display = 'none';
   document.getElementById('paste-csv').value = '';
@@ -6828,76 +6492,53 @@ function renderCalendar() {
       if (data) { weekPnl += data.pnl; weekTrades += data.count; if (data.pnl >= 0) weekWins++; else weekLosses++; }
     }
     const weekPnlColor = weekPnl >= 0 ? 'var(--green)' : 'var(--red)';
+
     const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow-y:auto;">';
+    // Summary row at top
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface2);">';
+    html += '<div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Week Summary</div>';
+    html += '<div style="display:flex;gap:32px;align-items:center;">';
+    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Trades</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + weekTrades + '</div></div>';
+    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">W / L</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + weekWins + ' / ' + weekLosses + '</div></div>';
+    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Net P&L</div><div style="font-size:22px;font-weight:900;color:' + weekPnlColor + ';">' + fmt(weekPnl) + '</div></div>';
+    html += '</div></div>';
 
-    // ── WEEK SUMMARY BAR ──
-    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow:hidden;padding:12px;gap:12px;box-sizing:border-box;">';
-
-    // Summary pill row
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border-radius:14px;padding:12px 16px;flex-shrink:0;">';
-    html += '<div><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Net P&L</div>';
-    html += '<div style="font-size:22px;font-weight:900;color:' + weekPnlColor + ';letter-spacing:-0.5px;">' + fmt(weekPnl) + '</div></div>';
-    html += '<div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Trades</div>';
-    html += '<div style="font-size:22px;font-weight:900;color:var(--text);">' + weekTrades + '</div></div>';
-    html += '<div style="text-align:right;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">W / L</div>';
-    html += '<div style="font-size:22px;font-weight:900;color:var(--text);">'
-      + '<span style="color:var(--green);">' + weekWins + '</span>'
-      + '<span style="color:var(--muted);font-size:16px;"> / </span>'
-      + '<span style="color:var(--red);">' + weekLosses + '</span>'
-      + '</div></div>';
-    html += '</div>';
-
-    // ── 7 DAY BOXES ──
-    html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;flex:1;">';
+    // Day rows
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
       const dateStr = d.toISOString().slice(0,10);
       const isToday = dateStr === todayStr;
       const data = dayMap[dateStr];
       const isWeekend = i >= 5;
-      const pnl = data ? data.pnl : null;
-      const pnlColor = pnl === null ? 'var(--muted)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
-      const bgColor = isToday ? 'var(--accent)' : data ? (pnl >= 0 ? 'var(--green-bg)' : 'var(--red-bg)') : 'var(--surface)';
-      const borderColor = isToday ? 'var(--accent)' : data ? (pnl >= 0 ? 'rgba(0,255,187,0.3)' : 'rgba(255,59,92,0.3)') : 'var(--border)';
-      const topBar = data && !isToday ? (pnl >= 0 ? 'var(--green)' : 'var(--red)') : isToday ? 'rgba(255,255,255,0.3)' : 'transparent';
+      const dayPnlColor = data ? (data.pnl >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--muted)';
+      const rowBg = isToday ? 'var(--surface2)' : 'transparent';
+      const borderLeft = isToday ? '3px solid var(--accent)' : '3px solid transparent';
+      const maxPnl = Math.max(...Object.values(dayMap).map(d => Math.abs(d.pnl)), 1);
+      const barW = data ? Math.round(Math.abs(data.pnl) / maxPnl * 100) : 0;
+      const barColor = data ? (data.pnl >= 0 ? 'var(--green)' : 'var(--red)') : 'transparent';
 
-      // Format PNL
-      let pnlStr = '—';
-      if (pnl !== null) {
-        const abs = Math.abs(pnl);
-        const sym = getCurrencySymbol();
-        if (abs >= 1000) pnlStr = (pnl >= 0 ? '+' : '-') + sym + (abs/1000).toFixed(1) + 'k';
-        else pnlStr = (pnl >= 0 ? '+' : '-') + sym + abs.toFixed(0);
+      html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="display:flex;align-items:center;gap:20px;padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer;background:' + rowBg + ';border-left:' + borderLeft + ';transition:background .15s;" onmouseover="if(!this.style.borderLeft.includes(\'accent\'))this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'' + rowBg + '\'">';
+      // Day name + date
+      html += '<div style="width:80px;flex-shrink:0;">';
+      html += '<div style="font-size:13px;font-weight:800;color:' + (isToday ? 'var(--accent)' : isWeekend ? 'var(--muted)' : 'var(--text)') + ';">' + dayNames[i] + '</div>';
+      html += '<div style="font-size:11px;color:var(--muted);margin-top:2px;">' + d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + '</div>';
+      html += '</div>';
+      // Bar
+      html += '<div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">';
+      html += '<div style="height:100%;width:' + barW + '%;background:' + barColor + ';border-radius:3px;transition:width .3s;"></div>';
+      html += '</div>';
+      // Stats
+      if (data) {
+        html += '<div style="width:80px;text-align:right;flex-shrink:0;font-size:11px;color:var(--muted);">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
+        html += '<div style="width:100px;text-align:right;flex-shrink:0;font-size:16px;font-weight:800;color:' + dayPnlColor + ';">' + fmt(data.pnl) + '</div>';
+      } else {
+        html += '<div style="width:80px;text-align:right;flex-shrink:0;font-size:11px;color:var(--muted);">—</div>';
+        html += '<div style="width:100px;text-align:right;flex-shrink:0;font-size:14px;font-weight:600;color:var(--muted);">No trades</div>';
       }
-
-      const white = isToday ? '#fff' : null;
-      const dayColor = white || (isWeekend ? 'var(--muted)' : 'var(--text2)');
-      const numColor = white || 'var(--text)';
-      const pnlTextColor = white || pnlColor;
-      const countColor = white ? 'rgba(255,255,255,0.7)' : 'var(--muted)';
-
-      html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="'
-        + 'border-radius:12px;border:1px solid ' + borderColor + ';background:' + bgColor + ';'
-        + 'display:flex;flex-direction:column;align-items:center;justify-content:space-between;'
-        + 'padding:10px 4px 8px;cursor:pointer;transition:transform .15s;position:relative;overflow:hidden;">';
-
-      // Top accent bar
-      html += '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:' + topBar + ';border-radius:12px 12px 0 0;"></div>';
-
-      // Day name
-      html += '<div style="font-size:9px;font-weight:800;color:' + dayColor + ';text-transform:uppercase;letter-spacing:0.8px;margin-top:2px;">' + dayNames[i] + '</div>';
-      // Day number
-      html += '<div style="font-size:22px;font-weight:900;color:' + numColor + ';line-height:1;margin:4px 0;">' + d.getDate() + '</div>';
-      // PNL
-      html += '<div style="font-size:10px;font-weight:900;color:' + pnlTextColor + ';line-height:1;text-align:center;letter-spacing:-0.3px;">' + pnlStr + '</div>';
-      // Trade count
-      html += '<div style="font-size:8px;color:' + countColor + ';font-weight:600;margin-top:3px;">' + (data ? data.count + 't' : '') + '</div>';
-
       html += '</div>';
     }
     html += '</div>';
-    html += '</div>';
-
     document.getElementById('cal-grid').innerHTML = html;
     return;
   }
@@ -7263,20 +6904,16 @@ function closeGoalsModal() {
   document.getElementById('goals-modal').style.display = 'none';
 }
 
-async function saveGoals() {
+function saveGoals() {
   const g = {
     daily:   parseFloat(document.getElementById('goal-input-daily').value)   || 0,
     weekly:  parseFloat(document.getElementById('goal-input-weekly').value)  || 0,
     monthly: parseFloat(document.getElementById('goal-input-monthly').value) || 0,
   };
-  console.log('[GOALS] saving:', JSON.stringify(g));
   localStorage.setItem(GOALS_KEY, JSON.stringify(g));
-  console.log('[GOALS] localStorage now:', localStorage.getItem(GOALS_KEY));
   closeGoalsModal();
   renderGoals();
-  await saveAllSettingsToSupabase();
-  console.log('[GOALS] after sync, localStorage:', localStorage.getItem(GOALS_KEY));
-  toast('Goals saved ✓', 'success');
+  toast('Goals saved!', 'success');
 }
 
 function renderGoals() {
@@ -7295,14 +6932,13 @@ function renderGoals() {
   const weekStart2 = new Date(now); weekStart2.setHours(0,0,0,0); weekStart2.setDate(now.getDate() - dow2);
   const weekEnd2 = new Date(weekStart2); weekEnd2.setDate(weekStart2.getDate() + 6); weekEnd2.setHours(23,59,59,999);
   const weeklyPnl = trades.filter(t => {
-    const dateStr = (t.date||'').slice(0,10);
-    const d = new Date(dateStr + 'T12:00:00'); // noon to avoid DST issues
+    const d = new Date((t.date||'').slice(0,10) + 'T00:00:00');
     return !isNaN(d) && d >= weekStart2 && d <= weekEnd2;
   }).reduce((s,t) => s + getPnl(t), 0);
 
   // Monthly
   const mStr2 = `${now.getFullYear()}-${pad(now.getMonth()+1)}`;
-  const monthlyPnl = trades.filter(t => (t.date||'').slice(0,7) === mStr2).reduce((s,t) => s + getPnl(t), 0);
+  const monthlyPnl = trades.filter(t => (t.date||'').startsWith(mStr2)).reduce((s,t) => s + getPnl(t), 0);
 
   const setGoal = (prefix, current, target, barColor) => {
     const label = document.getElementById(`goal-${prefix}-label`);
@@ -7393,8 +7029,7 @@ function saveJournal() {
       review: (document.getElementById('journal-review')?.value || '').trim(),
     };
     localStorage.setItem(JOURNAL_KEY, JSON.stringify(all));
-    saveAllSettingsToSupabase();
-    toast('Journal saved ✓', 'success');
+    toast('Journal saved!', 'success');
   } catch { toast('Could not save journal', 'error'); }
 }
 
@@ -7405,7 +7040,7 @@ function getMindsetData() {
   try { return JSON.parse(localStorage.getItem(MINDSET_KEY)) || { entries: {}, rules: [] }; }
   catch { return { entries: {}, rules: [] }; }
 }
-function saveMindsetData(data) { localStorage.setItem(MINDSET_KEY, JSON.stringify(data)); saveAllSettingsToSupabase(); }
+function saveMindsetData(data) { localStorage.setItem(MINDSET_KEY, JSON.stringify(data)); }
 
 function initMindsetPage() {
   const key  = getTodayKey();
@@ -7717,11 +7352,6 @@ function renderMindsetWeekStats(entries) {
 
 // ── CALENDAR → TRADES LINK ────────────────────────────────────────────────────
 // Override selectCalDay to also support jumping to trades filtered by that day
-function closeMobileCalSheet() {
-  const s = document.getElementById('cal-mobile-sheet');
-  if (s) s.style.display = 'none';
-}
-
 function selectCalDay(dateStr) {
   selectedCalDay = dateStr;
   document.querySelectorAll('#cal-grid .cal-cell').forEach(c => {
@@ -7749,7 +7379,7 @@ function selectCalDay(dateStr) {
   const sym = getCurrencySymbol();
   const pnlColor = dayPnl >= 0 ? 'var(--green)' : 'var(--red)';
 
-  body.innerHTML = `
+  const dayBodyHTML = `
     <div style="padding:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
         <div style="font-size:28px;font-weight:800;color:${pnlColor};">${dayPnl>=0?'+':''}${sym}${Math.abs(dayPnl).toFixed(2)}</div>
@@ -7773,26 +7403,55 @@ function selectCalDay(dateStr) {
       <button class="btn btn-ghost" style="width:100%;margin-top:14px;font-size:11px;" onclick="jumpToDateTrades('${dateStr}')">View in Trades →</button>
     </div>
   `;
-}
 
-  // On mobile, show bottom sheet
+  body.innerHTML = dayBodyHTML;
+
+  // On mobile: show as bottom sheet
   if (window.innerWidth <= 768) {
-    const sheet = document.getElementById('cal-mobile-sheet');
-    const sheetTitle = document.getElementById('cal-mobile-sheet-title');
-    const sheetBody = document.getElementById('cal-mobile-sheet-body');
-    if (sheet && sheetTitle && sheetBody) {
-      sheetTitle.textContent = title.textContent;
-      sheetBody.innerHTML = body.innerHTML;
+    const sheet = document.getElementById('cal-day-sheet');
+    const sheetTitle = document.getElementById('cal-day-sheet-title');
+    const sheetBody = document.getElementById('cal-day-sheet-body');
+    if (sheet) {
+      sheetTitle.textContent = d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
+      sheetBody.innerHTML = dayBodyHTML;
       sheet.style.display = 'flex';
     }
   }
+}
 
 function jumpToDateTrades(dateStr) {
-  // Set custom date range to that specific day and switch to trades page
+  // Close ALL calendar popups immediately
+  ['cal-day-sheet'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  // Set filter to that exact day
   customFrom = dateStr;
   customTo   = dateStr;
   tradesRange = 'custom';
-  switchPage('trades');
+
+  // Update the custom range hidden inputs and labels
+  const fromEl = document.getElementById('custom-from');
+  const toEl   = document.getElementById('custom-to');
+  const fromLabel = document.getElementById('from-label');
+  const toLabel   = document.getElementById('to-label');
+  if (fromEl) fromEl.value = dateStr;
+  if (toEl)   toEl.value   = dateStr;
+  const d = new Date(dateStr);
+  const label = d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+  if (fromLabel) { fromLabel.textContent = label; fromLabel.style.color = 'var(--text)'; }
+  if (toLabel)   { toLabel.textContent   = label; toLabel.style.color   = 'var(--text)'; }
+
+  // Show custom range picker and activate custom button
+  const picker = document.getElementById('custom-range-picker');
+  if (picker) picker.style.display = 'flex';
+  document.querySelectorAll('.tb-range-btn').forEach(b => b.classList.remove('active'));
+  const customBtn = document.getElementById('tbr-custom');
+  if (customBtn) customBtn.classList.add('active');
+
+  // Small delay so sheet fully closes before switching page
+  setTimeout(() => switchPage('trades'), 50);
 }
 
 // ── SHARE ─────────────────────────────────────────────────────────────────────
@@ -7992,8 +7651,11 @@ document.getElementById('share-modal').addEventListener('click', function(e) {
 function updateGreeting() {
   const h = new Date().getHours();
   const greet = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Up late, trader 🌙';
+  // Get name from profile
+  const profile = JSON.parse(localStorage.getItem('tradelog_profile') || '{}');
+  const name = profile.name && profile.name !== 'My Account' ? ', ' + profile.name.split(' ')[0] : '';
   const el = document.getElementById('dash-greeting');
-  if (el) el.textContent = greet;
+  if (el) el.textContent = greet + name;
   const sub = document.getElementById('dash-date-sub');
   if (sub) {
     const d = new Date();
@@ -8034,180 +7696,6 @@ function positionTooltip(btn) {
 // ── INIT ──────────────────────────────────────────────────────────────────────
 loadProfile();
 updateCurrencyButtons();
-
-// ── MOBILE LAYOUT FIXES ──────────────────────────────────────────────────────
-function applyMobileLayout() {
-  if (window.innerWidth > 768) return;
-
-  // Trades page: hide detail panel, full width table
-  const tradesGrid = document.getElementById('trades-grid');
-  if (tradesGrid) tradesGrid.style.gridTemplateColumns = '1fr';
-  const detailPanel = document.getElementById('trade-detail-panel');
-  if (detailPanel) detailPanel.style.display = 'none';
-
-  // Calendar: force week view on mobile
-  const calDayPanel = document.getElementById('cal-day-panel');
-  if (calDayPanel) calDayPanel.style.display = 'none';
-  const calContainer = document.querySelector('#page-calendar > div > div[style*="grid-template-columns"]');
-  if (calContainer) calContainer.style.gridTemplateColumns = '1fr';
-  if (calView !== 'week') {
-    calView = 'week';
-    if (window.calWeekOffset === undefined) window.calWeekOffset = 0;
-    renderCalendar();
-  }
-
-  // Mindset: stack columns
-  const mindsetGrid = document.querySelector('#page-mindset [style*="grid-template-columns:1fr 300px"]');
-  if (mindsetGrid) {
-    mindsetGrid.style.gridTemplateColumns = '1fr';
-    mindsetGrid.style.overflow = 'auto';
-    mindsetGrid.style.height = 'auto';
-  }
-}
-
-// Run mobile layout on resize and load only
-window.addEventListener('resize', applyMobileLayout);
-window.addEventListener('load', applyMobileLayout);
-
-// ── REAL-TIME SYNC ───────────────────────────────────────────────────────────
-// Supabase Realtime: auto-reload trades when another device makes changes
-let _syncInterval = null;
-
-async function refreshAllData() {
-  if (!currentUser) return;
-
-  // Snapshot trades count+last id before reload to detect actual changes
-  const beforeCount = trades.length;
-  const beforeLast = trades[0] ? trades[0].id : null;
-
-  // Reload trades
-  await loadTradesFromSupabase();
-
-  const afterCount = trades.length;
-  const afterLast = trades[0] ? trades[0].id : null;
-  const tradesChanged = beforeCount !== afterCount || beforeLast !== afterLast;
-
-  // Reload profile + balance
-  let profileChanged = false;
-  try {
-    const remoteProfile = await loadProfileFromSupabase();
-    if (remoteProfile) {
-      const existing = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-      if (remoteProfile.name !== existing.name || remoteProfile.balance !== getBalance()) {
-        profileChanged = true;
-        applyProfile(remoteProfile);
-        if (remoteProfile.balance && remoteProfile.balance > 0) {
-          localStorage.setItem(BAL_KEY, remoteProfile.balance);
-        }
-      }
-    }
-  } catch(e) {}
-
-  // Only refresh UI if something actually changed
-  if (!tradesChanged && !profileChanged) return;
-
-  const activePage = document.querySelector('.page.active');
-  if (activePage) {
-    const name = activePage.id.replace('page-', '');
-    if (name === 'dashboard') refreshDashboard();
-    else if (name === 'trades') renderTrades();
-    else if (name === 'analytics') renderAnalytics();
-    else if (name === 'calendar') renderCalendar();
-  }
-}
-
-let _realtimeSetup = false;
-function setupRealtimeSync() {
-  if (!sb || !currentUser) return;
-  if (_realtimeSetup) return; // only setup once
-  _realtimeSetup = true;
-
-  // ── Supabase Realtime — only refresh when OTHER device changes data ──
-  try {
-    sb.channel('trades-sync-' + currentUser.id)
-      .on('postgres_changes', {
-        event: '*', schema: 'public', table: 'trades',
-        filter: 'user_id=eq.' + currentUser.id
-      }, async () => {
-        // Debounce — wait 2s so rapid saves don't cause multiple refreshes
-        clearTimeout(window._realtimeDebounce);
-        window._realtimeDebounce = setTimeout(() => refreshAllData(), 2000);
-      })
-      .subscribe();
-  } catch(e) { console.log('Realtime not available:', e.message); }
-
-  // ── Poll every 2 minutes only — just a safety net ──
-  if (_syncInterval) clearInterval(_syncInterval);
-  _syncInterval = setInterval(async () => {
-    if (document.visibilityState === 'visible' && currentUser) {
-      await refreshAllData();
-    }
-  }, 120000);
-
-  // ── Sync once when tab becomes visible after being hidden ──
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && currentUser) {
-      clearTimeout(window._visDebounce);
-      window._visDebounce = setTimeout(() => refreshAllData(), 2000);
-    }
-  });
-}
-
-// ── SCROLL-AWARE CHART PERFORMANCE ───────────────────────────────────────────
-// Disables all Chart.js mouse interaction while scrolling for smooth FPS,
-// re-enables hover/tooltip after scrolling stops.
-(function() {
-  let scrollTimer = null;
-  let isScrolling = false;
-
-  function getAllCharts() {
-    const charts = [];
-    if (equityChartInst) charts.push(equityChartInst);
-    Object.values(chartReg || {}).forEach(c => { if (c) charts.push(c); });
-    return charts;
-  }
-
-  function disableChartInteraction() {
-    getAllCharts().forEach(chart => {
-      if (!chart.options) return;
-      chart.options.events = [];
-      // Hide any visible tooltip immediately
-      if (chart.tooltip) chart.tooltip.opacity = 0;
-      chart.update('none');
-    });
-  }
-
-  function enableChartInteraction() {
-    getAllCharts().forEach(chart => {
-      if (!chart.options) return;
-      chart.options.events = ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove'];
-      chart.update('none');
-    });
-  }
-
-  // Listen on the main scrollable container
-  function attachScrollListener() {
-    const scroller = document.getElementById('main-content') || document.querySelector('.main-content') || window;
-    scroller.addEventListener('scroll', function() {
-      if (!isScrolling) {
-        isScrolling = true;
-        disableChartInteraction();
-      }
-      clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(function() {
-        isScrolling = false;
-        enableChartInteraction();
-      }, 150); // re-enable 150ms after scroll stops
-    }, { passive: true });
-  }
-
-  // Attach after DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', attachScrollListener);
-  } else {
-    attachScrollListener();
-  }
-})();
 </script>
 
 </div><!-- /main-content -->
@@ -8255,6 +7743,65 @@ function setupRealtimeSync() {
     <button onclick="closeDatePicker()"
       style="padding:6px 16px;border-radius:7px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity .15s;"
       onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Done</button>
+  </div>
+</div>
+<!-- ── AUTH SCREEN ─────────────────────────────────────────────────────────── -->
+<div id="auth-screen" style="display:flex;position:fixed;inset:0;z-index:99998;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;">
+  <div style="width:100%;max-width:400px;padding:0 24px;">
+    <!-- Logo -->
+    <div style="text-align:center;margin-bottom:40px;">
+      <div style="font-size:36px;font-weight:900;color:var(--text);letter-spacing:-2px;">Trade<span style="color:var(--accent);">Log</span></div>
+      <div style="font-size:13px;color:var(--muted);margin-top:6px;">Your professional trading journal</div>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:4px;margin-bottom:28px;">
+      <button id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;">Log In</button>
+      <button id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;">Sign Up</button>
+    </div>
+
+    <!-- Form -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div id="auth-name-field" style="display:none;">
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Name</label>
+        <input id="auth-name" type="text" placeholder="Your name" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Email</label>
+        <input id="auth-email" type="email" placeholder="you@example.com" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
+      </div>
+      <div id="auth-error" style="display:none;padding:10px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);"></div>
+      <button id="auth-btn" onclick="handleAuth()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;transition:opacity .2s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Log In</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MOBILE CALENDAR DAY SHEET ── -->
+<div id="cal-day-sheet" onclick="if(event.target===this)this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.5);align-items:flex-end;">
+  <div style="width:100%;max-height:70vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:0 0 30px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);">
+      <div style="font-size:15px;font-weight:800;color:var(--text);" id="cal-day-sheet-title"></div>
+      <button onclick="document.getElementById('cal-day-sheet').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div id="cal-day-sheet-body"></div>
+  </div>
+</div>
+
+<!-- ── MOBILE TRADE DETAIL SHEET ── -->
+<div id="mobile-trade-sheet" onclick="if(event.target===this)closeMobileTradeSheet()" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.5);align-items:flex-end;">
+  <div style="width:100%;max-height:90vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:0 0 40px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;">
+      <div style="font-size:16px;font-weight:800;color:var(--text);" id="mobile-sheet-title">Trade</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="openMobileSheetEdit()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:rgba(99,102,241,.1);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Edit</button>
+        <button onclick="closeMobileTradeSheet()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>
+      </div>
+    </div>
+    <div id="mobile-sheet-body" style="padding:16px 20px;"></div>
   </div>
 </div>
 </body>
