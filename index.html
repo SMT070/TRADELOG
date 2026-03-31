@@ -7777,15 +7777,21 @@ updateCurrencyButtons();
   </div>
 </div>
   <script>
+ // ── AUTO-SYNC SENSOR ──────────────────────────────────────────────────────────
     // This tells the phone: "Every time the user looks at me, get the latest data."
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
-            // This runs your existing function to pull data from Supabase
-            if (typeof fetchTrades === "function") {
-                fetchTrades(); 
-            }
+            console.log("App became visible - refreshing data...");
+            // These are the specific functions in your file that pull and show data
+            if (typeof renderTrades === "function") renderTrades();
+            if (typeof refreshDashboard === "function") refreshDashboard();
+            if (typeof renderCalendar === "function") renderCalendar();
         }
     });
-</script>
+
+    // ── INIT ──────────────────────────────────────────────────────────────────────
+    loadProfile();
+    updateCurrencyButtons();
+    
 </body>
 </html>
