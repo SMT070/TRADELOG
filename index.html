@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="icon" type="image/png" sizes="32x32" href="logo.png?v=2">
-  <link rel="icon" type="image/png" sizes="16x16" href="logo.png?v=2">
-  <link rel="shortcut icon" href="logo.png?v=2">
-  <link rel="apple-touch-icon" href="logo.png?v=2">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TradeLog — Your Trading Journal</title>
@@ -15,27 +11,12 @@
     <meta name="theme-color" content="#0b0f1a">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-  // Keep your theme loader
+  // Apply theme instantly before any rendering to prevent flash
   (function() {
     const t = localStorage.getItem('tradelog_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', t);
   })();
-
-  // THE DATA FIX
-  // Go to Supabase > Settings > API to get these two values:
-  const SUPABASE_URL = 'https://your-project.supabase.co'; 
-  const SUPABASE_ANON_KEY = 'your-anon-key';
-
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
-  });
 </script>
 <style>
   :root {
@@ -7776,26 +7757,5 @@ updateCurrencyButtons();
     <div id="mobile-sheet-body" style="padding:16px 20px;"></div>
   </div>
 </div>
-  <script>
- // ── AUTO-SYNC SENSOR ──────────────────────────────────────────────────────────
-    // Refreshes your Nasdaq logs and Equity Curve whenever you switch to the app.
-    document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-            console.log("TradeLog: App active - refreshing data...");
-            
-            // These match the exact function names in your index gem.html file
-            if (typeof renderTrades === "function") renderTrades();
-            if (typeof refreshDashboard === "function") refreshDashboard();
-            if (typeof renderCalendar === "function") renderCalendar();
-            if (typeof loadJournal === "function") loadJournal();
-        }
-    });
-
-    // ── INITIALIZATION ────────────────────────────────────────────────────────────
-    // These start the app when it first loads
-    loadProfile();
-    updateCurrencyButtons();
-    
-</script>
 </body>
 </html>
