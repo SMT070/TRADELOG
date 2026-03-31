@@ -3834,8 +3834,14 @@ function saveTrade() {
   } else {
     trades.unshift(trade);
   }
-  save();
+ save();
+if (currentUser) {
   saveTradeToSupabase(trade);
+} else {
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) { currentUser = session.user; saveTradeToSupabase(trade); }
+  });
+}
   clearForm();
   toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
   switchPage(editId ? 'trades' : 'dashboard');
@@ -5964,7 +5970,13 @@ function deleteInlineEdit(id) {
     trades = trades.filter(t => t.id !== id);
     selectedId = null;
     save();
-    deleteTradeFromSupabase(id);
+if (currentUser) {
+  deleteTradeFromSupabase(id);
+} else {
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) { currentUser = session.user; deleteTradeFromSupabase(id); }
+  });
+}
     collapseDetailPanel();
     renderTrades();
     refreshDashboard();
