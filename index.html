@@ -3258,22 +3258,30 @@ async function loadTradesFromSupabase() {
 
 async function saveTradeToSupabase(t) {
   if (!currentUser) return;
-  const row = {
-    id: t.id, user_id: currentUser.id, symbol: t.symbol, date: t.date,
-    close_date: t.closeDate, dir: t.dir, lots: t.lots, entry: t.entry,
-    exit: t.exit, sl: t.sl, tp: t.tp, pnl: t.pnl, commission: t.commission,
-    net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
-    confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
-    strategies: t.strategies || []
-  };
-  const { error } = await sb.from('trades').upsert(row);
-  if (error) console.error('Save error:', error);
+  try {
+    const row = {
+      id: t.id, user_id: currentUser.id, symbol: t.symbol, date: t.date,
+      close_date: t.closeDate, dir: t.dir, lots: t.lots, entry: t.entry,
+      exit: t.exit, sl: t.sl, tp: t.tp, pnl: t.pnl, commission: t.commission,
+      net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
+      confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
+      strategies: t.strategies || []
+    };
+    const { error } = await sb.from('trades').upsert(row);
+    if (error) console.error('Save error:', error);
+  } catch(e) {
+    console.error('Save failed:', e);
+  }
 }
 
 async function deleteTradeFromSupabase(id) {
   if (!currentUser) return;
-  const { error } = await sb.from('trades').delete().eq('id', id).eq('user_id', currentUser.id);
-  if (error) console.error('Delete error:', error);
+  try {
+    const { error } = await sb.from('trades').delete().eq('id', id).eq('user_id', currentUser.id);
+    if (error) console.error('Delete error:', error);
+  } catch(e) {
+    console.error('Delete failed:', e);
+  }
 }
 
 function load() { /* handled by Supabase */ }
