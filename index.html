@@ -6957,6 +6957,7 @@ function saveGoals() {
     monthly: parseFloat(document.getElementById('goal-input-monthly').value) || 0,
   };
   localStorage.setItem(GOALS_KEY, JSON.stringify(g));
+  saveUserDataToSupabase();
   closeGoalsModal();
   renderGoals();
   toast('Goals saved!', 'success');
@@ -7090,6 +7091,10 @@ async function loadUserDataFromSupabase() {
       const merged = [...new Set([...local, ...remote])];
       localStorage.setItem(TAGS_KEY, JSON.stringify(merged));
     }
+    if (data.goals) {
+      const remote = typeof data.goals === 'string' ? JSON.parse(data.goals) : data.goals;
+      localStorage.setItem(GOALS_KEY, JSON.stringify(remote));
+    }
   } catch(e) {
     console.warn('TradeLog: user_data load failed', e);
   }
@@ -7109,7 +7114,8 @@ async function saveUserDataToSupabase() {
       user_id: uid,
       mindset: getMindsetDataLocal(),
       journal: JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
-      tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]')
+      tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]'),
+      goals:   JSON.parse(localStorage.getItem(GOALS_KEY) || '{}')
     });
   } catch(e) {
     console.warn('TradeLog: user_data save failed', e);
