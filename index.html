@@ -3081,9 +3081,18 @@ showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the c
 
 
 function clearAllTrades() {
-  showConfirm({ icon:'🗑️', title:'Delete All Trades', message:'This will permanently delete all your trades. This cannot be undone.', okText:'Delete All', okColor:'var(--red)', onOk: async () => {
-    if (currentUser) {
-      await sb.from('trades').delete().eq('user_id', currentUser.id);
+  showConfirm({ icon:'\uD83D\uDDD1\uFE0F', title:'Delete All Trades', message:'This will permanently delete all your trades. This cannot be undone.', okText:'Delete All', okColor:'var(--red)', onOk: async () => {
+    // Guarantee we have a valid session before deleting from Supabase
+    let uid = currentUser ? currentUser.id : null;
+    if (!uid) {
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session && session.user) { currentUser = session.user; uid = session.user.id; }
+      } catch(e) {}
+    }
+    if (uid) {
+      const { error } = await sb.from('trades').delete().eq('user_id', uid);
+      if (error) console.error('Clear all error:', error);
     }
     trades = [];
     save();
@@ -3154,7 +3163,14 @@ function setResult(r) {
 const SUPABASE_URL = 'https://yuqfoasfefldenkvwyrm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cWZvYXNmZWZsZGVua3Z3eXJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTI1MDEsImV4cCI6MjA4ODk4ODUwMX0.lTbdFJ6DPDfSQLNXiQbAH2lxo9mzi9DUyjz9IpHoNNE';
 const _supa = window.supabase || window.Supabase;
-const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+    storageKey: 'tradelog_sb_session'
+  }
+}) : null;
 let currentUser = null;
 
 // ── AUTH UI ───────────────────────────────────────────────────────────────────
@@ -3334,10 +3350,7 @@ async function guaranteedDeleteFromSupabase(id) {
 let _appInitialized = false;
 
 async function initApp(user) {
-  if (_appInitialized && currentUser && currentUser.id === user.id) {
-    showApp();
-    return;
-  }
+  const isFirstInit = !_appInitialized || !currentUser || currentUser.id !== user.id;
   _appInitialized = true;
   currentUser = user;
 
@@ -3350,17 +3363,19 @@ async function initApp(user) {
   const btn = document.getElementById('auth-btn');
   if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
 
-// Show cached localStorage data instantly
-  try {
-    const cached = JSON.parse(localStorage.getItem(KEY));
-    if (cached && cached.length) {
-      trades = cached;
-      refreshDashboard();
-    }
-  } catch(e) {}
+  // Show cached localStorage data instantly (first load only)
+  if (isFirstInit) {
+    try {
+      const cached = JSON.parse(localStorage.getItem(KEY));
+      if (cached && cached.length) {
+        trades = cached;
+        refreshDashboard();
+      }
+    } catch(e) {}
+  }
 
-  // Then load from Supabase and refresh again
- try {
+  // Always load fresh data from Supabase
+  try {
     await loadProfileFromSupabase();
     await loadTradesFromSupabase();
     await loadUserDataFromSupabase();
