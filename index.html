@@ -2863,6 +2863,7 @@ const KEY = 'tradelog_v1';
 setInterval(async () => {
   if (currentUser) {
     await loadTradesFromSupabase();
+    await loadUserDataFromSupabase();
     refreshDashboard();
     renderTrades();
     if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
@@ -2873,6 +2874,7 @@ setInterval(async () => {
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && currentUser) {
     await loadTradesFromSupabase();
+    await loadUserDataFromSupabase();
     refreshDashboard();
     renderTrades();
     if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
@@ -2883,6 +2885,7 @@ document.addEventListener('visibilitychange', async () => {
 window.addEventListener('focus', async () => {
   if (currentUser) {
     await loadTradesFromSupabase();
+    await loadUserDataFromSupabase();
     refreshDashboard();
     renderTrades();
     if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
@@ -3289,6 +3292,44 @@ function save() {
   localStorage.setItem(KEY, JSON.stringify(trades));
 }
 
+// ── GUARANTEED SUPABASE WRITE ─────────────────────────────────────────────────
+// Ensures currentUser is set before writing — fixes mobile session race condition
+async function guaranteedSaveToSupabase(trade) {
+  if (currentUser) {
+    await saveTradeToSupabase(trade);
+    return;
+  }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      currentUser = session.user;
+      await saveTradeToSupabase(trade);
+    } else {
+      console.warn('TradeLog: no active session — trade saved locally only');
+    }
+  } catch(e) {
+    console.error('TradeLog: session check failed', e);
+  }
+}
+
+async function guaranteedDeleteFromSupabase(id) {
+  if (currentUser) {
+    await deleteTradeFromSupabase(id);
+    return;
+  }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      currentUser = session.user;
+      await deleteTradeFromSupabase(id);
+    } else {
+      console.warn('TradeLog: no active session — delete may not have synced');
+    }
+  } catch(e) {
+    console.error('TradeLog: session check failed on delete', e);
+  }
+}
+
 // ── APP INIT ──────────────────────────────────────────────────────────────────
 let _appInitialized = false;
 
@@ -3322,6 +3363,7 @@ async function initApp(user) {
  try {
     await loadProfileFromSupabase();
     await loadTradesFromSupabase();
+    await loadUserDataFromSupabase();
     localStorage.setItem(KEY, JSON.stringify(trades));
   } catch(e) { console.error('Trade load error:', e); }
 
@@ -3440,11 +3482,12 @@ function getSavedTags() {
 }
 function saveCustomTag(tag) {
   const tags = getSavedTags();
-  if (!tags.includes(tag)) { tags.push(tag); localStorage.setItem(TAGS_KEY, JSON.stringify(tags)); }
+  if (!tags.includes(tag)) { tags.push(tag); localStorage.setItem(TAGS_KEY, JSON.stringify(tags)); saveUserDataToSupabase(); }
 }
 function deleteCustomTag(tag) {
   const tags = getSavedTags().filter(t => t !== tag);
   localStorage.setItem(TAGS_KEY, JSON.stringify(tags));
+  saveUserDataToSupabase();
   // Also remove from current active selection if present
   strategyTags = strategyTags.filter(t => t !== tag);
   renderStrategyTags();
@@ -3834,14 +3877,8 @@ function saveTrade() {
   } else {
     trades.unshift(trade);
   }
- save();
-if (currentUser) {
-  saveTradeToSupabase(trade);
-} else {
-  sb.auth.getSession().then(({ data: { session } }) => {
-    if (session) { currentUser = session.user; saveTradeToSupabase(trade); }
-  });
-}
+  save();
+  guaranteedSaveToSupabase(trade);
   clearForm();
   toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
   switchPage(editId ? 'trades' : 'dashboard');
@@ -3851,7 +3888,7 @@ function instantDelete(id) {
   showConfirm({ icon:'🗑️', title:'Delete Trade', message:'This trade will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: () => {
     trades = trades.filter(t => t.id !== id);
     save();
-    deleteTradeFromSupabase(id);
+    guaranteedDeleteFromSupabase(id);
     toast('Trade deleted');
     renderTrades();
     refreshDashboard();
@@ -3863,7 +3900,7 @@ function deleteSelected() {
   if (!id) return;
   trades = trades.filter(t => t.id !== id);
   save();
-  deleteTradeFromSupabase(id);
+  guaranteedDeleteFromSupabase(id);
   clearForm();
   toast('Trade deleted');
   switchPage('trades');
@@ -5928,7 +5965,7 @@ function saveInlineEdit(id) {
     t.r = risk ? +(reward / risk).toFixed(2) : 0;
   }
   save();
-  saveTradeToSupabase(t);
+  guaranteedSaveToSupabase(t);
   collapseDetailPanel();
   renderTrades();
   refreshDashboard();
@@ -5970,13 +6007,7 @@ function deleteInlineEdit(id) {
     trades = trades.filter(t => t.id !== id);
     selectedId = null;
     save();
-if (currentUser) {
-  deleteTradeFromSupabase(id);
-} else {
-  sb.auth.getSession().then(({ data: { session } }) => {
-    if (session) { currentUser = session.user; deleteTradeFromSupabase(id); }
-  });
-}
+    guaranteedDeleteFromSupabase(id);
     collapseDetailPanel();
     renderTrades();
     refreshDashboard();
@@ -6358,7 +6389,7 @@ function confirmImport() {
   trades = [...pendingImport, ...trades];
   save();
   // Sync all imported trades to Supabase
-  pendingImport.forEach(t => saveTradeToSupabase(t));
+  pendingImport.forEach(t => guaranteedSaveToSupabase(t));
   toast('✓ Imported ' + pendingImport.length + ' trades', 'success');
   pendingImport = [];
   document.getElementById('import-preview').style.display = 'none';
@@ -6995,12 +7026,85 @@ function renderGoals() {
 }
 
 // ── DAILY JOURNAL ─────────────────────────────────────────────────────────────
-const JOURNAL_KEY = 'tradelog_journal';
+const JOURNAL_KEY  = 'tradelog_journal';
+const MINDSET_KEY  = 'tradelog_mindset_v2';
 
 function getTodayKey() {
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
   return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+}
+
+// ── SUPABASE USER-DATA SYNC (mindset, journal, tags) ─────────────────────────
+// Requires a `user_data` table in Supabase. Run this SQL once in your Supabase
+// SQL Editor (Dashboard → SQL Editor → New Query):
+//
+//   create table if not exists public.user_data (
+//     user_id uuid primary key references auth.users(id) on delete cascade,
+//     mindset jsonb default '{}'::jsonb,
+//     journal jsonb default '{}'::jsonb,
+//     tags    jsonb default '[]'::jsonb
+//   );
+//   alter table public.user_data enable row level security;
+//   create policy "Users manage own data" on public.user_data
+//     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+async function loadUserDataFromSupabase() {
+  if (!currentUser) return;
+  try {
+    const { data, error } = await sb.from('user_data').select('*').eq('user_id', currentUser.id).single();
+    if (error || !data) return;
+    if (data.mindset) {
+      const remote = typeof data.mindset === 'string' ? JSON.parse(data.mindset) : data.mindset;
+      const local  = getMindsetDataLocal();
+      const merged = {
+        entries: Object.assign({}, local.entries, remote.entries || {}),
+        rules: (remote.rules && remote.rules.length) ? remote.rules : (local.rules || [])
+      };
+      localStorage.setItem(MINDSET_KEY, JSON.stringify(merged));
+    }
+    if (data.journal) {
+      const remote = typeof data.journal === 'string' ? JSON.parse(data.journal) : data.journal;
+      const local  = JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}');
+      const merged = Object.assign({}, local, remote);
+      localStorage.setItem(JOURNAL_KEY, JSON.stringify(merged));
+    }
+    if (data.tags) {
+      const remote = typeof data.tags === 'string' ? JSON.parse(data.tags) : data.tags;
+      const local  = JSON.parse(localStorage.getItem(TAGS_KEY) || '[]');
+      const merged = [...new Set([...local, ...remote])];
+      localStorage.setItem(TAGS_KEY, JSON.stringify(merged));
+    }
+  } catch(e) {
+    console.warn('TradeLog: user_data load failed', e);
+  }
+}
+
+async function saveUserDataToSupabase() {
+  let uid = currentUser ? currentUser.id : null;
+  if (!uid) {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session && session.user) { currentUser = session.user; uid = session.user.id; }
+      else return;
+    } catch { return; }
+  }
+  try {
+    await sb.from('user_data').upsert({
+      user_id: uid,
+      mindset: getMindsetDataLocal(),
+      journal: JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
+      tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]')
+    });
+  } catch(e) {
+    console.warn('TradeLog: user_data save failed', e);
+  }
+}
+
+// Internal: read mindset only from localStorage (no Supabase)
+function getMindsetDataLocal() {
+  try { return JSON.parse(localStorage.getItem(MINDSET_KEY)) || { entries: {}, rules: [] }; }
+  catch { return { entries: {}, rules: [] }; }
 }
 
 function loadJournal() {
@@ -7029,18 +7133,20 @@ function saveJournal() {
       review: (document.getElementById('journal-review')?.value || '').trim(),
     };
     localStorage.setItem(JOURNAL_KEY, JSON.stringify(all));
+    saveUserDataToSupabase();
     toast('Journal saved!', 'success');
   } catch { toast('Could not save journal', 'error'); }
 }
 
 // ── MINDSET PAGE ──────────────────────────────────────────────────────────────
-const MINDSET_KEY = 'tradelog_mindset_v2';
 
 function getMindsetData() {
-  try { return JSON.parse(localStorage.getItem(MINDSET_KEY)) || { entries: {}, rules: [] }; }
-  catch { return { entries: {}, rules: [] }; }
+  return getMindsetDataLocal();
 }
-function saveMindsetData(data) { localStorage.setItem(MINDSET_KEY, JSON.stringify(data)); }
+function saveMindsetData(data) {
+  localStorage.setItem(MINDSET_KEY, JSON.stringify(data));
+  saveUserDataToSupabase();
+}
 
 function initMindsetPage() {
   const key  = getTodayKey();
