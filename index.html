@@ -3122,7 +3122,7 @@ function showConfirm({ icon='⚠️', title='Are you sure?', message='', okText=
   okBtn.style.background = okColor;
   okBtn.style.color = '#fff';
   okBtn.style.border = 'none';
-  _confirmCallback = () => { closeConfirmModal(); onOk(); };
+  _confirmCallback = async () => { closeConfirmModal(); await onOk(); };
   document.getElementById('confirm-modal').style.display = 'flex';
 }
 function closeConfirmModal() {
@@ -7700,78 +7700,138 @@ function buildShareText() {
   return `📊 Today's Trading Summary\n\nP&L: ${pnlStr}\nWin Rate: ${wr}% (${wins}W / ${losses}L)\nTrades: ${todayTrades.length}\n\nTracked with TradeLog 📈`;
 }
 
-function shareToX() {
+// ── Core: render card to high-res canvas blob ─────────────────────────────────
+function renderCardToBlob(scale) {
+  return new Promise((resolve, reject) => {
+    const card = document.getElementById('share-card');
+    html2canvas(card, {
+      backgroundColor: null,
+      scale: scale || 3,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      imageTimeout: 0,
+      removeContainer: true
+    }).then(canvas => {
+      canvas.toBlob(blob => blob ? resolve({ blob, canvas }) : reject('blob null'), 'image/png', 1.0);
+    }).catch(reject);
+  });
+}
+
+// ── Share to X (image on mobile via Web Share, text fallback on desktop) ──────
+async function shareToX() {
+  // On mobile try Web Share API with image first
+  if (navigator.share && navigator.canShare) {
+    try {
+      const { blob } = await renderCardToBlob(3);
+      const file = new File([blob], 'tradelog.png', { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'TradeLog', text: buildShareText() });
+        return;
+      }
+    } catch(e) { /* fall through */ }
+  }
+  // Desktop: open Twitter with text
   const text = encodeURIComponent(buildShareText());
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
 }
 
-function shareToWhatsApp() {
+// ── Share to WhatsApp (image on mobile, text fallback) ────────────────────────
+async function shareToWhatsApp() {
+  if (navigator.share && navigator.canShare) {
+    try {
+      const { blob } = await renderCardToBlob(3);
+      const file = new File([blob], 'tradelog.png', { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'TradeLog', text: buildShareText() });
+        return;
+      }
+    } catch(e) { /* fall through */ }
+  }
   const text = encodeURIComponent(buildShareText());
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 
-function shareToFacebook() {
-  // Facebook sharing requires a URL; share text via dialog
+// ── Share to Facebook ─────────────────────────────────────────────────────────
+async function shareToFacebook() {
+  if (navigator.share && navigator.canShare) {
+    try {
+      const { blob } = await renderCardToBlob(3);
+      const file = new File([blob], 'tradelog.png', { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'TradeLog' });
+        return;
+      }
+    } catch(e) { /* fall through */ }
+  }
   const text = encodeURIComponent(buildShareText());
   window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}&u=https://tradelog.app`, '_blank');
 }
 
-function downloadShareCard() {
-  const card = document.getElementById('share-card');
-  // Use html2canvas if available, otherwise copy text to clipboard
-  if (typeof html2canvas !== 'undefined') {
-    html2canvas(card, { backgroundColor: null, scale: 2 }).then(canvas => {
-      const a = document.createElement('a');
-      a.download = `tradelog-${new Date().toISOString().slice(0,10)}.png`;
-      a.href = canvas.toDataURL('image/png');
-      a.click();
-    });
-  } else {
-    // Fallback: copy text summary
-    navigator.clipboard.writeText(buildShareText()).then(() => {
-      toast('Summary copied to clipboard!', 'success');
-    });
+// ── Save as Image ─────────────────────────────────────────────────────────────
+async function downloadShareCard() {
+  const btn = event && event.target ? event.target.closest('button') : null;
+  const origHTML = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '⏳ Generating…';
+  try {
+    const { blob } = await renderCardToBlob(3);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.download = `tradelog-${new Date().toISOString().slice(0,10)}.png`;
+    a.href = url;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    if (btn) { btn.innerHTML = '✓ Saved!'; setTimeout(() => btn.innerHTML = origHTML, 2000); }
+  } catch(e) {
+    console.error('Save failed:', e);
+    navigator.clipboard.writeText(buildShareText()).then(() => toast('Image failed — text copied', 'error'));
+    if (btn) btn.innerHTML = origHTML;
   }
 }
 
-function copyShareCard() {
-  const card = document.getElementById('share-card');
-  const btn  = document.getElementById('copy-img-btn');
-  function setBtnCopied() {
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Image Copied!';
-    btn.style.background = 'rgba(0,255,187,0.12)';
-    btn.style.color = 'var(--green)';
-    btn.style.borderColor = 'rgba(0,255,187,0.3)';
-    setTimeout(() => {
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image';
-      btn.style.background = 'rgba(99,102,241,0.1)';
-      btn.style.color = '#6366f1';
-      btn.style.borderColor = '#2d3f55';
-    }, 2500);
-  }
-  if (typeof html2canvas !== 'undefined') {
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg> Copying…';
-    html2canvas(card, { backgroundColor: null, scale: 2 }).then(canvas => {
-      canvas.toBlob(blob => {
-        try {
-          navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(() => {
-            setBtnCopied();
-          }).catch(() => {
-            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image';
-            toast('Copy failed — try Save as Image instead', 'error');
-          });
-        } catch {
-          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image';
-          toast('Copy not supported in this browser', 'error');
-        }
-      }, 'image/png');
-    });
-  } else {
-    navigator.clipboard.writeText(buildShareText()).then(() => {
-      setBtnCopied();
-    });
+// ── Copy Image ────────────────────────────────────────────────────────────────
+async function copyShareCard() {
+  const btn = document.getElementById('copy-img-btn');
+  const origHTML = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '⏳ Copying…';
+
+  try {
+    const { blob } = await renderCardToBlob(3);
+
+    // Try modern Clipboard API (works on desktop Chrome/Edge, iOS 16.4+)
+    if (navigator.clipboard && window.ClipboardItem) {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        if (btn) { btn.innerHTML = '✓ Image Copied!'; setTimeout(() => btn.innerHTML = origHTML, 2500); }
+        return;
+      } catch(e) { /* fall through to mobile share */ }
+    }
+
+    // Mobile fallback: use Web Share API to share the image
+    if (navigator.share && navigator.canShare) {
+      const file = new File([blob], 'tradelog.png', { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'TradeLog' });
+        if (btn) { btn.innerHTML = origHTML; }
+        return;
+      }
+    }
+
+    // Last resort: download it
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.download = `tradelog-${new Date().toISOString().slice(0,10)}.png`;
+    a.href = url; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    if (btn) { btn.innerHTML = '✓ Saved!'; setTimeout(() => btn.innerHTML = origHTML, 2000); }
+
+  } catch(e) {
+    console.error('Copy failed:', e);
+    navigator.clipboard.writeText(buildShareText()).then(() => toast('Image failed — text copied instead', 'error'));
+    if (btn) btn.innerHTML = origHTML;
   }
 }
+
 document.getElementById('share-modal').addEventListener('click', function(e) {
   if (e.target === this) closeShareModal();
 });
