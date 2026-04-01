@@ -3122,7 +3122,7 @@ function showConfirm({ icon='⚠️', title='Are you sure?', message='', okText=
   okBtn.style.background = okColor;
   okBtn.style.color = '#fff';
   okBtn.style.border = 'none';
-  _confirmCallback = async () => { closeConfirmModal(); await onOk(); };
+  _confirmCallback = () => { closeConfirmModal(); onOk(); };
   document.getElementById('confirm-modal').style.display = 'flex';
 }
 function closeConfirmModal() {
@@ -3167,7 +3167,8 @@ const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false
+    detectSessionInUrl: false,
+    storageKey: 'tradelog_sb_session'
   }
 }) : null;
 let currentUser = null;
@@ -3262,8 +3263,6 @@ async function saveProfileToSupabase() {
 }// ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
 async function loadTradesFromSupabase() {
   if (!currentUser) return;
-  // Refresh session silently before loading
-  try { const { data: r } = await sb.auth.refreshSession(); if (r && r.session && r.session.user) currentUser = r.session.user; } catch(e) {}
   const { data, error } = await sb.from('trades').select('*').eq('user_id', currentUser.id).order('date', { ascending: false });
   if (error) { console.error('Load error:', error); return; }
   trades = (data || []).map(r => ({
@@ -3277,7 +3276,7 @@ async function loadTradesFromSupabase() {
 }
 
 async function saveTradeToSupabase(t) {
-  if (!currentUser) { console.warn('saveTradeToSupabase: no currentUser'); return; }
+  if (!currentUser) return;
   try {
     const row = {
       id: t.id, user_id: currentUser.id, symbol: t.symbol, date: t.date,
@@ -3295,7 +3294,7 @@ async function saveTradeToSupabase(t) {
 }
 
 async function deleteTradeFromSupabase(id) {
-  if (!currentUser) { console.warn('deleteTradeFromSupabase: no currentUser'); return; }
+  if (!currentUser) return;
   try {
     const { error } = await sb.from('trades').delete().eq('id', id).eq('user_id', currentUser.id);
     if (error) console.error('Delete error:', error);
@@ -3310,46 +3309,26 @@ function save() {
 }
 
 // ── GUARANTEED SUPABASE WRITE ─────────────────────────────────────────────────
-// Always refreshes session before writing — fixes stale token on mobile/PWA
-async function getValidSession() {
-  try {
-    // Always try refresh first — this keeps the token alive on mobile
-    const { data: refreshData } = await sb.auth.refreshSession();
-    if (refreshData && refreshData.session && refreshData.session.user) {
-      currentUser = refreshData.session.user;
-      return refreshData.session;
-    }
-  } catch(e) {}
-  // Fall back to getSession if refresh fails
+// Ensures currentUser is set before writing — fixes mobile session race condition
+async function guaranteedSaveToSupabase(trade) {
+  if (currentUser) {
+    await saveTradeToSupabase(trade);
+    return;
+  }
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session && session.user) {
       currentUser = session.user;
-      return session;
+      await saveTradeToSupabase(trade);
+    } else {
+      console.warn('TradeLog: no active session — trade saved locally only');
     }
-  } catch(e) {}
-  return null;
-}
-
-async function guaranteedSaveToSupabase(trade) {
-  const session = await getValidSession();
-  if (!session) {
-    console.warn('TradeLog: no valid session — trade saved locally only');
-    return;
+  } catch(e) {
+    console.error('TradeLog: session check failed', e);
   }
-  await saveTradeToSupabase(trade);
 }
 
 async function guaranteedDeleteFromSupabase(id) {
-  const session = await getValidSession();
-  if (!session) {
-    console.warn('TradeLog: no valid session — delete may not have synced');
-    return;
-  }
-  await deleteTradeFromSupabase(id);
-}
-
-async function _guaranteedDeleteLegacy(id) {
   if (currentUser) {
     await deleteTradeFromSupabase(id);
     return;
@@ -6978,7 +6957,6 @@ function saveGoals() {
     monthly: parseFloat(document.getElementById('goal-input-monthly').value) || 0,
   };
   localStorage.setItem(GOALS_KEY, JSON.stringify(g));
-  saveUserDataToSupabase();
   closeGoalsModal();
   renderGoals();
   toast('Goals saved!', 'success');
@@ -7112,27 +7090,26 @@ async function loadUserDataFromSupabase() {
       const merged = [...new Set([...local, ...remote])];
       localStorage.setItem(TAGS_KEY, JSON.stringify(merged));
     }
-    if (data.goals) {
-      const remote = typeof data.goals === 'string' ? JSON.parse(data.goals) : data.goals;
-      localStorage.setItem(GOALS_KEY, JSON.stringify(remote));
-    }
   } catch(e) {
     console.warn('TradeLog: user_data load failed', e);
   }
 }
 
 async function saveUserDataToSupabase() {
-  const session = await getValidSession();
-  if (!session) return;
   let uid = currentUser ? currentUser.id : null;
-  if (!uid) return;
+  if (!uid) {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session && session.user) { currentUser = session.user; uid = session.user.id; }
+      else return;
+    } catch { return; }
+  }
   try {
     await sb.from('user_data').upsert({
       user_id: uid,
       mindset: getMindsetDataLocal(),
       journal: JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
-      tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]'),
-      goals:   JSON.parse(localStorage.getItem(GOALS_KEY) || '{}')
+      tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]')
     });
   } catch(e) {
     console.warn('TradeLog: user_data save failed', e);
@@ -7717,138 +7694,78 @@ function buildShareText() {
   return `📊 Today's Trading Summary\n\nP&L: ${pnlStr}\nWin Rate: ${wr}% (${wins}W / ${losses}L)\nTrades: ${todayTrades.length}\n\nTracked with TradeLog 📈`;
 }
 
-// ── Core: render card to high-res canvas blob ─────────────────────────────────
-function renderCardToBlob(scale) {
-  return new Promise((resolve, reject) => {
-    const card = document.getElementById('share-card');
-    html2canvas(card, {
-      backgroundColor: null,
-      scale: scale || 3,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      imageTimeout: 0,
-      removeContainer: true
-    }).then(canvas => {
-      canvas.toBlob(blob => blob ? resolve({ blob, canvas }) : reject('blob null'), 'image/png', 1.0);
-    }).catch(reject);
-  });
-}
-
-// ── Share to X (image on mobile via Web Share, text fallback on desktop) ──────
-async function shareToX() {
-  // On mobile try Web Share API with image first
-  if (navigator.share && navigator.canShare) {
-    try {
-      const { blob } = await renderCardToBlob(3);
-      const file = new File([blob], 'tradelog.png', { type: 'image/png' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'TradeLog', text: buildShareText() });
-        return;
-      }
-    } catch(e) { /* fall through */ }
-  }
-  // Desktop: open Twitter with text
+function shareToX() {
   const text = encodeURIComponent(buildShareText());
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
 }
 
-// ── Share to WhatsApp (image on mobile, text fallback) ────────────────────────
-async function shareToWhatsApp() {
-  if (navigator.share && navigator.canShare) {
-    try {
-      const { blob } = await renderCardToBlob(3);
-      const file = new File([blob], 'tradelog.png', { type: 'image/png' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'TradeLog', text: buildShareText() });
-        return;
-      }
-    } catch(e) { /* fall through */ }
-  }
+function shareToWhatsApp() {
   const text = encodeURIComponent(buildShareText());
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 
-// ── Share to Facebook ─────────────────────────────────────────────────────────
-async function shareToFacebook() {
-  if (navigator.share && navigator.canShare) {
-    try {
-      const { blob } = await renderCardToBlob(3);
-      const file = new File([blob], 'tradelog.png', { type: 'image/png' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'TradeLog' });
-        return;
-      }
-    } catch(e) { /* fall through */ }
-  }
+function shareToFacebook() {
+  // Facebook sharing requires a URL; share text via dialog
   const text = encodeURIComponent(buildShareText());
   window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}&u=https://tradelog.app`, '_blank');
 }
 
-// ── Save as Image ─────────────────────────────────────────────────────────────
-async function downloadShareCard() {
-  const btn = event && event.target ? event.target.closest('button') : null;
-  const origHTML = btn ? btn.innerHTML : '';
-  if (btn) btn.innerHTML = '⏳ Generating…';
-  try {
-    const { blob } = await renderCardToBlob(3);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.download = `tradelog-${new Date().toISOString().slice(0,10)}.png`;
-    a.href = url;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 3000);
-    if (btn) { btn.innerHTML = '✓ Saved!'; setTimeout(() => btn.innerHTML = origHTML, 2000); }
-  } catch(e) {
-    console.error('Save failed:', e);
-    navigator.clipboard.writeText(buildShareText()).then(() => toast('Image failed — text copied', 'error'));
-    if (btn) btn.innerHTML = origHTML;
+function downloadShareCard() {
+  const card = document.getElementById('share-card');
+  // Use html2canvas if available, otherwise copy text to clipboard
+  if (typeof html2canvas !== 'undefined') {
+    html2canvas(card, { backgroundColor: null, scale: 2 }).then(canvas => {
+      const a = document.createElement('a');
+      a.download = `tradelog-${new Date().toISOString().slice(0,10)}.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+  } else {
+    // Fallback: copy text summary
+    navigator.clipboard.writeText(buildShareText()).then(() => {
+      toast('Summary copied to clipboard!', 'success');
+    });
   }
 }
 
-// ── Copy Image ────────────────────────────────────────────────────────────────
-async function copyShareCard() {
-  const btn = document.getElementById('copy-img-btn');
-  const origHTML = btn ? btn.innerHTML : '';
-  if (btn) btn.innerHTML = '⏳ Copying…';
-
-  try {
-    const { blob } = await renderCardToBlob(3);
-
-    // Try modern Clipboard API (works on desktop Chrome/Edge, iOS 16.4+)
-    if (navigator.clipboard && window.ClipboardItem) {
-      try {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        if (btn) { btn.innerHTML = '✓ Image Copied!'; setTimeout(() => btn.innerHTML = origHTML, 2500); }
-        return;
-      } catch(e) { /* fall through to mobile share */ }
-    }
-
-    // Mobile fallback: use Web Share API to share the image
-    if (navigator.share && navigator.canShare) {
-      const file = new File([blob], 'tradelog.png', { type: 'image/png' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'TradeLog' });
-        if (btn) { btn.innerHTML = origHTML; }
-        return;
-      }
-    }
-
-    // Last resort: download it
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.download = `tradelog-${new Date().toISOString().slice(0,10)}.png`;
-    a.href = url; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 3000);
-    if (btn) { btn.innerHTML = '✓ Saved!'; setTimeout(() => btn.innerHTML = origHTML, 2000); }
-
-  } catch(e) {
-    console.error('Copy failed:', e);
-    navigator.clipboard.writeText(buildShareText()).then(() => toast('Image failed — text copied instead', 'error'));
-    if (btn) btn.innerHTML = origHTML;
+function copyShareCard() {
+  const card = document.getElementById('share-card');
+  const btn  = document.getElementById('copy-img-btn');
+  function setBtnCopied() {
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Image Copied!';
+    btn.style.background = 'rgba(0,255,187,0.12)';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'rgba(0,255,187,0.3)';
+    setTimeout(() => {
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image';
+      btn.style.background = 'rgba(99,102,241,0.1)';
+      btn.style.color = '#6366f1';
+      btn.style.borderColor = '#2d3f55';
+    }, 2500);
+  }
+  if (typeof html2canvas !== 'undefined') {
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg> Copying…';
+    html2canvas(card, { backgroundColor: null, scale: 2 }).then(canvas => {
+      canvas.toBlob(blob => {
+        try {
+          navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(() => {
+            setBtnCopied();
+          }).catch(() => {
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image';
+            toast('Copy failed — try Save as Image instead', 'error');
+          });
+        } catch {
+          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image';
+          toast('Copy not supported in this browser', 'error');
+        }
+      }, 'image/png');
+    });
+  } else {
+    navigator.clipboard.writeText(buildShareText()).then(() => {
+      setBtnCopied();
+    });
   }
 }
-
 document.getElementById('share-modal').addEventListener('click', function(e) {
   if (e.target === this) closeShareModal();
 });
