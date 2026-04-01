@@ -3167,8 +3167,7 @@ const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false,
-    storageKey: 'tradelog_sb_session'
+    detectSessionInUrl: false
   }
 }) : null;
 let currentUser = null;
@@ -3263,6 +3262,8 @@ async function saveProfileToSupabase() {
 }// ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
 async function loadTradesFromSupabase() {
   if (!currentUser) return;
+  // Refresh session silently before loading
+  try { const { data: r } = await sb.auth.refreshSession(); if (r && r.session && r.session.user) currentUser = r.session.user; } catch(e) {}
   const { data, error } = await sb.from('trades').select('*').eq('user_id', currentUser.id).order('date', { ascending: false });
   if (error) { console.error('Load error:', error); return; }
   trades = (data || []).map(r => ({
@@ -3276,7 +3277,7 @@ async function loadTradesFromSupabase() {
 }
 
 async function saveTradeToSupabase(t) {
-  if (!currentUser) return;
+  if (!currentUser) { console.warn('saveTradeToSupabase: no currentUser'); return; }
   try {
     const row = {
       id: t.id, user_id: currentUser.id, symbol: t.symbol, date: t.date,
@@ -3294,7 +3295,7 @@ async function saveTradeToSupabase(t) {
 }
 
 async function deleteTradeFromSupabase(id) {
-  if (!currentUser) return;
+  if (!currentUser) { console.warn('deleteTradeFromSupabase: no currentUser'); return; }
   try {
     const { error } = await sb.from('trades').delete().eq('id', id).eq('user_id', currentUser.id);
     if (error) console.error('Delete error:', error);
@@ -3309,26 +3310,46 @@ function save() {
 }
 
 // ── GUARANTEED SUPABASE WRITE ─────────────────────────────────────────────────
-// Ensures currentUser is set before writing — fixes mobile session race condition
-async function guaranteedSaveToSupabase(trade) {
-  if (currentUser) {
-    await saveTradeToSupabase(trade);
-    return;
-  }
+// Always refreshes session before writing — fixes stale token on mobile/PWA
+async function getValidSession() {
+  try {
+    // Always try refresh first — this keeps the token alive on mobile
+    const { data: refreshData } = await sb.auth.refreshSession();
+    if (refreshData && refreshData.session && refreshData.session.user) {
+      currentUser = refreshData.session.user;
+      return refreshData.session;
+    }
+  } catch(e) {}
+  // Fall back to getSession if refresh fails
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session && session.user) {
       currentUser = session.user;
-      await saveTradeToSupabase(trade);
-    } else {
-      console.warn('TradeLog: no active session — trade saved locally only');
+      return session;
     }
-  } catch(e) {
-    console.error('TradeLog: session check failed', e);
+  } catch(e) {}
+  return null;
+}
+
+async function guaranteedSaveToSupabase(trade) {
+  const session = await getValidSession();
+  if (!session) {
+    console.warn('TradeLog: no valid session — trade saved locally only');
+    return;
   }
+  await saveTradeToSupabase(trade);
 }
 
 async function guaranteedDeleteFromSupabase(id) {
+  const session = await getValidSession();
+  if (!session) {
+    console.warn('TradeLog: no valid session — delete may not have synced');
+    return;
+  }
+  await deleteTradeFromSupabase(id);
+}
+
+async function _guaranteedDeleteLegacy(id) {
   if (currentUser) {
     await deleteTradeFromSupabase(id);
     return;
@@ -7101,14 +7122,10 @@ async function loadUserDataFromSupabase() {
 }
 
 async function saveUserDataToSupabase() {
+  const session = await getValidSession();
+  if (!session) return;
   let uid = currentUser ? currentUser.id : null;
-  if (!uid) {
-    try {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session && session.user) { currentUser = session.user; uid = session.user.id; }
-      else return;
-    } catch { return; }
-  }
+  if (!uid) return;
   try {
     await sb.from('user_data').upsert({
       user_id: uid,
