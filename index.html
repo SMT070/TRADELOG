@@ -3311,10 +3311,7 @@ function save() {
 // ── GUARANTEED SUPABASE WRITE ─────────────────────────────────────────────────
 // Ensures currentUser is set before writing — fixes mobile session race condition
 async function guaranteedSaveToSupabase(trade) {
-  if (currentUser) {
-    await saveTradeToSupabase(trade);
-    return;
-  }
+  // Always re-check session — mobile browsers can expire tokens silently
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session && session.user) {
@@ -3324,15 +3321,12 @@ async function guaranteedSaveToSupabase(trade) {
       console.warn('TradeLog: no active session — trade saved locally only');
     }
   } catch(e) {
-    console.error('TradeLog: session check failed', e);
+    console.error('TradeLog: session check failed on save', e);
   }
 }
 
 async function guaranteedDeleteFromSupabase(id) {
-  if (currentUser) {
-    await deleteTradeFromSupabase(id);
-    return;
-  }
+  // Always re-check session — mobile browsers can expire tokens silently
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session && session.user) {
@@ -7090,6 +7084,8 @@ async function loadUserDataFromSupabase() {
       const merged = [...new Set([...local, ...remote])];
       localStorage.setItem(TAGS_KEY, JSON.stringify(merged));
     }
+    // Refresh dashboard journal fields if the page is currently visible
+    try { loadJournal(); } catch(e) {}
   } catch(e) {
     console.warn('TradeLog: user_data load failed', e);
   }
@@ -7101,16 +7097,24 @@ async function saveUserDataToSupabase() {
     try {
       const { data: { session } } = await sb.auth.getSession();
       if (session && session.user) { currentUser = session.user; uid = session.user.id; }
-      else return;
-    } catch { return; }
+      else { console.warn('TradeLog: no session — user_data saved locally only'); return; }
+    } catch(e) { console.warn('TradeLog: session check failed in saveUserData', e); return; }
   }
+  // Re-verify session token is still valid (catches expired mobile sessions)
   try {
-    await sb.from('user_data').upsert({
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session || !session.user) { console.warn('TradeLog: session expired — user_data saved locally only'); return; }
+    uid = session.user.id;
+    currentUser = session.user;
+  } catch(e) { console.warn('TradeLog: session re-check failed', e); return; }
+  try {
+    const { error } = await sb.from('user_data').upsert({
       user_id: uid,
       mindset: getMindsetDataLocal(),
       journal: JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
       tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]')
     });
+    if (error) console.warn('TradeLog: user_data upsert error', error);
   } catch(e) {
     console.warn('TradeLog: user_data save failed', e);
   }
@@ -7143,12 +7147,23 @@ function saveJournal() {
   const key = getTodayKey();
   try {
     const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
-    all[key] = {
-      plan:   (document.getElementById('journal-plan')?.value   || '').trim(),
-      review: (document.getElementById('journal-review')?.value || '').trim(),
-    };
+    const planVal   = (document.getElementById('journal-plan')?.value   || '').trim();
+    const reviewVal = (document.getElementById('journal-review')?.value || '').trim();
+    all[key] = { plan: planVal, review: reviewVal };
     localStorage.setItem(JOURNAL_KEY, JSON.stringify(all));
+
+    // Keep Mindset page in sync — write the same plan/review into the mindset store
+    try {
+      const mData = getMindsetDataLocal();
+      if (!mData.entries[key]) mData.entries[key] = {};
+      if (planVal)   mData.entries[key].plan   = planVal;
+      if (reviewVal) mData.entries[key].review  = reviewVal;
+      mData.entries[key].date = key;
+      localStorage.setItem(MINDSET_KEY, JSON.stringify(mData));
+    } catch(e) {}
+
     saveUserDataToSupabase();
+    loadJournal(); // re-load to confirm saved state
     toast('Journal saved!', 'success');
   } catch { toast('Could not save journal', 'error'); }
 }
@@ -7285,12 +7300,24 @@ function saveMindsetAll() {
   const key  = getTodayKey();
   const data = getMindsetData();
   if (!data.entries[key]) data.entries[key] = {};
-  data.entries[key].plan       = (document.getElementById('mindset-plan')?.value   || '').trim();
-  data.entries[key].review     = (document.getElementById('mindset-review')?.value || '').trim();
+  const planVal   = (document.getElementById('mindset-plan')?.value   || '').trim();
+  const reviewVal = (document.getElementById('mindset-review')?.value || '').trim();
+  data.entries[key].plan       = planVal;
+  data.entries[key].review     = reviewVal;
   data.entries[key].confidence = window._mindsetConf   || 5;
   data.entries[key].emotion    = window._mindsetEmotion || '';
   data.entries[key].date       = key;
   saveMindsetData(data);
+
+  // Keep Dashboard journal in sync
+  try {
+    const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
+    if (!all[key]) all[key] = {};
+    if (planVal)   all[key].plan   = planVal;
+    if (reviewVal) all[key].review = reviewVal;
+    localStorage.setItem(JOURNAL_KEY, JSON.stringify(all));
+  } catch(e) {}
+
   renderMindsetPastEntries(data.entries);
   renderMindsetWeekStats(data.entries);
   toast('✓ Mindset saved', 'success');
