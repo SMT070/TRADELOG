@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TradeLog — Your Trading Journal</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TradeLog">
+    <link rel="apple-touch-icon" href="logo.png?v=1">
     <meta name="theme-color" content="#0b0f1a">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="TradeLog">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <link rel="apple-touch-icon" href="icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
   // Apply theme instantly before any rendering to prevent flash
@@ -2860,63 +2860,61 @@ function getPnlColor(v) { return v >= 0 ? gc() : rc(); }
 
 const KEY = 'tradelog_v1';
 
-setInterval(async () => {
-  if (currentUser) {
-    await loadTradesFromSupabase();
-    await loadUserDataFromSupabase();
-    refreshDashboard();
-    renderTrades();
-    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
-    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
-  }
-}, 30000);
+// ── BACKGROUND SYNC ──────────────────────────────────────────────────────────
+// Pulls fresh data from Supabase so PC sees phone's trades and vice versa.
+let _syncInProgress = false;
+let _syncDebounceTimer = null;
 
-document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible' && currentUser) {
-    await loadTradesFromSupabase();
-    await loadUserDataFromSupabase();
-    refreshDashboard();
-    renderTrades();
-    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
-    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+async function backgroundSync() {
+  if (_syncInProgress) return;
+  _syncInProgress = true;
+  try {
+    const uid = await getValidUid();
+    if (!uid) { _syncInProgress = false; return; }
+    // Re-fetch trades and user data
+    const { data, error } = await sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false });
+    if (!error && data) {
+      trades = data.map(r => ({
+        id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
+        dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
+        pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
+        result: r.result, emotion: r.emotion, confidence: r.confidence,
+        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+      }));
+      localStorage.setItem(KEY, JSON.stringify(trades));
+      refreshDashboard();
+      renderTrades();
+      if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+      if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+    }
+  } catch(e) {
+    console.warn('TradeLog: backgroundSync failed', e);
+  } finally {
+    _syncInProgress = false;
   }
-});
+}
 
-window.addEventListener('focus', async () => {
-  if (currentUser) {
-    await loadTradesFromSupabase();
-    await loadUserDataFromSupabase();
-    refreshDashboard();
-    renderTrades();
-    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
-    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
-  }
+function debouncedSync() {
+  clearTimeout(_syncDebounceTimer);
+  _syncDebounceTimer = setTimeout(backgroundSync, 800);
+}
+
+// Poll every 30s so PC auto-updates when phone saves
+setInterval(backgroundSync, 30000);
+
+// Re-sync when tab becomes visible again (phone returning from background)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') debouncedSync();
 });
+window.addEventListener('focus', () => { debouncedSync(); });
 const BAL_KEY = 'tradelog_balance';
 const CUR_KEY = 'tradelog_currency';
 const TAGS_KEY = 'tradelog_custom_tags';
 const CURRENCIES = { USD:'$', EUR:'€', GBP:'£', ILS:'₪' };
-
-// ── IN-MEMORY APP STATE (source of truth at runtime) ──────────────────────────
-// All reads go through appState. Supabase populates it on load and after saves.
-// localStorage is only used for the theme flash-prevention script at the top.
-const appState = {
-  currency: 'USD',
-  balance: 0,
-  theme: 'dark',
-  profile: { name: 'My Account', avatar: null },
-  goals: {},
-  journal: {},   // { 'YYYY-MM-DD': { plan, review } }
-  mindset: { entries: {}, rules: [] },
-  tags: []
-};
-
-function getCurrency() { return appState.currency || 'USD'; }
+function getCurrency() { return localStorage.getItem(CUR_KEY) || 'USD'; }
 function getCurrencySymbol() { return CURRENCIES[getCurrency()] || '$'; }
-function getBalance() { return parseFloat(appState.balance) || 0; }
-
 function setCurrency(c) {
-  appState.currency = c;
+  localStorage.setItem(CUR_KEY, c);
   saveProfileToSupabase();
   window._suppressChartAnim = true;
   refreshDashboard();
@@ -2949,9 +2947,10 @@ function getResult(t) {
   if (pnl === 0) return 'be';
   return pnl > 0 ? 'win' : 'loss';
 }
+function getBalance() { return parseFloat(localStorage.getItem(BAL_KEY)) || 0; }
 
-function load() { /* Supabase only */ }
-function save() { /* Supabase only — no localStorage for data */ }
+function load() { try { trades = JSON.parse(localStorage.getItem(KEY)) || []; } catch { trades = []; } }
+function save() { localStorage.setItem(KEY, JSON.stringify(trades)); }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
 // ── THEME ────────────────────────────────────────────────────────────────────
@@ -2959,9 +2958,8 @@ const THEMES = ['dark','gray','black','light'];
 const THEME_LABELS = { dark:'Dark', gray:'Gray', black:'Black', light:'Light' };
 
 function setTheme(t) {
-  document.documentElement.setAttribute('data-theme', t);
-  appState.theme = t;
-  localStorage.setItem(THEME_KEY, t); // keep for flash-prevention only
+document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem(THEME_KEY, t);
   updateThemeButtons(t);
   saveProfileToSupabase();
   if (equityChartInst) refreshDashboard();
@@ -2978,7 +2976,7 @@ function updateThemeButtons(t) {
 }
 
 function loadTheme() {
-  const t = appState.theme || localStorage.getItem(THEME_KEY) || 'dark';
+  const t = localStorage.getItem(THEME_KEY) || 'dark';
   document.documentElement.setAttribute('data-theme', t);
   updateThemeButtons(t);
 }
@@ -3021,30 +3019,38 @@ document.addEventListener('click', function(e) {
 });
 
 // ── PROFILE ──────────────────────────────────────────────────────────────────
-const PROFILE_KEY = 'tradelog_profile'; // kept for legacy reference only
+const PROFILE_KEY = 'tradelog_profile';
 
 function loadProfile() {
-  const p = appState.profile || { name: 'My Account', avatar: null };
-  const name = p.name || 'My Account';
-  const initial = name.trim().charAt(0).toUpperCase();
-  const avatar = p.avatar || null;
-  document.getElementById('sidebar-account-name').textContent = name;
-  const sidebarAv = document.getElementById('sidebar-avatar');
-  sidebarAv.textContent = avatar ? '' : initial;
-  if (avatar) { sidebarAv.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
-  else sidebarAv.textContent = initial;
-  document.getElementById('popup-account-name').textContent = name;
-  const popupAv = document.getElementById('popup-avatar');
-  if (avatar) { popupAv.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
-  else { popupAv.textContent = initial; }
+  try {
+    const p = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
+    const name = p.name || 'My Account';
+    const initial = name.trim().charAt(0).toUpperCase();
+    const avatar = p.avatar || null;
+
+    // Sidebar card
+    document.getElementById('sidebar-account-name').textContent = name;
+    const sidebarAv = document.getElementById('sidebar-avatar');
+    sidebarAv.textContent = avatar ? '' : initial;
+    if (avatar) { sidebarAv.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
+    else sidebarAv.textContent = initial;
+
+    // Popup
+    document.getElementById('popup-account-name').textContent = name;
+    const popupAv = document.getElementById('popup-avatar');
+    if (avatar) { popupAv.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
+    else { popupAv.textContent = initial; }
+  } catch(e) {}
 }
 
 function openProfileModal() {
-  const p = appState.profile || {};
-  document.getElementById('profile-name-input').value = p.name || '';
-  const prev = document.getElementById('profile-avatar-preview');
-  if (p.avatar) { prev.innerHTML = `<img src="${p.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
-  else { prev.textContent = (p.name||'T').charAt(0).toUpperCase(); }
+  try {
+    const p = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
+    document.getElementById('profile-name-input').value = p.name || '';
+    const prev = document.getElementById('profile-avatar-preview');
+    if (p.avatar) { prev.innerHTML = `<img src="${p.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
+    else { prev.textContent = (p.name||'T').charAt(0).toUpperCase(); }
+  } catch(e) {}
   document.getElementById('profile-modal').style.display = 'flex';
 }
 function closeProfileModal() { document.getElementById('profile-modal').style.display = 'none'; }
@@ -3062,8 +3068,9 @@ function previewProfileAvatar(ev) {
 
 function saveProfile() {
   const name = document.getElementById('profile-name-input').value.trim() || 'My Account';
-  const avatar = window._pendingAvatar || (appState.profile && appState.profile.avatar) || null;
-  appState.profile = { name, avatar };
+  const existing = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+  const avatar = window._pendingAvatar || existing.avatar || null;
+localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
   window._pendingAvatar = null;
   loadProfile();
   saveProfileToSupabase();
@@ -3090,14 +3097,7 @@ showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the c
 
 function clearAllTrades() {
   showConfirm({ icon:'\uD83D\uDDD1\uFE0F', title:'Delete All Trades', message:'This will permanently delete all your trades. This cannot be undone.', okText:'Delete All', okColor:'var(--red)', onOk: async () => {
-    // Guarantee we have a valid session before deleting from Supabase
-    let uid = currentUser ? currentUser.id : null;
-    if (!uid) {
-      try {
-        const { data: { session } } = await sb.auth.getSession();
-        if (session && session.user) { currentUser = session.user; uid = session.user.id; }
-      } catch(e) {}
-    }
+    const uid = await getValidUid();
     if (uid) {
       const { error } = await sb.from('trades').delete().eq('user_id', uid);
       if (error) console.error('Clear all error:', error);
@@ -3140,7 +3140,7 @@ function closeConfirmModal() {
 function saveBalance() {
   const val = parseFloat(document.getElementById('modal-balance-input').value);
   if (!val || val <= 0) { toast('Enter a valid balance', 'error'); return; }
-  appState.balance = val;
+ localStorage.setItem(BAL_KEY, val);
   saveProfileToSupabase();
   closeBalanceModal();
   toast('Balance saved — $' + val.toLocaleString(), 'success');
@@ -3167,7 +3167,11 @@ function setResult(r) {
   });
 }
 
-// ── SUPABASE ──────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// SUPABASE — SINGLE SOURCE OF TRUTH
+// Load on boot → Supabase. Save anything → Supabase directly.
+// localStorage = cache only, never authoritative.
+// ══════════════════════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://yuqfoasfefldenkvwyrm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cWZvYXNmZWZsZGVua3Z3eXJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTI1MDEsImV4cCI6MjA4ODk4ODUwMX0.lTbdFJ6DPDfSQLNXiQbAH2lxo9mzi9DUyjz9IpHoNNE';
 const _supa = window.supabase || window.Supabase;
@@ -3181,6 +3185,36 @@ const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
 }) : null;
 let currentUser = null;
 
+// ── CENTRAL SESSION RESOLVER ──────────────────────────────────────────────────
+// Every Supabase operation calls this first.
+// Returns uid string or null. Always re-reads from storage (mobile-safe).
+async function getValidUid() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session || !session.user) {
+      // No session in memory — try refresh (recovers token on mobile resume)
+      const { data: refreshed } = await sb.auth.refreshSession();
+      if (!refreshed || !refreshed.session || !refreshed.session.user) return null;
+      currentUser = refreshed.session.user;
+      return currentUser.id;
+    }
+    // Proactively refresh if token expires within 5 minutes
+    const exp = session.expires_at;
+    if (exp && (exp - Math.floor(Date.now() / 1000)) < 300) {
+      const { data: refreshed } = await sb.auth.refreshSession();
+      if (refreshed && refreshed.session && refreshed.session.user) {
+        currentUser = refreshed.session.user;
+        return currentUser.id;
+      }
+    }
+    currentUser = session.user;
+    return session.user.id;
+  } catch(e) {
+    console.warn('TradeLog: getValidUid failed', e);
+    return null;
+  }
+}
+
 // ── AUTH UI ───────────────────────────────────────────────────────────────────
 let authMode = 'login';
 function switchAuthTab(mode) {
@@ -3193,13 +3227,11 @@ function switchAuthTab(mode) {
   document.getElementById('auth-btn').textContent             = mode==='login'  ? 'Log In' : 'Create Account';
   document.getElementById('auth-error').style.display = 'none';
 }
-
 function showAuthError(msg) {
   const el = document.getElementById('auth-error');
   el.textContent = msg;
   el.style.display = 'block';
 }
-
 async function handleAuth() {
   const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
@@ -3211,91 +3243,143 @@ async function handleAuth() {
     if (authMode === 'login') {
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
       if (error) { showAuthError(error.message); btn.textContent = 'Log In'; btn.disabled = false; return; }
-      // Immediately init app without waiting for onAuthStateChange
       if (data && data.user) await initApp(data.user);
     } else {
       const name = document.getElementById('auth-name').value.trim();
       const { error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
       if (error) { showAuthError(error.message); btn.textContent = 'Create Account'; btn.disabled = false; return; }
+      showAuthError('Check your email to confirm your account.');
+      btn.textContent = 'Create Account'; btn.disabled = false;
     }
   } catch(e) {
-    showAuthError('Something went wrong. Try again.'); btn.textContent = authMode==='login'?'Log In':'Create Account'; btn.disabled = false;
+    showAuthError('Something went wrong. Try again.');
+    btn.textContent = authMode==='login'?'Log In':'Create Account'; btn.disabled = false;
   }
 }
-
 function showApp() {
   const auth = document.getElementById('auth-screen');
-  const app = document.getElementById('app-root');
+  const app  = document.getElementById('app-root');
   if (auth) auth.style.display = 'none';
-  if (app) app.style.display = 'block';
+  if (app)  app.style.display  = 'block';
 }
-
 function showAuthScreen() {
   const auth = document.getElementById('auth-screen');
-  const app = document.getElementById('app-root');
+  const app  = document.getElementById('app-root');
   if (auth) auth.style.display = 'flex';
-  if (app) app.style.display = 'none';
+  if (app)  app.style.display  = 'none';
 }
 
-async function loadProfileFromSupabase() {
-  if (!currentUser) return;
-  const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  if (error || !data) return;
-  // Populate appState directly — this is the source of truth
-  if (data.name) appState.profile = { name: data.name, avatar: data.avatar || null };
-  if (data.currency) appState.currency = data.currency;
-  if (data.balance !== undefined && data.balance !== null) appState.balance = parseFloat(data.balance) || 0;
-  if (data.goals) appState.goals = typeof data.goals === 'string' ? JSON.parse(data.goals) : data.goals;
-  if (data.settings) {
-    try {
-      const s = typeof data.settings === 'string' ? JSON.parse(data.settings) : data.settings;
-      if (s.theme) {
-        appState.theme = s.theme;
-        localStorage.setItem(THEME_KEY, s.theme); // keep for flash-prevention
-        setTheme(s.theme);
+// ── LOAD ALL DATA FROM SUPABASE ───────────────────────────────────────────────
+async function loadAllFromSupabase() {
+  const uid = await getValidUid();
+  if (!uid) return false;
+
+  // 1. Profile (name, avatar, currency, balance, theme, goals)
+  try {
+    const { data, error } = await sb.from('profiles').select('*').eq('id', uid).single();
+    if (!error && data) {
+      if (data.name)     localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: data.name, avatar: data.avatar || null }));
+      if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
+      if (data.balance)  localStorage.setItem(BAL_KEY, String(data.balance));
+      if (data.settings) {
+        try {
+          const s = typeof data.settings === 'string' ? JSON.parse(data.settings) : data.settings;
+          if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
+          if (s.goals) localStorage.setItem(GOALS_KEY, typeof s.goals === 'string' ? s.goals : JSON.stringify(s.goals));
+        } catch(e) {}
       }
-    } catch(e) {}
-  }
-  loadProfile();
-  updateCurrencyButtons();
-  renderGoals();
+      loadProfile();
+      updateCurrencyButtons();
+    }
+  } catch(e) { console.warn('TradeLog: loadProfile failed', e); }
+
+  // 2. Trades
+  try {
+    const { data, error } = await sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false });
+    if (!error) {
+      trades = (data || []).map(r => ({
+        id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
+        dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
+        pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
+        result: r.result, emotion: r.emotion, confidence: r.confidence,
+        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+      }));
+      localStorage.setItem(KEY, JSON.stringify(trades));
+    }
+  } catch(e) { console.error('TradeLog: loadTrades failed', e); }
+
+  // 3. User data (journal, mindset, tags)
+  try {
+    const { data, error } = await sb.from('user_data').select('*').eq('user_id', uid).single();
+    if (!error && data) {
+      if (data.mindset) {
+        const m = typeof data.mindset === 'string' ? JSON.parse(data.mindset) : data.mindset;
+        localStorage.setItem(MINDSET_KEY, JSON.stringify(m));
+      }
+      if (data.journal) {
+        const j = typeof data.journal === 'string' ? JSON.parse(data.journal) : data.journal;
+        localStorage.setItem(JOURNAL_KEY, JSON.stringify(j));
+      }
+      if (data.tags) {
+        const t = typeof data.tags === 'string' ? JSON.parse(data.tags) : data.tags;
+        localStorage.setItem(TAGS_KEY, JSON.stringify(t));
+      }
+    }
+  } catch(e) { console.warn('TradeLog: loadUserData failed', e); }
+
+  return true;
 }
 
+// ── SAVE PROFILE (name, avatar, currency, balance, theme, goals) ──────────────
 async function saveProfileToSupabase() {
-  if (!currentUser) return;
-  const settings = JSON.stringify({ theme: appState.theme || 'dark' });
-  await sb.from('profiles').upsert({
-    id: currentUser.id,
-    name: (appState.profile && appState.profile.name) || '',
-    avatar: (appState.profile && appState.profile.avatar) || null,
-    currency: appState.currency || 'USD',
-    balance: appState.balance || 0,
-    settings,
-    goals: appState.goals || {}
-  });
-}// ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
-async function loadTradesFromSupabase() {
-  if (!currentUser) return;
-  const { data, error } = await sb.from('trades').select('*').eq('user_id', currentUser.id).order('date', { ascending: false });
-  if (error) { console.error('Load error:', error); return; }
-  trades = (data || []).map(r => ({
-    id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
-    dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
-    pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
-    result: r.result, emotion: r.emotion, confidence: r.confidence,
-    notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
-  }));
+  const uid = await getValidUid();
+  if (!uid) { console.warn('TradeLog: saveProfile — no session'); return; }
+  try {
+    const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+    const goals = JSON.parse(localStorage.getItem(GOALS_KEY) || '{}');
+    const settings = { theme: localStorage.getItem(THEME_KEY) || 'dark', goals };
+    const { error } = await sb.from('profiles').upsert({
+      id: uid,
+      name: p.name || '',
+      avatar: p.avatar || null,
+      currency: getCurrency(),
+      balance: getBalance(),
+      settings: JSON.stringify(settings)
+    });
+    if (error) console.warn('TradeLog: saveProfile error', error);
+  } catch(e) { console.warn('TradeLog: saveProfile failed', e); }
 }
+
+// Alias used by loadProfileFromSupabase callers
+async function loadProfileFromSupabase() { /* handled by loadAllFromSupabase */ }
+
+// ── SAVE USER DATA (journal, mindset, tags) ───────────────────────────────────
+async function saveUserDataToSupabase() {
+  const uid = await getValidUid();
+  if (!uid) { console.warn('TradeLog: saveUserData — no session'); return; }
+  try {
+    const { error } = await sb.from('user_data').upsert({
+      user_id: uid,
+      mindset: getMindsetDataLocal(),
+      journal: JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
+      tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]')
+    });
+    if (error) console.warn('TradeLog: saveUserData error', error);
+  } catch(e) { console.warn('TradeLog: saveUserData failed', e); }
+}
+
+// Alias for old callers
+async function loadUserDataFromSupabase() { /* handled by loadAllFromSupabase */ }
+
+// ── TRADES ────────────────────────────────────────────────────────────────────
+function load() { /* no-op — data loaded from Supabase on boot */ }
+function save() { localStorage.setItem(KEY, JSON.stringify(trades)); }
 
 async function saveTradeToSupabase(t) {
-  if (!currentUser) {
-    // Try to recover session
-    const { data: { session } } = await sb.auth.getSession();
-    if (session && session.user) currentUser = session.user;
-    else throw new Error('No active session');
-  }
+  const uid = await getValidUid();
+  if (!uid) { console.warn('TradeLog: saveTradeToSupabase — no session'); return; }
   const row = {
-    id: t.id, user_id: currentUser.id, symbol: t.symbol, date: t.date,
+    id: t.id, user_id: uid, symbol: t.symbol, date: t.date,
     close_date: t.closeDate, dir: t.dir, lots: t.lots, entry: t.entry,
     exit: t.exit, sl: t.sl, tp: t.tp, pnl: t.pnl, commission: t.commission,
     net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
@@ -3303,105 +3387,62 @@ async function saveTradeToSupabase(t) {
     strategies: t.strategies || []
   };
   const { error } = await sb.from('trades').upsert(row);
-  if (error) throw error;
+  if (error) { console.error('TradeLog: upsert error', error); throw error; }
 }
 
 async function deleteTradeFromSupabase(id) {
-  if (!currentUser) return;
-  try {
-    const { error } = await sb.from('trades').delete().eq('id', id).eq('user_id', currentUser.id);
-    if (error) console.error('Delete error:', error);
-  } catch(e) {
-    console.error('Delete failed:', e);
-  }
+  const uid = await getValidUid();
+  if (!uid) { console.warn('TradeLog: deleteTradeFromSupabase — no session'); return; }
+  const { error } = await sb.from('trades').delete().eq('id', id).eq('user_id', uid);
+  if (error) { console.error('TradeLog: delete error', error); throw error; }
 }
 
-function load() { /* Supabase only */ }
-function save() { /* Supabase only — no localStorage */ }
-
-// ── GUARANTEED SUPABASE WRITE ─────────────────────────────────────────────────
-// Ensures currentUser is set before writing — fixes mobile session race condition
-async function guaranteedSaveToSupabase(trade) {
-  if (currentUser) {
-    await saveTradeToSupabase(trade);
-    return;
-  }
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session && session.user) {
-      currentUser = session.user;
-      await saveTradeToSupabase(trade);
-    } else {
-      console.warn('TradeLog: no active session — trade saved locally only');
-    }
-  } catch(e) {
-    console.error('TradeLog: session check failed', e);
-  }
-}
-
-async function guaranteedDeleteFromSupabase(id) {
-  if (currentUser) {
-    await deleteTradeFromSupabase(id);
-    return;
-  }
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session && session.user) {
-      currentUser = session.user;
-      await deleteTradeFromSupabase(id);
-    } else {
-      console.warn('TradeLog: no active session — delete may not have synced');
-    }
-  } catch(e) {
-    console.error('TradeLog: session check failed on delete', e);
-  }
-}
+// Thin wrappers (backwards compat)
+async function guaranteedSaveToSupabase(trade) { await saveTradeToSupabase(trade); }
+async function guaranteedDeleteFromSupabase(id) { await deleteTradeFromSupabase(id); }
 
 // ── APP INIT ──────────────────────────────────────────────────────────────────
 let _appInitialized = false;
 
 async function initApp(user) {
-  _appInitialized = true;
   currentUser = user;
-
-  // Show app shell immediately (blank state is fine — data loads in ms)
-  loadTheme();
-  showApp();
+  _appInitialized = true;
 
   // Reset auth button
   const btn = document.getElementById('auth-btn');
   if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
 
-  // Load ALL data from Supabase — this is the only source of truth
-  try {
-    await loadProfileFromSupabase();
-    await loadTradesFromSupabase();
-    await loadUserDataFromSupabase();
-  } catch(e) { console.error('TradeLog: init load error', e); }
-
-  // Now render with fresh Supabase data
+  // Show loading state immediately
+  loadTheme();
+  showApp();
   updateGreeting();
+
+  // Load EVERYTHING from Supabase before rendering
+  await loadAllFromSupabase();
+
+  // Now render with real data
   refreshDashboard();
   renderTrades();
+  try { loadJournal(); } catch(e) {}
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
   if (!sb) { showAuthScreen(); return; }
 
-  // Check existing session first
-  sb.auth.getSession().then(({ data: { session } }) => {
+  sb.auth.getSession().then(async ({ data: { session } }) => {
     if (session && session.user) {
-      initApp(session.user);
+      await initApp(session.user);
     } else {
       showAuthScreen();
     }
   }).catch(() => showAuthScreen());
 
-  // Listen for auth changes
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session && session.user) {
-      await initApp(session.user);
+      if (!_appInitialized) await initApp(session.user);
+    } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
+      currentUser = session.user;
     } else if (event === 'SIGNED_OUT') {
       _appInitialized = false;
       currentUser = null;
@@ -3492,18 +3533,17 @@ function toggleEmotion(el, name) {
 
 // ── CUSTOM TAGS SYSTEM ────────────────────────────────────────────────────────
 function getSavedTags() {
-  return appState.tags || [];
+  try { return JSON.parse(localStorage.getItem(TAGS_KEY)) || []; } catch { return []; }
 }
 function saveCustomTag(tag) {
   const tags = getSavedTags();
-  if (!tags.includes(tag)) {
-    appState.tags = [...tags, tag];
-    saveUserDataToSupabase();
-  }
+  if (!tags.includes(tag)) { tags.push(tag); localStorage.setItem(TAGS_KEY, JSON.stringify(tags)); saveUserDataToSupabase(); }
 }
 function deleteCustomTag(tag) {
-  appState.tags = getSavedTags().filter(t => t !== tag);
+  const tags = getSavedTags().filter(t => t !== tag);
+  localStorage.setItem(TAGS_KEY, JSON.stringify(tags));
   saveUserDataToSupabase();
+  // Also remove from current active selection if present
   strategyTags = strategyTags.filter(t => t !== tag);
   renderStrategyTags();
 }
@@ -3635,13 +3675,14 @@ function renderDetailTagsHTML(tid) {
 }
 
 function permanentDeleteTag(tag) {
-  appState.tags = getSavedTags().filter(t => t !== tag);
+  // Remove from saved custom tags
+  const saved = getSavedTags().filter(t => t !== tag);
+  localStorage.setItem(TAGS_KEY, JSON.stringify(saved));
+  // Remove from ALL trades
   trades.forEach(t => {
     if (t.strategies) t.strategies = t.strategies.filter(s => s !== tag);
   });
-  saveUserDataToSupabase();
-  // Also update each affected trade in Supabase
-  trades.forEach(t => { if (!(t.strategies||[]).includes(tag)) saveTradeToSupabase(t); });
+  save();
   rebuildTagDropdown();
   renderTrades();
   if (selectedId) showTradeDetail(selectedId);
@@ -3651,7 +3692,7 @@ function removeDetailTag(tid, tag) {
   const trade = trades.find(x => x.id === tid);
   if (!trade) return;
   trade.strategies = (trade.strategies || []).filter(s => s !== tag);
-  saveTradeToSupabase(trade);
+  save();
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
   rebuildTagDropdown();
@@ -3662,7 +3703,7 @@ function addDetailTag2(tid, tag) {
   if (!trade) return;
   if (!trade.strategies) trade.strategies = [];
   if (!trade.strategies.includes(tag)) trade.strategies.push(tag);
-  saveTradeToSupabase(trade);
+  save();
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
   rebuildTagDropdown();
@@ -3753,7 +3794,7 @@ function toggleDetailTag(tid, tag) {
     trade.strategies.push(tag);
     saveCustomTag(tag);
   }
-  saveTradeToSupabase(trade);
+  save();
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
 }
@@ -3767,9 +3808,11 @@ function addDetailTag(tid) {
   const trade = trades.find(x => x.id === tid);
   if (!trade) return;
   if (!trade.strategies) trade.strategies = [];
-  if (!trade.strategies.includes(tag)) trade.strategies.push(tag);
+  if (!trade.strategies.includes(tag)) {
+    trade.strategies.push(tag);
+  }
   saveCustomTag(tag);
-  saveTradeToSupabase(trade);
+  save();
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
   rebuildTagDropdown();
@@ -3801,7 +3844,7 @@ function saveTradePhoto(file, id) {
     const idx = trades.findIndex(t => t.id === id);
     if (idx === -1) return;
     trades[idx].screenshot = e.target.result;
-    saveTradeToSupabase(trades[idx]);
+    save();
     showTradeDetail(id);
     if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
     toast('Photo saved', 'success');
@@ -3832,7 +3875,7 @@ function removeTradePhoto(id) {
   const idx = trades.findIndex(t => t.id === id);
   if (idx === -1) return;
   trades[idx].screenshot = null;
-  saveTradeToSupabase(trades[idx]);
+  save();
   showTradeDetail(id);
   if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
   toast('Photo removed', '');
@@ -3851,10 +3894,6 @@ function openPhotoLightbox(id) {
 async function saveTrade() {
   const sym = document.getElementById('f-symbol').value.trim().toUpperCase();
   if (!sym) { toast('Symbol is required','error'); return; }
-
-  const saveBtn = document.querySelector('button[onclick="saveTrade()"]');
-  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
-
   const pnl = parseFloat(document.getElementById('f-pnl').value) || 0;
   const entry = parseFloat(document.getElementById('f-entry').value) || 0;
   const exit = parseFloat(document.getElementById('f-exit').value) || 0;
@@ -3887,48 +3926,56 @@ async function saveTrade() {
   };
   const netPnl = trade.netPnl;
   trade.result = netPnl === 0 ? 'be' : (selectedResult ? selectedResult : (netPnl > 0 ? 'win' : 'loss'));
-
-  // Write to Supabase first — if it fails, stop and show error
-  try {
-    await saveTradeToSupabase(trade);
-  } catch(e) {
-    toast('❌ Save failed — check connection', 'error');
-    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Trade'; }
-    return;
-  }
-
-  // Update in-memory trades array
   if (editId) {
     const idx = trades.findIndex(t => t.id === editId);
-    if (idx > -1) trades[idx] = trade; else trades.unshift(trade);
+    if (idx > -1) trades[idx] = trade;
   } else {
     trades.unshift(trade);
   }
-
+  save();
   clearForm();
-  toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
+  toast(editId ? '⏳ Saving...' : '⏳ Saving...', '');
   switchPage(editId ? 'trades' : 'dashboard');
-  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Trade'; }
+  // Await the Supabase write — this is critical on mobile
+  try {
+    await guaranteedSaveToSupabase(trade);
+    toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
+  } catch(e) {
+    toast('⚠️ Saved locally — sync failed, will retry', 'error');
+    console.error('TradeLog: saveTrade sync failed', e);
+  }
 }
 
 function instantDelete(id) {
-  showConfirm({ icon:'🗑️', title:'Delete Trade', message:'This trade will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: () => {
+  showConfirm({ icon:'🗑️', title:'Delete Trade', message:'This trade will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: async () => {
     trades = trades.filter(t => t.id !== id);
-    deleteTradeFromSupabase(id);
-    toast('Trade deleted');
+    save();
+    toast('⏳ Deleting...', '');
     renderTrades();
     refreshDashboard();
+    try {
+      await guaranteedDeleteFromSupabase(id);
+      toast('Trade deleted', 'success');
+    } catch(e) {
+      toast('⚠️ Deleted locally — sync failed', 'error');
+    }
   }});
 }
 
-function deleteSelected() {
+async function deleteSelected() {
   const id = document.getElementById('edit-id').value;
   if (!id) return;
   trades = trades.filter(t => t.id !== id);
-  deleteTradeFromSupabase(id);
+  save();
   clearForm();
-  toast('Trade deleted');
+  toast('⏳ Deleting...', '');
   switchPage('trades');
+  try {
+    await guaranteedDeleteFromSupabase(id);
+    toast('Trade deleted', 'success');
+  } catch(e) {
+    toast('⚠️ Deleted locally — sync failed', 'error');
+  }
 }
 
 function openEditSelected() {
@@ -5521,9 +5568,11 @@ function saveOverlayNotes(id, val) {
   const t = trades.find(x => x.id === id);
   if (!t) return;
   t.notes = val;
-  saveTradeToSupabase(t);
+  save();
+  // Update the static notes display in the side detail panel
   const clamp = document.querySelector('.notes-clamp');
   if (clamp) clamp.textContent = val || 'No notes added.';
+  // Sync if edit panel is open
   const ieNotes = document.getElementById('ie-notes');
   if (ieNotes) ieNotes.value = val;
 }
@@ -5959,7 +6008,7 @@ function ieAddNewTag() {
   ieRenderTagsOnly();
 }
 
-function saveInlineEdit(id) {
+async function saveInlineEdit(id) {
   const idx = trades.findIndex(x => x.id === id);
   if (idx === -1) return;
   const t = trades[idx];
@@ -5987,15 +6036,20 @@ function saveInlineEdit(id) {
     const reward = Math.abs(t.exit - t.entry);
     t.r = risk ? +(reward / risk).toFixed(2) : 0;
   }
-  saveTradeToSupabase(t);
+  save();
   collapseDetailPanel();
   renderTrades();
   refreshDashboard();
   showTradeDetail(id);
-  // sync overlay notes if open
   const overlayNotes = document.getElementById('overlay-notes-input');
   if (overlayNotes) overlayNotes.value = t.notes || '';
-  toast('✓ Trade updated', 'success');
+  toast('⏳ Saving...', '');
+  try {
+    await guaranteedSaveToSupabase(t);
+    toast('✓ Trade updated', 'success');
+  } catch(e) {
+    toast('⚠️ Saved locally — sync failed', 'error');
+  }
 }
 
 function cancelInlineEdit() {
@@ -6025,15 +6079,21 @@ function collapseDetailPanel() {
 }
 
 function deleteInlineEdit(id) {
-  showConfirm({ icon:'🗑️', title:'Delete Trade', message:'This trade will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: () => {
+  showConfirm({ icon:'🗑️', title:'Delete Trade', message:'This trade will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: async () => {
     trades = trades.filter(t => t.id !== id);
     selectedId = null;
-    deleteTradeFromSupabase(id);
+    save();
     collapseDetailPanel();
     renderTrades();
     refreshDashboard();
     document.getElementById('trade-detail-body').innerHTML = '<div class="empty-state"><h3>Select a trade</h3><p>Click any row to see details</p></div>';
-    toast('Trade deleted', '');
+    toast('⏳ Deleting...', '');
+    try {
+      await guaranteedDeleteFromSupabase(id);
+      toast('Trade deleted', 'success');
+    } catch(e) {
+      toast('⚠️ Deleted locally — sync failed', 'error');
+    }
   }});
 }
 
@@ -6408,12 +6468,13 @@ function showImportPreview(rows, headers) {
 async function confirmImport() {
   if (!pendingImport.length) return;
   trades = [...pendingImport, ...trades];
-  // Write all imported trades to Supabase
+  save();
+  toast('⏳ Importing...', '');
   try {
-    await Promise.all(pendingImport.map(t => saveTradeToSupabase(t)));
+    await Promise.all(pendingImport.map(t => guaranteedSaveToSupabase(t)));
     toast('✓ Imported ' + pendingImport.length + ' trades', 'success');
   } catch(e) {
-    toast('⚠️ Import partially failed — check connection', 'error');
+    toast('⚠️ Saved locally — sync may be partial', 'error');
   }
   pendingImport = [];
   document.getElementById('import-preview').style.display = 'none';
@@ -6941,10 +7002,10 @@ function updateEmptyState() {
 }
 
 // ── GOALS ─────────────────────────────────────────────────────────────────────
-const GOALS_KEY = 'tradelog_goals'; // kept for reference only
+const GOALS_KEY = 'tradelog_goals';
 
 function getGoals() {
-  return appState.goals || {};
+  try { return JSON.parse(localStorage.getItem(GOALS_KEY)) || {}; } catch { return {}; }
 }
 
 function openGoalsModal() {
@@ -6965,8 +7026,8 @@ function saveGoals() {
     weekly:  parseFloat(document.getElementById('goal-input-weekly').value)  || 0,
     monthly: parseFloat(document.getElementById('goal-input-monthly').value) || 0,
   };
-  appState.goals = g;
-  saveProfileToSupabase();
+  localStorage.setItem(GOALS_KEY, JSON.stringify(g));
+  saveProfileToSupabase(); // goals live inside profiles.settings
   closeGoalsModal();
   renderGoals();
   toast('Goals saved!', 'success');
@@ -7051,8 +7112,8 @@ function renderGoals() {
 }
 
 // ── DAILY JOURNAL ─────────────────────────────────────────────────────────────
-const JOURNAL_KEY  = 'tradelog_journal';  // kept for reference only
-const MINDSET_KEY  = 'tradelog_mindset_v2'; // kept for reference only
+const JOURNAL_KEY  = 'tradelog_journal';
+const MINDSET_KEY  = 'tradelog_mindset_v2';
 
 function getTodayKey() {
   const now = new Date();
@@ -7060,37 +7121,26 @@ function getTodayKey() {
   return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
 }
 
-async function loadUserDataFromSupabase() {
-  if (!currentUser) return;
-  try {
-    const { data, error } = await sb.from('user_data').select('*').eq('user_id', currentUser.id).single();
-    if (error || !data) return;
-    if (data.mindset) appState.mindset = typeof data.mindset === 'string' ? JSON.parse(data.mindset) : data.mindset;
-    if (data.journal) appState.journal = typeof data.journal === 'string' ? JSON.parse(data.journal) : data.journal;
-    if (data.tags)    appState.tags    = typeof data.tags    === 'string' ? JSON.parse(data.tags)    : data.tags;
-    if (data.goals)   appState.goals   = typeof data.goals   === 'string' ? JSON.parse(data.goals)   : data.goals;
-  } catch(e) {
-    console.warn('TradeLog: user_data load failed', e);
-  }
-}
+// ── SUPABASE USER-DATA SYNC (mindset, journal, tags) ─────────────────────────
+// Requires a `user_data` table in Supabase. Run this SQL once in your Supabase
+// SQL Editor (Dashboard → SQL Editor → New Query):
+//
+//   create table if not exists public.user_data (
+//     user_id uuid primary key references auth.users(id) on delete cascade,
+//     mindset jsonb default '{}'::jsonb,
+//     journal jsonb default '{}'::jsonb,
+//     tags    jsonb default '[]'::jsonb
+//   );
+//   alter table public.user_data enable row level security;
+//   create policy "Users manage own data" on public.user_data
+//     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-async function saveUserDataToSupabase() {
-  if (!currentUser) return;
-  try {
-    await sb.from('user_data').upsert({
-      user_id: currentUser.id,
-      mindset: appState.mindset || { entries: {}, rules: [] },
-      journal: appState.journal || {},
-      tags:    appState.tags    || [],
-      goals:   appState.goals   || {}
-    });
-  } catch(e) {
-    console.warn('TradeLog: user_data save failed', e);
-  }
-}
+// (loadUserDataFromSupabase and saveUserDataToSupabase defined above in Supabase block)
 
+// Internal: read mindset only from localStorage (no Supabase)
 function getMindsetDataLocal() {
-  return appState.mindset || { entries: {}, rules: [] };
+  try { return JSON.parse(localStorage.getItem(MINDSET_KEY)) || { entries: {}, rules: [] }; }
+  catch { return { entries: {}, rules: [] }; }
 }
 
 function loadJournal() {
@@ -7100,33 +7150,48 @@ function loadJournal() {
     const d = new Date();
     label.textContent = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
   }
-  const all = appState.journal || {};
-  const entry = all[key] || {};
-  const plan = document.getElementById('journal-plan');
-  const review = document.getElementById('journal-review');
-  if (plan) plan.value = entry.plan || '';
-  if (review) review.value = entry.review || '';
+  try {
+    const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
+    const entry = all[key] || {};
+    const plan = document.getElementById('journal-plan');
+    const review = document.getElementById('journal-review');
+    if (plan) plan.value = entry.plan || '';
+    if (review) review.value = entry.review || '';
+  } catch {}
 }
 
 function saveJournal() {
   const key = getTodayKey();
-  const all = appState.journal || {};
-  all[key] = {
-    plan:   (document.getElementById('journal-plan')?.value   || '').trim(),
-    review: (document.getElementById('journal-review')?.value || '').trim(),
-  };
-  appState.journal = all;
-  saveUserDataToSupabase();
-  toast('Journal saved!', 'success');
+  try {
+    const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
+    const planVal   = (document.getElementById('journal-plan')?.value   || '').trim();
+    const reviewVal = (document.getElementById('journal-review')?.value || '').trim();
+    all[key] = { plan: planVal, review: reviewVal };
+    localStorage.setItem(JOURNAL_KEY, JSON.stringify(all));
+
+    // Keep Mindset page in sync — write the same plan/review into the mindset store
+    try {
+      const mData = getMindsetDataLocal();
+      if (!mData.entries[key]) mData.entries[key] = {};
+      if (planVal)   mData.entries[key].plan   = planVal;
+      if (reviewVal) mData.entries[key].review  = reviewVal;
+      mData.entries[key].date = key;
+      localStorage.setItem(MINDSET_KEY, JSON.stringify(mData));
+    } catch(e) {}
+
+    saveUserDataToSupabase();
+    loadJournal(); // re-load to confirm saved state
+    toast('Journal saved!', 'success');
+  } catch { toast('Could not save journal', 'error'); }
 }
 
 // ── MINDSET PAGE ──────────────────────────────────────────────────────────────
 
 function getMindsetData() {
-  return appState.mindset || { entries: {}, rules: [] };
+  return getMindsetDataLocal();
 }
 function saveMindsetData(data) {
-  appState.mindset = data;
+  localStorage.setItem(MINDSET_KEY, JSON.stringify(data));
   saveUserDataToSupabase();
 }
 
@@ -7252,12 +7317,24 @@ function saveMindsetAll() {
   const key  = getTodayKey();
   const data = getMindsetData();
   if (!data.entries[key]) data.entries[key] = {};
-  data.entries[key].plan       = (document.getElementById('mindset-plan')?.value   || '').trim();
-  data.entries[key].review     = (document.getElementById('mindset-review')?.value || '').trim();
+  const planVal   = (document.getElementById('mindset-plan')?.value   || '').trim();
+  const reviewVal = (document.getElementById('mindset-review')?.value || '').trim();
+  data.entries[key].plan       = planVal;
+  data.entries[key].review     = reviewVal;
   data.entries[key].confidence = window._mindsetConf   || 5;
   data.entries[key].emotion    = window._mindsetEmotion || '';
   data.entries[key].date       = key;
   saveMindsetData(data);
+
+  // Keep Dashboard journal in sync
+  try {
+    const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
+    if (!all[key]) all[key] = {};
+    if (planVal)   all[key].plan   = planVal;
+    if (reviewVal) all[key].review = reviewVal;
+    localStorage.setItem(JOURNAL_KEY, JSON.stringify(all));
+  } catch(e) {}
+
   renderMindsetPastEntries(data.entries);
   renderMindsetWeekStats(data.entries);
   toast('✓ Mindset saved', 'success');
@@ -7559,7 +7636,7 @@ function openShareModal() {
   const isPos = pnl >= 0;
 
   // ── Theme palette ──────────────────────────────────────────────────────────
-  const theme = appState.theme || 'dark';
+  const theme = localStorage.getItem('tradelog_theme') || 'dark';
   const palettes = {
     dark:  { bg: 'linear-gradient(145deg,#0b0f1a 0%,#111827 60%,#0d1220 100%)', border: '#2d3f55', statBg: 'rgba(255,255,255,0.04)', statBorder: '#1e293b', text: '#f1f5f9', muted: '#64748b', glow1: 'rgba(99,102,241,0.18)', glow2: 'rgba(0,255,187,0.08)', pos: '#00FFBB', neg: '#ff3b5c', tradeRow: 'rgba(255,255,255,0.04)', footerBorder: '#1e293b' },
     gray:  { bg: 'linear-gradient(145deg,#1a1f2e 0%,#1e2536 60%,#161b28 100%)', border: '#2d3a50', statBg: 'rgba(255,255,255,0.05)', statBorder: '#252d3d', text: '#e2e8f0', muted: '#64748b', glow1: 'rgba(99,102,241,0.15)', glow2: 'rgba(0,255,187,0.07)', pos: '#00FFBB', neg: '#ff3b5c', tradeRow: 'rgba(255,255,255,0.05)', footerBorder: '#252d3d' },
@@ -7739,8 +7816,9 @@ document.getElementById('share-modal').addEventListener('click', function(e) {
 function updateGreeting() {
   const h = new Date().getHours();
   const greet = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Up late, trader 🌙';
-  const name = appState.profile && appState.profile.name && appState.profile.name !== 'My Account'
-    ? ', ' + appState.profile.name.split(' ')[0] : '';
+  // Get name from profile
+  const profile = JSON.parse(localStorage.getItem('tradelog_profile') || '{}');
+  const name = profile.name && profile.name !== 'My Account' ? ', ' + profile.name.split(' ')[0] : '';
   const el = document.getElementById('dash-greeting');
   if (el) el.textContent = greet + name;
   const sub = document.getElementById('dash-date-sub');
@@ -7748,6 +7826,7 @@ function updateGreeting() {
     const d = new Date();
     sub.textContent = d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
   }
+  // recent count badge
   const rc = document.getElementById('recent-count');
   if (rc) rc.textContent = trades.length ? `${Math.min(trades.length, 10)} of ${trades.length}` : '';
 }
