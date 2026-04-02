@@ -7052,8 +7052,9 @@ async function loadUserDataFromSupabase() {
   const uid = await getValidUid();
   if (!uid) return;
   try {
-    const { data, error } = await sb.from('user_data').select('*').eq('user_id', uid).single();
-    if (error || !data) return;
+    const { data, error } = await sb.from('user_data').select('*').eq('user_id', uid).maybeSingle();
+    if (error) { console.warn('TradeLog: user_data load failed', error); return; }
+    if (!data) return; // no row yet, that's fine
     if (data.mindset) {
       const remote = typeof data.mindset === 'string' ? JSON.parse(data.mindset) : data.mindset;
       const local  = getMindsetDataLocal();
