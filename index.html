@@ -2896,10 +2896,20 @@ const BAL_KEY = 'tradelog_balance';
 const CUR_KEY = 'tradelog_currency';
 const TAGS_KEY = 'tradelog_custom_tags';
 const CURRENCIES = { USD:'$', EUR:'€', GBP:'£', ILS:'₪' };
-function getCurrency() { return localStorage.getItem(CUR_KEY) || 'USD'; }
+
+// ── IN-MEMORY APP STATE (Supabase is the only source of truth) ────────────────
+let _currency = 'USD';
+let _balance  = 0;
+let _profile  = { name: 'My Account', avatar: null };
+let _goals    = {};
+let _tags     = [];
+let _journal  = {};
+let _mindset  = { entries: {}, rules: [] };
+
+function getCurrency() { return _currency; }
 function getCurrencySymbol() { return CURRENCIES[getCurrency()] || '$'; }
 function setCurrency(c) {
-  localStorage.setItem(CUR_KEY, c);
+  _currency = c;
   saveProfileToSupabase();
   window._suppressChartAnim = true;
   refreshDashboard();
@@ -2932,7 +2942,7 @@ function getResult(t) {
   if (pnl === 0) return 'be';
   return pnl > 0 ? 'win' : 'loss';
 }
-function getBalance() { return parseFloat(localStorage.getItem(BAL_KEY)) || 0; }
+function getBalance() { return _balance; }
 
 function load() { /* no-op: trades always loaded from Supabase */ }
 function save() { /* no-op: trades always saved to Supabase */ }
@@ -2944,7 +2954,8 @@ const THEME_LABELS = { dark:'Dark', gray:'Gray', black:'Black', light:'Light' };
 
 function setTheme(t) {
 document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem(THEME_KEY, t);
+  _theme = t;
+  localStorage.setItem(THEME_KEY, t); // keep for flash-prevention on next load
   updateThemeButtons(t);
   saveProfileToSupabase();
   if (equityChartInst) refreshDashboard();
@@ -2961,7 +2972,7 @@ function updateThemeButtons(t) {
 }
 
 function loadTheme() {
-  const t = localStorage.getItem(THEME_KEY) || 'dark';
+  const t = _theme || localStorage.getItem(THEME_KEY) || 'dark';
   document.documentElement.setAttribute('data-theme', t);
   updateThemeButtons(t);
 }
@@ -3008,7 +3019,7 @@ const PROFILE_KEY = 'tradelog_profile';
 
 function loadProfile() {
   try {
-    const p = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
+    const p = _profile || {};
     const name = p.name || 'My Account';
     const initial = name.trim().charAt(0).toUpperCase();
     const avatar = p.avatar || null;
@@ -3030,7 +3041,7 @@ function loadProfile() {
 
 function openProfileModal() {
   try {
-    const p = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
+    const p = _profile || {};
     document.getElementById('profile-name-input').value = p.name || '';
     const prev = document.getElementById('profile-avatar-preview');
     if (p.avatar) { prev.innerHTML = `<img src="${p.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
@@ -3053,9 +3064,8 @@ function previewProfileAvatar(ev) {
 
 function saveProfile() {
   const name = document.getElementById('profile-name-input').value.trim() || 'My Account';
-  const existing = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-  const avatar = window._pendingAvatar || existing.avatar || null;
-localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
+  const avatar = window._pendingAvatar || (_profile && _profile.avatar) || null;
+  _profile = { name, avatar };
   window._pendingAvatar = null;
   loadProfile();
   saveProfileToSupabase();
@@ -3132,7 +3142,7 @@ function closeConfirmModal() {
 function saveBalance() {
   const val = parseFloat(document.getElementById('modal-balance-input').value);
   if (!val || val <= 0) { toast('Enter a valid balance', 'error'); return; }
- localStorage.setItem(BAL_KEY, val);
+  _balance = val;
   saveProfileToSupabase();
   closeBalanceModal();
   toast('Balance saved — $' + val.toLocaleString(), 'success');
@@ -3234,15 +3244,15 @@ async function loadProfileFromSupabase() {
   const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
   if (error || !data) return;
   if (data.name) {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: data.name, avatar: data.avatar || null }));
+    _profile = { name: data.name, avatar: data.avatar || null };
   }
-  if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
-  if (data.balance) localStorage.setItem(BAL_KEY, data.balance);
-  if (data.goals) localStorage.setItem(GOALS_KEY, JSON.stringify(data.goals));
+  if (data.currency) _currency = data.currency;
+  if (data.balance) _balance = parseFloat(data.balance) || 0;
+  if (data.goals) _goals = (typeof data.goals === 'string' ? JSON.parse(data.goals) : data.goals) || {};
   if (data.settings) {
     try {
       const s = JSON.parse(data.settings);
-      if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
+      if (s.theme) { _theme = s.theme; localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
     } catch(e) {}
   }
   loadProfile();
@@ -3251,9 +3261,9 @@ async function loadProfileFromSupabase() {
 
 async function saveProfileToSupabase() {
   if (!currentUser) return;
-  const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-  const settings = JSON.stringify({ theme: localStorage.getItem(THEME_KEY) || 'dark' });
-  const goals = JSON.parse(localStorage.getItem(GOALS_KEY) || '{}');
+  const p = _profile || {};
+  const settings = JSON.stringify({ theme: _theme || 'dark' });
+  const goals = _goals || {};
   await sb.from('profiles').upsert({
     id: currentUser.id,
     name: p.name || '',
@@ -3481,15 +3491,15 @@ function toggleEmotion(el, name) {
 
 // ── CUSTOM TAGS SYSTEM ────────────────────────────────────────────────────────
 function getSavedTags() {
-  try { return JSON.parse(localStorage.getItem(TAGS_KEY)) || []; } catch { return []; }
+  return _tags || [];
 }
 function saveCustomTag(tag) {
   const tags = getSavedTags();
-  if (!tags.includes(tag)) { tags.push(tag); localStorage.setItem(TAGS_KEY, JSON.stringify(tags)); saveUserDataToSupabase(); }
+  if (!tags.includes(tag)) { tags.push(tag); _tags = tags; saveUserDataToSupabase(); }
 }
 function deleteCustomTag(tag) {
   const tags = getSavedTags().filter(t => t !== tag);
-  localStorage.setItem(TAGS_KEY, JSON.stringify(tags));
+  _tags = tags;
   saveUserDataToSupabase();
   // Also remove from current active selection if present
   strategyTags = strategyTags.filter(t => t !== tag);
@@ -3625,7 +3635,7 @@ function renderDetailTagsHTML(tid) {
 function permanentDeleteTag(tag) {
   // Remove from saved custom tags
   const saved = getSavedTags().filter(t => t !== tag);
-  localStorage.setItem(TAGS_KEY, JSON.stringify(saved));
+  _tags = saved;
   // Remove from ALL trades
   trades.forEach(t => {
     if (t.strategies) t.strategies = t.strategies.filter(s => s !== tag);
@@ -6923,7 +6933,7 @@ function updateEmptyState() {
 const GOALS_KEY = 'tradelog_goals';
 
 function getGoals() {
-  try { return JSON.parse(localStorage.getItem(GOALS_KEY)) || {}; } catch { return {}; }
+  return _goals || {};
 }
 
 function openGoalsModal() {
@@ -6944,7 +6954,7 @@ function saveGoals() {
     weekly:  parseFloat(document.getElementById('goal-input-weekly').value)  || 0,
     monthly: parseFloat(document.getElementById('goal-input-monthly').value) || 0,
   };
-  localStorage.setItem(GOALS_KEY, JSON.stringify(g));
+  _goals = g;
   saveProfileToSupabase();
   closeGoalsModal();
   renderGoals();
@@ -7060,24 +7070,18 @@ async function loadUserDataFromSupabase() {
     if (error || !data) return;
     if (data.mindset) {
       const remote = typeof data.mindset === 'string' ? JSON.parse(data.mindset) : data.mindset;
-      const local  = getMindsetDataLocal();
-      const merged = {
-        entries: Object.assign({}, local.entries, remote.entries || {}),
-        rules: (remote.rules && remote.rules.length) ? remote.rules : (local.rules || [])
+      _mindset = {
+        entries: Object.assign({}, (_mindset||{}).entries, remote.entries || {}),
+        rules: (remote.rules && remote.rules.length) ? remote.rules : ((_mindset||{}).rules || [])
       };
-      localStorage.setItem(MINDSET_KEY, JSON.stringify(merged));
     }
     if (data.journal) {
       const remote = typeof data.journal === 'string' ? JSON.parse(data.journal) : data.journal;
-      const local  = JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}');
-      const merged = Object.assign({}, local, remote);
-      localStorage.setItem(JOURNAL_KEY, JSON.stringify(merged));
+      _journal = Object.assign({}, _journal, remote);
     }
     if (data.tags) {
       const remote = typeof data.tags === 'string' ? JSON.parse(data.tags) : data.tags;
-      const local  = JSON.parse(localStorage.getItem(TAGS_KEY) || '[]');
-      const merged = [...new Set([...local, ...remote])];
-      localStorage.setItem(TAGS_KEY, JSON.stringify(merged));
+      _tags = [...new Set([...(_tags||[]), ...remote])];
     }
   } catch(e) {
     console.warn('TradeLog: user_data load failed', e);
@@ -7096,19 +7100,18 @@ async function saveUserDataToSupabase() {
   try {
     await sb.from('user_data').upsert({
       user_id: uid,
-      mindset: getMindsetDataLocal(),
-      journal: JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
-      tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]')
+      mindset: _mindset || { entries: {}, rules: [] },
+      journal: _journal || {},
+      tags:    _tags || []
     });
   } catch(e) {
     console.warn('TradeLog: user_data save failed', e);
   }
 }
 
-// Internal: read mindset only from localStorage (no Supabase)
+// Internal: read mindset from in-memory state
 function getMindsetDataLocal() {
-  try { return JSON.parse(localStorage.getItem(MINDSET_KEY)) || { entries: {}, rules: [] }; }
-  catch { return { entries: {}, rules: [] }; }
+  return _mindset || { entries: {}, rules: [] };
 }
 
 function loadJournal() {
@@ -7119,7 +7122,7 @@ function loadJournal() {
     label.textContent = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
   }
   try {
-    const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
+    const all = _journal || {};
     const entry = all[key] || {};
     const plan = document.getElementById('journal-plan');
     const review = document.getElementById('journal-review');
@@ -7131,12 +7134,12 @@ function loadJournal() {
 function saveJournal() {
   const key = getTodayKey();
   try {
-    const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
+    const all = Object.assign({}, _journal || {});
     all[key] = {
       plan:   (document.getElementById('journal-plan')?.value   || '').trim(),
       review: (document.getElementById('journal-review')?.value || '').trim(),
     };
-    localStorage.setItem(JOURNAL_KEY, JSON.stringify(all));
+    _journal = all;
     saveUserDataToSupabase();
     toast('Journal saved!', 'success');
   } catch { toast('Could not save journal', 'error'); }
@@ -7148,7 +7151,7 @@ function getMindsetData() {
   return getMindsetDataLocal();
 }
 function saveMindsetData(data) {
-  localStorage.setItem(MINDSET_KEY, JSON.stringify(data));
+  _mindset = data;
   saveUserDataToSupabase();
 }
 
@@ -7581,7 +7584,7 @@ function openShareModal() {
   const isPos = pnl >= 0;
 
   // ── Theme palette ──────────────────────────────────────────────────────────
-  const theme = localStorage.getItem('tradelog_theme') || 'dark';
+  const theme = _theme || 'dark';
   const palettes = {
     dark:  { bg: 'linear-gradient(145deg,#0b0f1a 0%,#111827 60%,#0d1220 100%)', border: '#2d3f55', statBg: 'rgba(255,255,255,0.04)', statBorder: '#1e293b', text: '#f1f5f9', muted: '#64748b', glow1: 'rgba(99,102,241,0.18)', glow2: 'rgba(0,255,187,0.08)', pos: '#00FFBB', neg: '#ff3b5c', tradeRow: 'rgba(255,255,255,0.04)', footerBorder: '#1e293b' },
     gray:  { bg: 'linear-gradient(145deg,#1a1f2e 0%,#1e2536 60%,#161b28 100%)', border: '#2d3a50', statBg: 'rgba(255,255,255,0.05)', statBorder: '#252d3d', text: '#e2e8f0', muted: '#64748b', glow1: 'rgba(99,102,241,0.15)', glow2: 'rgba(0,255,187,0.07)', pos: '#00FFBB', neg: '#ff3b5c', tradeRow: 'rgba(255,255,255,0.05)', footerBorder: '#252d3d' },
@@ -7762,7 +7765,7 @@ function updateGreeting() {
   const h = new Date().getHours();
   const greet = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Up late, trader 🌙';
   // Get name from profile
-  const profile = JSON.parse(localStorage.getItem('tradelog_profile') || '{}');
+  const profile = _profile || {};
   const name = profile.name && profile.name !== 'My Account' ? ', ' + profile.name.split(' ')[0] : '';
   const el = document.getElementById('dash-greeting');
   if (el) el.textContent = greet + name;
