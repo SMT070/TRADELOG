@@ -1326,8 +1326,6 @@
   }
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
 </head>
 <body>
 <div id="info-tooltip"></div>
@@ -2862,25 +2860,38 @@ function getPnlColor(v) { return v >= 0 ? gc() : rc(); }
 
 const KEY = 'tradelog_v1';
 
-// ── BACKGROUND SYNC ──────────────────────────────────────────────────────────
-async function backgroundSync() {
-  const uid = await getValidUid();
-  if (!uid) return; // not logged in
-  await loadTradesFromSupabase();
-  await loadUserDataFromSupabase();
-  refreshDashboard();
-  renderTrades();
-  if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
-  if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
-}
+setInterval(async () => {
+  if (currentUser) {
+    await loadTradesFromSupabase();
+    await loadUserDataFromSupabase();
+    refreshDashboard();
+    renderTrades();
+    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+  }
+}, 30000);
 
-setInterval(backgroundSync, 30000);
-
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') backgroundSync();
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && currentUser) {
+    await loadTradesFromSupabase();
+    await loadUserDataFromSupabase();
+    refreshDashboard();
+    renderTrades();
+    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+  }
 });
 
-window.addEventListener('focus', () => { backgroundSync(); });
+window.addEventListener('focus', async () => {
+  if (currentUser) {
+    await loadTradesFromSupabase();
+    await loadUserDataFromSupabase();
+    refreshDashboard();
+    renderTrades();
+    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+  }
+});
 const BAL_KEY = 'tradelog_balance';
 const CUR_KEY = 'tradelog_currency';
 const TAGS_KEY = 'tradelog_custom_tags';
@@ -3071,7 +3082,14 @@ showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the c
 
 function clearAllTrades() {
   showConfirm({ icon:'\uD83D\uDDD1\uFE0F', title:'Delete All Trades', message:'This will permanently delete all your trades. This cannot be undone.', okText:'Delete All', okColor:'var(--red)', onOk: async () => {
-    const uid = await getValidUid();
+    // Guarantee we have a valid session before deleting from Supabase
+    let uid = currentUser ? currentUser.id : null;
+    if (!uid) {
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session && session.user) { currentUser = session.user; uid = session.user.id; }
+      } catch(e) {}
+    }
     if (uid) {
       const { error } = await sb.from('trades').delete().eq('user_id', uid);
       if (error) console.error('Clear all error:', error);
@@ -3147,10 +3165,10 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const _supa = window.supabase || window.Supabase;
 const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
-    storage: window.localStorage,
-    autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+    storageKey: 'tradelog_sb_session'
   }
 }) : null;
 let currentUser = null;
@@ -3211,95 +3229,57 @@ function showAuthScreen() {
   if (app) app.style.display = 'none';
 }
 
-// ── CENTRAL SESSION RESOLVER ──────────────────────────────────────────────────
-// Always call this before any Supabase operation.
-// Returns the resolved user id (string) or null if no valid session.
-// Also keeps currentUser in sync so the rest of the app sees the right user.
-async function getValidUid() {
-  try {
-    const { data: { session }, error } = await sb.auth.getSession();
-    if (error || !session || !session.user) return null;
-    // Token about to expire in <60 s? Force a refresh now.
-    const exp = session.expires_at; // unix seconds
-    if (exp && (exp - Math.floor(Date.now() / 1000)) < 60) {
-      const { data: refreshed } = await sb.auth.refreshSession();
-      if (refreshed && refreshed.session && refreshed.session.user) {
-        currentUser = refreshed.session.user;
-        return currentUser.id;
-      }
-    }
-    currentUser = session.user;
-    return session.user.id;
-  } catch(e) {
-    console.warn('TradeLog: getValidUid failed', e);
-    return null;
-  }
-}
-
 async function loadProfileFromSupabase() {
-  const uid = await getValidUid();
-  if (!uid) return;
-  try {
-    const { data, error } = await sb.from('profiles').select('*').eq('id', uid).single();
-    if (error || !data) return;
-    if (data.name) {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: data.name, avatar: data.avatar || null }));
-    }
-    if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
-    if (data.balance)  localStorage.setItem(BAL_KEY, data.balance);
-    if (data.settings) {
-      try {
-        const s = JSON.parse(data.settings);
-        if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
-      } catch(e) {}
-    }
-    loadProfile();
-    updateCurrencyButtons();
-  } catch(e) { console.warn('TradeLog: loadProfile failed', e); }
+  if (!currentUser) return;
+  const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (error || !data) return;
+  if (data.name) {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: data.name, avatar: data.avatar || null }));
+  }
+  if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
+  if (data.balance) localStorage.setItem(BAL_KEY, data.balance);
+  if (data.settings) {
+    try {
+      const s = JSON.parse(data.settings);
+      if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
+    } catch(e) {}
+  }
+  loadProfile();
+  updateCurrencyButtons();
 }
 
 async function saveProfileToSupabase() {
-  const uid = await getValidUid();
-  if (!uid) return;
-  try {
-    const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-    const settings = JSON.stringify({ theme: localStorage.getItem(THEME_KEY) || 'dark' });
-    const { error } = await sb.from('profiles').upsert({
-      id: uid,
-      name: p.name || '',
-      avatar: p.avatar || null,
-      currency: getCurrency(),
-      balance: getBalance(),
-      settings
-    });
-    if (error) console.warn('TradeLog: saveProfile error', error);
-  } catch(e) { console.warn('TradeLog: saveProfile failed', e); }
-}
-
-// ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
+  if (!currentUser) return;
+  const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+  const settings = JSON.stringify({ theme: localStorage.getItem(THEME_KEY) || 'dark' });
+  await sb.from('profiles').upsert({
+    id: currentUser.id,
+    name: p.name || '',
+    avatar: p.avatar || null,
+    currency: getCurrency(),
+    balance: getBalance(),
+    settings
+  });
+}// ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
 async function loadTradesFromSupabase() {
-  const uid = await getValidUid();
-  if (!uid) return;
-  try {
-    const { data, error } = await sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false });
-    if (error) { console.error('TradeLog: load trades error', error); return; }
-    trades = (data || []).map(r => ({
-      id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
-      dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
-      pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
-      result: r.result, emotion: r.emotion, confidence: r.confidence,
-      notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
-    }));
-    localStorage.setItem(KEY, JSON.stringify(trades));
-  } catch(e) { console.error('TradeLog: loadTrades failed', e); }
+  if (!currentUser) return;
+  const { data, error } = await sb.from('trades').select('*').eq('user_id', currentUser.id).order('date', { ascending: false });
+  if (error) { console.error('Load error:', error); return; }
+  trades = (data || []).map(r => ({
+    id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
+    dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
+    pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
+    result: r.result, emotion: r.emotion, confidence: r.confidence,
+    notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+  }));
+  localStorage.setItem(KEY, JSON.stringify(trades));
 }
 
 async function saveTradeToSupabase(t) {
-  const uid = await getValidUid();
-  if (!uid) { console.warn('TradeLog: saveTradeToSupabase — no session'); return; }
+  if (!currentUser) return;
   try {
     const row = {
-      id: t.id, user_id: uid, symbol: t.symbol, date: t.date,
+      id: t.id, user_id: currentUser.id, symbol: t.symbol, date: t.date,
       close_date: t.closeDate, dir: t.dir, lots: t.lots, entry: t.entry,
       exit: t.exit, sl: t.sl, tp: t.tp, pnl: t.pnl, commission: t.commission,
       net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
@@ -3307,29 +3287,63 @@ async function saveTradeToSupabase(t) {
       strategies: t.strategies || []
     };
     const { error } = await sb.from('trades').upsert(row);
-    if (error) console.error('TradeLog: upsert error', error);
-  } catch(e) { console.error('TradeLog: saveTradeToSupabase failed', e); }
+    if (error) console.error('Save error:', error);
+  } catch(e) {
+    console.error('Save failed:', e);
+  }
 }
 
 async function deleteTradeFromSupabase(id) {
-  const uid = await getValidUid();
-  if (!uid) { console.warn('TradeLog: deleteTradeFromSupabase — no session'); return; }
+  if (!currentUser) return;
   try {
-    const { error } = await sb.from('trades').delete().eq('id', id).eq('user_id', uid);
-    if (error) console.error('TradeLog: delete error', error);
-  } catch(e) { console.error('TradeLog: deleteTradeFromSupabase failed', e); }
+    const { error } = await sb.from('trades').delete().eq('id', id).eq('user_id', currentUser.id);
+    if (error) console.error('Delete error:', error);
+  } catch(e) {
+    console.error('Delete failed:', e);
+  }
 }
 
 function load() { /* handled by Supabase */ }
-function save() { localStorage.setItem(KEY, JSON.stringify(trades)); }
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(trades));
+}
 
-// guaranteedSave/Delete are now thin wrappers — the real work is inside save/deleteTradeToSupabase via getValidUid()
+// ── GUARANTEED SUPABASE WRITE ─────────────────────────────────────────────────
+// Ensures currentUser is set before writing — fixes mobile session race condition
 async function guaranteedSaveToSupabase(trade) {
-  await saveTradeToSupabase(trade);
+  if (currentUser) {
+    await saveTradeToSupabase(trade);
+    return;
+  }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      currentUser = session.user;
+      await saveTradeToSupabase(trade);
+    } else {
+      console.warn('TradeLog: no active session — trade saved locally only');
+    }
+  } catch(e) {
+    console.error('TradeLog: session check failed', e);
+  }
 }
 
 async function guaranteedDeleteFromSupabase(id) {
-  await deleteTradeFromSupabase(id);
+  if (currentUser) {
+    await deleteTradeFromSupabase(id);
+    return;
+  }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      currentUser = session.user;
+      await deleteTradeFromSupabase(id);
+    } else {
+      console.warn('TradeLog: no active session — delete may not have synced');
+    }
+  } catch(e) {
+    console.error('TradeLog: session check failed on delete', e);
+  }
 }
 
 // ── APP INIT ──────────────────────────────────────────────────────────────────
@@ -7051,12 +7065,10 @@ function getTodayKey() {
 //     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 async function loadUserDataFromSupabase() {
-  const uid = await getValidUid();
-  if (!uid) return;
+  if (!currentUser) return;
   try {
-    const { data, error } = await sb.from('user_data').select('*').eq('user_id', uid).maybeSingle();
-    if (error) { console.warn('TradeLog: user_data load failed', error); return; }
-    if (!data) return; // no row yet, that's fine
+    const { data, error } = await sb.from('user_data').select('*').eq('user_id', currentUser.id).single();
+    if (error || !data) return;
     if (data.mindset) {
       const remote = typeof data.mindset === 'string' ? JSON.parse(data.mindset) : data.mindset;
       const local  = getMindsetDataLocal();
@@ -7078,23 +7090,27 @@ async function loadUserDataFromSupabase() {
       const merged = [...new Set([...local, ...remote])];
       localStorage.setItem(TAGS_KEY, JSON.stringify(merged));
     }
-    try { loadJournal(); } catch(e) {}
   } catch(e) {
     console.warn('TradeLog: user_data load failed', e);
   }
 }
 
 async function saveUserDataToSupabase() {
-  const uid = await getValidUid();
-  if (!uid) { console.warn('TradeLog: saveUserData — no session'); return; }
+  let uid = currentUser ? currentUser.id : null;
+  if (!uid) {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session && session.user) { currentUser = session.user; uid = session.user.id; }
+      else return;
+    } catch { return; }
+  }
   try {
-    const { error } = await sb.from('user_data').upsert({
+    await sb.from('user_data').upsert({
       user_id: uid,
       mindset: getMindsetDataLocal(),
       journal: JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
       tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]')
     });
-    if (error) console.warn('TradeLog: user_data upsert error', error);
   } catch(e) {
     console.warn('TradeLog: user_data save failed', e);
   }
@@ -7127,23 +7143,12 @@ function saveJournal() {
   const key = getTodayKey();
   try {
     const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
-    const planVal   = (document.getElementById('journal-plan')?.value   || '').trim();
-    const reviewVal = (document.getElementById('journal-review')?.value || '').trim();
-    all[key] = { plan: planVal, review: reviewVal };
+    all[key] = {
+      plan:   (document.getElementById('journal-plan')?.value   || '').trim(),
+      review: (document.getElementById('journal-review')?.value || '').trim(),
+    };
     localStorage.setItem(JOURNAL_KEY, JSON.stringify(all));
-
-    // Keep Mindset page in sync — write the same plan/review into the mindset store
-    try {
-      const mData = getMindsetDataLocal();
-      if (!mData.entries[key]) mData.entries[key] = {};
-      if (planVal)   mData.entries[key].plan   = planVal;
-      if (reviewVal) mData.entries[key].review  = reviewVal;
-      mData.entries[key].date = key;
-      localStorage.setItem(MINDSET_KEY, JSON.stringify(mData));
-    } catch(e) {}
-
     saveUserDataToSupabase();
-    loadJournal(); // re-load to confirm saved state
     toast('Journal saved!', 'success');
   } catch { toast('Could not save journal', 'error'); }
 }
@@ -7280,24 +7285,12 @@ function saveMindsetAll() {
   const key  = getTodayKey();
   const data = getMindsetData();
   if (!data.entries[key]) data.entries[key] = {};
-  const planVal   = (document.getElementById('mindset-plan')?.value   || '').trim();
-  const reviewVal = (document.getElementById('mindset-review')?.value || '').trim();
-  data.entries[key].plan       = planVal;
-  data.entries[key].review     = reviewVal;
+  data.entries[key].plan       = (document.getElementById('mindset-plan')?.value   || '').trim();
+  data.entries[key].review     = (document.getElementById('mindset-review')?.value || '').trim();
   data.entries[key].confidence = window._mindsetConf   || 5;
   data.entries[key].emotion    = window._mindsetEmotion || '';
   data.entries[key].date       = key;
   saveMindsetData(data);
-
-  // Keep Dashboard journal in sync
-  try {
-    const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
-    if (!all[key]) all[key] = {};
-    if (planVal)   all[key].plan   = planVal;
-    if (reviewVal) all[key].review = reviewVal;
-    localStorage.setItem(JOURNAL_KEY, JSON.stringify(all));
-  } catch(e) {}
-
   renderMindsetPastEntries(data.entries);
   renderMindsetWeekStats(data.entries);
   toast('✓ Mindset saved', 'success');
