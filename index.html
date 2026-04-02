@@ -2934,8 +2934,8 @@ function getResult(t) {
 }
 function getBalance() { return parseFloat(localStorage.getItem(BAL_KEY)) || 0; }
 
-function load() { try { trades = JSON.parse(localStorage.getItem(KEY)) || []; } catch { trades = []; } }
-function save() { localStorage.setItem(KEY, JSON.stringify(trades)); }
+function load() { /* no-op: trades always loaded from Supabase */ }
+function save() { /* no-op: trades always saved to Supabase */ }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
 // ── THEME ────────────────────────────────────────────────────────────────────
@@ -3275,7 +3275,6 @@ async function loadTradesFromSupabase() {
     result: r.result, emotion: r.emotion, confidence: r.confidence,
     notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
   }));
-  localStorage.setItem(KEY, JSON.stringify(trades));
 }
 
 async function saveTradeToSupabase(t) {
@@ -3306,10 +3305,8 @@ async function deleteTradeFromSupabase(id) {
   }
 }
 
-function load() { /* handled by Supabase */ }
-function save() {
-  localStorage.setItem(KEY, JSON.stringify(trades));
-}
+function load() { /* no-op: trades always loaded from Supabase */ }
+function save() { /* no-op: trades always saved to Supabase */ }
 
 // ── GUARANTEED SUPABASE WRITE ─────────────────────────────────────────────────
 // Ensures currentUser is set before writing — fixes mobile session race condition
@@ -3366,23 +3363,11 @@ async function initApp(user) {
   const btn = document.getElementById('auth-btn');
   if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
 
-  // Show cached localStorage data instantly (first load only)
-  if (isFirstInit) {
-    try {
-      const cached = JSON.parse(localStorage.getItem(KEY));
-      if (cached && cached.length) {
-        trades = cached;
-        refreshDashboard();
-      }
-    } catch(e) {}
-  }
-
-  // Always load fresh data from Supabase
+  // Always load fresh data from Supabase — no localStorage cache
   try {
     await loadProfileFromSupabase();
     await loadTradesFromSupabase();
     await loadUserDataFromSupabase();
-    localStorage.setItem(KEY, JSON.stringify(trades));
   } catch(e) { console.error('Trade load error:', e); }
 
   refreshDashboard();
