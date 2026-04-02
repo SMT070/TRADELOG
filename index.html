@@ -2852,27 +2852,6 @@
   Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
 </script>
 <script>
-
-// ── DEBUG HELPERS ─────────────────────────────────────────────────────────────
-function dbg(msg, color) {
-  color = color || '#0f0';
-  const el = document.getElementById('debug-log');
-  if (!el) return;
-  const d = document.getElementById('debug-panel');
-  if (d) d.style.display = 'block';
-  const line = document.createElement('div');
-  line.style.color = color;
-  line.style.borderBottom = '1px solid #222';
-  line.style.padding = '2px 0';
-  line.textContent = new Date().toLocaleTimeString() + ' ' + msg;
-  el.appendChild(line);
-  el.scrollTop = el.scrollHeight;
-  console.log('[TL]', msg);
-}
-function dbgErr(msg) { dbg('❌ ' + msg, '#f55'); }
-function dbgOk(msg)  { dbg('✅ ' + msg, '#0f0'); }
-function dbgInfo(msg){ dbg('ℹ️  ' + msg, '#ff0'); }
-
 // ── DATA STORE ──────────────────────────────────────────────────────────────
 function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 function gc() { return cssVar('--green'); }  // green color
@@ -3211,37 +3190,27 @@ let currentUser = null;
 // Returns uid string or null. Always re-reads from storage (mobile-safe).
 async function getValidUid() {
   try {
-    dbgInfo('getValidUid: calling getSession...');
-    const { data: { session }, error: sessErr } = await sb.auth.getSession();
-    if (sessErr) { dbgErr('getSession error: ' + JSON.stringify(sessErr)); }
+    const { data: { session } } = await sb.auth.getSession();
     if (!session || !session.user) {
-      dbgErr('getSession: no session — trying refreshSession...');
-      const { data: refreshed, error: refErr } = await sb.auth.refreshSession();
-      if (refErr) { dbgErr('refreshSession error: ' + JSON.stringify(refErr)); }
-      if (!refreshed || !refreshed.session || !refreshed.session.user) {
-        dbgErr('refreshSession: also no session — NOT LOGGED IN');
-        return null;
-      }
+      // No session in memory — try refresh (recovers token on mobile resume)
+      const { data: refreshed } = await sb.auth.refreshSession();
+      if (!refreshed || !refreshed.session || !refreshed.session.user) return null;
       currentUser = refreshed.session.user;
-      dbgOk('refreshSession succeeded: uid=' + currentUser.id);
       return currentUser.id;
     }
+    // Proactively refresh if token expires within 5 minutes
     const exp = session.expires_at;
-    const remaining = exp ? (exp - Math.floor(Date.now() / 1000)) : 9999;
-    dbgOk('getSession OK: uid=' + session.user.id + ' exp_in=' + remaining + 's');
-    if (remaining < 300) {
-      dbgInfo('token expiring soon — refreshing...');
+    if (exp && (exp - Math.floor(Date.now() / 1000)) < 300) {
       const { data: refreshed } = await sb.auth.refreshSession();
       if (refreshed && refreshed.session && refreshed.session.user) {
         currentUser = refreshed.session.user;
-        dbgOk('proactive refresh OK');
         return currentUser.id;
       }
     }
     currentUser = session.user;
     return session.user.id;
   } catch(e) {
-    dbgErr('getValidUid EXCEPTION: ' + e.message);
+    console.warn('TradeLog: getValidUid failed', e);
     return null;
   }
 }
@@ -3407,29 +3376,18 @@ function load() { /* no-op — data loaded from Supabase on boot */ }
 function save() { localStorage.setItem(KEY, JSON.stringify(trades)); }
 
 async function saveTradeToSupabase(t) {
-  dbgInfo('saveTradeToSupabase START symbol=' + t.symbol);
   const uid = await getValidUid();
-  if (!uid) {
-    dbgErr('saveTradeToSupabase: no uid — ABORTING. Not logged in.');
-    throw new Error('No session');
-  }
-  dbgInfo('saveTradeToSupabase: uid=' + uid);
-  if (t.screenshot) saveScreenshot(t.id, t.screenshot);
+  if (!uid) { console.warn('TradeLog: saveTradeToSupabase — no session'); return; }
   const row = {
     id: t.id, user_id: uid, symbol: t.symbol, date: t.date,
     close_date: t.closeDate, dir: t.dir, lots: t.lots, entry: t.entry,
     exit: t.exit, sl: t.sl, tp: t.tp, pnl: t.pnl, commission: t.commission,
     net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
-    confidence: t.confidence, notes: t.notes,
+    confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
     strategies: t.strategies || []
   };
-  dbgInfo('upsert sending to Supabase...');
-  const { data: upsData, error } = await sb.from('trades').upsert(row).select();
-  if (error) {
-    dbgErr('upsert FAILED: code=' + error.code + ' msg=' + error.message + ' details=' + error.details);
-    throw error;
-  }
-  dbgOk('upsert SUCCESS: ' + t.symbol + ' rows=' + JSON.stringify(upsData));
+  const { error } = await sb.from('trades').upsert(row);
+  if (error) { console.error('TradeLog: upsert error', error); throw error; }
 }
 
 async function deleteTradeFromSupabase(id) {
@@ -3449,34 +3407,42 @@ let _appInitialized = false;
 async function initApp(user) {
   currentUser = user;
   _appInitialized = true;
-  dbgOk('initApp START uid=' + user.id + ' email=' + user.email);
 
+  // Reset auth button
   const btn = document.getElementById('auth-btn');
   if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
 
+  // Show loading state immediately
   loadTheme();
   showApp();
   updateGreeting();
 
-  dbgInfo('initApp: calling loadAllFromSupabase...');
+  // Load EVERYTHING from Supabase before rendering
   await loadAllFromSupabase();
-  dbgOk('initApp: loadAll done. trades.length=' + trades.length);
 
+  // Now render with real data
   refreshDashboard();
   renderTrades();
   try { loadJournal(); } catch(e) {}
-  dbgOk('initApp COMPLETE');
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
-window.addEventListener('load', async () => {
+window.addEventListener('load', () => {
   if (!sb) { showAuthScreen(); return; }
 
-  // Listen for auth state changes — keeps currentUser fresh, handles sign-out
+  sb.auth.getSession().then(async ({ data: { session } }) => {
+    if (session && session.user) {
+      await initApp(session.user);
+    } else {
+      showAuthScreen();
+    }
+  }).catch(() => showAuthScreen());
+
   sb.auth.onAuthStateChange(async (event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session && session.user) {
+    if (event === 'SIGNED_IN' && session && session.user) {
       if (!_appInitialized) await initApp(session.user);
-      else currentUser = session.user;
+    } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
+      currentUser = session.user;
     } else if (event === 'SIGNED_OUT') {
       _appInitialized = false;
       currentUser = null;
@@ -3484,36 +3450,6 @@ window.addEventListener('load', async () => {
       showAuthScreen();
     }
   });
-
-  // Step 1: try getSession()
-  try {
-    dbgInfo('BOOT: trying getSession...');
-    const { data: { session }, error } = await sb.auth.getSession();
-    if (error) dbgErr('BOOT getSession error: ' + JSON.stringify(error));
-    if (session && session.user) {
-      dbgOk('BOOT: getSession found user=' + session.user.email);
-      await initApp(session.user);
-      return;
-    }
-    dbgErr('BOOT: getSession returned no session');
-  } catch(e) { dbgErr('BOOT: getSession exception: ' + e.message); }
-
-  // Step 2: try refreshSession (mobile cached refresh)
-  try {
-    dbgInfo('BOOT: trying refreshSession...');
-    const { data: { session }, error } = await sb.auth.refreshSession();
-    if (error) dbgErr('BOOT refreshSession error: ' + JSON.stringify(error));
-    if (session && session.user) {
-      dbgOk('BOOT: refreshSession found user=' + session.user.email);
-      await initApp(session.user);
-      return;
-    }
-    dbgErr('BOOT: refreshSession also returned no session');
-  } catch(e) { dbgErr('BOOT: refreshSession exception: ' + e.message); }
-
-  // Step 3: not logged in
-  dbgErr('BOOT: no session found — showing auth screen');
-  showAuthScreen();
 });
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
@@ -8032,18 +7968,6 @@ updateCurrencyButtons();
     </div>
     <div id="mobile-sheet-body" style="padding:16px 20px;"></div>
   </div>
-</div>
-
-<!-- ── DEBUG PANEL (remove after fixing) ── -->
-<div id="debug-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:99999;
-  background:#000;color:#0f0;font-family:monospace;font-size:11px;padding:8px;
-  max-height:40vh;overflow-y:auto;border-top:2px solid #0f0;">
-  <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-    <strong style="color:#ff0;">TradeLog DEBUG</strong>
-    <button onclick="document.getElementById('debug-panel').style.display='none'"
-      style="background:#333;color:#fff;border:none;padding:2px 8px;cursor:pointer;font-size:11px;">close</button>
-  </div>
-  <div id="debug-log"></div>
 </div>
 </body>
 </html>
