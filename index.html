@@ -3427,22 +3427,14 @@ async function initApp(user) {
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   if (!sb) { showAuthScreen(); return; }
 
-  sb.auth.getSession().then(async ({ data: { session } }) => {
-    if (session && session.user) {
-      await initApp(session.user);
-    } else {
-      showAuthScreen();
-    }
-  }).catch(() => showAuthScreen());
-
+  // Listen for auth state changes — keeps currentUser fresh, handles sign-out
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session && session.user) {
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session && session.user) {
       if (!_appInitialized) await initApp(session.user);
-    } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
-      currentUser = session.user;
+      else currentUser = session.user;
     } else if (event === 'SIGNED_OUT') {
       _appInitialized = false;
       currentUser = null;
@@ -3450,6 +3442,29 @@ window.addEventListener('load', () => {
       showAuthScreen();
     }
   });
+
+  // Step 1: try getSession() — works on hard reset and most desktop refreshes
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      await initApp(session.user);
+      return;
+    }
+  } catch(e) { console.warn('TradeLog: getSession failed', e); }
+
+  // Step 2: getSession() returned null — mobile cached-page refresh.
+  // Token lives in localStorage but SDK hasn't hydrated it yet.
+  // refreshSession() forces it to load and returns a valid session.
+  try {
+    const { data: { session } } = await sb.auth.refreshSession();
+    if (session && session.user) {
+      await initApp(session.user);
+      return;
+    }
+  } catch(e) { console.warn('TradeLog: refreshSession failed', e); }
+
+  // Step 3: genuinely not logged in
+  showAuthScreen();
 });
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
