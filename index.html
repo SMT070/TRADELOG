@@ -3238,6 +3238,7 @@ async function loadProfileFromSupabase() {
   }
   if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
   if (data.balance) localStorage.setItem(BAL_KEY, data.balance);
+  if (data.goals) localStorage.setItem(GOALS_KEY, JSON.stringify(data.goals));
   if (data.settings) {
     try {
       const s = JSON.parse(data.settings);
@@ -3252,13 +3253,15 @@ async function saveProfileToSupabase() {
   if (!currentUser) return;
   const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
   const settings = JSON.stringify({ theme: localStorage.getItem(THEME_KEY) || 'dark' });
+  const goals = JSON.parse(localStorage.getItem(GOALS_KEY) || '{}');
   await sb.from('profiles').upsert({
     id: currentUser.id,
     name: p.name || '',
     avatar: p.avatar || null,
     currency: getCurrency(),
     balance: getBalance(),
-    settings
+    settings,
+    goals
   });
 }// ── SUPABASE TRADES SYNC ──────────────────────────────────────────────────────
 async function loadTradesFromSupabase() {
@@ -6957,6 +6960,7 @@ function saveGoals() {
     monthly: parseFloat(document.getElementById('goal-input-monthly').value) || 0,
   };
   localStorage.setItem(GOALS_KEY, JSON.stringify(g));
+  saveProfileToSupabase();
   closeGoalsModal();
   renderGoals();
   toast('Goals saved!', 'success');
