@@ -2871,22 +2871,20 @@ async function backgroundSync() {
   try {
     const uid = await getValidUid();
     if (!uid) { _syncInProgress = false; return; }
-    // Re-fetch trades and user data
-    const { data, error } = await sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false });
-    if (!error && data) {
-      trades = data.map(r => ({
-        id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
-        dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
-        pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
-        result: r.result, emotion: r.emotion, confidence: r.confidence,
-        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
-      }));
-      localStorage.setItem(KEY, JSON.stringify(trades));
-      refreshDashboard();
-      renderTrades();
-      if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
-      if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
-    }
+
+    // Re-fetch EVERYTHING — trades + profile/settings + user data
+    // This is the key fix: phone changes to settings/journal/mindset also sync
+    await loadAllFromSupabase();
+
+    // Re-render all active views
+    refreshDashboard();
+    renderTrades();
+    if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+    if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+    if (document.getElementById('page-mindset').classList.contains('active')) initMindsetPage();
+    try { loadJournal(); } catch(e) {}
+    updateCurrencyButtons();
+    loadProfile();
   } catch(e) {
     console.warn('TradeLog: backgroundSync failed', e);
   } finally {
@@ -2911,9 +2909,9 @@ const BAL_KEY = 'tradelog_balance';
 const CUR_KEY = 'tradelog_currency';
 const TAGS_KEY = 'tradelog_custom_tags';
 const CURRENCIES = { USD:'$', EUR:'€', GBP:'£', ILS:'₪' };
-function getCurrency() { return localStorage.getItem(CUR_KEY) || 'USD'; }
 function getCurrencySymbol() { return CURRENCIES[getCurrency()] || '$'; }
 function setCurrency(c) {
+  if (window._appState) window._appState.currency = c;
   localStorage.setItem(CUR_KEY, c);
   saveProfileToSupabase();
   window._suppressChartAnim = true;
@@ -2947,10 +2945,9 @@ function getResult(t) {
   if (pnl === 0) return 'be';
   return pnl > 0 ? 'win' : 'loss';
 }
-function getBalance() { return parseFloat(localStorage.getItem(BAL_KEY)) || 0; }
+function getBalance() { return window._appState ? window._appState.balance : (parseFloat(localStorage.getItem(BAL_KEY)) || 0); }
+function getCurrency() { return window._appState ? (window._appState.currency || 'USD') : (localStorage.getItem(CUR_KEY) || 'USD'); }
 
-function load() { try { trades = JSON.parse(localStorage.getItem(KEY)) || []; } catch { trades = []; } }
-function save() { localStorage.setItem(KEY, JSON.stringify(trades)); }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
 // ── THEME ────────────────────────────────────────────────────────────────────
@@ -2958,7 +2955,8 @@ const THEMES = ['dark','gray','black','light'];
 const THEME_LABELS = { dark:'Dark', gray:'Gray', black:'Black', light:'Light' };
 
 function setTheme(t) {
-document.documentElement.setAttribute('data-theme', t);
+  document.documentElement.setAttribute('data-theme', t);
+  if (window._appState) window._appState.theme = t;
   localStorage.setItem(THEME_KEY, t);
   updateThemeButtons(t);
   saveProfileToSupabase();
@@ -2976,7 +2974,7 @@ function updateThemeButtons(t) {
 }
 
 function loadTheme() {
-  const t = localStorage.getItem(THEME_KEY) || 'dark';
+  const t = (window._appState && window._appState.theme) ? window._appState.theme : (localStorage.getItem(THEME_KEY) || 'dark');
   document.documentElement.setAttribute('data-theme', t);
   updateThemeButtons(t);
 }
@@ -3023,7 +3021,9 @@ const PROFILE_KEY = 'tradelog_profile';
 
 function loadProfile() {
   try {
-    const p = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
+    const p = (window._appState && window._appState.profile && window._appState.profile.name)
+              ? window._appState.profile
+              : (JSON.parse(localStorage.getItem(PROFILE_KEY)) || {});
     const name = p.name || 'My Account';
     const initial = name.trim().charAt(0).toUpperCase();
     const avatar = p.avatar || null;
@@ -3045,7 +3045,9 @@ function loadProfile() {
 
 function openProfileModal() {
   try {
-    const p = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
+    const p = (window._appState && window._appState.profile && window._appState.profile.name)
+              ? window._appState.profile
+              : (JSON.parse(localStorage.getItem(PROFILE_KEY)) || {});
     document.getElementById('profile-name-input').value = p.name || '';
     const prev = document.getElementById('profile-avatar-preview');
     if (p.avatar) { prev.innerHTML = `<img src="${p.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
@@ -3068,9 +3070,10 @@ function previewProfileAvatar(ev) {
 
 function saveProfile() {
   const name = document.getElementById('profile-name-input').value.trim() || 'My Account';
-  const existing = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+  const existing = window._appState ? window._appState.profile : (JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}'));
   const avatar = window._pendingAvatar || existing.avatar || null;
-localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
+  if (window._appState) window._appState.profile = { name, avatar };
+  localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
   window._pendingAvatar = null;
   loadProfile();
   saveProfileToSupabase();
@@ -3103,7 +3106,6 @@ function clearAllTrades() {
       if (error) console.error('Clear all error:', error);
     }
     trades = [];
-    save();
     selectedId = null;
     sortCol = 'date'; sortDir = -1;
     toast('All trades cleared', 'success');
@@ -3140,7 +3142,8 @@ function closeConfirmModal() {
 function saveBalance() {
   const val = parseFloat(document.getElementById('modal-balance-input').value);
   if (!val || val <= 0) { toast('Enter a valid balance', 'error'); return; }
- localStorage.setItem(BAL_KEY, val);
+  window._appState.balance = val;
+  localStorage.setItem(BAL_KEY, val);
   saveProfileToSupabase();
   closeBalanceModal();
   toast('Balance saved — $' + val.toLocaleString(), 'success');
@@ -3269,6 +3272,21 @@ function showAuthScreen() {
   if (app)  app.style.display  = 'none';
 }
 
+// ── IN-MEMORY SETTINGS STORE (replaces localStorage for all settings) ──────────
+// These are populated from Supabase on every load. Never read from localStorage
+// for authoritative data — localStorage is only used as a last-resort fallback
+// for theme (to avoid flash on first paint).
+window._appState = {
+  profile:  {},   // { name, avatar }
+  currency: 'USD',
+  balance:  0,
+  theme:    'dark',
+  goals:    {},
+  mindset:  {},
+  journal:  {},
+  tags:     []
+};
+
 // ── LOAD ALL DATA FROM SUPABASE ───────────────────────────────────────────────
 async function loadAllFromSupabase() {
   const uid = await getValidUid();
@@ -3278,22 +3296,28 @@ async function loadAllFromSupabase() {
   try {
     const { data, error } = await sb.from('profiles').select('*').eq('id', uid).single();
     if (!error && data) {
-      if (data.name)     localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: data.name, avatar: data.avatar || null }));
-      if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
-      if (data.balance)  localStorage.setItem(BAL_KEY, String(data.balance));
+      window._appState.profile  = { name: data.name || 'My Account', avatar: data.avatar || null };
+      window._appState.currency = data.currency || 'USD';
+      window._appState.balance  = parseFloat(data.balance) || 0;
       if (data.settings) {
         try {
           const s = typeof data.settings === 'string' ? JSON.parse(data.settings) : data.settings;
-          if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
-          if (s.goals) localStorage.setItem(GOALS_KEY, typeof s.goals === 'string' ? s.goals : JSON.stringify(s.goals));
+          if (s.theme) { window._appState.theme = s.theme; setTheme(s.theme); }
+          if (s.goals) window._appState.goals = typeof s.goals === 'string' ? JSON.parse(s.goals) : s.goals;
         } catch(e) {}
       }
+      // Mirror to localStorage so legacy reads still work
+      localStorage.setItem(PROFILE_KEY,  JSON.stringify(window._appState.profile));
+      localStorage.setItem(CUR_KEY,       window._appState.currency);
+      localStorage.setItem(BAL_KEY,       String(window._appState.balance));
+      localStorage.setItem(THEME_KEY,     window._appState.theme);
+      localStorage.setItem(GOALS_KEY,     JSON.stringify(window._appState.goals));
       loadProfile();
       updateCurrencyButtons();
     }
   } catch(e) { console.warn('TradeLog: loadProfile failed', e); }
 
-  // 2. Trades
+  // 2. Trades — pure in-memory, no localStorage write
   try {
     const { data, error } = await sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false });
     if (!error) {
@@ -3304,25 +3328,24 @@ async function loadAllFromSupabase() {
         result: r.result, emotion: r.emotion, confidence: r.confidence,
         notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
       }));
-      localStorage.setItem(KEY, JSON.stringify(trades));
     }
   } catch(e) { console.error('TradeLog: loadTrades failed', e); }
 
-  // 3. User data (journal, mindset, tags)
+  // 3. User data (journal, mindset, tags) — in-memory + localStorage mirror
   try {
     const { data, error } = await sb.from('user_data').select('*').eq('user_id', uid).single();
     if (!error && data) {
       if (data.mindset) {
-        const m = typeof data.mindset === 'string' ? JSON.parse(data.mindset) : data.mindset;
-        localStorage.setItem(MINDSET_KEY, JSON.stringify(m));
+        window._appState.mindset = typeof data.mindset === 'string' ? JSON.parse(data.mindset) : data.mindset;
+        localStorage.setItem(MINDSET_KEY, JSON.stringify(window._appState.mindset));
       }
       if (data.journal) {
-        const j = typeof data.journal === 'string' ? JSON.parse(data.journal) : data.journal;
-        localStorage.setItem(JOURNAL_KEY, JSON.stringify(j));
+        window._appState.journal = typeof data.journal === 'string' ? JSON.parse(data.journal) : data.journal;
+        localStorage.setItem(JOURNAL_KEY, JSON.stringify(window._appState.journal));
       }
       if (data.tags) {
-        const t = typeof data.tags === 'string' ? JSON.parse(data.tags) : data.tags;
-        localStorage.setItem(TAGS_KEY, JSON.stringify(t));
+        window._appState.tags = typeof data.tags === 'string' ? JSON.parse(data.tags) : data.tags;
+        localStorage.setItem(TAGS_KEY, JSON.stringify(window._appState.tags));
       }
     }
   } catch(e) { console.warn('TradeLog: loadUserData failed', e); }
@@ -3335,15 +3358,18 @@ async function saveProfileToSupabase() {
   const uid = await getValidUid();
   if (!uid) { console.warn('TradeLog: saveProfile — no session'); return; }
   try {
-    const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-    const goals = JSON.parse(localStorage.getItem(GOALS_KEY) || '{}');
-    const settings = { theme: localStorage.getItem(THEME_KEY) || 'dark', goals };
+    const p = window._appState ? window._appState.profile : (JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}'));
+    const goals = window._appState ? window._appState.goals : (JSON.parse(localStorage.getItem(GOALS_KEY) || '{}'));
+    const theme = window._appState ? window._appState.theme : (localStorage.getItem(THEME_KEY) || 'dark');
+    const currency = window._appState ? window._appState.currency : getCurrency();
+    const balance = window._appState ? window._appState.balance : getBalance();
+    const settings = { theme, goals };
     const { error } = await sb.from('profiles').upsert({
       id: uid,
       name: p.name || '',
       avatar: p.avatar || null,
-      currency: getCurrency(),
-      balance: getBalance(),
+      currency,
+      balance,
       settings: JSON.stringify(settings)
     });
     if (error) console.warn('TradeLog: saveProfile error', error);
@@ -3358,11 +3384,14 @@ async function saveUserDataToSupabase() {
   const uid = await getValidUid();
   if (!uid) { console.warn('TradeLog: saveUserData — no session'); return; }
   try {
+    const mindset = window._appState ? window._appState.mindset : getMindsetDataLocal();
+    const journal = window._appState ? window._appState.journal : (JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'));
+    const tags    = window._appState ? window._appState.tags    : (JSON.parse(localStorage.getItem(TAGS_KEY)    || '[]'));
     const { error } = await sb.from('user_data').upsert({
       user_id: uid,
-      mindset: getMindsetDataLocal(),
-      journal: JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
-      tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]')
+      mindset,
+      journal,
+      tags
     });
     if (error) console.warn('TradeLog: saveUserData error', error);
   } catch(e) { console.warn('TradeLog: saveUserData failed', e); }
@@ -3373,7 +3402,7 @@ async function loadUserDataFromSupabase() { /* handled by loadAllFromSupabase */
 
 // ── TRADES ────────────────────────────────────────────────────────────────────
 function load() { /* no-op — data loaded from Supabase on boot */ }
-function save() { localStorage.setItem(KEY, JSON.stringify(trades)); }
+function save() { /* no-op — trades live in memory only; Supabase is the single source of truth */ }
 
 async function saveTradeToSupabase(t) {
   const uid = await getValidUid();
@@ -3533,14 +3562,20 @@ function toggleEmotion(el, name) {
 
 // ── CUSTOM TAGS SYSTEM ────────────────────────────────────────────────────────
 function getSavedTags() {
-  try { return JSON.parse(localStorage.getItem(TAGS_KEY)) || []; } catch { return []; }
+  return window._appState.tags || [];
 }
 function saveCustomTag(tag) {
   const tags = getSavedTags();
-  if (!tags.includes(tag)) { tags.push(tag); localStorage.setItem(TAGS_KEY, JSON.stringify(tags)); saveUserDataToSupabase(); }
+  if (!tags.includes(tag)) {
+    tags.push(tag);
+    window._appState.tags = tags;
+    localStorage.setItem(TAGS_KEY, JSON.stringify(tags));
+    saveUserDataToSupabase();
+  }
 }
 function deleteCustomTag(tag) {
   const tags = getSavedTags().filter(t => t !== tag);
+  window._appState.tags = tags;
   localStorage.setItem(TAGS_KEY, JSON.stringify(tags));
   saveUserDataToSupabase();
   // Also remove from current active selection if present
@@ -3677,12 +3712,19 @@ function renderDetailTagsHTML(tid) {
 function permanentDeleteTag(tag) {
   // Remove from saved custom tags
   const saved = getSavedTags().filter(t => t !== tag);
+  window._appState.tags = saved;
   localStorage.setItem(TAGS_KEY, JSON.stringify(saved));
-  // Remove from ALL trades
+  // Remove from ALL trades (in memory + Supabase)
+  const affected = [];
   trades.forEach(t => {
-    if (t.strategies) t.strategies = t.strategies.filter(s => s !== tag);
+    if (t.strategies && t.strategies.includes(tag)) {
+      t.strategies = t.strategies.filter(s => s !== tag);
+      affected.push(t);
+    }
   });
-  save();
+  // Push affected trades + user data to Supabase
+  affected.forEach(t => guaranteedSaveToSupabase(t).catch(e => console.warn('tag delete sync', e)));
+  saveUserDataToSupabase();
   rebuildTagDropdown();
   renderTrades();
   if (selectedId) showTradeDetail(selectedId);
@@ -3692,7 +3734,7 @@ function removeDetailTag(tid, tag) {
   const trade = trades.find(x => x.id === tid);
   if (!trade) return;
   trade.strategies = (trade.strategies || []).filter(s => s !== tag);
-  save();
+  guaranteedSaveToSupabase(trade).catch(e => console.warn('removeDetailTag sync', e));
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
   rebuildTagDropdown();
@@ -3703,7 +3745,7 @@ function addDetailTag2(tid, tag) {
   if (!trade) return;
   if (!trade.strategies) trade.strategies = [];
   if (!trade.strategies.includes(tag)) trade.strategies.push(tag);
-  save();
+  guaranteedSaveToSupabase(trade).catch(e => console.warn('addDetailTag2 sync', e));
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
   rebuildTagDropdown();
@@ -3794,7 +3836,7 @@ function toggleDetailTag(tid, tag) {
     trade.strategies.push(tag);
     saveCustomTag(tag);
   }
-  save();
+  guaranteedSaveToSupabase(trade).catch(e => console.warn('toggleDetailTag sync', e));
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
 }
@@ -3812,7 +3854,7 @@ function addDetailTag(tid) {
     trade.strategies.push(tag);
   }
   saveCustomTag(tag);
-  save();
+  guaranteedSaveToSupabase(trade).catch(e => console.warn('addDetailTag sync', e));
   updateTradeRowTags(tid);
   refreshDetailTagEditor();
   rebuildTagDropdown();
@@ -3840,14 +3882,18 @@ function uploadTradePhoto(ev, id) {
 function saveTradePhoto(file, id) {
   if (!file || !file.type.startsWith('image/')) return;
   const r = new FileReader();
-  r.onload = e => {
+  r.onload = async e => {
     const idx = trades.findIndex(t => t.id === id);
     if (idx === -1) return;
     trades[idx].screenshot = e.target.result;
-    save();
     showTradeDetail(id);
     if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
-    toast('Photo saved', 'success');
+    try {
+      await guaranteedSaveToSupabase(trades[idx]);
+      toast('Photo saved', 'success');
+    } catch(err) {
+      toast('⚠️ Photo save failed — check connection', 'error');
+    }
   };
   r.readAsDataURL(file);
 }
@@ -3875,9 +3921,9 @@ function removeTradePhoto(id) {
   const idx = trades.findIndex(t => t.id === id);
   if (idx === -1) return;
   trades[idx].screenshot = null;
-  save();
   showTradeDetail(id);
   if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
+  guaranteedSaveToSupabase(trades[idx]).catch(e => console.warn('removePhoto sync', e));
   toast('Photo removed', '');
 }
 
@@ -3926,38 +3972,44 @@ async function saveTrade() {
   };
   const netPnl = trade.netPnl;
   trade.result = netPnl === 0 ? 'be' : (selectedResult ? selectedResult : (netPnl > 0 ? 'win' : 'loss'));
+
+  toast('⏳ Saving...', '');
+
+  // ── SUPABASE FIRST — if it fails we do NOT add to the local array ──
+  try {
+    await guaranteedSaveToSupabase(trade);
+  } catch(e) {
+    toast('⚠️ Save failed — check your connection and try again', 'error');
+    console.error('TradeLog: saveTrade Supabase write failed', e);
+    return; // do NOT update local state — force the user to retry
+  }
+
+  // Only update in-memory array AFTER confirmed Supabase write
   if (editId) {
     const idx = trades.findIndex(t => t.id === editId);
     if (idx > -1) trades[idx] = trade;
+    else trades.unshift(trade);
   } else {
     trades.unshift(trade);
   }
-  save();
+
   clearForm();
-  toast(editId ? '⏳ Saving...' : '⏳ Saving...', '');
+  toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
   switchPage(editId ? 'trades' : 'dashboard');
-  // Await the Supabase write — this is critical on mobile
-  try {
-    await guaranteedSaveToSupabase(trade);
-    toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
-  } catch(e) {
-    toast('⚠️ Saved locally — sync failed, will retry', 'error');
-    console.error('TradeLog: saveTrade sync failed', e);
-  }
 }
 
 function instantDelete(id) {
   showConfirm({ icon:'🗑️', title:'Delete Trade', message:'This trade will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: async () => {
-    trades = trades.filter(t => t.id !== id);
-    save();
     toast('⏳ Deleting...', '');
-    renderTrades();
-    refreshDashboard();
     try {
       await guaranteedDeleteFromSupabase(id);
+      trades = trades.filter(t => t.id !== id);
+      renderTrades();
+      refreshDashboard();
       toast('Trade deleted', 'success');
     } catch(e) {
-      toast('⚠️ Deleted locally — sync failed', 'error');
+      toast('⚠️ Delete failed — check your connection', 'error');
+      console.error('TradeLog: instantDelete failed', e);
     }
   }});
 }
@@ -3965,16 +4017,16 @@ function instantDelete(id) {
 async function deleteSelected() {
   const id = document.getElementById('edit-id').value;
   if (!id) return;
-  trades = trades.filter(t => t.id !== id);
-  save();
-  clearForm();
   toast('⏳ Deleting...', '');
-  switchPage('trades');
   try {
     await guaranteedDeleteFromSupabase(id);
+    trades = trades.filter(t => t.id !== id);
+    clearForm();
+    switchPage('trades');
     toast('Trade deleted', 'success');
   } catch(e) {
-    toast('⚠️ Deleted locally — sync failed', 'error');
+    toast('⚠️ Delete failed — check your connection', 'error');
+    console.error('TradeLog: deleteSelected failed', e);
   }
 }
 
@@ -5568,7 +5620,9 @@ function saveOverlayNotes(id, val) {
   const t = trades.find(x => x.id === id);
   if (!t) return;
   t.notes = val;
-  save();
+  // Push to Supabase (debounced to avoid hammering on every keystroke)
+  clearTimeout(saveOverlayNotes._timer);
+  saveOverlayNotes._timer = setTimeout(() => guaranteedSaveToSupabase(t).catch(e => console.warn('notes sync', e)), 1200);
   // Update the static notes display in the side detail panel
   const clamp = document.querySelector('.notes-clamp');
   if (clamp) clamp.textContent = val || 'No notes added.';
@@ -6011,7 +6065,7 @@ function ieAddNewTag() {
 async function saveInlineEdit(id) {
   const idx = trades.findIndex(x => x.id === id);
   if (idx === -1) return;
-  const t = trades[idx];
+  const t = { ...trades[idx] }; // work on a copy
   const sym = (document.getElementById('ie-symbol').value||'').trim().toUpperCase();
   if (!sym) { toast('Symbol is required','error'); return; }
   t.symbol     = sym;
@@ -6036,19 +6090,20 @@ async function saveInlineEdit(id) {
     const reward = Math.abs(t.exit - t.entry);
     t.r = risk ? +(reward / risk).toFixed(2) : 0;
   }
-  save();
-  collapseDetailPanel();
-  renderTrades();
-  refreshDashboard();
-  showTradeDetail(id);
-  const overlayNotes = document.getElementById('overlay-notes-input');
-  if (overlayNotes) overlayNotes.value = t.notes || '';
   toast('⏳ Saving...', '');
   try {
     await guaranteedSaveToSupabase(t);
+    trades[idx] = t; // commit to memory only after confirmed DB write
+    collapseDetailPanel();
+    renderTrades();
+    refreshDashboard();
+    showTradeDetail(id);
+    const overlayNotes = document.getElementById('overlay-notes-input');
+    if (overlayNotes) overlayNotes.value = t.notes || '';
     toast('✓ Trade updated', 'success');
   } catch(e) {
-    toast('⚠️ Saved locally — sync failed', 'error');
+    toast('⚠️ Save failed — check your connection', 'error');
+    console.error('TradeLog: saveInlineEdit failed', e);
   }
 }
 
@@ -6080,19 +6135,19 @@ function collapseDetailPanel() {
 
 function deleteInlineEdit(id) {
   showConfirm({ icon:'🗑️', title:'Delete Trade', message:'This trade will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: async () => {
-    trades = trades.filter(t => t.id !== id);
-    selectedId = null;
-    save();
-    collapseDetailPanel();
-    renderTrades();
-    refreshDashboard();
-    document.getElementById('trade-detail-body').innerHTML = '<div class="empty-state"><h3>Select a trade</h3><p>Click any row to see details</p></div>';
     toast('⏳ Deleting...', '');
     try {
       await guaranteedDeleteFromSupabase(id);
+      trades = trades.filter(t => t.id !== id);
+      selectedId = null;
+      collapseDetailPanel();
+      renderTrades();
+      refreshDashboard();
+      document.getElementById('trade-detail-body').innerHTML = '<div class="empty-state"><h3>Select a trade</h3><p>Click any row to see details</p></div>';
       toast('Trade deleted', 'success');
     } catch(e) {
-      toast('⚠️ Deleted locally — sync failed', 'error');
+      toast('⚠️ Delete failed — check your connection', 'error');
+      console.error('TradeLog: deleteInlineEdit failed', e);
     }
   }});
 }
@@ -6467,14 +6522,17 @@ function showImportPreview(rows, headers) {
 
 async function confirmImport() {
   if (!pendingImport.length) return;
-  trades = [...pendingImport, ...trades];
-  save();
   toast('⏳ Importing...', '');
   try {
     await Promise.all(pendingImport.map(t => guaranteedSaveToSupabase(t)));
+    // Only update in-memory array after all writes confirmed
+    trades = [...pendingImport, ...trades];
     toast('✓ Imported ' + pendingImport.length + ' trades', 'success');
+    refreshDashboard();
+    renderTrades();
   } catch(e) {
-    toast('⚠️ Saved locally — sync may be partial', 'error');
+    toast('⚠️ Import failed — check your connection and try again', 'error');
+    console.error('TradeLog: confirmImport failed', e);
   }
   pendingImport = [];
   document.getElementById('import-preview').style.display = 'none';
@@ -7005,6 +7063,9 @@ function updateEmptyState() {
 const GOALS_KEY = 'tradelog_goals';
 
 function getGoals() {
+  if (window._appState && window._appState.goals && Object.keys(window._appState.goals).length) {
+    return window._appState.goals;
+  }
   try { return JSON.parse(localStorage.getItem(GOALS_KEY)) || {}; } catch { return {}; }
 }
 
@@ -7026,6 +7087,7 @@ function saveGoals() {
     weekly:  parseFloat(document.getElementById('goal-input-weekly').value)  || 0,
     monthly: parseFloat(document.getElementById('goal-input-monthly').value) || 0,
   };
+  if (window._appState) window._appState.goals = g;
   localStorage.setItem(GOALS_KEY, JSON.stringify(g));
   saveProfileToSupabase(); // goals live inside profiles.settings
   closeGoalsModal();
@@ -7137,8 +7199,11 @@ function getTodayKey() {
 
 // (loadUserDataFromSupabase and saveUserDataToSupabase defined above in Supabase block)
 
-// Internal: read mindset only from localStorage (no Supabase)
+// Internal: read mindset from _appState (authoritative) or localStorage (fallback)
 function getMindsetDataLocal() {
+  if (window._appState && window._appState.mindset && Object.keys(window._appState.mindset).length) {
+    return window._appState.mindset;
+  }
   try { return JSON.parse(localStorage.getItem(MINDSET_KEY)) || { entries: {}, rules: [] }; }
   catch { return { entries: {}, rules: [] }; }
 }
@@ -7151,7 +7216,9 @@ function loadJournal() {
     label.textContent = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
   }
   try {
-    const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
+    // Read from _appState first (authoritative — came from Supabase on last load)
+    const all = (window._appState && window._appState.journal) ? window._appState.journal
+                : (JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {});
     const entry = all[key] || {};
     const plan = document.getElementById('journal-plan');
     const review = document.getElementById('journal-review');
@@ -7163,19 +7230,23 @@ function loadJournal() {
 function saveJournal() {
   const key = getTodayKey();
   try {
-    const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
+    const all = (window._appState && window._appState.journal) ? { ...window._appState.journal }
+                : (JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {});
     const planVal   = (document.getElementById('journal-plan')?.value   || '').trim();
     const reviewVal = (document.getElementById('journal-review')?.value || '').trim();
     all[key] = { plan: planVal, review: reviewVal };
+    if (window._appState) window._appState.journal = all;
     localStorage.setItem(JOURNAL_KEY, JSON.stringify(all));
 
     // Keep Mindset page in sync — write the same plan/review into the mindset store
     try {
       const mData = getMindsetDataLocal();
+      if (!mData.entries) mData.entries = {};
       if (!mData.entries[key]) mData.entries[key] = {};
       if (planVal)   mData.entries[key].plan   = planVal;
       if (reviewVal) mData.entries[key].review  = reviewVal;
       mData.entries[key].date = key;
+      if (window._appState) window._appState.mindset = mData;
       localStorage.setItem(MINDSET_KEY, JSON.stringify(mData));
     } catch(e) {}
 
@@ -7191,6 +7262,7 @@ function getMindsetData() {
   return getMindsetDataLocal();
 }
 function saveMindsetData(data) {
+  if (window._appState) window._appState.mindset = data;
   localStorage.setItem(MINDSET_KEY, JSON.stringify(data));
   saveUserDataToSupabase();
 }
@@ -7316,6 +7388,7 @@ function selectMindsetEmotion(emotion, save=false) {
 function saveMindsetAll() {
   const key  = getTodayKey();
   const data = getMindsetData();
+  if (!data.entries) data.entries = {};
   if (!data.entries[key]) data.entries[key] = {};
   const planVal   = (document.getElementById('mindset-plan')?.value   || '').trim();
   const reviewVal = (document.getElementById('mindset-review')?.value || '').trim();
@@ -7324,14 +7397,16 @@ function saveMindsetAll() {
   data.entries[key].confidence = window._mindsetConf   || 5;
   data.entries[key].emotion    = window._mindsetEmotion || '';
   data.entries[key].date       = key;
-  saveMindsetData(data);
+  saveMindsetData(data); // updates _appState.mindset + localStorage + Supabase
 
-  // Keep Dashboard journal in sync
+  // Keep Dashboard journal in sync via _appState
   try {
-    const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
+    const all = (window._appState && window._appState.journal) ? { ...window._appState.journal }
+                : (JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {});
     if (!all[key]) all[key] = {};
     if (planVal)   all[key].plan   = planVal;
     if (reviewVal) all[key].review = reviewVal;
+    if (window._appState) window._appState.journal = all;
     localStorage.setItem(JOURNAL_KEY, JSON.stringify(all));
   } catch(e) {}
 
@@ -7636,7 +7711,7 @@ function openShareModal() {
   const isPos = pnl >= 0;
 
   // ── Theme palette ──────────────────────────────────────────────────────────
-  const theme = localStorage.getItem('tradelog_theme') || 'dark';
+  const theme = (window._appState && window._appState.theme) ? window._appState.theme : (localStorage.getItem('tradelog_theme') || 'dark');
   const palettes = {
     dark:  { bg: 'linear-gradient(145deg,#0b0f1a 0%,#111827 60%,#0d1220 100%)', border: '#2d3f55', statBg: 'rgba(255,255,255,0.04)', statBorder: '#1e293b', text: '#f1f5f9', muted: '#64748b', glow1: 'rgba(99,102,241,0.18)', glow2: 'rgba(0,255,187,0.08)', pos: '#00FFBB', neg: '#ff3b5c', tradeRow: 'rgba(255,255,255,0.04)', footerBorder: '#1e293b' },
     gray:  { bg: 'linear-gradient(145deg,#1a1f2e 0%,#1e2536 60%,#161b28 100%)', border: '#2d3a50', statBg: 'rgba(255,255,255,0.05)', statBorder: '#252d3d', text: '#e2e8f0', muted: '#64748b', glow1: 'rgba(99,102,241,0.15)', glow2: 'rgba(0,255,187,0.07)', pos: '#00FFBB', neg: '#ff3b5c', tradeRow: 'rgba(255,255,255,0.05)', footerBorder: '#252d3d' },
@@ -7816,8 +7891,9 @@ document.getElementById('share-modal').addEventListener('click', function(e) {
 function updateGreeting() {
   const h = new Date().getHours();
   const greet = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Up late, trader 🌙';
-  // Get name from profile
-  const profile = JSON.parse(localStorage.getItem('tradelog_profile') || '{}');
+  // Get name from _appState (authoritative) or localStorage fallback
+  const profile = (window._appState && window._appState.profile) ? window._appState.profile
+                  : (JSON.parse(localStorage.getItem('tradelog_profile') || '{}'));
   const name = profile.name && profile.name !== 'My Account' ? ', ' + profile.name.split(' ')[0] : '';
   const el = document.getElementById('dash-greeting');
   if (el) el.textContent = greet + name;
