@@ -3147,10 +3147,10 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const _supa = window.supabase || window.Supabase;
 const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
-    persistSession: true,
+    storage: window.localStorage,
     autoRefreshToken: true,
-    detectSessionInUrl: false,
-    storageKey: 'tradelog_sb_session'
+    persistSession: true,
+    detectSessionInUrl: false
   }
 }) : null;
 let currentUser = null;
