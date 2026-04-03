@@ -7314,7 +7314,9 @@ function selectMindsetEmotion(emotion, save=false) {
 
 // ── Save All ─────────────────────────────────────────────────
 function saveMindsetAll() {
-  const key  = getTodayKey();
+  // If editing a past entry, save to that date — otherwise save to today
+  const key  = window._mindsetEditKey || getTodayKey();
+  window._mindsetEditKey = null; // clear after use
   const data = getMindsetData();
   if (!data.entries[key]) data.entries[key] = {};
   const planVal   = (document.getElementById('mindset-plan')?.value   || '').trim();
@@ -7401,6 +7403,9 @@ function renderMindsetPastEntries(entries) {
     return;
   }
   const todayKey = getTodayKey();
+  // SVG chevron — clean and sharp on all screens
+  const svgChevron = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+
   el.innerHTML = keys.map(k => {
     const e       = entries[k];
     const d       = new Date(k);
@@ -7411,7 +7416,7 @@ function renderMindsetPastEntries(entries) {
     const confBg  = conf >= 8 ? 'var(--green-bg)' : conf >= 5 ? 'rgba(99,102,241,.1)' : conf >= 3 ? 'rgba(245,158,11,.12)' : conf ? 'var(--red-bg)' : 'transparent';
     const isToday = k === todayKey;
 
-    // Build day's trades HTML inline so it works without external state
+    // Build day's trades HTML inline
     const dayTrades = trades.filter(t => (t.date||'').slice(0,10) === k);
     const sym = getCurrencySymbol();
     let tradesHTML = '';
@@ -7466,7 +7471,7 @@ function renderMindsetPastEntries(entries) {
           <div style="display:flex;align-items:center;gap:7px;">
             ${e.emotion?`<span style="font-size:16px;line-height:1;">${e.emotion.split(' ')[0]}</span>`:''}
             ${conf?`<span style="font-size:11px;font-weight:800;color:${confClr};background:${confBg};padding:2px 7px;border-radius:8px;">${conf}/10</span>`:''}
-            <span id="mindset-chevron-${k}" style="font-size:10px;color:var(--muted);transition:transform .2s;display:inline-block;line-height:1;">▼</span>
+            <span id="mindset-chevron-${k}" style="color:var(--muted);transition:transform .2s;display:inline-flex;align-items:center;">${svgChevron}</span>
           </div>
         </div>
 
@@ -7480,8 +7485,20 @@ function renderMindsetPastEntries(entries) {
         ${e.review?`<div style="font-size:11px;color:var(--text2);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"><span style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--green);margin-right:4px;">Review</span>${e.review}</div>`:''}
       </div>
 
-      <!-- EXPANDED PANEL — hidden by default, display:block when open -->
+      <!-- EXPANDED PANEL -->
       <div id="mindset-expand-${k}" style="display:none;border-top:1px solid var(--border);padding:14px 12px;">
+
+        <!-- Edit / Delete buttons -->
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <button onclick="event.stopPropagation();editMindsetEntry('${k}')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:8px;border:1px solid var(--border2);background:var(--surface3);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+          <button onclick="event.stopPropagation();deleteMindsetEntry('${k}')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:8px;border:1px solid var(--border2);background:var(--surface3);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--red)';this.style.background='var(--red-bg)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--text2)';this.style.background='var(--surface3)'">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            Delete
+          </button>
+        </div>
 
         ${e.plan?`<div style="margin-bottom:12px;">
           <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:5px;">📋 Pre-Market Plan</div>
@@ -7521,17 +7538,68 @@ function toggleMindsetEntry(k) {
   const card    = document.getElementById('mindset-entry-' + k);
   if (!expand) return;
   const isOpen = expand.style.display === 'block';
-  // Toggle
   expand.style.display    = isOpen ? 'none' : 'block';
   chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
   chevron.style.color     = isOpen ? 'var(--muted)' : 'var(--accent)';
   card.style.borderColor  = isOpen ? 'var(--border)' : 'var(--accent)';
-  // On mobile, remove the max-height cap from the container so expanded content isn't clipped
   const container = document.getElementById('mindset-past-entries');
   if (container && window.innerWidth <= 768) {
     container.style.maxHeight = isOpen ? '300px' : 'none';
     container.style.overflow  = isOpen ? 'auto' : 'visible';
   }
+}
+
+function editMindsetEntry(k) {
+  const data = getMindsetData();
+  const e = data.entries && data.entries[k];
+  if (!e) return;
+  // Load the entry into the today fields and scroll to top of mindset page
+  const planEl   = document.getElementById('mindset-plan');
+  const reviewEl = document.getElementById('mindset-review');
+  if (planEl)   planEl.value   = e.plan   || '';
+  if (reviewEl) reviewEl.value = e.review || '';
+  // Set confidence
+  window._mindsetConf = e.confidence || 0;
+  document.querySelectorAll('#mindset-conf-pills button').forEach(btn => {
+    const v = parseInt(btn.getAttribute('data-val') || btn.textContent);
+    btn.style.background   = v === window._mindsetConf ? 'var(--accent)' : 'var(--surface3)';
+    btn.style.color        = v === window._mindsetConf ? '#fff' : 'var(--text2)';
+    btn.style.borderColor  = v === window._mindsetConf ? 'var(--accent)' : 'var(--border2)';
+  });
+  // Set emotion
+  window._mindsetEmotion = e.emotion || '';
+  document.querySelectorAll('#mindset-emotion-btns button').forEach(btn => {
+    const active = btn.textContent.trim() === (e.emotion||'').trim();
+    btn.style.background  = active ? 'rgba(99,102,241,.15)' : 'var(--surface3)';
+    btn.style.borderColor = active ? 'var(--accent)' : 'var(--border2)';
+    btn.style.color       = active ? 'var(--accent)' : 'var(--text2)';
+  });
+  // Store the date key being edited so Save overwrites the right entry
+  window._mindsetEditKey = k;
+  // Scroll the page to the input area
+  const page = document.getElementById('page-mindset');
+  if (page) page.scrollTo({ top: 0, behavior: 'smooth' });
+  toast('Editing entry for ' + k + ' — press Save Today when done', 'success');
+}
+
+function deleteMindsetEntry(k) {
+  showConfirm({
+    icon: '🗑️',
+    title: 'Delete Entry',
+    message: 'Delete the mindset entry for ' + k + '? This cannot be undone.',
+    okText: 'Delete',
+    okColor: 'var(--red)',
+    onOk: () => {
+      const data = getMindsetData();
+      if (data.entries && data.entries[k]) {
+        delete data.entries[k];
+        saveMindsetData(data);
+        renderMindsetPastEntries(data.entries);
+        renderMindsetWeekStats(data.entries);
+        toast('Entry deleted', '');
+      }
+    }
+  });
 }
 
 // ── Week Stats ───────────────────────────────────────────────
