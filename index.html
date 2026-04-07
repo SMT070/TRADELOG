@@ -6413,11 +6413,11 @@ function parseMT5HTML(arrayBuffer) {
   const rows = [];
   let rowMatch;
   while ((rowMatch = rowRegex.exec(section)) !== null) {
-    const rowHTML = rowMatch[1];
+    let rowHTML = rowMatch[1];
 
-    // Skip rows that have the hidden colspan trick (MT5 uses this for sub-rows we don't need)
-    // A valid position row has NO class="hidden" cell
-    if (/class="hidden"/.test(rowHTML)) continue;
+    // MT5 inserts a spacer <td class="hidden" colspan="8"> in every Positions row
+    // to handle the dual-header layout. Strip it before extracting real cells.
+    rowHTML = rowHTML.replace(/<td[^>]*class="hidden"[^>]*>[\s\S]*?<\/td>/gi, '');
 
     // Extract cell text values
     const cells = [];
@@ -6427,7 +6427,7 @@ function parseMT5HTML(arrayBuffer) {
       cells.push(cellMatch[1].replace(/<[^>]+>/g, '').trim());
     }
 
-    // Positions columns (14 cols, last Profit uses colspan=2 = one cell):
+    // Positions columns after removing hidden spacer (13 real cells):
     // 0: Open Time, 1: Position ID, 2: Symbol, 3: Type,
     // 4: Volume, 5: Entry Price, 6: S/L, 7: T/P,
     // 8: Close Time, 9: Close Price, 10: Commission, 11: Swap, 12: Profit
