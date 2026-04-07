@@ -8825,16 +8825,24 @@ async function streamCoachMessage(userMsg, isInit) {
     });
 
     const data = await res.json();
+    console.log('Claude API response:', JSON.stringify(data));
+
+    if (!res.ok) {
+      const errMsg = (data && data.error && data.error.message) ? data.error.message : JSON.stringify(data);
+      msgDiv.textContent = 'API Error: ' + errMsg;
+      return;
+    }
+
     const reply = (data.content || []).map(b => b.text || '').join('').trim();
 
     if (reply) {
       msgDiv.textContent = reply;
       fcCoachHistory.push({ role: 'assistant', content: reply });
     } else {
-      msgDiv.textContent = 'Unable to generate advice right now. Try again.';
+      msgDiv.textContent = 'No response content. Raw: ' + JSON.stringify(data);
     }
   } catch (e) {
-    msgDiv.textContent = 'Connection error. Check your internet and try again.';
+    msgDiv.textContent = 'Connection error: ' + e.message;
   }
 
   box.scrollTop = box.scrollHeight;
