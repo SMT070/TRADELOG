@@ -1372,6 +1372,10 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       <span class="sidebar-label">Calendar</span>
     </button>
+    <button class="sidebar-item" data-label="Forecast" onclick="switchPage('forecast')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2"/><path d="M6.34 6.34l1.42 1.42"/><path d="M12 2v2"/><path d="M17.66 6.34l-1.42 1.42"/><path d="M22 12h-2"/><path d="M17.66 17.66l-1.42-1.42"/><path d="M12 22v-2"/><path d="M6.34 17.66l1.42-1.42"/><circle cx="12" cy="12" r="4"/></svg>
+      <span class="sidebar-label">Forecast</span>
+    </button>
     <button class="sidebar-item" data-label="Mindset" onclick="switchPage('mindset')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg>
       <span class="sidebar-label">Mindset</span>
@@ -2510,6 +2514,167 @@
   </div>
 </div>
 
+<!-- FORECAST PAGE -->
+<div class="page" id="page-forecast" style="padding:var(--page-py) var(--page-px) 40px;box-sizing:border-box;overflow-y:auto;">
+  <div style="max-width:900px;margin:0 auto;">
+
+    <!-- Header -->
+    <div style="margin-bottom:24px;">
+      <div style="font-size:22px;font-weight:900;letter-spacing:-0.6px;color:var(--text);">AI Forecast</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">Personalized coaching based on your real trading data</div>
+    </div>
+
+    <!-- Health Score Bar -->
+    <div id="fc-score-card" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;margin-bottom:16px;display:flex;align-items:center;gap:24px;">
+      <div style="position:relative;width:90px;height:90px;flex-shrink:0;">
+        <svg width="90" height="90" viewBox="0 0 90 90">
+          <circle cx="45" cy="45" r="38" fill="none" stroke="var(--border)" stroke-width="8"/>
+          <circle id="fc-score-ring" cx="45" cy="45" r="38" fill="none" stroke="var(--accent)" stroke-width="8"
+            stroke-linecap="round" stroke-dasharray="0 239" stroke-dashoffset="-60"
+            style="transition:stroke-dasharray .8s ease,stroke .5s ease"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+          <div id="fc-score-num" style="font-size:22px;font-weight:900;color:var(--text);line-height:1;">—</div>
+          <div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:0.5px;">SCORE</div>
+        </div>
+      </div>
+      <div style="flex:1;">
+        <div id="fc-score-label" style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px;">Analyzing your trades…</div>
+        <div id="fc-score-sub" style="font-size:12px;color:var(--muted);line-height:1.6;">Add at least 10 trades to unlock your full forecast.</div>
+      </div>
+      <div id="fc-focus-box" style="display:none;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:14px 18px;min-width:200px;max-width:240px;flex-shrink:0;">
+        <div style="font-size:9px;font-weight:800;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">🎯 Focus This Week</div>
+        <div id="fc-focus-text" style="font-size:12px;color:var(--text);line-height:1.6;font-weight:600;"></div>
+      </div>
+    </div>
+
+    <!-- 5 Weakness Cards -->
+    <div id="fc-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+
+      <!-- Win Rate Card -->
+      <div class="panel" style="padding:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Win Rate & Consistency</div>
+          <div id="fc-wr-badge" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--surface3);color:var(--muted);">—</div>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+          <div id="fc-wr-val" style="font-size:28px;font-weight:900;color:var(--text);">—</div>
+          <div style="font-size:12px;color:var(--muted);">win rate</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;height:5px;margin-bottom:10px;overflow:hidden;">
+          <div id="fc-wr-bar" style="height:100%;width:0%;background:var(--accent);border-radius:6px;transition:width .8s ease;"></div>
+        </div>
+        <div id="fc-wr-tip" style="font-size:11px;color:var(--muted);line-height:1.6;">—</div>
+      </div>
+
+      <!-- Risk Management Card -->
+      <div class="panel" style="padding:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Risk Management</div>
+          <div id="fc-risk-badge" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--surface3);color:var(--muted);">—</div>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+          <div id="fc-risk-val" style="font-size:28px;font-weight:900;color:var(--text);">—</div>
+          <div style="font-size:12px;color:var(--muted);">avg R:R</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;height:5px;margin-bottom:10px;overflow:hidden;">
+          <div id="fc-risk-bar" style="height:100%;width:0%;background:var(--accent);border-radius:6px;transition:width .8s ease;"></div>
+        </div>
+        <div id="fc-risk-tip" style="font-size:11px;color:var(--muted);line-height:1.6;">—</div>
+      </div>
+
+      <!-- Overtrading Card -->
+      <div class="panel" style="padding:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Overtrading</div>
+          <div id="fc-ot-badge" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--surface3);color:var(--muted);">—</div>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+          <div id="fc-ot-val" style="font-size:28px;font-weight:900;color:var(--text);">—</div>
+          <div style="font-size:12px;color:var(--muted);">avg trades/day</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;height:5px;margin-bottom:10px;overflow:hidden;">
+          <div id="fc-ot-bar" style="height:100%;width:0%;background:var(--accent);border-radius:6px;transition:width .8s ease;"></div>
+        </div>
+        <div id="fc-ot-tip" style="font-size:11px;color:var(--muted);line-height:1.6;">—</div>
+      </div>
+
+      <!-- Emotions Card -->
+      <div class="panel" style="padding:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Emotional Patterns</div>
+          <div id="fc-emo-badge" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--surface3);color:var(--muted);">—</div>
+        </div>
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:8px;">
+          <div id="fc-emo-val" style="font-size:28px;font-weight:900;color:var(--text);">—</div>
+          <div style="font-size:12px;color:var(--muted);">avg confidence</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;height:5px;margin-bottom:10px;overflow:hidden;">
+          <div id="fc-emo-bar" style="height:100%;width:0%;background:var(--accent);border-radius:6px;transition:width .8s ease;"></div>
+        </div>
+        <div id="fc-emo-tip" style="font-size:11px;color:var(--muted);line-height:1.6;">—</div>
+      </div>
+
+      <!-- Best/Worst Sessions Card (full width) -->
+      <div class="panel" style="padding:18px;grid-column:1/-1;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Best & Worst Sessions</div>
+          <div id="fc-sess-badge" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--surface3);color:var(--muted);">—</div>
+        </div>
+        <div style="display:flex;gap:24px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:700;">BEST DAY</div>
+            <div id="fc-best-day" style="font-size:16px;font-weight:800;color:var(--green);">—</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:700;">WORST DAY</div>
+            <div id="fc-worst-day" style="font-size:16px;font-weight:800;color:var(--red);">—</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:700;">BEST HOUR</div>
+            <div id="fc-best-hour" style="font-size:16px;font-weight:800;color:var(--green);">—</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:700;">AVOID HOUR</div>
+            <div id="fc-worst-hour" style="font-size:16px;font-weight:800;color:var(--red);">—</div>
+          </div>
+          <div style="flex:1;min-width:200px;">
+            <div id="fc-sess-tip" style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:4px;">—</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- AI Coach Panel -->
+    <div class="panel" style="padding:0;overflow:hidden;">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+        <div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#818cf8);display:flex;align-items:center;justify-content:center;font-size:16px;">🤖</div>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--text);">AI Trading Coach</div>
+          <div style="font-size:11px;color:var(--muted);">Powered by Claude · Knows your data</div>
+        </div>
+        <button onclick="initAICoach()" style="margin-left:auto;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">↺ Refresh</button>
+      </div>
+
+      <!-- Messages -->
+      <div id="fc-chat-messages" style="min-height:160px;max-height:340px;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+        <div style="text-align:center;color:var(--muted);font-size:12px;padding:20px 0;">Open the Forecast page with trade data to get your AI coaching session.</div>
+      </div>
+
+      <!-- Input -->
+      <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;">
+        <input id="fc-chat-input" type="text" placeholder="Ask your coach anything… e.g. why am I losing on Mondays?" 
+          style="flex:1;padding:10px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;font-family:var(--sans);outline:none;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+          onkeydown="if(event.key==='Enter')sendCoachMessage()">
+        <button onclick="sendCoachMessage()" style="padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity .15s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Send</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- MINDSET PAGE -->
 <div class="page" id="page-mindset" style="padding:var(--page-py) var(--page-px) 0;box-sizing:border-box;flex-direction:column;overflow:hidden;">
 
@@ -3468,12 +3633,13 @@ function switchPage(name) {
   // Pre-render trades before showing the page to avoid layout flash
   if (name === 'trades') renderTrades();
   if (name === 'analytics') renderAnalytics();
+  if (name === 'forecast') renderForecast();
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
   void nextPage.offsetWidth;
   nextPage.classList.add('active');
-  const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import Trades', mindset:'Mindset' };
+  const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import Trades', mindset:'Mindset', forecast:'Forecast' };
   document.querySelectorAll('.sidebar-item[data-label]').forEach(btn => {
     if (btn.id === 'settings-sidebar-btn') return;
     btn.classList.toggle('active', map[name] === btn.getAttribute('data-label'));
@@ -8229,6 +8395,412 @@ function positionTooltip(btn) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
+// ── FORECAST PAGE ─────────────────────────────────────────────────────────────
+
+let fcCoachHistory = [];
+let fcStatsCache   = null;
+
+function renderForecast() {
+  if (!trades.length) {
+    setScore(0, 'No trades yet', 'Import or add trades to unlock your AI forecast.');
+    return;
+  }
+  const fc = buildForecastStats();
+  fcStatsCache = fc;
+  renderScoreCard(fc);
+  renderWinRateCard(fc);
+  renderRiskCard(fc);
+  renderOvertradingCard(fc);
+  renderEmotionCard(fc);
+  renderSessionCard(fc);
+  renderFocusBox(fc);
+  initAICoach();
+}
+
+// ── STAT BUILDER ──────────────────────────────────────────────────────────────
+function buildForecastStats() {
+  const s     = calcStats();
+  const total = trades.length;
+  const wr    = s.wr;
+
+  // ── R:R calculation
+  const rrTrades = trades.filter(t => t.sl && t.entry && t.exit);
+  const avgRR = rrTrades.length
+    ? rrTrades.reduce((sum, t) => {
+        const risk   = Math.abs(t.entry - t.sl);
+        const reward = Math.abs(t.exit  - t.entry);
+        return sum + (risk ? reward / risk : 0);
+      }, 0) / rrTrades.length
+    : null;
+
+  // SL usage rate
+  const slUsage = total ? trades.filter(t => t.sl).length / total : 0;
+
+  // ── Overtrading: trades per active day
+  const byDay = {};
+  trades.forEach(t => {
+    const d = (t.date || '').slice(0, 10);
+    if (d) byDay[d] = (byDay[d] || 0) + 1;
+  });
+  const activeDays   = Object.keys(byDay).length;
+  const avgPerDay    = activeDays ? total / activeDays : 0;
+  const maxDay       = activeDays ? Math.max(...Object.values(byDay)) : 0;
+  // Days with a loss streak of 2+ after which more trades were taken (revenge)
+  const sorted = [...trades].sort((a,b) => new Date(a.date)-new Date(b.date));
+  let revengeDays = 0;
+  Object.keys(byDay).forEach(d => {
+    const dayTrades = sorted.filter(t => (t.date||'').startsWith(d));
+    let consecutive = 0;
+    let revengeFlag = false;
+    dayTrades.forEach(t => {
+      if (getResult(t) === 'loss') { consecutive++; }
+      else { if (consecutive >= 2) revengeFlag = true; consecutive = 0; }
+    });
+    if (revengeFlag) revengeDays++;
+  });
+
+  // ── Emotions
+  const withConf = trades.filter(t => t.confidence > 0);
+  const avgConf  = withConf.length
+    ? withConf.reduce((s, t) => s + t.confidence, 0) / withConf.length : null;
+  // confidence vs outcome
+  const highConfWins = withConf.filter(t => t.confidence >= 7 && getResult(t) === 'win').length;
+  const highConfTotal= withConf.filter(t => t.confidence >= 7).length;
+  const confEdge     = highConfTotal ? highConfWins / highConfTotal : null;
+
+  // ── Sessions: day of week
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dowPnl  = Array(7).fill(0);
+  const dowCnt  = Array(7).fill(0);
+  trades.forEach(t => {
+    const d = new Date((t.date||'').replace(' ','T'));
+    if (!isNaN(d)) { dowPnl[d.getDay()] += getPnl(t); dowCnt[d.getDay()]++; }
+  });
+  const dowAvg = dowPnl.map((p, i) => dowCnt[i] ? p / dowCnt[i] : null);
+  let bestDow = null, worstDow = null;
+  dowAvg.forEach((v, i) => {
+    if (v === null) return;
+    if (bestDow  === null || v > dowAvg[bestDow])  bestDow  = i;
+    if (worstDow === null || v < dowAvg[worstDow]) worstDow = i;
+  });
+
+  // ── Sessions: hour
+  const hourPnl = Array(24).fill(0);
+  const hourCnt = Array(24).fill(0);
+  trades.forEach(t => {
+    const d = new Date((t.date||'').replace(' ','T'));
+    if (!isNaN(d)) { hourPnl[d.getHours()] += getPnl(t); hourCnt[d.getHours()]++; }
+  });
+  const hourAvg = hourPnl.map((p, i) => hourCnt[i] >= 2 ? p / hourCnt[i] : null);
+  let bestHour = null, worstHour = null;
+  hourAvg.forEach((v, i) => {
+    if (v === null) return;
+    if (bestHour  === null || v > hourAvg[bestHour])  bestHour  = i;
+    if (worstHour === null || v < hourAvg[worstHour]) worstHour = i;
+  });
+
+  // ── Scores (0–100 each)
+  const wrScore   = Math.min(100, Math.max(0, wr * 1.5));           // 67%wr = 100
+  const rrScore   = avgRR !== null ? Math.min(100, avgRR * 50) : 50; // 2:1 = 100
+  const otScore   = Math.max(0, 100 - Math.max(0, avgPerDay - 3) * 15); // >3/day penalty
+  const emoScore  = avgConf !== null ? Math.min(100, avgConf * 10) : 50;
+  const sessScore = (bestDow !== null && worstDow !== null) ? 75 : 50;
+  const overall   = Math.round((wrScore * 0.3 + rrScore * 0.25 + otScore * 0.2 + emoScore * 0.15 + sessScore * 0.1));
+
+  return {
+    total, s, wr, wrScore,
+    avgRR, rrScore, slUsage,
+    avgPerDay, maxDay, revengeDays, otScore, activeDays,
+    avgConf, confEdge, emoScore,
+    bestDow, worstDow, bestHour, worstHour, dowAvg, hourAvg, sessScore,
+    overall, DAYS,
+    // lowest scoring area for Focus box
+    areas: [
+      { name:'win rate', score: wrScore  },
+      { name:'risk management', score: rrScore },
+      { name:'overtrading', score: otScore },
+      { name:'emotions', score: emoScore },
+      { name:'session timing', score: sessScore },
+    ]
+  };
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function badge(score) {
+  if (score >= 70) return { label:'🟢 Solid',   bg:'var(--green-bg)',  color:'var(--green)' };
+  if (score >= 45) return { label:'🟡 Okay',    bg:'rgba(245,158,11,0.12)', color:'var(--yellow)' };
+  return              { label:'🔴 Needs Work', bg:'var(--red-bg)',   color:'var(--red)' };
+}
+function setBadge(id, score) {
+  const b = badge(score);
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = b.label;
+  el.style.background = b.bg;
+  el.style.color = b.color;
+}
+function setBar(id, pct, score) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.width = Math.min(100, pct) + '%';
+  el.style.background = score >= 70 ? 'var(--green)' : score >= 45 ? 'var(--yellow)' : 'var(--red)';
+}
+function setScore(num, label, sub) {
+  const ring = document.getElementById('fc-score-ring');
+  const numEl = document.getElementById('fc-score-num');
+  const labelEl = document.getElementById('fc-score-label');
+  const subEl = document.getElementById('fc-score-sub');
+  if (numEl)   numEl.textContent  = num || '—';
+  if (labelEl) labelEl.textContent = label;
+  if (subEl)   subEl.textContent   = sub;
+  if (ring && num) {
+    const circ = 239;
+    const fill = (num / 100) * circ;
+    ring.setAttribute('stroke-dasharray', fill + ' ' + (circ - fill));
+    const color = num >= 70 ? 'var(--green)' : num >= 45 ? 'var(--yellow)' : 'var(--red)';
+    ring.setAttribute('stroke', color);
+    if (numEl) numEl.style.color = color;
+  }
+}
+function fmt12h(h) {
+  if (h === null) return '—';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return (h % 12 || 12) + ':00 ' + ampm;
+}
+
+// ── RENDER FUNCTIONS ──────────────────────────────────────────────────────────
+function renderScoreCard(fc) {
+  const lbl = fc.overall >= 70 ? 'Trading Health: Strong 💪'
+            : fc.overall >= 45 ? 'Trading Health: Developing 📈'
+            : 'Trading Health: Needs Attention ⚠️';
+  const sub = `Based on ${fc.total} trades across ${fc.activeDays} active days`;
+  setScore(fc.overall, lbl, sub);
+}
+
+function renderWinRateCard(fc) {
+  const wr = fc.wr;
+  document.getElementById('fc-wr-val').textContent = wr.toFixed(1) + '%';
+  setBar('fc-wr-bar', wr, fc.wrScore);
+  setBadge('fc-wr-badge', fc.wrScore);
+  let tip = '';
+  if (wr < 40)       tip = `Your win rate is ${wr.toFixed(1)}% — well below 50%. Focus on quality over quantity. Before entering, ask: does this trade have a clear edge? If not, skip it.`;
+  else if (wr < 50)  tip = `At ${wr.toFixed(1)}% you're close but still losing more than winning. Tighten your entry criteria and only take A+ setups until your rate crosses 50%.`;
+  else if (wr < 60)  tip = `${wr.toFixed(1)}% win rate is decent. Make sure your avg win is larger than your avg loss — a 55% WR with bad R:R still loses money.`;
+  else               tip = `Strong win rate at ${wr.toFixed(1)}%. Keep your discipline. Don't chase trades trying to maintain it — the edge comes from setups, not volume.`;
+  document.getElementById('fc-wr-tip').textContent = tip;
+}
+
+function renderRiskCard(fc) {
+  const rr  = fc.avgRR;
+  const sl  = fc.slUsage;
+  const rrDisplay = rr !== null ? rr.toFixed(2) + ':1' : 'N/A';
+  document.getElementById('fc-risk-val').textContent = rrDisplay;
+  setBar('fc-risk-bar', rr !== null ? Math.min(100, rr * 50) : 0, fc.rrScore);
+  setBadge('fc-risk-badge', fc.rrScore);
+  let tip = '';
+  if (sl < 0.5) tip = `Only ${Math.round(sl*100)}% of your trades have a stop loss set. Trading without a SL is gambling, not trading. Set a SL on every single trade — no exceptions.`;
+  else if (rr !== null && rr < 1) tip = `Your average R:R is ${rrDisplay} — you're risking more than you make. Even a 60% WR can't save negative R:R long term. Target at least 1.5:1.`;
+  else if (rr !== null && rr < 1.5) tip = `R:R of ${rrDisplay} is okay but fragile. Aim for 1.5:1 minimum. Let your winners run a bit longer before taking profit.`;
+  else if (rr !== null) tip = `Solid R:R at ${rrDisplay}. Keep protecting this — don't move your TP closer under pressure. Let the trade play out.`;
+  else tip = 'Add SL and TP to your trades to unlock R:R analysis.';
+  document.getElementById('fc-risk-tip').textContent = tip;
+}
+
+function renderOvertradingCard(fc) {
+  const apd = fc.avgPerDay;
+  document.getElementById('fc-ot-val').textContent = apd.toFixed(1);
+  setBar('fc-ot-bar', Math.max(0, 100 - apd * 10), fc.otScore);
+  setBadge('fc-ot-badge', fc.otScore);
+  let tip = '';
+  if (apd > 8)       tip = `Averaging ${apd.toFixed(1)} trades/day is very high. This is a strong sign of overtrading. Most professional traders take 1–3 setups per day. More trades = more fees, more mistakes, more emotional decisions.`;
+  else if (apd > 5)  tip = `${apd.toFixed(1)} trades/day is above average. Review if each trade had a clear reason. If ${fc.revengeDays} of your days show a losing streak followed by more trades, that's revenge trading.`;
+  else if (apd > 3)  tip = `${apd.toFixed(1)} trades/day is manageable. Watch for days where you take extra trades after losses — that's where discipline breaks down.`;
+  else               tip = `${apd.toFixed(1)} trades/day shows good discipline. You're being selective. This is exactly the mindset of a professional trader.`;
+  if (fc.revengeDays > 0) tip += ` ⚠️ You showed revenge trading patterns on ${fc.revengeDays} day${fc.revengeDays > 1 ? 's' : ''} — days where you kept trading after 2+ consecutive losses.`;
+  document.getElementById('fc-ot-tip').textContent = tip;
+}
+
+function renderEmotionCard(fc) {
+  const conf = fc.avgConf;
+  const display = conf !== null ? conf.toFixed(1) + '/10' : 'No data';
+  document.getElementById('fc-emo-val').textContent = display;
+  setBar('fc-emo-bar', conf !== null ? conf * 10 : 0, fc.emoScore);
+  setBadge('fc-emo-badge', fc.emoScore);
+  let tip = '';
+  if (conf === null) {
+    tip = 'Start logging your confidence (1–10) and emotion on each trade. Over time this reveals whether your feelings actually predict your results.';
+  } else if (conf < 5) {
+    tip = `Average confidence of ${conf.toFixed(1)}/10 is low. If you're consistently entering trades you don't feel confident about — stop. Only trade when your conviction is 7+.`;
+  } else if (fc.confEdge !== null && fc.confEdge < 0.5) {
+    tip = `Interesting — your high-confidence trades (7+) only win ${Math.round(fc.confEdge*100)}% of the time. Your confidence doesn't match your edge. Focus on refining your strategy, not your feelings.`;
+  } else if (fc.confEdge !== null) {
+    tip = `Your high-confidence trades win ${Math.round(fc.confEdge*100)}% of the time. That's a real edge. Lean into it — when confidence is low, sit on your hands.`;
+  } else {
+    tip = `Confidence avg ${conf.toFixed(1)}/10. Log more trades with emotion data to see if your instincts are actually predictive.`;
+  }
+  document.getElementById('fc-emo-tip').textContent = tip;
+}
+
+function renderSessionCard(fc) {
+  const DAYS = fc.DAYS;
+  const bestD  = fc.bestDow  !== null ? DAYS[fc.bestDow]  : '—';
+  const worstD = fc.worstDow !== null ? DAYS[fc.worstDow] : '—';
+  const bestH  = fmt12h(fc.bestHour);
+  const worstH = fmt12h(fc.worstHour);
+
+  document.getElementById('fc-best-day').textContent  = bestD;
+  document.getElementById('fc-worst-day').textContent = worstD;
+  document.getElementById('fc-best-hour').textContent = bestH;
+  document.getElementById('fc-worst-hour').textContent= worstH;
+  setBadge('fc-sess-badge', fc.sessScore);
+
+  let tip = '';
+  if (fc.bestDow !== null && fc.worstDow !== null) {
+    const bestAvg  = fc.dowAvg[fc.bestDow];
+    const worstAvg = fc.dowAvg[fc.worstDow];
+    const sym = getCurrencySymbol();
+    tip = `Your best day is ${bestD} (avg ${bestAvg >= 0 ? '+' : ''}${sym}${Math.abs(bestAvg).toFixed(0)}/trade). `;
+    tip += `Your worst is ${worstD} (avg ${worstAvg >= 0 ? '+' : ''}${sym}${Math.abs(worstAvg).toFixed(0)}/trade). `;
+    if (worstAvg < 0) tip += `Consider reducing size or skipping ${worstD} entirely until you identify why it underperforms.`;
+    if (fc.bestHour !== null) tip += ` Your edge peaks around ${bestH} — prioritize being sharp and focused at that time.`;
+  } else {
+    tip = 'Trade across more days and hours to unlock session pattern analysis.';
+  }
+  document.getElementById('fc-sess-tip').textContent = tip;
+}
+
+function renderFocusBox(fc) {
+  const box = document.getElementById('fc-focus-box');
+  const txt = document.getElementById('fc-focus-text');
+  if (!box || !txt) return;
+  const lowest = fc.areas.slice().sort((a,b) => a.score - b.score)[0];
+  const focusMap = {
+    'win rate':         'Stop taking low-conviction trades. Only enter when your setup is an A+.',
+    'risk management':  'Set a stop loss on every trade. No SL = no trade.',
+    'overtrading':      'Cut your daily trade limit in half. Quality beats quantity.',
+    'emotions':         'Log your confidence before every trade. Sit out when it\'s below 6.',
+    'session timing':   `Avoid trading on ${fc.worstDow !== null ? fc.DAYS[fc.worstDow] : 'your worst day'} until you understand why it underperforms.`,
+  };
+  txt.textContent = focusMap[lowest.name] || 'Keep refining your edge.';
+  box.style.display = 'block';
+}
+
+// ── AI COACH ──────────────────────────────────────────────────────────────────
+function buildSystemPrompt(fc) {
+  if (!fc) return 'You are a trading coach. The user has no trade data yet.';
+  const s   = fc.s;
+  const sym = getCurrencySymbol();
+  return `You are an expert trading coach and performance analyst. You are direct, honest, and data-driven. You do NOT give generic advice — everything you say is based on the trader's actual numbers below.
+
+TRADER STATS (real data):
+- Total trades: ${fc.total} across ${fc.activeDays} active trading days
+- Win rate: ${fc.wr.toFixed(1)}% (${s.wins}W / ${s.losses}L / ${s.bes}BE)
+- Net P&L: ${sym}${s.totalPnl.toFixed(2)}
+- Avg win: ${sym}${s.avgWin.toFixed(2)} | Avg loss: ${sym}${s.avgLoss.toFixed(2)}
+- Profit factor: ${s.pf !== null ? s.pf : 'N/A'}
+- Max drawdown: ${sym}${Math.abs(s.maxDD).toFixed(2)}
+- Avg R:R: ${fc.avgRR !== null ? fc.avgRR.toFixed(2) + ':1' : 'N/A'}
+- SL usage: ${Math.round(fc.slUsage * 100)}% of trades have a stop loss
+- Avg trades/day: ${fc.avgPerDay.toFixed(1)} (max on one day: ${fc.maxDay})
+- Revenge trading days detected: ${fc.revengeDays}
+- Avg confidence: ${fc.avgConf !== null ? fc.avgConf.toFixed(1) + '/10' : 'Not logged'}
+- Best day of week: ${fc.bestDow !== null ? fc.DAYS[fc.bestDow] : 'N/A'}
+- Worst day of week: ${fc.worstDow !== null ? fc.DAYS[fc.worstDow] : 'N/A'}
+- Best hour: ${fmt12h(fc.bestHour)} | Worst hour: ${fmt12h(fc.worstHour)}
+- Overall health score: ${fc.overall}/100
+- Biggest weakness: ${fc.areas.slice().sort((a,b) => a.score - b.score)[0].name}
+
+COACHING STYLE:
+- Be direct and specific. Use their actual numbers.
+- If win rate < 50%, focus on trade quality and selectivity.
+- If R:R is poor, focus on letting winners run and cutting losers faster.
+- If overtrading, tell them to set a hard daily limit.
+- If no SL used, be firm: this is non-negotiable.
+- Keep responses concise — 3 to 5 sentences max unless they ask for more.
+- Never be generic. Always reference their specific numbers.`;
+}
+
+async function initAICoach() {
+  const fc = fcStatsCache;
+  if (!fc) return;
+
+  fcCoachHistory = [];
+  const box = document.getElementById('fc-chat-messages');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:12px 0;">Coach is analyzing your data…</div>';
+
+  const openingPrompt = `Give me a brief, direct coaching overview of my trading performance. Lead with my biggest problem, then give me one concrete action to take this week. Be specific — use my actual numbers.`;
+
+  await streamCoachMessage(openingPrompt, true);
+}
+
+async function sendCoachMessage() {
+  const input = document.getElementById('fc-chat-input');
+  if (!input) return;
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  await streamCoachMessage(msg, false);
+}
+
+async function streamCoachMessage(userMsg, isInit) {
+  const box = document.getElementById('fc-chat-messages');
+  if (!box) return;
+
+  // Add user bubble (skip for the silent init message)
+  if (!isInit) {
+    const userBubble = document.createElement('div');
+    userBubble.style.cssText = 'display:flex;justify-content:flex-end;';
+    userBubble.innerHTML = `<div style="max-width:75%;background:var(--accent);color:#fff;padding:10px 14px;border-radius:12px 12px 3px 12px;font-size:12px;line-height:1.6;">${userMsg}</div>`;
+    box.appendChild(userBubble);
+    box.scrollTop = box.scrollHeight;
+  } else {
+    box.innerHTML = '';
+  }
+
+  // Add assistant bubble with loading dots
+  const aiBubble = document.createElement('div');
+  aiBubble.style.cssText = 'display:flex;gap:8px;align-items:flex-start;';
+  const avatar = '<div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#818cf8);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>';
+  const msgDiv = document.createElement('div');
+  msgDiv.style.cssText = 'max-width:85%;background:var(--surface2);border:1px solid var(--border);padding:10px 14px;border-radius:3px 12px 12px 12px;font-size:12px;line-height:1.7;color:var(--text);';
+  msgDiv.innerHTML = '<span style="opacity:0.5;">●●●</span>';
+  aiBubble.innerHTML = avatar;
+  aiBubble.appendChild(msgDiv);
+  box.appendChild(aiBubble);
+  box.scrollTop = box.scrollHeight;
+
+  // Build messages for API
+  fcCoachHistory.push({ role: 'user', content: userMsg });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: buildSystemPrompt(fcStatsCache),
+        messages: fcCoachHistory
+      })
+    });
+
+    const data = await res.json();
+    const reply = (data.content || []).map(b => b.text || '').join('').trim();
+
+    if (reply) {
+      msgDiv.textContent = reply;
+      fcCoachHistory.push({ role: 'assistant', content: reply });
+    } else {
+      msgDiv.textContent = 'Unable to generate advice right now. Try again.';
+    }
+  } catch (e) {
+    msgDiv.textContent = 'Connection error. Check your internet and try again.';
+  }
+
+  box.scrollTop = box.scrollHeight;
+}
+
 loadProfile();
 updateCurrencyButtons();
 </script>
