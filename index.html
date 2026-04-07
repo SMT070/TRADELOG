@@ -8416,7 +8416,7 @@ function positionTooltip(btn) {
 
 let fcCoachHistory = [];
 let fcStatsCache   = null;
-let userApiKey     = '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';
+let userApiKey     = '';
 
 function saveApiKey() {
   const input = document.getElementById('fc-api-key-input');
@@ -8817,7 +8817,7 @@ async function streamCoachMessage(userMsg, isInit) {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1000,
         system: buildSystemPrompt(fcStatsCache),
         messages: fcCoachHistory
