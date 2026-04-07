@@ -2658,7 +2658,7 @@
       </div>
 
       <!-- API Key Input -->
-      <div id="fc-api-key-bar" style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--surface2);">
+      <div id="fc-api-key-bar" style="display:none!important;" hidden style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--surface2);">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--muted);"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
         <input id="fc-api-key-input" type="password" placeholder="Enter your Anthropic API key (sk-ant-...)" 
           style="flex:1;padding:7px 12px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:12px;font-family:var(--sans);outline:none;"
@@ -8416,7 +8416,7 @@ function positionTooltip(btn) {
 
 let fcCoachHistory = [];
 let fcStatsCache   = null;
-let userApiKey     = localStorage.getItem('tradelog_api_key') || '';
+let userApiKey     = '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';
 
 function saveApiKey() {
   const input = document.getElementById('fc-api-key-input');
