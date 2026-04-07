@@ -1383,9 +1383,9 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       <span class="sidebar-label">Add Trade</span>
     </button>
-    <button class="sidebar-item" data-label="Import" onclick="switchPage('import')">
+    <button class="sidebar-item" data-label="Import MT5" onclick="switchPage('import')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <span class="sidebar-label">Import</span>
+      <span class="sidebar-label">Import Trades</span>
     </button>
   </div>
 
@@ -1626,7 +1626,7 @@
       <div style="font-size:14px;color:var(--muted);line-height:1.7;max-width:400px;margin:0 auto 28px;">You haven't logged any trades yet. Add your first trade manually or import from MT5 to get started.</div>
       <div style="display:flex;gap:12px;justify-content:center;">
         <button class="btn btn-primary" onclick="switchPage('add')" style="padding:12px 28px;font-size:13px;">+ Add First Trade</button>
-        <button class="btn btn-ghost" onclick="switchPage('import')" style="padding:12px 28px;font-size:13px;">Import Trades</button>
+        <button class="btn btn-ghost" onclick="switchPage('import')" style="padding:12px 28px;font-size:13px;">Import MT5 CSV</button>
       </div>
     </div>
 
@@ -2453,38 +2453,35 @@
         <div class="panel-header-left"><div class="panel-title">Import Trades</div></div>
         <button onclick="switchPage('dashboard')" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;padding:6px 10px;transition:all .15s;" title="Close" onmouseenter="this.style.color='var(--text)';this.style.borderColor='var(--border2)'" onmouseleave="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">&#x2715;</button>
       </div>
-
-      <!-- Supported format badges -->
-      <div style="display:flex;gap:8px;padding:0 20px 16px;flex-wrap:wrap;">
-        <span style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:var(--accent);">CSV / TXT</span>
-        <span style="padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(0,255,187,.08);border:1px solid rgba(0,255,187,.25);color:var(--green);">MT4 / MT5 HTML Report</span>
-      </div>
-
-      <div class="import-zone" id="import-zone" onclick="document.getElementById('import-file').click()"
+      <div class="import-zone" id="import-zone" onclick="document.getElementById('csv-file').click()"
            ondragover="event.preventDefault();this.classList.add('dragover')"
            ondragleave="this.classList.remove('dragover')"
            ondrop="handleDrop(event)">
         <div class="import-icon">📂</div>
-        <div class="import-title">Drop your file here</div>
-        <div class="import-sub">CSV, TXT, or MT4/MT5 HTML report — auto-detected<br>or click to browse</div>
+        <div class="import-title">Drop your trade file here</div>
+        <div class="import-sub">or click to browse — auto-detects broker format</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;">
+          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT5 CSV</span>
+          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT5 HTML</span>
+          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT4 HTML</span>
+          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">cTrader CSV</span>
+          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">TradingView CSV</span>
+          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">Excel</span>
+          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">JSON</span>
+        </div>
       </div>
-      <input type="file" id="import-file" accept=".csv,.txt,.html,.htm" style="display:none;" onchange="handleImportFile(event)">
+      <input type="file" id="csv-file" accept=".csv,.txt,.html,.htm,.xlsx,.xls,.json" style="display:none;" onchange="handleCSVFile(event)">
 
       <div style="padding:0 20px 20px;">
-        <!-- How to export instructions -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px;">MT5 CSV</div>
-            <div style="font-size:11px;color:var(--muted);line-height:1.7;">Terminal → Account History → right-click → <strong style="color:var(--text2);">Save as Report (CSV)</strong></div>
-          </div>
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--green);margin-bottom:6px;">MT4 / MT5 HTML</div>
-            <div style="font-size:11px;color:var(--muted);line-height:1.7;">Terminal → Account History → right-click → <strong style="color:var(--text2);">Save as Report (HTML)</strong></div>
-          </div>
+        <div class="import-sub" style="margin-bottom:12px;font-size:11px;color:var(--muted);">
+          <strong style="color:var(--text);">MT5 CSV:</strong> Terminal → Account History → right-click → Save as Report (CSV)<br>
+          <strong style="color:var(--text);">MT5 / MT4 HTML:</strong> Terminal → Account History → right-click → Save as Report (HTML)<br>
+          <strong style="color:var(--text);">cTrader:</strong> History → Export → CSV<br>
+          <strong style="color:var(--text);">TradingView:</strong> Strategy Tester → List of Trades → Export<br>
+          <strong style="color:var(--text);">Excel / JSON:</strong> Any spreadsheet or JSON export with trade columns
         </div>
-
         <div id="import-preview" style="display:none;">
-          <div class="panel-header" style="margin:0;border-radius:8px 8px 0 0;">
+          <div class="panel-header" style="margin:0 -0px;border-radius:8px 8px 0 0;">
             <div class="panel-header-left"><div class="panel-title">Preview</div></div>
             <span id="import-count" style="color:var(--accent);font-size:12px;"></span>
           </div>
@@ -2500,7 +2497,7 @@
     </div>
 
     <div class="panel">
-      <div class="panel-header"><div class="panel-header-left"><div class="panel-title">Paste Data</div></div></div>
+      <div class="panel-header"><div class="panel-header-left"><div class="panel-title">Paste CSV Data</div></div></div>
       <div style="padding:20px;">
         <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Paste raw CSV content from MT5 or any broker export below:</div>
         <textarea id="paste-csv" rows="8" placeholder="Paste CSV data here...&#10;&#10;Expected columns: Symbol, Type/Direction, Lots/Volume, Open Price, Close Price, S/L, T/P, Profit, Comment, Open Time..."></textarea>
@@ -3476,7 +3473,7 @@ function switchPage(name) {
   const nextPage = document.getElementById('page-' + name);
   void nextPage.offsetWidth;
   nextPage.classList.add('active');
-  const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import', mindset:'Mindset' };
+  const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import Trades', mindset:'Mindset' };
   document.querySelectorAll('.sidebar-item[data-label]').forEach(btn => {
     if (btn.id === 'settings-sidebar-btn') return;
     btn.classList.toggle('active', map[name] === btn.getAttribute('data-label'));
@@ -6347,191 +6344,327 @@ function renderAnalytics() {
   // ── HEATMAP ──
   renderHeatmap();
 }
-// ── IMPORT ROUTER ─────────────────────────────────────────────────────────────
-function handleDrop(e) {
-  e.preventDefault();
-  document.getElementById('import-zone').classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
+// ── SMART FILE ROUTER ────────────────────────────────────────────────────────
+function routeFile(file) {
   if (!file) return;
-  routeImportFile(file);
-}
+  const name = file.name.toLowerCase();
+  const ext  = name.split('.').pop();
 
-function handleImportFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  routeImportFile(file);
-  e.target.value = '';
-}
-
-function routeImportFile(file) {
-  const name = (file.name || '').toLowerCase();
-  const r = new FileReader();
-  if (name.endsWith('.html') || name.endsWith('.htm')) {
-    r.onload = ev => parseHTMLReport(ev.target.result);
+  if (ext === 'json') {
+    const r = new FileReader();
+    r.onload = ev => parseJSONFile(ev.target.result);
     r.readAsText(file);
+  } else if (ext === 'xlsx' || ext === 'xls') {
+    parseExcelFile(file);
+  } else if (ext === 'html' || ext === 'htm') {
+    const r = new FileReader();
+    // MT5/MT4 HTML reports are UTF-16-LE encoded
+    r.onload = ev => parseMT5HTML(ev.target.result);
+    r.readAsArrayBuffer(file);
   } else {
+    // CSV / TXT — read as text then sniff
+    const r = new FileReader();
     r.onload = ev => parseCSVText(ev.target.result);
     r.readAsText(file);
   }
 }
 
-function parsePastedCSV() {
-  const text = document.getElementById('paste-csv').value.trim();
-  if (!text) { toast('Paste some CSV data first','error'); return; }
-  // auto-detect if pasted content looks like HTML
-  if (text.trimStart().startsWith('<')) {
-    parseHTMLReport(text);
-  } else {
-    parseCSVText(text);
-  }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('import-zone').classList.remove('dragover');
+  routeFile(e.dataTransfer.files[0]);
 }
 
-// ── MT4/MT5 HTML REPORT PARSER ────────────────────────────────────────────────
-function parseHTMLReport(html) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
+function handleCSVFile(e) {
+  routeFile(e.target.files[0]);
+}
+
+// ── MT5 / MT4 HTML PARSER ────────────────────────────────────────────────────
+function parseMT5HTML(arrayBuffer) {
+  // MT5 exports as UTF-16-LE with BOM
+  let html;
+  try {
+    const bytes = new Uint8Array(arrayBuffer);
+    // Detect UTF-16-LE BOM (FF FE)
+    if (bytes[0] === 0xFF && bytes[1] === 0xFE) {
+      html = new TextDecoder('utf-16-le').decode(arrayBuffer);
+    } else {
+      html = new TextDecoder('utf-8').decode(arrayBuffer);
+    }
+  } catch(e) {
+    toast('Could not read HTML file', 'error'); return;
+  }
+
+  // We only want the Positions section — ignore Orders and Deals (same trades repeated)
+  const posStart   = html.indexOf('<b>Positions</b>');
+  const ordersStart = html.indexOf('<b>Orders</b>');
+  const dealsStart  = html.indexOf('<b>Deals</b>');
+
+  let section = html;
+  if (posStart !== -1) {
+    const end = ordersStart !== -1 ? ordersStart : (dealsStart !== -1 ? dealsStart : html.length);
+    section = html.slice(posStart, end);
+  }
+
+  // Parse rows — alternating #FFFFFF / #F7F7F7 rows are trade data rows
+  const rowRegex = /<tr\s+bgcolor="#(?:FFFFFF|F7F7F7)"[^>]*>([\s\S]*?)<\/tr>/gi;
+  const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+
   const rows = [];
+  let rowMatch;
+  while ((rowMatch = rowRegex.exec(section)) !== null) {
+    const rowHTML = rowMatch[1];
 
-  // MT4/MT5 HTML reports have multiple tables; find the one with trade data
-  // by looking for rows that contain recognisable trade types (buy/sell)
-  const tables = Array.from(doc.querySelectorAll('table'));
+    // Skip rows that have the hidden colspan trick (MT5 uses this for sub-rows we don't need)
+    // A valid position row has NO class="hidden" cell
+    if (/class="hidden"/.test(rowHTML)) continue;
 
-  let headerMap = null;
-  let tradeTable = null;
-
-  for (const table of tables) {
-    const trs = Array.from(table.querySelectorAll('tr'));
-    for (let i = 0; i < trs.length; i++) {
-      const cells = Array.from(trs[i].querySelectorAll('td,th')).map(c => c.textContent.trim().toLowerCase());
-      // Look for a header row that contains typical MT4/MT5 column names
-      if (cells.some(c => c.includes('symbol') || c.includes('item')) &&
-          cells.some(c => c.includes('type') || c.includes('direction')) &&
-          cells.some(c => c.includes('profit') || c.includes('p&l'))) {
-        headerMap = cells;
-        tradeTable = { trs, startRow: i + 1 };
-        break;
-      }
+    // Extract cell text values
+    const cells = [];
+    let cellMatch;
+    const cellRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+    while ((cellMatch = cellRe.exec(rowHTML)) !== null) {
+      cells.push(cellMatch[1].replace(/<[^>]+>/g, '').trim());
     }
-    if (tradeTable) break;
-  }
 
-  // Fallback: try positional parsing on first table with enough columns
-  if (!tradeTable) {
-    for (const table of tables) {
-      const trs = Array.from(table.querySelectorAll('tr'));
-      if (trs.length > 3) {
-        const sampleCells = Array.from(trs[1]?.querySelectorAll('td,th') || []);
-        if (sampleCells.length >= 8) {
-          tradeTable = { trs, startRow: 1 };
-          break;
-        }
-      }
-    }
-  }
+    // Positions columns (14 cols, last Profit uses colspan=2 = one cell):
+    // 0: Open Time, 1: Position ID, 2: Symbol, 3: Type,
+    // 4: Volume, 5: Entry Price, 6: S/L, 7: T/P,
+    // 8: Close Time, 9: Close Price, 10: Commission, 11: Swap, 12: Profit
+    if (cells.length < 12) continue;
 
-  if (!tradeTable) { toast('No trade table found in HTML report', 'error'); return; }
+    const openTime  = cells[0];
+    const ticket    = cells[1];
+    const symbol    = cells[2].toUpperCase();
+    const dir       = cells[3].toUpperCase();
+    const lots      = parseFloat(cells[4]) || 0;
+    const entry     = parseFloat(cells[5]) || 0;
+    const sl        = parseFloat(cells[6]) || 0;
+    const tp        = parseFloat(cells[7]) || 0;
+    const closeTime = cells[8];
+    const exitPrice = parseFloat(cells[9]) || 0;
+    const commission= Math.abs(parseFloat(cells[10]) || 0);
+    const swap      = parseFloat(cells[11]) || 0;
+    const pnl       = parseFloat((cells[12] || '').replace(/\s/g, '')) || 0;
 
-  const fixDate = d => {
-    if (!d) return '';
-    // Handle formats: "2025.03.11 18:37" or "2025-03-11 18:37" or "11.03.2025 18:37"
-    return d.replace(/\./g, '-').slice(0, 16);
-  };
+    if (!symbol || !openTime) continue;
 
-  const colIdx = (keywords) => {
-    if (!headerMap) return -1;
-    for (const kw of keywords) {
-      const idx = headerMap.findIndex(h => h.includes(kw));
-      if (idx !== -1) return idx;
-    }
-    return -1;
-  };
-
-  // Map header columns
-  const iTime    = colIdx(['time','open time','open date']) !== -1 ? colIdx(['time','open time','open date']) : 0;
-  const iTicket  = colIdx(['ticket','order','deal','position']);
-  const iSymbol  = colIdx(['symbol','item','instrument']);
-  const iType    = colIdx(['type','direction','action']);
-  const iLots    = colIdx(['lots','volume','size','qty']);
-  const iEntry   = colIdx(['price','open price','entry']);
-  const iSL      = colIdx(['s/l','sl','stop loss','stoploss']);
-  const iTP      = colIdx(['t/p','tp','take profit','takeprofit']);
-  const iClose   = colIdx(['close time','close date','exit time']);
-  const iExit    = colIdx(['close price','exit price','exit']);
-  const iComm    = colIdx(['commission','comm']);
-  const iSwap    = colIdx(['swap']);
-  const iProfit  = colIdx(['profit','p&l','pnl','net profit']);
-
-  for (let i = tradeTable.startRow; i < tradeTable.trs.length; i++) {
-    const cells = Array.from(tradeTable.trs[i].querySelectorAll('td,th')).map(c => c.textContent.trim());
-    if (cells.length < 5) continue;
-
-    const get = (idx, fallback = '') => idx >= 0 && idx < cells.length ? cells[idx] : fallback;
-    const getNum = (idx) => parseFloat((get(idx) || '').replace(/\s/g, '').replace(/,/g, '')) || 0;
-
-    const dirRaw = get(iType !== -1 ? iType : 3).toLowerCase();
-    // Skip summary/balance/deposit rows
-    if (!dirRaw || ['balance','deposit','withdrawal','credit','comment','type'].includes(dirRaw)) continue;
-    if (!dirRaw.includes('buy') && !dirRaw.includes('sell') && !dirRaw.includes('long') && !dirRaw.includes('short')) continue;
-
-    const symbolRaw = get(iSymbol !== -1 ? iSymbol : 2);
-    if (!symbolRaw) continue;
-
-    const openTime  = get(iTime);
-    const closeTime = iClose !== -1 ? get(iClose) : '';
-    const ticket    = iTicket !== -1 ? get(iTicket) : '';
-    const lots      = getNum(iLots !== -1 ? iLots : 4);
-    const entry     = getNum(iEntry !== -1 ? iEntry : 5);
-    const sl        = getNum(iSL !== -1 ? iSL : -1);
-    const tp        = getNum(iTP !== -1 ? iTP : -1);
-    const exitPrice = getNum(iExit !== -1 ? iExit : 9);
-    const commission = Math.abs(getNum(iComm !== -1 ? iComm : -1));
-    const swap      = getNum(iSwap !== -1 ? iSwap : -1);
-    const pnl       = getNum(iProfit !== -1 ? iProfit : cells.length - 1);
-
-    const netPnl = pnl - commission + swap;
-    let rMultiple = 0;
+    const fixDate = d => d ? d.replace(/\./g, '-').slice(0, 16) : '';
+    const netPnl  = pnl - commission + swap;
+    let r = 0;
     if (sl && entry && exitPrice) {
       const risk = Math.abs(entry - sl);
       const reward = Math.abs(exitPrice - entry);
-      rMultiple = risk ? +(reward / risk).toFixed(2) : 0;
+      r = risk ? +(reward / risk).toFixed(2) : 0;
     }
 
     rows.push({
-      id: uid(),
-      date: fixDate(openTime),
-      closeDate: fixDate(closeTime),
-      ticket,
-      symbol: symbolRaw.toUpperCase(),
-      dir: (dirRaw.includes('buy') || dirRaw.includes('long')) ? 'BUY' : 'SELL',
-      lots,
-      entry,
-      exit: exitPrice,
-      sl,
-      tp,
-      pnl,
-      commission,
-      swap,
-      netPnl,
-      r: rMultiple,
-      strategies: [],
-      emotion: '',
-      confidence: 0,
-      notes: '',
-      screenshot: null,
+      id: uid(), date: fixDate(openTime), closeDate: fixDate(closeTime),
+      ticket, symbol,
+      dir: (dir === 'BUY' || dir === 'LONG') ? 'BUY' : 'SELL',
+      lots, entry, exit: exitPrice, sl, tp, pnl, commission, swap, netPnl, r,
+      strategies: [], emotion: '', confidence: 0, notes: '', screenshot: null,
       result: netPnl === 0 ? 'be' : (netPnl > 0 ? 'win' : 'loss')
     });
   }
 
-  if (!rows.length) { toast('No valid trades found in HTML report', 'error'); return; }
+  if (!rows.length) { toast('No trades found in HTML — is this an MT5/MT4 report?', 'error'); return; }
+  toast(`Detected: MT5/MT4 HTML — ${rows.length} trades`, 'success');
   pendingImport = rows;
   showImportPreview(rows, []);
 }
 
-// ── MT5 CSV PARSER ────────────────────────────────────────────────────────────
+// ── JSON PARSER ───────────────────────────────────────────────────────────────
+function parseJSONFile(text) {
+  let data;
+  try { data = JSON.parse(text); } catch(e) { toast('Invalid JSON file', 'error'); return; }
+  if (!Array.isArray(data)) data = data.trades || data.history || data.data || [];
+  if (!Array.isArray(data) || !data.length) { toast('No trade array found in JSON', 'error'); return; }
+
+  const rows = data.map(t => {
+    const pnl  = parseFloat(t.pnl ?? t.profit ?? t.pl ?? t.realized_pnl ?? 0);
+    const commission = Math.abs(parseFloat(t.commission ?? 0));
+    const swap = parseFloat(t.swap ?? 0);
+    const netPnl = pnl - commission + swap;
+    const entry = parseFloat(t.entry ?? t.open_price ?? t.entryPrice ?? t.price ?? 0);
+    const exit  = parseFloat(t.exit ?? t.close_price ?? t.exitPrice ?? t.closePrice ?? 0);
+    const sl    = parseFloat(t.sl ?? t.stop_loss ?? t.stopLoss ?? 0);
+    const tp    = parseFloat(t.tp ?? t.take_profit ?? t.takeProfit ?? 0);
+    const dir   = (t.dir ?? t.type ?? t.side ?? t.direction ?? '').toString().toUpperCase();
+    const symbol= (t.symbol ?? t.instrument ?? t.pair ?? '').toUpperCase();
+    const date  = t.date ?? t.open_time ?? t.openTime ?? t.time ?? '';
+    const closeDate = t.closeDate ?? t.close_time ?? t.closeTime ?? '';
+    let r = 0;
+    if (sl && entry && exit) {
+      const risk = Math.abs(entry - sl);
+      const reward = Math.abs(exit - entry);
+      r = risk ? +(reward / risk).toFixed(2) : 0;
+    }
+    return {
+      id: uid(), date, closeDate, ticket: String(t.ticket ?? t.id ?? t.position ?? ''),
+      symbol, dir: (dir === 'BUY' || dir === 'LONG') ? 'BUY' : 'SELL',
+      lots: parseFloat(t.lots ?? t.volume ?? t.size ?? t.qty ?? 0),
+      entry, exit, sl, tp, pnl, commission, swap, netPnl, r,
+      strategies: [], emotion: '', confidence: 0, notes: '', screenshot: null,
+      result: netPnl === 0 ? 'be' : (netPnl > 0 ? 'win' : 'loss')
+    };
+  }).filter(t => t.symbol);
+
+  if (!rows.length) { toast('No valid trades found in JSON', 'error'); return; }
+  toast(`Detected: JSON — ${rows.length} trades`, 'success');
+  pendingImport = rows;
+  showImportPreview(rows, []);
+}
+
+// ── EXCEL PARSER ──────────────────────────────────────────────────────────────
+function parseExcelFile(file) {
+  // Dynamically load SheetJS if not already loaded
+  if (window.XLSX) { _doParseExcel(file); return; }
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload = () => _doParseExcel(file);
+  s.onerror = () => toast('Could not load Excel parser', 'error');
+  document.head.appendChild(s);
+}
+function _doParseExcel(file) {
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const wb = XLSX.read(ev.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      if (!data.length) { toast('Empty Excel sheet', 'error'); return; }
+      // Normalize keys to lowercase
+      const norm = data.map(row => {
+        const o = {};
+        Object.keys(row).forEach(k => o[k.toLowerCase().replace(/[\s\/\-]/g,'_')] = row[k]);
+        return o;
+      });
+      // Reuse JSON parser logic by passing normalized objects
+      parseJSONFile(JSON.stringify(norm));
+    } catch(e) { toast('Could not parse Excel file', 'error'); }
+  };
+  r.readAsArrayBuffer(file);
+}
+
+// ── CSV SNIFFER (MT5 CSV / cTrader / TradingView) ─────────────────────────────
+function sniffCSVFormat(lines) {
+  if (!lines.length) return 'unknown';
+  const header = lines[0].toLowerCase();
+  if (header.includes('trade #') || header.includes('signal')) return 'tradingview';
+  if (header.includes('positionid') || header.includes('position id') || header.includes('closing direction')) return 'ctrader';
+  // MT5 CSV is tab-separated with no real header, first field looks like a date
+  if (/^\d{4}\.\d{2}\.\d{2}/.test(lines[0])) return 'mt5csv';
+  // Try tab-separated date in second line
+  if (lines.length > 1 && /^\d{4}\.\d{2}\.\d{2}/.test(lines[1])) return 'mt5csv';
+  return 'generic';
+}
+
+function parseCTraderCSV(lines) {
+  if (!lines.length) return [];
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[\s\/\-]/g,'_'));
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',').map(p => p.trim().replace(/^"|"$/g,''));
+    if (parts.length < 5) continue;
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = parts[idx] || '');
+    const dir = (obj.direction ?? obj.type ?? obj.side ?? '').toUpperCase();
+    const pnl = parseFloat(obj.net_profit ?? obj.profit ?? obj.pnl ?? 0);
+    const commission = Math.abs(parseFloat(obj.commission ?? obj.commissions ?? 0));
+    const swap = parseFloat(obj.swap ?? 0);
+    const netPnl = pnl - commission + swap;
+    const entry = parseFloat(obj.entry_price ?? obj.open_price ?? obj.price ?? 0);
+    const exit  = parseFloat(obj.closing_price ?? obj.close_price ?? obj.exit_price ?? 0);
+    const symbol= (obj.symbol ?? obj.instrument ?? '').toUpperCase();
+    if (!symbol) continue;
+    rows.push({
+      id: uid(),
+      date: obj.open_time ?? obj.entry_time ?? obj.time ?? '',
+      closeDate: obj.closing_time ?? obj.close_time ?? '',
+      ticket: obj.positionid ?? obj.position_id ?? obj.ticket ?? '',
+      symbol, dir: (dir === 'BUY' || dir === 'LONG') ? 'BUY' : 'SELL',
+      lots: parseFloat(obj.volume ?? obj.quantity ?? obj.size ?? 0),
+      entry, exit, sl: parseFloat(obj.stop_loss ?? obj.sl ?? 0),
+      tp: parseFloat(obj.take_profit ?? obj.tp ?? 0),
+      pnl, commission, swap, netPnl, r: 0,
+      strategies: [], emotion: '', confidence: 0, notes: '', screenshot: null,
+      result: netPnl === 0 ? 'be' : (netPnl > 0 ? 'win' : 'loss')
+    });
+  }
+  return rows;
+}
+
+function parseTradingViewCSV(lines) {
+  if (!lines.length) return [];
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[\s#\/\-]/g,'_'));
+  // TradingView has entry and exit as separate rows — pair them by trade #
+  const raw = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',').map(p => p.trim().replace(/^"|"$/g,''));
+    if (parts.length < 5) continue;
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = parts[idx] || '');
+    raw.push(obj);
+  }
+  // Group by trade_ (entry+exit pairs)
+  const rows = [];
+  for (let i = 0; i < raw.length; i++) {
+    const r = raw[i];
+    const type = (r.type ?? r.signal ?? '').toLowerCase();
+    if (!type.includes('entry')) continue;
+    const exit = raw[i + 1];
+    const dir  = (r.direction ?? r.market_position ?? '').toUpperCase();
+    const entry = parseFloat(r.price ?? r.entry_price ?? 0);
+    const exitPrice = exit ? parseFloat(exit.price ?? exit.exit_price ?? 0) : 0;
+    const pnl = exit ? parseFloat((exit.profit ?? exit.cum__net_profit ?? exit.net_profit ?? '').replace(/\s/g,'')) || 0 : 0;
+    const symbol = (r.symbol ?? r.ticker ?? '').toUpperCase() || 'UNKNOWN';
+    rows.push({
+      id: uid(), date: r.date_time ?? r.date ?? r.time ?? '', closeDate: exit ? (exit.date_time ?? exit.date ?? '') : '',
+      ticket: r.trade_ ?? r.trade_number ?? String(i),
+      symbol, dir: (dir === 'SHORT' || dir === 'SELL') ? 'SELL' : 'BUY',
+      lots: parseFloat(r.qty ?? r.contracts ?? r.size ?? 1),
+      entry, exit: exitPrice, sl: 0, tp: 0, pnl, commission: 0, swap: 0, netPnl: pnl, r: 0,
+      strategies: [], emotion: '', confidence: 0, notes: '', screenshot: null,
+      result: pnl === 0 ? 'be' : (pnl > 0 ? 'win' : 'loss')
+    });
+  }
+  return rows;
+}
+
+// ── LEGACY CSV READER (now used by routeFile) ─────────────────────────────────
+function _readCSVFile(file) {
+  const r = new FileReader();
+  r.onload = ev => parseCSVText(ev.target.result);
+  r.readAsText(file);
+}
+
+function parsePastedCSV() {
+  const text = document.getElementById('paste-csv').value.trim();
+  if (!text) { toast('Paste some CSV data first','error'); return; }
+  parseCSVText(text);
+}
+
 function parseCSVText(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   if (!lines.length) { toast('No data found', 'error'); return; }
 
+  const format = sniffCSVFormat(lines);
+
+  if (format === 'ctrader') {
+    const rows = parseCTraderCSV(lines);
+    if (!rows.length) { toast('No valid trades found in cTrader CSV', 'error'); return; }
+    toast(`Detected: cTrader CSV — ${rows.length} trades`, 'success');
+    pendingImport = rows; showImportPreview(rows, []); return;
+  }
+  if (format === 'tradingview') {
+    const rows = parseTradingViewCSV(lines);
+    if (!rows.length) { toast('No valid trades found in TradingView CSV', 'error'); return; }
+    toast(`Detected: TradingView CSV — ${rows.length} trades`, 'success');
+    pendingImport = rows; showImportPreview(rows, []); return;
+  }
+
+  // MT5 CSV or generic tab-separated
   const rows = [];
 
   for (let i = 0; i < lines.length; i++) {
@@ -6550,8 +6683,13 @@ function parseCSVText(text) {
     // [11] Swap            e.g. "0.00"
     // [12] Profit          e.g. "1.74"
 
+    // Split by TAB only — do NOT filter empty strings so column indices stay fixed
     const parts = lines[i].split('\t').map(p => p.trim());
+
+    // Skip header row or lines with too few columns
     if (parts.length < 13) continue;
+
+    // Skip header
     if (parts[0].toLowerCase().includes('time') || parts[3].toLowerCase() === 'type') continue;
 
     const openTime   = parts[0];
@@ -6566,6 +6704,7 @@ function parseCSVText(text) {
     const exitPrice  = parseFloat(parts[9]) || 0;
     const commission = Math.abs(parseFloat(parts[10]) || 0);
     const swap       = parseFloat(parts[11]) || 0;
+    // Profit can have spaces in it like "1 104.48" — remove spaces before parsing
     const pnl        = parseFloat((parts[12] || '').replace(/\s/g, '')) || 0;
 
     if (!symbol || (!entry && !pnl)) continue;
@@ -6606,6 +6745,7 @@ function parseCSVText(text) {
   }
 
   if (!rows.length) { toast('No valid trades found — check format', 'error'); return; }
+  toast(`Detected: MT5 CSV — ${rows.length} trades`, 'success');
   pendingImport = rows;
   showImportPreview(rows, []);
 }
