@@ -2516,7 +2516,7 @@
 
 <!-- FORECAST PAGE -->
 <div class="page" id="page-forecast" style="padding:var(--page-py) var(--page-px) 40px;box-sizing:border-box;overflow-y:auto;">
-  <div style="max-width:900px;margin:0 auto;">
+  <div>
 
     <!-- Header -->
     <div style="margin-bottom:24px;">
@@ -2655,6 +2655,16 @@
           <div style="font-size:11px;color:var(--muted);">Powered by Claude · Knows your data</div>
         </div>
         <button onclick="initAICoach()" style="margin-left:auto;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">↺ Refresh</button>
+      </div>
+
+      <!-- API Key Input -->
+      <div id="fc-api-key-bar" style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--surface2);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;color:var(--muted);"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <input id="fc-api-key-input" type="password" placeholder="Enter your Anthropic API key (sk-ant-...)" 
+          style="flex:1;padding:7px 12px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:12px;font-family:var(--sans);outline:none;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+          onkeydown="if(event.key==='Enter')saveApiKey()">
+        <button onclick="saveApiKey()" style="padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);white-space:nowrap;transition:opacity .15s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Save Key</button>
       </div>
 
       <!-- Messages -->
@@ -3633,7 +3643,14 @@ function switchPage(name) {
   // Pre-render trades before showing the page to avoid layout flash
   if (name === 'trades') renderTrades();
   if (name === 'analytics') renderAnalytics();
-  if (name === 'forecast') renderForecast();
+  if (name === 'forecast') {
+    renderForecast();
+    // Pre-fill API key input from memory/storage
+    setTimeout(() => {
+      const inp = document.getElementById('fc-api-key-input');
+      if (inp && userApiKey) inp.value = userApiKey;
+    }, 0);
+  }
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
@@ -8399,6 +8416,17 @@ function positionTooltip(btn) {
 
 let fcCoachHistory = [];
 let fcStatsCache   = null;
+let userApiKey     = localStorage.getItem('tradelog_api_key') || '';
+
+function saveApiKey() {
+  const input = document.getElementById('fc-api-key-input');
+  if (input) {
+    userApiKey = input.value.trim();
+    localStorage.setItem('tradelog_api_key', userApiKey);
+    input.style.borderColor = userApiKey ? 'var(--green)' : 'var(--border2)';
+    setTimeout(() => { if(input) input.style.borderColor = 'var(--border2)'; }, 1500);
+  }
+}
 
 function renderForecast() {
   if (!trades.length) {
@@ -8747,6 +8775,12 @@ async function streamCoachMessage(userMsg, isInit) {
   const box = document.getElementById('fc-chat-messages');
   if (!box) return;
 
+  // Check for API key
+  if (!userApiKey) {
+    box.innerHTML = '<div style="text-align:center;padding:20px 16px;"><div style="font-size:13px;color:var(--text);font-weight:700;margin-bottom:6px;">API Key Required</div><div style="font-size:12px;color:var(--muted);line-height:1.6;">Enter your Anthropic API key above to use the AI coach.<br>Get one at <a href='https://console.anthropic.com' target='_blank' style='color:var(--accent);'>console.anthropic.com</a></div></div>';
+    return;
+  }
+
   // Add user bubble (skip for the silent init message)
   if (!isInit) {
     const userBubble = document.createElement('div');
@@ -8776,9 +8810,14 @@ async function streamCoachMessage(userMsg, isInit) {
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': userApiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1000,
         system: buildSystemPrompt(fcStatsCache),
         messages: fcCoachHistory
@@ -8803,6 +8842,15 @@ async function streamCoachMessage(userMsg, isInit) {
 
 loadProfile();
 updateCurrencyButtons();
+
+// Pre-fill API key input if saved
+(function() {
+  const saved = localStorage.getItem('tradelog_api_key');
+  if (saved) {
+    const inp = document.getElementById('fc-api-key-input');
+    if (inp) inp.value = saved;
+  }
+})();
 </script>
 
 </div><!-- /main-content -->
