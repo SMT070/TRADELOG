@@ -9213,7 +9213,7 @@ function renderKillerCard() {
   // By direction
   const byDir = {};
   losses.forEach(t => {
-    const k = (t.type||'Unknown').toUpperCase();
+    const k = (t.dir||'Unknown').toUpperCase();
     if (!byDir[k]) byDir[k]={pnl:0,count:0};
     byDir[k].pnl += Math.abs(getPnl(t));
     byDir[k].count++;
