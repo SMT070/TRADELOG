@@ -3849,18 +3849,19 @@ window.addEventListener('load', () => {
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
+  try {
   // Pre-render trades before showing the page to avoid layout flash
   if (name === 'trades') renderTrades();
   if (name === 'analytics') renderAnalytics();
   if (name === 'forecast') {
     renderForecast();
-    // Pre-fill API key input from memory/storage
     setTimeout(() => {
     }, 0);
   }
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
+  if (!nextPage) { console.warn('switchPage: no page found for', name); return; }
   void nextPage.offsetWidth;
   nextPage.classList.add('active');
   const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import Trades', mindset:'Mindset', forecast:'Forecast' };
@@ -3872,6 +3873,7 @@ function switchPage(name) {
   if (name === 'calendar') renderCalendar();
   if (name === 'mindset') initMindsetPage();
   if (name === 'add') { if (!document.getElementById('edit-id').value) clearForm(); }
+  } catch(e) { console.warn('switchPage error:', name, e); }
 }
 
 
@@ -8625,26 +8627,28 @@ let fcStatsCache   = null;
 
 
 function renderForecast() {
+  try {
   if (!trades.length) {
     setScore(0, 'No trades yet', 'Import or add trades to unlock your AI forecast.');
     return;
   }
   const fc = buildForecastStats();
   fcStatsCache = fc;
-  renderScoreCard(fc);
-  renderWinRateCard(fc);
-  renderRiskCard(fc);
-  renderOvertradingCard(fc);
-  renderEmotionCard(fc);
-  renderSessionCard(fc);
-  renderFocusBox(fc);
-  renderStreakCard();
-  renderSymbolCard();
-  renderHoldCard();
-  renderWeeklyCard();
-  renderTiltCard();
-  renderLuckCard();
-  renderKillerCard();
+  try { renderScoreCard(fc); } catch(e) { console.warn('renderScoreCard',e); }
+  try { renderWinRateCard(fc); } catch(e) { console.warn('renderWinRateCard',e); }
+  try { renderRiskCard(fc); } catch(e) { console.warn('renderRiskCard',e); }
+  try { renderOvertradingCard(fc); } catch(e) { console.warn('renderOvertradingCard',e); }
+  try { renderEmotionCard(fc); } catch(e) { console.warn('renderEmotionCard',e); }
+  try { renderSessionCard(fc); } catch(e) { console.warn('renderSessionCard',e); }
+  try { renderFocusBox(fc); } catch(e) { console.warn('renderFocusBox',e); }
+  try { renderStreakCard(); } catch(e) { console.warn('renderStreakCard',e); }
+  try { renderSymbolCard(); } catch(e) { console.warn('renderSymbolCard',e); }
+  try { renderHoldCard(); } catch(e) { console.warn('renderHoldCard',e); }
+  try { renderWeeklyCard(); } catch(e) { console.warn('renderWeeklyCard',e); }
+  try { renderTiltCard(); } catch(e) { console.warn('renderTiltCard',e); }
+  try { renderLuckCard(); } catch(e) { console.warn('renderLuckCard',e); }
+  try { renderKillerCard(); } catch(e) { console.warn('renderKillerCard',e); }
+  } catch(e) { console.warn('renderForecast',e); }
 }
 
 // ── STAT BUILDER ──────────────────────────────────────────────────────────────
