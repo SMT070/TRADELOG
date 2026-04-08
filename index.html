@@ -8221,7 +8221,7 @@ function renderMindsetWeekStats(entries) {
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
-    const k = d.toISOString().slice(0,10);
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     days.push({ key: k, day: d.toLocaleDateString('en-GB',{weekday:'short'}), entry: entries[k] || null });
   }
   const logged   = days.filter(d => d.entry).length;
