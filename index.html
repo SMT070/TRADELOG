@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>TradeLog — Your Trading Journal</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -937,15 +937,19 @@
     .dash-title { font-size: 18px !important; }
     .dash-subtitle { font-size: 11px !important; }
 
-    /* ── TOP 5 STAT CARDS: 2 cols ── */
+    /* ── TOP 5 STAT CARDS: 2 cols, Net P&L is wide ── */
     .stats-row {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
       margin-bottom: 10px !important;
     }
-    /* Last card full width */
+    /* Net P&L (first card) takes full width — the wide one */
+    .stats-row .stat-card:first-child {
+      grid-column: 1 / -1 !important;
+    }
+    /* Last card (Expectancy) normal size, NOT full width */
     .stats-row .stat-card:last-child {
-      grid-column: 1 / -1;
+      grid-column: unset !important;
     }
     .stat-card {
       padding: 12px 12px !important;
@@ -954,10 +958,30 @@
     .stat-value { font-size: 20px !important; letter-spacing: -0.5px !important; }
     .stat-label { font-size: 8px !important; }
     .stat-sub { font-size: 10px !important; }
-    /* Hide the balance row inside P&L card on mobile */
-    .stat-card > div > div[style*="Current Balance"] { display: none !important; }
+    /* Show balance row inside Net P&L wide card */
+    .stat-card > div > div[style*="Current Balance"] { display: flex !important; }
     /* Hide gauge SVGs on mobile to save space */
     .stat-card svg.ring-like { display: none; }
+
+    /* ── EQUITY CURVE: full width, good height on mobile ── */
+    .two-col {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+    }
+    /* Hide Performance panel on mobile — not needed */
+    .two-col .panel:last-child {
+      display: none !important;
+    }
+    /* Equity curve panel: nice tall chart */
+    .two-col .panel:first-child {
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    #equity-chart-wrap,
+    .two-col .panel:first-child > div:last-child {
+      min-height: 220px !important;
+      max-height: 260px !important;
+    }
 
     /* ── GOALS + JOURNAL: stack vertically ── */
     #dashboard-content > div:first-child {
@@ -1006,33 +1030,51 @@
     /* ══ ANALYTICS PAGE ══ */
     #page-analytics .container { padding: 10px !important; }
 
-    /* Analytics trading score: stack on mobile */
+    /* Analytics trading score: compact on mobile — radar small + score side by side */
     #an-score-layout {
       flex-direction: column !important;
+      align-items: stretch !important;
+      padding: 12px !important;
+      gap: 12px !important;
+    }
+    /* Radar + score number: horizontal row, compact */
+    #an-score-layout > div:first-child {
+      flex-direction: row !important;
       align-items: center !important;
-      padding: 16px 12px 20px !important;
-      gap: 20px !important;
+      gap: 14px !important;
+      justify-content: center !important;
     }
     #an-radar-chart {
-      width: 220px !important;
-      height: 220px !important;
+      width: 130px !important;
+      height: 110px !important;
     }
+    /* Score bar narrower to match */
+    #an-score-layout > div:first-child > div > div:nth-child(3),
+    #an-score-layout > div:first-child > div > div:nth-child(4) {
+      width: 120px !important;
+    }
+    /* Hide vertical divider on mobile */
+    #an-score-layout > div:nth-child(2) {
+      display: none !important;
+    }
+    /* Metrics: 2x3 grid, full width */
     #an-score-metrics {
       grid-template-columns: 1fr 1fr !important;
       width: 100% !important;
+      gap: 8px !important;
     }
 
-    /* Top 5 stat cards: 2 cols */
+    /* Top 5 stat cards: all equal 2x2 + 1 full — make all equal 2 cols, no odd card */
     #page-analytics > div > div[style*="repeat(5"] {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
     }
-    /* Last card full width */
+    /* Remove any last-child full-width override — all equal */
     #page-analytics > div > div[style*="repeat(5"] > div:last-child {
-      grid-column: 1 / -1 !important;
+      grid-column: unset !important;
     }
 
-    /* Second row 4 cards: 2 cols */
+    /* Second row 5 cards (was repeat(5) too): 2 cols, all equal */
     #page-analytics > div > div[style*="repeat(4"] {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
@@ -5790,13 +5832,21 @@ function openMobileTradeSheet(id) {
 function openMobilePhotoFullscreen(id) {
   const t = trades.find(x => x.id === id);
   if (!t || !t.screenshot) return;
+  // Unlock pinch-to-zoom for the photo lightbox
+  document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=device-width, initial-scale=1.0');
   const lb = document.createElement('div');
   lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;';
   lb.innerHTML = `
-    <button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1;">×</button>
+    <button id="lb-close-btn" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1;">×</button>
     <img src="${t.screenshot}" style="max-width:100%;max-height:100vh;object-fit:contain;">
   `;
-  lb.onclick = e => { if (e.target === lb) lb.remove(); };
+  const closeLb = () => {
+    // Re-lock zoom when photo is closed
+    document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    lb.remove();
+  };
+  lb.querySelector('#lb-close-btn').onclick = closeLb;
+  lb.onclick = e => { if (e.target === lb) closeLb(); };
   document.body.appendChild(lb);
 }
 
