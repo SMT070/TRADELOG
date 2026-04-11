@@ -1000,21 +1000,9 @@
       min-height: 60px !important;
     }
 
-    /* ── TRADING SCORE: stack vertically on mobile ── */
-    #dash-score-layout {
-      flex-direction: column !important;
-      align-items: center !important;
-      padding: 16px 12px 20px !important;
-      gap: 16px !important;
-    }
-    #dash-radar-chart {
-      width: 200px !important;
-      height: 180px !important;
-    }
-    #dash-score-metrics {
-      grid-template-columns: 1fr 1fr !important;
-      width: 100% !important;
-    }
+    /* ── TRADING SCORE: removed on mobile — badge hidden ── */
+    #dash-score-badge-inline,
+    #an-score-badge-inline { display: none !important; }
 
     /* ── RECENT TRADES TABLE: minimal columns ── */
     /* Hide less important columns */
@@ -1045,44 +1033,7 @@
     .an-mini-val { font-size: 11px !important; }
     .an-mini-label { font-size: 8px !important; }
 
-    /* ── TRADING SCORE: compact on mobile ── */
-    #an-score-layout {
-      flex-direction: column !important;
-      align-items: center !important;
-      padding: 16px 12px 20px !important;
-      gap: 16px !important;
-    }
-    #an-score-layout > div:first-child {
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      gap: 12px !important;
-      width: 100% !important;
-    }
-    #an-radar-chart {
-      width: 200px !important;
-      height: 180px !important;
-    }
-    #an-score-number {
-      font-size: 28px !important;
-      letter-spacing: -1px !important;
-    }
-    #dash-score-number {
-      font-size: 28px !important;
-      letter-spacing: -1px !important;
-    }
-    /* Hide vertical divider on mobile */
-    #an-score-layout > div:nth-child(2) {
-      display: none !important;
-    }
-    /* Metric cards: 2-col full width */
-    #an-score-metrics {
-      grid-template-columns: 1fr 1fr !important;
-      width: 100% !important;
-      gap: 8px !important;
-    }
-
-    /* Today strip: 2x2 grid */
+    /* ── EQUITY CURVE range buttons ── */
     #page-analytics .panel > div[style*="repeat(5"] {
       grid-template-columns: 1fr 1fr !important;
     }
@@ -1895,7 +1846,33 @@
             <div class="panel-title">Equity Curve</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Equity Curve','Running P&L total after each trade.')" onmouseleave="hideInfo()">i</button>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <!-- Trading Score inline badge — hidden on mobile via CSS -->
+            <div id="dash-score-badge-inline" style="display:flex;align-items:center;gap:10px;padding:6px 14px 6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;">
+              <!-- hidden canvas/containers still needed by renderTradingScore() -->
+              <canvas id="dash-radar-chart" width="0" height="0" style="display:none;"></canvas>
+              <div id="dash-score-track" style="display:none;"></div>
+              <div id="dash-score-pointer" style="display:none;"></div>
+              <div id="dash-score-metrics" style="display:none;"></div>
+              <div style="display:flex;flex-direction:column;gap:1px;">
+                <div style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);line-height:1;">Trading Score</div>
+                <div style="display:flex;align-items:baseline;gap:4px;">
+                  <span style="font-size:22px;font-weight:900;letter-spacing:-1px;line-height:1;" id="dash-score-number">—</span>
+                  <span style="font-size:10px;font-weight:600;color:var(--muted);">/100</span>
+                </div>
+              </div>
+              <div style="width:1px;height:28px;background:var(--border);flex-shrink:0;"></div>
+              <div style="display:flex;flex-direction:column;gap:3px;min-width:90px;">
+                <div style="height:5px;border-radius:3px;background:var(--border2);overflow:hidden;">
+                  <div id="dash-score-bar" style="height:100%;width:0%;border-radius:3px;transition:width .8s ease;background:linear-gradient(90deg,var(--accent),#818cf8);"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                  <span style="font-size:8px;color:var(--muted);font-weight:600;">0</span>
+                  <span style="font-size:8px;color:var(--muted);font-weight:600;">50</span>
+                  <span style="font-size:8px;color:var(--muted);font-weight:600;">100</span>
+                </div>
+              </div>
+            </div>
             <div id="equity-range-btns" style="display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;">
               <button onclick="setEquityRange('1D')"  class="eq-range-btn" style="padding:3px 9px;border-radius:5px;border:none;font-size:10px;font-family:var(--mono);font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">1D</button>
               <button onclick="setEquityRange('1W')"  class="eq-range-btn" style="padding:3px 9px;border-radius:5px;border:none;font-size:10px;font-family:var(--mono);font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">1W</button>
@@ -1956,40 +1933,6 @@
               <span id="consec-loss" style="color:var(--red);font-weight:800;font-size:13px;">0</span>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Trading Score -->
-    <div class="panel" style="margin-bottom:12px;">
-      <div class="panel-header">
-        <div class="panel-header-left">
-          <div class="panel-title">Trading Score</div>
-          <button class="info-btn" onmouseenter="showInfo(this,'Trading Score','A weighted score across 6 key metrics. Profit Factor 25%, Win% 20%, Avg Win/Loss 20%, Consistency 15%, Drawdown 10%, Recovery 10%.')" onmouseleave="hideInfo()">i</button>
-        </div>
-      </div>
-      <div id="dash-score-layout" style="padding:16px var(--page-px) 20px;display:flex;align-items:center;gap:24px;">
-        <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:12px;">
-          <canvas id="dash-radar-chart" width="260" height="240"></canvas>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:180px;">
-            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--muted);">Trading Score</div>
-            <div style="font-size:32px;font-weight:900;letter-spacing:-1.5px;line-height:1;" id="dash-score-number">—</div>
-            <div style="font-size:10px;font-weight:600;color:var(--muted);">out of 100</div>
-            <div style="width:160px;position:relative;margin-top:6px;">
-              <div style="height:7px;border-radius:4px;background:var(--border2);position:relative;overflow:hidden;">
-                <div id="dash-score-track" style="height:100%;width:0%;border-radius:4px;transition:width .8s ease;background:var(--accent);"></div>
-              </div>
-              <div id="dash-score-pointer" style="display:none;"></div>
-              <div style="display:flex;justify-content:space-between;margin-top:5px;">
-                <span style="font-size:9px;color:var(--muted);font-weight:600;">0</span>
-                <span style="font-size:9px;color:var(--muted);font-weight:600;">50</span>
-                <span style="font-size:9px;color:var(--muted);font-weight:600;">100</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start;" id="dash-score-metrics">
-          <!-- filled by JS -->
         </div>
       </div>
     </div>
@@ -2370,59 +2313,46 @@
       <span id="sp-avgr"></span>
     </div>
 
-    <!-- ── TRADING SCORE ── -->
-    <div class="panel" style="margin-bottom:16px;">
-      <div class="panel-header">
-        <div class="panel-header-left">
-          <div class="panel-title">Trading Score</div>
-          <button class="info-btn" onmouseenter="showInfo(this,'Trading Score','Weighted score: Profit Factor 25%, Win% 20%, Avg Win/Loss 20%, Consistency 15%, Drawdown 10%, Recovery 10%.')" onmouseleave="hideInfo()">i</button>
-        </div>
-      </div>
-      <div id="an-score-layout" style="padding:16px var(--page-px) 20px;display:flex;align-items:center;gap:32px;">
-
-        <!-- Radar + Score stacked -->
-        <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:12px;">
-          <canvas id="an-radar-chart" width="260" height="240"></canvas>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:180px;">
-            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--muted);">Trading Score</div>
-            <div style="font-size:32px;font-weight:900;letter-spacing:-1.5px;line-height:1;" id="an-score-number">—</div>
-            <div style="font-size:10px;font-weight:600;color:var(--muted);">out of 100</div>
-            <div style="width:160px;position:relative;margin-top:6px;">
-              <div style="height:7px;border-radius:4px;background:var(--border2);position:relative;overflow:hidden;">
-                <div id="an-score-track" style="height:100%;width:0%;border-radius:4px;transition:width .8s ease;background:var(--accent);"></div>
-              </div>
-              <div id="an-score-pointer" style="display:none;"></div>
-              <div style="display:flex;justify-content:space-between;margin-top:5px;">
-                <span style="font-size:9px;color:var(--muted);font-weight:600;">0</span>
-                <span style="font-size:9px;color:var(--muted);font-weight:600;">50</span>
-                <span style="font-size:9px;color:var(--muted);font-weight:600;">100</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Divider -->
-        <div style="width:1px;height:120px;background:var(--border);flex-shrink:0;"></div>
-
-        <!-- Metric cards -->
-        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:center;" id="an-score-metrics">
-          <!-- filled by JS -->
-        </div>
-
-      </div>
-    </div>
-
     <!-- ── EQUITY CURVE ── -->
     <div class="panel" style="margin-bottom:16px;">
       <div class="panel-header">
         <div class="panel-header-left"><div class="panel-title">Equity Curve</div></div>
-        <div id="analytics-equity-range-btns" style="display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;">
-          <button onclick="setAnalyticsEquityRange('1M')"  class="an-eq-btn" style="padding:3px 10px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">1M</button>
-          <button onclick="setAnalyticsEquityRange('3M')"  class="an-eq-btn" style="padding:3px 10px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">3M</button>
-          <button onclick="setAnalyticsEquityRange('6M')"  class="an-eq-btn" style="padding:3px 10px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">6M</button>
-          <button onclick="setAnalyticsEquityRange('ALL')" class="an-eq-btn an-eq-active" style="padding:3px 10px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:var(--surface3);color:var(--text);transition:all .15s;">ALL</button>
-        </div>
-      </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <!-- Trading Score inline badge — hidden on mobile via CSS -->
+          <div id="an-score-badge-inline" style="display:flex;align-items:center;gap:10px;padding:6px 14px 6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;">
+            <!-- hidden elements still needed by renderTradingScore() -->
+            <canvas id="an-radar-chart" width="0" height="0" style="display:none;"></canvas>
+            <div id="an-score-layout" style="display:none;"></div>
+            <div id="an-score-track" style="display:none;"></div>
+            <div id="an-score-pointer" style="display:none;"></div>
+            <div id="an-score-metrics" style="display:none;"></div>
+            <div style="display:flex;flex-direction:column;gap:1px;">
+              <div style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);line-height:1;">Trading Score</div>
+              <div style="display:flex;align-items:baseline;gap:4px;">
+                <span style="font-size:22px;font-weight:900;letter-spacing:-1px;line-height:1;" id="an-score-number">—</span>
+                <span style="font-size:10px;font-weight:600;color:var(--muted);">/100</span>
+              </div>
+            </div>
+            <div style="width:1px;height:28px;background:var(--border);flex-shrink:0;"></div>
+            <div style="display:flex;flex-direction:column;gap:3px;min-width:90px;">
+              <div style="height:5px;border-radius:3px;background:var(--border2);overflow:hidden;">
+                <div id="an-score-bar" style="height:100%;width:0%;border-radius:3px;transition:width .8s ease;background:linear-gradient(90deg,var(--accent),#818cf8);"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;">
+                <span style="font-size:8px;color:var(--muted);font-weight:600;">0</span>
+                <span style="font-size:8px;color:var(--muted);font-weight:600;">50</span>
+                <span style="font-size:8px;color:var(--muted);font-weight:600;">100</span>
+              </div>
+            </div>
+          </div>
+          <div id="analytics-equity-range-btns" style="display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;">
+            <button onclick="setAnalyticsEquityRange('1M')"  class="an-eq-btn" style="padding:3px 10px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">1M</button>
+            <button onclick="setAnalyticsEquityRange('3M')"  class="an-eq-btn" style="padding:3px 10px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">3M</button>
+            <button onclick="setAnalyticsEquityRange('6M')"  class="an-eq-btn" style="padding:3px 10px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">6M</button>
+            <button onclick="setAnalyticsEquityRange('ALL')" class="an-eq-btn an-eq-active" style="padding:3px 10px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:var(--surface3);color:var(--text);transition:all .15s;">ALL</button>
+          </div>
+        </div><!-- /flex row: badge + range btns -->
+      </div><!-- /panel-header -->
       <div style="padding:16px var(--page-px);height:260px;position:relative;">
         <canvas id="an-equity-chart"></canvas>
       </div>
@@ -5156,6 +5086,8 @@ function renderTradingScore(prefix) {
     if (trackEl)     trackEl.style.width = '0%';
     if (badgeEl)   { badgeEl.textContent = 'Need more trades'; badgeEl.style.color = 'var(--muted)'; }
     if (metricsEl)   metricsEl.innerHTML = '<div style="color:var(--muted);font-size:12px;grid-column:1/-1;padding:20px 0;">Add at least 3 trades to generate your score.</div>';
+    const barElEmpty = document.getElementById(prefix + '-score-bar');
+    if (barElEmpty) barElEmpty.style.width = '0%';
     // Draw empty radar
     _drawRadar(canvas, [0,0,0,0,0,0], prefix);
     return;
@@ -5211,6 +5143,12 @@ function renderTradingScore(prefix) {
   if (pointerEl)   pointerEl.style.left = totalScore + '%';
   if (trackEl)   { trackEl.style.width = totalScore + '%'; }
   if (badgeEl)   { badgeEl.textContent = scoreLabel; badgeEl.style.color = scoreColor; badgeEl.style.borderColor = scoreColor; badgeEl.style.background = 'transparent'; }
+  // ── Drive the new inline bar next to Equity Curve ──
+  const barEl = document.getElementById(prefix + '-score-bar');
+  if (barEl) {
+    barEl.style.width = totalScore + '%';
+    barEl.style.background = totalScore >= 70 ? 'linear-gradient(90deg,var(--green),#34d399)' : totalScore >= 45 ? 'linear-gradient(90deg,var(--yellow),#fbbf24)' : 'linear-gradient(90deg,var(--red),#fb7185)';
+  }
 
   // ── Metric cards ──
   const metrics = [
