@@ -6967,15 +6967,15 @@ function renderAnalytics() {
 
   // ── BEST DAY OF WEEK ──
   const dowNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const dowMap = {};
+  const bestDowMap = {};
   trades.forEach(t => {
     const d = (t.date||'').slice(0,10); if(!d) return;
     const dow = new Date(d).getDay();
-    if(!dowMap[dow]) dowMap[dow] = { wins:0, total:0 };
-    dowMap[dow].total++;
-    if(getPnl(t) > 0) dowMap[dow].wins++;
+    if(!bestDowMap[dow]) bestDowMap[dow] = { wins:0, total:0 };
+    bestDowMap[dow].total++;
+    if(getPnl(t) > 0) bestDowMap[dow].wins++;
   });
-  const dowEntries = Object.entries(dowMap).filter(([,v]) => v.total >= 2);
+  const dowEntries = Object.entries(bestDowMap).filter(([,v]) => v.total >= 2);
   if(dowEntries.length) {
     const bestDow = dowEntries.reduce((a,b) => (b[1].wins/b[1].total) > (a[1].wins/a[1].total) ? b : a);
     const wr = Math.round(bestDow[1].wins / bestDow[1].total * 100);
