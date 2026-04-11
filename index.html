@@ -1030,21 +1030,13 @@
     /* ══ ANALYTICS PAGE ══ */
     #page-analytics .container { padding: 10px !important; }
 
-    /* ── ROW 1: Net P&L, Win Rate, Profit Factor, Expectancy, Best Day ── */
+    /* ── ALL 10 STAT CARDS in one 2-col grid = 5 perfect pairs, zero empty space ── */
     #an-stat-row-1 {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
       margin-bottom: 8px !important;
     }
     #an-stat-row-1 > div { grid-column: unset !important; }
-
-    /* ── ROW 2: Best Day to Trade, Max Drawdown, Worst Day, Avg Holding, Streaks ── */
-    #an-stat-row-2 {
-      grid-template-columns: 1fr 1fr !important;
-      gap: 8px !important;
-      margin-bottom: 8px !important;
-    }
-    #an-stat-row-2 > div { grid-column: unset !important; }
 
     /* ── STAT CARD sizing ── */
     .an-stat-card { padding: 12px 12px !important; }
@@ -2296,7 +2288,7 @@
       </div>
     </div>
 
-    <!-- ── TOP STAT STRIP ── -->
+    <!-- ── STAT CARDS: all 10 in one grid ── -->
     <div id="an-stat-row-1" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">
 
       <div class="an-stat-card" style="--ac:var(--green);">
@@ -2335,7 +2327,6 @@
         </div>
       </div>
 
-      <!-- Best Day — winner, pairs with Best Day to Trade on mobile -->
       <div class="an-stat-card" style="--ac:var(--green);">
         <div class="an-stat-label">Best Day</div>
         <div class="an-stat-value color-green" id="sp-bestday-pnl">$0.00</div>
@@ -2345,12 +2336,6 @@
         </div>
       </div>
 
-    </div>
-
-    <!-- ── SECOND STAT ROW ── -->
-    <div id="an-stat-row-2" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">
-
-      <!-- Best Day to Trade — winner, pairs with Best Day above on mobile -->
       <div class="an-stat-card" style="--ac:var(--green);">
         <div class="an-stat-label">Best Day to Trade</div>
         <div class="an-stat-value color-green" id="sp-best-dow" style="font-size:22px;">—</div>
@@ -2360,7 +2345,6 @@
         </div>
       </div>
 
-      <!-- Max Drawdown — loser, pairs with Worst Day on mobile -->
       <div class="an-stat-card" style="--ac:var(--red);">
         <div class="an-stat-label">Max Drawdown</div>
         <div class="an-stat-value color-red" id="sp-dd">$0.00</div>
@@ -2369,7 +2353,6 @@
         </div>
       </div>
 
-      <!-- Worst Day — loser, pairs with Max Drawdown on mobile -->
       <div class="an-stat-card" style="--ac:var(--red);">
         <div class="an-stat-label">Worst Day</div>
         <div class="an-stat-value color-red" id="sp-worstday-pnl">$0.00</div>
@@ -2398,6 +2381,9 @@
       </div>
 
     </div>
+
+    <!-- empty row kept for JS compatibility -->
+    <div id="an-stat-row-2" style="display:none;"></div>
 
     <!-- Hidden today strip elements (kept for JS compatibility) -->
     <div style="display:none;">
