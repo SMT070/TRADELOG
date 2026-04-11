@@ -2291,6 +2291,7 @@
     <!-- ── STAT CARDS: all 10 in one grid ── -->
     <div id="an-stat-row-1" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">
 
+      <!-- Row 1 -->
       <div class="an-stat-card" style="--ac:var(--green);">
         <div class="an-stat-label">Total Net P&L</div>
         <div class="an-stat-value" id="sp-net-pnl" style="color:var(--green);">$0.00</div>
@@ -2310,6 +2311,7 @@
         </div>
       </div>
 
+      <!-- Row 2 -->
       <div class="an-stat-card" style="--ac:var(--yellow);">
         <div class="an-stat-label">Profit Factor</div>
         <div class="an-stat-value" id="sp-pf" style="color:var(--yellow);">—</div>
@@ -2324,6 +2326,34 @@
         <div class="an-stat-value" id="sp-expectancy">—</div>
         <div style="display:flex;gap:4px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
           <div style="font-size:9px;color:var(--muted);line-height:1.5;" id="sp-expect-formula">per trade</div>
+        </div>
+      </div>
+
+      <!-- PC row 1 slot 5 -->
+      <div class="an-stat-card" style="--ac:#6366f1;">
+        <div class="an-stat-label">Avg Holding Time</div>
+        <div class="an-stat-value" id="sp-avg-hold" style="color:#6366f1;font-size:22px;">—</div>
+        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <div><div class="an-mini-val" id="sp-min-hold" style="font-size:12px;">—</div><div class="an-mini-label">Shortest</div></div>
+          <div><div class="an-mini-val" id="sp-max-hold" style="font-size:12px;">—</div><div class="an-mini-label">Longest</div></div>
+        </div>
+      </div>
+
+      <!-- PC row 2 -->
+      <div class="an-stat-card" style="--ac:var(--red);">
+        <div class="an-stat-label">Max Drawdown</div>
+        <div class="an-stat-value color-red" id="sp-dd">$0.00</div>
+        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <div><div class="an-mini-val" id="sp-total-vol">0</div><div class="an-mini-label">Total Lots</div></div>
+        </div>
+      </div>
+
+      <div class="an-stat-card" style="--ac:var(--red);">
+        <div class="an-stat-label">Worst Day</div>
+        <div class="an-stat-value color-red" id="sp-worstday-pnl">$0.00</div>
+        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <div><div class="an-mini-val" id="sp-worstday-date" style="font-size:11px;">—</div><div class="an-mini-label">Date</div></div>
+          <div><div class="an-mini-val" id="sp-worstday-trades">0</div><div class="an-mini-label">Trades</div></div>
         </div>
       </div>
 
@@ -2351,32 +2381,6 @@
         <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
           <div><div class="an-mini-val color-green" id="sp-best-dow-wr">—</div><div class="an-mini-label">Win Rate</div></div>
           <div><div class="an-mini-val" id="sp-best-dow-trades">—</div><div class="an-mini-label">Trades</div></div>
-        </div>
-      </div>
-
-      <div class="an-stat-card" style="--ac:var(--red);">
-        <div class="an-stat-label">Max Drawdown</div>
-        <div class="an-stat-value color-red" id="sp-dd">$0.00</div>
-        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-          <div><div class="an-mini-val" id="sp-total-vol">0</div><div class="an-mini-label">Total Lots</div></div>
-        </div>
-      </div>
-
-      <div class="an-stat-card" style="--ac:var(--red);">
-        <div class="an-stat-label">Worst Day</div>
-        <div class="an-stat-value color-red" id="sp-worstday-pnl">$0.00</div>
-        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-          <div><div class="an-mini-val" id="sp-worstday-date" style="font-size:11px;">—</div><div class="an-mini-label">Date</div></div>
-          <div><div class="an-mini-val" id="sp-worstday-trades">0</div><div class="an-mini-label">Trades</div></div>
-        </div>
-      </div>
-
-      <div class="an-stat-card" style="--ac:#6366f1;">
-        <div class="an-stat-label">Avg Holding Time</div>
-        <div class="an-stat-value" id="sp-avg-hold" style="color:#6366f1;font-size:22px;">—</div>
-        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-          <div><div class="an-mini-val" id="sp-min-hold" style="font-size:12px;">—</div><div class="an-mini-label">Shortest</div></div>
-          <div><div class="an-mini-val" id="sp-max-hold" style="font-size:12px;">—</div><div class="an-mini-label">Longest</div></div>
         </div>
       </div>
 
