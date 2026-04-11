@@ -1892,7 +1892,6 @@
           <div class="panel-title">Trading Score</div>
           <button class="info-btn" onmouseenter="showInfo(this,'Trading Score','A weighted score across 6 key metrics. Profit Factor 25%, Win% 20%, Avg Win/Loss 20%, Consistency 15%, Drawdown 10%, Recovery 10%.')" onmouseleave="hideInfo()">i</button>
         </div>
-        <div id="dash-trading-score-badge" style="font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);">—</div>
       </div>
       <div style="padding:20px var(--page-px) 24px;display:flex;align-items:center;gap:40px;">
         <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:14px;">
@@ -2101,7 +2100,7 @@
           <table class="trades-table" style="width:100%;border-collapse:collapse;">
             <thead>
               <tr>
-                <th onclick="sortBy('date')"   style="user-select:none;">Date/Time <span id="sort-date"></span></th>
+                <th onclick="sortBy('date')"   style="user-select:none;">Date <span id="sort-date"></span></th>
                 <th onclick="sortBy('symbol')" style="user-select:none;">Symbol <span id="sort-symbol"></span></th>
                 <th onclick="sortBy('dir')"    style="user-select:none;">Type <span id="sort-dir"></span></th>
                 <th onclick="sortBy('lots')"   style="user-select:none;">Lots <span id="sort-lots"></span> <button class="info-btn" onclick="event.stopPropagation()" onmouseenter="showInfo(this,'Lot Size','Trade volume. 1.0 = 100k units.')" onmouseleave="hideInfo()">i</button></th>
@@ -2304,7 +2303,6 @@
           <div class="panel-title">Trading Score</div>
           <button class="info-btn" onmouseenter="showInfo(this,'Trading Score','Weighted score: Profit Factor 25%, Win% 20%, Avg Win/Loss 20%, Consistency 15%, Drawdown 10%, Recovery 10%.')" onmouseleave="hideInfo()">i</button>
         </div>
-        <div id="an-trading-score-badge" style="font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);">—</div>
       </div>
       <div style="padding:20px var(--page-px) 24px;display:flex;align-items:center;gap:40px;">
         <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:14px;">
@@ -3245,37 +3243,105 @@
 
 <!-- ── SUPPORT MODAL ── -->
 <div id="support-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:32px;width:420px;max-width:95vw;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
-      <div style="font-size:17px;font-weight:700;">Help & Support</div>
-      <button onclick="closeSupportModal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">&#x2715;</button>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <div style="padding:14px 16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">📖 Getting Started</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.6;">Add trades manually or import from MT5. Use the calendar to review past sessions and the analytics page to track your edge.</div>
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:0;width:480px;max-width:95vw;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
+
+    <!-- Header -->
+    <div style="padding:24px 28px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div>
+        <div style="font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.3px;">Help & Support</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500;">Everything you need to know about TradeLog</div>
       </div>
-      <div style="padding:14px 16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">⌨️ Keyboard Shortcuts</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.8;">
-          <span style="font-family:var(--mono);background:var(--surface3);padding:1px 6px;border-radius:4px;">D</span> Dashboard &nbsp;
-          <span style="font-family:var(--mono);background:var(--surface3);padding:1px 6px;border-radius:4px;">T</span> Trades &nbsp;
-          <span style="font-family:var(--mono);background:var(--surface3);padding:1px 6px;border-radius:4px;">A</span> Analytics<br>
-          <span style="font-family:var(--mono);background:var(--surface3);padding:1px 6px;border-radius:4px;">C</span> Calendar &nbsp;
-          <span style="font-family:var(--mono);background:var(--surface3);padding:1px 6px;border-radius:4px;">N</span> New Trade &nbsp;
-          <span style="font-family:var(--mono);background:var(--surface3);padding:1px 6px;border-radius:4px;">?</span> Shortcuts
+      <button onclick="closeSupportModal()" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">&#x2715;</button>
+    </div>
+
+    <!-- Scrollable body -->
+    <div style="overflow-y:auto;padding:20px 28px 24px;display:flex;flex-direction:column;gap:10px;">
+
+      <!-- Getting Started -->
+      <div style="padding:16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:16px;">🚀</span>
+          <span style="font-size:13px;font-weight:700;color:var(--text);">Getting Started</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;">
+          Log trades manually using <strong style="color:var(--text);">+ Add Trade</strong>, or import directly from MT5, cTrader, or TradingView using a CSV file. Set your account balance in Settings so your return % is calculated correctly.
         </div>
       </div>
-      <div style="padding:14px 16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">💾 Your Data</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.6;">All data is stored locally in your browser. Use Export CSV regularly to back up your trades.</div>
+
+      <!-- Pages explained -->
+      <div style="padding:16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:16px;">🗺️</span>
+          <span style="font-size:13px;font-weight:700;color:var(--text);">Pages Overview</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          ${[
+            ['Dashboard','Your live overview — P&L, equity curve, goals and journal.'],
+            ['Trades','Full trade log with filters, sorting, and inline editing.'],
+            ['Analytics','Deep performance metrics, charts, heatmap and Trading Score.'],
+            ['Calendar','Day-by-day P&L view. Spot your best and worst sessions.'],
+            ['Mindset','Daily trading plan, end-of-day review, and trading rules.'],
+            ['Forecast','AI-powered analysis of patterns and risk in your trading.'],
+          ].map(([page, desc]) => `
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="font-size:10px;font-weight:800;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 8px;border-radius:6px;white-space:nowrap;margin-top:1px;">${page}</span>
+              <span style="font-size:12px;color:var(--muted);line-height:1.5;">${desc}</span>
+            </div>`).join('')}
+        </div>
       </div>
-      <div style="padding:14px 16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;">📬 Contact</div>
-        <div style="font-size:12px;color:var(--muted);">Version 1.0 · Built with TradeLog</div>
+
+      <!-- Keyboard shortcuts -->
+      <div style="padding:16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:16px;">⌨️</span>
+          <span style="font-size:13px;font-weight:700;color:var(--text);">Keyboard Shortcuts</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          ${[
+            ['D','Dashboard'],['T','Trades'],['A','Analytics'],['C','Calendar'],
+            ['M','Mindset'],['N','New Trade'],['Esc','Close panels'],['?','This help'],
+          ].map(([key, label]) => `
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-family:var(--mono);background:var(--surface3);border:1px solid var(--border2);padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;color:var(--text);min-width:28px;text-align:center;">${key}</span>
+              <span style="font-size:12px;color:var(--muted);">${label}</span>
+            </div>`).join('')}
+        </div>
       </div>
+
+      <!-- Data & sync -->
+      <div style="padding:16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:16px;">☁️</span>
+          <span style="font-size:13px;font-weight:700;color:var(--text);">Your Data & Sync</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;">
+          All trades are synced to the cloud in real time — your data is safe across devices. TradeLog auto-syncs every 30 seconds and whenever you return to the app. Use <strong style="color:var(--text);">Export CSV</strong> from the Import page for a local backup anytime.
+        </div>
+      </div>
+
+      <!-- Trading Score -->
+      <div style="padding:16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:16px;">🎯</span>
+          <span style="font-size:13px;font-weight:700;color:var(--text);">Trading Score</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;">
+          Your score (0–100) is calculated from 6 weighted metrics: <strong style="color:var(--text);">Profit Factor</strong> (25%), <strong style="color:var(--text);">Win %</strong> (20%), <strong style="color:var(--text);">Avg Win/Loss</strong> (20%), <strong style="color:var(--text);">Consistency</strong> (15%), <strong style="color:var(--text);">Drawdown</strong> (10%), <strong style="color:var(--text);">Recovery</strong> (10%). Needs at least 3 trades.
+        </div>
+      </div>
+
+      <!-- Version -->
+      <div style="text-align:center;padding-top:4px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:500;">TradeLog · Version 2.0 · Built for serious traders</div>
+      </div>
+
     </div>
-    <button onclick="closeSupportModal()" class="btn btn-ghost" style="width:100%;padding:11px;font-size:13px;margin-top:16px;">Close</button>
+
+    <!-- Footer -->
+    <div style="padding:16px 28px;border-top:1px solid var(--border);flex-shrink:0;">
+      <button onclick="closeSupportModal()" class="btn btn-ghost" style="width:100%;padding:11px;font-size:13px;">Close</button>
+    </div>
+
   </div>
 </div>
 
@@ -5155,7 +5221,7 @@ function renderRecentTable() {
     const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
     const pnlStr = (pnl>=0?'+'+getCurrencySymbol():'-'+getCurrencySymbol())+Math.abs(pnl).toFixed(2);
     return `<tr data-id="${t.id}" onclick="switchPage('trades');setTimeout(()=>selectTrade('${t.id}'),300)" style="cursor:pointer;">
-      <td style="color:var(--muted);white-space:nowrap;font-size:12px;">${t.date||'—'}</td>
+      <td style="color:var(--muted);white-space:nowrap;font-size:12px;">${t.date ? t.date.slice(0,10)+'<span style="color:var(--border2);margin:0 2px;">·</span>'+t.date.slice(11,16) : '—'}</td>
       <td style="font-weight:700;">${t.symbol}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
       <td>${t.lots||'—'}</td>
@@ -5175,7 +5241,7 @@ function tradeRow(t) {
   const activeTag = document.getElementById('filter-tag').value;
   const tags = (t.strategies||[]).map(s => `<span class="trade-tag${s===activeTag?' active':''}" onclick="event.stopPropagation();setTagFilter('${s}','${s}')">${s}</span>`).join('');
   return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;" ${t.id===selectedId?'class="selected"':''}>
-    <td style="color:var(--muted);white-space:nowrap;font-size:12px;">${t.date||'—'}</td>
+    <td style="color:var(--muted);white-space:nowrap;font-size:12px;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--border2);">'+t.date.slice(11,16)+'</span>' : '—'}</td>
     <td style="font-weight:700;">${t.symbol}</td>
     <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
     <td>${t.lots||'—'}</td>
@@ -5535,7 +5601,7 @@ function renderTrades() {
       : `<span style="color:var(--red);font-size:10px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:4px;">LOSS</span>`;
     const isSelected = t.id===selectedId;
     return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;"${isSelected?' class="selected"':''}>
-      <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${t.date||'—'}</td>
+      <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--border2);">'+t.date.slice(11,16)+'</span>' : '—'}</td>
       <td style="font-weight:600;">${t.symbol}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
       <td>${t.lots||'—'}</td>
