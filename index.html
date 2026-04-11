@@ -1000,10 +1000,6 @@
       min-height: 60px !important;
     }
 
-    /* ── TRADING SCORE: removed on mobile — badge hidden ── */
-    #dash-score-badge-inline,
-    #an-score-badge-inline { display: none !important; }
-
     /* ── RECENT TRADES TABLE: minimal columns ── */
     /* Hide less important columns */
     .trades-table th:nth-child(4),
@@ -1846,33 +1842,7 @@
             <div class="panel-title">Equity Curve</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Equity Curve','Running P&L total after each trade.')" onmouseleave="hideInfo()">i</button>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <!-- Trading Score inline badge — hidden on mobile via CSS -->
-            <div id="dash-score-badge-inline" style="display:flex;align-items:center;gap:10px;padding:6px 14px 6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;">
-              <!-- hidden canvas/containers still needed by renderTradingScore() -->
-              <canvas id="dash-radar-chart" width="0" height="0" style="display:none;"></canvas>
-              <div id="dash-score-track" style="display:none;"></div>
-              <div id="dash-score-pointer" style="display:none;"></div>
-              <div id="dash-score-metrics" style="display:none;"></div>
-              <div style="display:flex;flex-direction:column;gap:1px;">
-                <div style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);line-height:1;">Trading Score</div>
-                <div style="display:flex;align-items:baseline;gap:4px;">
-                  <span style="font-size:22px;font-weight:900;letter-spacing:-1px;line-height:1;" id="dash-score-number">—</span>
-                  <span style="font-size:10px;font-weight:600;color:var(--muted);">/100</span>
-                </div>
-              </div>
-              <div style="width:1px;height:28px;background:var(--border);flex-shrink:0;"></div>
-              <div style="display:flex;flex-direction:column;gap:3px;min-width:90px;">
-                <div style="height:5px;border-radius:3px;background:var(--border2);overflow:hidden;">
-                  <div id="dash-score-bar" style="height:100%;width:0%;border-radius:3px;transition:width .8s ease;background:linear-gradient(90deg,var(--accent),#818cf8);"></div>
-                </div>
-                <div style="display:flex;justify-content:space-between;">
-                  <span style="font-size:8px;color:var(--muted);font-weight:600;">0</span>
-                  <span style="font-size:8px;color:var(--muted);font-weight:600;">50</span>
-                  <span style="font-size:8px;color:var(--muted);font-weight:600;">100</span>
-                </div>
-              </div>
-            </div>
+          <div style="display:flex;align-items:center;gap:6px;">
             <div id="equity-range-btns" style="display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;">
               <button onclick="setEquityRange('1D')"  class="eq-range-btn" style="padding:3px 9px;border-radius:5px;border:none;font-size:10px;font-family:var(--mono);font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">1D</button>
               <button onclick="setEquityRange('1W')"  class="eq-range-btn" style="padding:3px 9px;border-radius:5px;border:none;font-size:10px;font-family:var(--mono);font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">1W</button>
@@ -2318,33 +2288,6 @@
       <div class="panel-header">
         <div class="panel-header-left"><div class="panel-title">Equity Curve</div></div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <!-- Trading Score inline badge — hidden on mobile via CSS -->
-          <div id="an-score-badge-inline" style="display:flex;align-items:center;gap:10px;padding:6px 14px 6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;">
-            <!-- hidden elements still needed by renderTradingScore() -->
-            <canvas id="an-radar-chart" width="0" height="0" style="display:none;"></canvas>
-            <div id="an-score-layout" style="display:none;"></div>
-            <div id="an-score-track" style="display:none;"></div>
-            <div id="an-score-pointer" style="display:none;"></div>
-            <div id="an-score-metrics" style="display:none;"></div>
-            <div style="display:flex;flex-direction:column;gap:1px;">
-              <div style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);line-height:1;">Trading Score</div>
-              <div style="display:flex;align-items:baseline;gap:4px;">
-                <span style="font-size:22px;font-weight:900;letter-spacing:-1px;line-height:1;" id="an-score-number">—</span>
-                <span style="font-size:10px;font-weight:600;color:var(--muted);">/100</span>
-              </div>
-            </div>
-            <div style="width:1px;height:28px;background:var(--border);flex-shrink:0;"></div>
-            <div style="display:flex;flex-direction:column;gap:3px;min-width:90px;">
-              <div style="height:5px;border-radius:3px;background:var(--border2);overflow:hidden;">
-                <div id="an-score-bar" style="height:100%;width:0%;border-radius:3px;transition:width .8s ease;background:linear-gradient(90deg,var(--accent),#818cf8);"></div>
-              </div>
-              <div style="display:flex;justify-content:space-between;">
-                <span style="font-size:8px;color:var(--muted);font-weight:600;">0</span>
-                <span style="font-size:8px;color:var(--muted);font-weight:600;">50</span>
-                <span style="font-size:8px;color:var(--muted);font-weight:600;">100</span>
-              </div>
-            </div>
-          </div>
           <div id="analytics-equity-range-btns" style="display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;">
             <button onclick="setAnalyticsEquityRange('1M')"  class="an-eq-btn" style="padding:3px 10px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">1M</button>
             <button onclick="setAnalyticsEquityRange('3M')"  class="an-eq-btn" style="padding:3px 10px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;background:none;color:var(--muted);transition:all .15s;">3M</button>
@@ -3294,7 +3237,7 @@
           ${[
             ['Dashboard','Your live overview — P&L, equity curve, goals and journal.'],
             ['Trades','Full trade log with filters, sorting, and inline editing.'],
-            ['Analytics','Deep performance metrics, charts, heatmap and Trading Score.'],
+            ['Analytics','Deep performance metrics, charts and heatmap.'],
             ['Calendar','Day-by-day P&L view. Spot your best and worst sessions.'],
             ['Mindset','Daily trading plan, end-of-day review, and trading rules.'],
             ['Forecast','AI-powered analysis of patterns and risk in your trading.'],
@@ -3332,17 +3275,6 @@
         </div>
         <div style="font-size:12px;color:var(--muted);line-height:1.7;">
           All trades are synced to the cloud in real time — your data is safe across devices. TradeLog auto-syncs every 30 seconds and whenever you return to the app. Use <strong style="color:var(--text);">Export CSV</strong> from the Import page for a local backup anytime.
-        </div>
-      </div>
-
-      <!-- Trading Score -->
-      <div style="padding:16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-          <span style="font-size:16px;">🎯</span>
-          <span style="font-size:13px;font-weight:700;color:var(--text);">Trading Score</span>
-        </div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.7;">
-          Your score (0–100) is calculated from 6 weighted metrics: <strong style="color:var(--text);">Profit Factor</strong> (25%), <strong style="color:var(--text);">Win %</strong> (20%), <strong style="color:var(--text);">Avg Win/Loss</strong> (20%), <strong style="color:var(--text);">Consistency</strong> (15%), <strong style="color:var(--text);">Drawdown</strong> (10%), <strong style="color:var(--text);">Recovery</strong> (10%). Needs at least 3 trades.
         </div>
       </div>
 
@@ -5056,193 +4988,6 @@ function refreshDashboard() {
   try { renderGoals(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
   try { updateGreeting(); } catch(e) {}
-  try { renderTradingScore('dash'); } catch(e) {}
-}
-
-// ── TRADING SCORE ─────────────────────────────────────────────────────────────
-let _radarChartInst = {};
-
-function renderTradingScore(prefix) {
-  const s = calcStats();
-  const canvasId  = prefix + '-radar-chart';
-  const scoreId   = prefix + '-score-number';
-  const pointerId = prefix + '-score-pointer';
-  const badgeId   = prefix + '-trading-score-badge';
-  const metricsId = prefix + '-score-metrics';
-
-  const scoreEl   = document.getElementById(scoreId);
-  const pointerEl = document.getElementById(pointerId);
-  const trackEl   = document.getElementById(prefix + '-score-track');
-  const badgeEl   = document.getElementById(badgeId);
-  const metricsEl = document.getElementById(metricsId);
-  const canvas    = document.getElementById(canvasId);
-
-  if (!canvas) return;
-
-  // ── Empty state ──
-  if (!s || trades.length < 3) {
-    if (scoreEl)   { scoreEl.textContent = '—'; scoreEl.style.color = 'var(--muted)'; }
-    if (pointerEl)   pointerEl.style.left = '0%';
-    if (trackEl)     trackEl.style.width = '0%';
-    if (badgeEl)   { badgeEl.textContent = 'Need more trades'; badgeEl.style.color = 'var(--muted)'; }
-    if (metricsEl)   metricsEl.innerHTML = '<div style="color:var(--muted);font-size:12px;grid-column:1/-1;padding:20px 0;">Add at least 3 trades to generate your score.</div>';
-    const barElEmpty = document.getElementById(prefix + '-score-bar');
-    if (barElEmpty) barElEmpty.style.width = '0%';
-    // Draw empty radar
-    _drawRadar(canvas, [0,0,0,0,0,0], prefix);
-    return;
-  }
-
-  // ── Calculate 6 raw metrics, each normalized 0–100 ──
-
-  // 1. Win % (0–100 → score: 40%=0, 80%=100)
-  const winPct = s.wr; // already 0–100
-  const winScore = Math.min(100, Math.max(0, (winPct - 30) / (75 - 30) * 100));
-
-  // 2. Profit Factor (0–5+ → score: <1=0, 1=20, 2=70, 3+=100)
-  const pf = s.pf || 0;
-  const pfScore = pf <= 0 ? 0 : Math.min(100, Math.max(0, (pf - 0.5) / (3 - 0.5) * 100));
-
-  // 3. Avg Win/Loss ratio
-  const avgWin  = Math.abs(s.avgWin  || 0);
-  const avgLoss = Math.abs(s.avgLoss || 0.001);
-  const wlRatio = avgLoss > 0 ? avgWin / avgLoss : 0;
-  const wlScore = Math.min(100, Math.max(0, (wlRatio - 0.5) / (3 - 0.5) * 100));
-
-  // 4. Consistency — measured as inverse of equity curve volatility
-  //    std deviation of trade P&L vs mean absolute P&L
-  const pnls = trades.map(t => getPnl(t));
-  const meanPnl = pnls.reduce((a,b) => a+b, 0) / pnls.length;
-  const variance = pnls.reduce((a,b) => a + Math.pow(b - meanPnl, 2), 0) / pnls.length;
-  const stdDev = Math.sqrt(variance);
-  const meanAbs = pnls.reduce((a,b) => a + Math.abs(b), 0) / pnls.length || 1;
-  const cv = stdDev / meanAbs; // coefficient of variation — lower = more consistent
-  const consistencyScore = Math.min(100, Math.max(0, (1 - Math.min(cv, 3) / 3) * 100));
-
-  // 5. Max Drawdown — as % of gross wins (lower DD = higher score)
-  const grossWins = s.wins > 0 ? trades.filter(t => getResult(t) === 'win').reduce((a,t) => a + getPnl(t), 0) : 1;
-  const ddPct = grossWins > 0 ? Math.abs(s.maxDD) / grossWins : 1;
-  const ddScore = Math.min(100, Math.max(0, (1 - Math.min(ddPct, 1)) * 100));
-
-  // 6. Recovery Factor — total net P&L / max drawdown (higher = better recovery)
-  const rf = s.maxDD !== 0 ? Math.abs(s.totalPnl / s.maxDD) : (s.totalPnl > 0 ? 5 : 0);
-  const rfScore = Math.min(100, Math.max(0, (Math.min(rf, 5) / 5) * 100));
-
-  const rawScores = [winScore, pfScore, wlScore, consistencyScore, ddScore, rfScore];
-
-  // ── Weighted overall score ──
-  const weights = [0.20, 0.25, 0.20, 0.15, 0.10, 0.10];
-  const totalScore = Math.round(rawScores.reduce((sum, v, i) => sum + v * weights[i], 0));
-
-  // ── Score color ──
-  const scoreColor = totalScore >= 70 ? 'var(--green)' : totalScore >= 45 ? 'var(--yellow)' : 'var(--red)';
-  const scoreLabel = totalScore >= 80 ? 'Elite' : totalScore >= 65 ? 'Strong' : totalScore >= 50 ? 'Average' : totalScore >= 35 ? 'Developing' : 'Beginner';
-
-  // ── Update DOM ──
-  if (scoreEl)   { scoreEl.textContent = totalScore; scoreEl.style.color = scoreColor; }
-  if (pointerEl)   pointerEl.style.left = totalScore + '%';
-  if (trackEl)   { trackEl.style.width = totalScore + '%'; }
-  if (badgeEl)   { badgeEl.textContent = scoreLabel; badgeEl.style.color = scoreColor; badgeEl.style.borderColor = scoreColor; badgeEl.style.background = 'transparent'; }
-  // ── Drive the new inline bar next to Equity Curve ──
-  const barEl = document.getElementById(prefix + '-score-bar');
-  if (barEl) {
-    barEl.style.width = totalScore + '%';
-    barEl.style.background = totalScore >= 70 ? 'linear-gradient(90deg,var(--green),#34d399)' : totalScore >= 45 ? 'linear-gradient(90deg,var(--yellow),#fbbf24)' : 'linear-gradient(90deg,var(--red),#fb7185)';
-  }
-
-  // ── Metric cards ──
-  const metrics = [
-    { label: 'Win %',          raw: winPct.toFixed(1) + '%',                  score: winScore,         hint: 'Target: >55%' },
-    { label: 'Profit Factor',  raw: pf ? pf.toFixed(2) : '—',                 score: pfScore,          hint: 'Target: >1.5' },
-    { label: 'Avg Win/Loss',   raw: wlRatio ? wlRatio.toFixed(2) + 'x' : '—', score: wlScore,          hint: 'Target: >1.5x' },
-    { label: 'Consistency',    raw: Math.round(consistencyScore) + '/100',     score: consistencyScore, hint: 'Lower volatility = higher' },
-    { label: 'Max Drawdown',   raw: Math.round(ddScore) + '/100',              score: ddScore,          hint: 'Lower DD = higher score' },
-    { label: 'Recovery Factor',raw: rf.toFixed(2) + 'x',                       score: rfScore,          hint: 'Target: >2x' },
-  ];
-
-  if (metricsEl) {
-    metricsEl.innerHTML = metrics.map(m => {
-      const barW = Math.round(m.score);
-      return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);">${m.label}</span>
-          <span style="font-size:13px;font-weight:900;color:var(--text);letter-spacing:-0.3px;">${m.raw}</span>
-        </div>
-        <div style="height:5px;border-radius:3px;background:var(--border2);overflow:hidden;margin-bottom:6px;">
-          <div style="height:100%;width:${barW}%;background:var(--accent);border-radius:3px;transition:width .8s ease;"></div>
-        </div>
-        <div style="font-size:8px;color:var(--muted);font-weight:600;letter-spacing:0.3px;">${m.hint}</div>
-      </div>`;
-    }).join('');
-  }
-
-  // ── Draw radar ──
-  _drawRadar(canvas, rawScores, prefix);
-}
-
-function _drawRadar(canvas, scores, prefix) {
-  if (_radarChartInst[prefix]) {
-    _radarChartInst[prefix].destroy();
-    delete _radarChartInst[prefix];
-  }
-
-  const labels = ['Win %', 'Profit Factor', 'Avg Win/Loss', 'Recovery Factor', 'Max Drawdown', 'Consistency'];
-  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  const gridColor  = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
-  const labelColor = isDark ? '#94a3b8' : '#64748b';
-
-  // ── Sharp canvas: scale by device pixel ratio ──
-  const dpr = window.devicePixelRatio || 1;
-  const cssW = canvas.offsetWidth  || 260;
-  const cssH = canvas.offsetHeight || 240;
-  canvas.width  = cssW * dpr;
-  canvas.height = cssH * dpr;
-  canvas.style.width  = cssW + 'px';
-  canvas.style.height = cssH + 'px';
-  const ctx2d = canvas.getContext('2d');
-  ctx2d.scale(dpr, dpr);
-
-  _radarChartInst[prefix] = new Chart(canvas, {
-    type: 'radar',
-    data: {
-      labels,
-      datasets: [{
-        data: scores,
-        backgroundColor: 'rgba(99,102,241,0.15)',
-        borderColor: 'rgba(99,102,241,0.9)',
-        borderWidth: 2,
-        pointBackgroundColor: '#6366f1',
-        pointBorderColor: isDark ? '#0b0f1a' : '#ffffff',
-        pointBorderWidth: 1.5,
-        pointRadius: 3,
-        pointHoverRadius: 5,
-      }]
-    },
-    options: {
-      responsive: false,
-      animation: { duration: 800, easing: 'easeOutQuart' },
-      layout: { padding: { top: 12, bottom: 12, left: 38, right: 38 } },
-      scales: {
-        r: {
-          min: 0, max: 100,
-          ticks: { display: false },
-          grid: { color: gridColor, lineWidth: 1 },
-          angleLines: { display: false },
-          pointLabels: {
-            font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: '700' },
-            color: labelColor,
-            padding: 6,
-          }
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: { label: ctx => ' ' + Math.round(ctx.raw) + ' / 100' }
-        }
-      }
-    }
-  });
 }
 
 function renderRecentTable() {
@@ -7101,7 +6846,7 @@ function renderAnalytics() {
 
   // ── HEATMAP ──
   renderHeatmap();
-  try { renderTradingScore('an'); } catch(e) {}
+
 }
 // ── SMART FILE ROUTER ────────────────────────────────────────────────────────
 function routeFile(file) {
