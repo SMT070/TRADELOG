@@ -1005,11 +1005,11 @@
       flex-direction: column !important;
       align-items: center !important;
       padding: 16px 12px 20px !important;
-      gap: 20px !important;
+      gap: 16px !important;
     }
     #dash-radar-chart {
-      width: 220px !important;
-      height: 220px !important;
+      width: 200px !important;
+      height: 180px !important;
     }
     #dash-score-metrics {
       grid-template-columns: 1fr 1fr !important;
@@ -1049,34 +1049,20 @@
     #an-score-layout {
       flex-direction: column !important;
       align-items: center !important;
-      padding: 12px !important;
-      gap: 10px !important;
+      padding: 16px 12px 20px !important;
+      gap: 16px !important;
     }
-    /* Radar + score: horizontal row */
     #an-score-layout > div:first-child {
       display: flex !important;
-      flex-direction: row !important;
+      flex-direction: column !important;
       align-items: center !important;
       gap: 12px !important;
       width: 100% !important;
-      justify-content: center !important;
     }
     #an-radar-chart {
-      width: 130px !important;
-      height: 110px !important;
+      width: 200px !important;
+      height: 180px !important;
     }
-    /* Score column (number + bar) */
-    #an-score-layout > div:first-child > div {
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: flex-start !important;
-      gap: 4px !important;
-    }
-    /* Hide "Trading Score" text label — redundant */
-    #an-score-layout > div:first-child > div > div:first-child {
-      display: none !important;
-    }
-    /* Score number smaller, show XX/100 */
     #an-score-number {
       font-size: 28px !important;
       letter-spacing: -1px !important;
@@ -5223,7 +5209,7 @@ function renderTradingScore(prefix) {
   // ── Update DOM ──
   if (scoreEl)   { scoreEl.textContent = totalScore; scoreEl.style.color = scoreColor; }
   if (pointerEl)   pointerEl.style.left = totalScore + '%';
-  if (trackEl)   { trackEl.style.width = totalScore + '%'; trackEl.style.background = scoreColor; }
+  if (trackEl)   { trackEl.style.width = totalScore + '%'; }
   if (badgeEl)   { badgeEl.textContent = scoreLabel; badgeEl.style.color = scoreColor; badgeEl.style.borderColor = scoreColor; badgeEl.style.background = 'transparent'; }
 
   // ── Metric cards ──
@@ -5269,7 +5255,8 @@ function _drawRadar(canvas, scores, prefix) {
 
   // ── Sharp canvas: scale by device pixel ratio ──
   const dpr = window.devicePixelRatio || 1;
-  const cssW = 260, cssH = 240;
+  const cssW = canvas.offsetWidth  || 260;
+  const cssH = canvas.offsetHeight || 240;
   canvas.width  = cssW * dpr;
   canvas.height = cssH * dpr;
   canvas.style.width  = cssW + 'px';
