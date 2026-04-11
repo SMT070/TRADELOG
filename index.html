@@ -1030,54 +1030,33 @@
     /* ══ ANALYTICS PAGE ══ */
     #page-analytics .container { padding: 10px !important; }
 
-    /* Analytics trading score: compact on mobile — radar small + score side by side */
-    #an-score-layout {
-      flex-direction: column !important;
-      align-items: stretch !important;
-      padding: 12px !important;
-      gap: 12px !important;
-    }
-    /* Radar + score number: horizontal row, compact */
-    #an-score-layout > div:first-child {
-      flex-direction: row !important;
-      align-items: center !important;
-      gap: 14px !important;
-      justify-content: center !important;
-    }
-    #an-radar-chart {
-      width: 130px !important;
-      height: 110px !important;
-    }
-    /* Score bar narrower to match */
-    #an-score-layout > div:first-child > div > div:nth-child(3),
-    #an-score-layout > div:first-child > div > div:nth-child(4) {
-      width: 120px !important;
-    }
-    /* Hide vertical divider on mobile */
-    #an-score-layout > div:nth-child(2) {
-      display: none !important;
-    }
-    /* Metrics: 2x3 grid, full width */
-    #an-score-metrics {
-      grid-template-columns: 1fr 1fr !important;
-      width: 100% !important;
-      gap: 8px !important;
-    }
+    /* ── STAT CARDS: merge both rows into one symmetric 2-col flow ── */
+    /* Row 1: Total Net P&L, Win Rate, Profit Factor, Expectancy, Max Drawdown */
+    /* Row 2: Avg Holding Time, Best Day, Worst Day, Streaks, Best Day to Trade */
+    /* We want on mobile: all 10 cards in 2 cols, but reordered so pairs make sense */
 
-    /* Top 5 stat cards: all equal 2x2 + 1 full — make all equal 2 cols, no odd card */
+    /* Both stat rows become 2-col grids */
     #page-analytics > div > div[style*="repeat(5"] {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
     }
-    /* Remove any last-child full-width override — all equal */
-    #page-analytics > div > div[style*="repeat(5"] > div:last-child {
+    /* All cards equal — no full-width outlier */
+    #page-analytics > div > div[style*="repeat(5"] > div {
       grid-column: unset !important;
     }
 
-    /* Second row 5 cards (was repeat(5) too): 2 cols, all equal */
-    #page-analytics > div > div[style*="repeat(4"] {
-      grid-template-columns: 1fr 1fr !important;
-      gap: 8px !important;
+    /* Row 1: reorder so Max Drawdown (card 5) moves to position 4, Expectancy goes to 5 */
+    /* Cards: 1=Net P&L, 2=Win Rate, 3=Profit Factor, 4=Expectancy, 5=Max Drawdown */
+    /* Desired: Net P&L | Win Rate / Profit Factor | Max Drawdown / Expectancy (full width) */
+    #page-analytics > div > div[style*="repeat(5"]:first-of-type > div:nth-child(4) { order: 5 !important; }
+    #page-analytics > div > div[style*="repeat(5"]:first-of-type > div:nth-child(5) { order: 4 !important; }
+
+    /* Row 2: reorder so Worst Day (card 3) moves next to Max Drawdown feel */
+    /* Cards: 1=Avg Holding, 2=Best Day, 3=Worst Day, 4=Streaks, 5=Best Day to Trade */
+    /* Desired: Avg Holding | Best Day / Worst Day | Streaks / Best Day to Trade | (full) */
+    /* Already symmetric with 2-col — just make sure last card doesn't go full width */
+    #page-analytics > div > div[style*="repeat(5"]:last-of-type > div:last-child {
+      grid-column: unset !important;
     }
 
     /* Stat card sizing */
@@ -1086,6 +1065,68 @@
     .an-stat-label { font-size: 8px !important; }
     .an-mini-val { font-size: 11px !important; }
     .an-mini-label { font-size: 8px !important; }
+
+    /* ── TRADING SCORE: compact side-by-side layout ── */
+    #an-score-layout {
+      flex-direction: row !important;
+      align-items: center !important;
+      padding: 12px !important;
+      gap: 10px !important;
+      flex-wrap: nowrap !important;
+    }
+    /* Radar side */
+    #an-score-layout > div:first-child {
+      flex: 0 0 auto !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 4px !important;
+    }
+    #an-radar-chart {
+      width: 140px !important;
+      height: 120px !important;
+    }
+    /* Hide vertical divider */
+    #an-score-layout > div:nth-child(2) {
+      display: none !important;
+    }
+    /* Score number: smaller, show as XX/100 */
+    #an-score-number {
+      font-size: 22px !important;
+      letter-spacing: -0.5px !important;
+    }
+    #an-score-number::after {
+      content: '/100';
+      font-size: 13px !important;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0;
+      margin-left: 2px;
+    }
+    /* Hide the "Trading Score" text label above number — score is self-explanatory */
+    #an-score-layout > div:first-child > div:first-child {
+      display: none !important;
+    }
+    /* Make the score bar wider and taller on mobile */
+    #an-score-layout > div:first-child > div:nth-child(3) {
+      width: 130px !important;
+      height: 8px !important;
+      border-radius: 4px !important;
+    }
+    #an-score-pointer {
+      width: 16px !important;
+      height: 16px !important;
+      top: -4px !important;
+    }
+    #an-score-layout > div:first-child > div:nth-child(4) {
+      width: 130px !important;
+    }
+    /* Metrics grid: right side, 2-col */
+    #an-score-metrics {
+      grid-template-columns: 1fr 1fr !important;
+      width: 100% !important;
+      gap: 8px !important;
+      flex: 1 !important;
+    }
 
     /* Today strip: 2x2 grid */
     #page-analytics .panel > div[style*="repeat(5"] {
