@@ -1121,12 +1121,12 @@
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
-      justify-content: flex-start !important;
+      justify-content: center !important;
       text-align: center !important;
       border-radius: 8px !important;
     }
-    .cal-day-num { font-size: 11px !important; margin-bottom: 3px !important; font-weight: 700 !important; }
-    .cal-pnl { font-size: 10px !important; margin-top: auto !important; margin-bottom: 1px !important; letter-spacing: -0.3px !important; }
+    .cal-day-num { font-size: 11px !important; margin-bottom: 4px !important; font-weight: 700 !important; }
+    .cal-pnl { font-size: 12px !important; margin-top: 0 !important; margin-bottom: 2px !important; letter-spacing: -0.4px !important; }
     .cal-trades { font-size: 8px !important; }
     .cal-cell-bar { display: none !important; }
     /* Grid — transparent background, small gap so rounded corners show */
@@ -7814,7 +7814,10 @@ function renderCalendar() {
       let inner = '<div class="cal-day-num">' + d + '</div>';
       if (data) {
         const pnlClass = data.pnl >= 0 ? 'pos' : 'neg';
-        inner += '<div class="cal-pnl ' + pnlClass + '">' + fmt(data.pnl) + '</div>';
+        const pnlStr = fmt(data.pnl);
+        const pnlLen = pnlStr.replace(/[^0-9.]/g,'').length;
+        const pnlSize = pnlLen >= 7 ? '9px' : pnlLen >= 5 ? '11px' : '13px';
+        inner += '<div class="cal-pnl ' + pnlClass + '" style="font-size:' + pnlSize + ';">' + pnlStr + '</div>';
         inner += '<div class="cal-trades">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
         inner += '<div class="cal-cell-bar ' + pnlClass + '"></div>';
       }
@@ -7947,7 +7950,7 @@ function renderHeatmap() {
         cell.style.cssText = 'width:'+SZ+'px;height:'+SZ+'px;border-radius:3px;cursor:default;transition:transform .1s;flex-shrink:0;';
         var inMonth = day.getMonth() === mo && day.getFullYear() === heatmapYear;
         if (!inMonth) { cell.style.background = 'transparent'; weekCol.appendChild(cell); return; }
-        var ds = day.toISOString().slice(0,10);
+        var ds = day.getFullYear() + '-' + String(day.getMonth()+1).padStart(2,'0') + '-' + String(day.getDate()).padStart(2,'0');
         var data = dayMap[ds];
         if (!data) {
           cell.style.background = 'var(--surface3)';
