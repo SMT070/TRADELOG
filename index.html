@@ -8438,6 +8438,55 @@ function selectCalDay(dateStr) {
   const sym = getCurrencySymbol();
   const pnlColor = dayPnl >= 0 ? 'var(--green)' : 'var(--red)';
 
+  // ── Fetch mindset entry for this day ──
+  const mindsetEntry = (() => {
+    try { return (getMindsetData().entries || {})[dateStr] || null; } catch(e) { return null; }
+  })();
+
+  const confLabels = ['','Terrible','Poor','Low','Okay','Moderate','Good','Confident','Strong','Excellent','Peak'];
+  const confColors = ['','var(--red)','var(--red)','var(--red)','var(--yellow)','var(--yellow)','var(--yellow)','var(--green)','var(--green)','var(--green)','var(--green)'];
+
+  const mindsetHTML = mindsetEntry ? (() => {
+    const conf     = mindsetEntry.confidence || 0;
+    const emotion  = mindsetEntry.emotion    || '';
+    const plan     = mindsetEntry.plan       || '';
+    const review   = mindsetEntry.review     || '';
+    const hasAny   = conf || emotion || plan || review;
+    if (!hasAny) return '';
+
+    const confColor = confColors[conf] || 'var(--muted)';
+    const confLabel = confLabels[conf] || '';
+
+    return `
+      <div style="margin:14px 0 0;padding-top:14px;border-top:1px solid var(--border);">
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:12px;">Mental State</div>
+
+        ${(conf || emotion) ? `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:${(plan||review)?'12px':'0'};">
+          ${conf ? `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;flex:1;">
+            <div style="font-size:22px;font-weight:900;color:${confColor};line-height:1;letter-spacing:-1px;">${conf}<span style="font-size:11px;font-weight:600;color:var(--muted);">/10</span></div>
+            <div style="font-size:9px;font-weight:700;color:${confColor};text-transform:uppercase;letter-spacing:1px;">${confLabel}</div>
+            <div style="font-size:8px;color:var(--muted);font-weight:600;">Confidence</div>
+          </div>` : ''}
+          ${emotion ? `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;flex:1;">
+            <div style="font-size:22px;line-height:1;">${emotion.slice(0,2)}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text);margin-top:2px;">${emotion.slice(2).trim()}</div>
+            <div style="font-size:8px;color:var(--muted);font-weight:600;">Emotion</div>
+          </div>` : ''}
+        </div>` : ''}
+
+        ${plan ? `<div style="margin-bottom:8px;">
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">📋 Plan</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;">${plan.replace(/\n/g,'<br>')}</div>
+        </div>` : ''}
+
+        ${review ? `<div>
+          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">🔁 Review</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;">${review.replace(/\n/g,'<br>')}</div>
+        </div>` : ''}
+      </div>`;
+  })() : '';
+
   const dayBodyHTML = `
     <div style="padding:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
@@ -8460,6 +8509,7 @@ function selectCalDay(dateStr) {
         </div>`;
       }).join('')}
       <button class="btn btn-ghost" style="width:100%;margin-top:14px;font-size:11px;" onclick="jumpToDateTrades('${dateStr}')">View in Trades →</button>
+      ${mindsetHTML}
     </div>
   `;
 
