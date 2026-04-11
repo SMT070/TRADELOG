@@ -1078,31 +1078,12 @@
     }
     /* Score number smaller, show XX/100 */
     #an-score-number {
-      font-size: 28px !important;
-      letter-spacing: -1px !important;
-    }
-    #an-score-number::after {
-      content: '/100';
-      font-size: 14px !important;
-      font-weight: 600;
-      color: var(--muted);
-      letter-spacing: 0;
-      margin-left: 3px;
-    }
-    /* Score bar: wider + taller */
-    #an-score-layout > div:first-child > div > div:nth-child(3) {
-      width: 150px !important;
-      height: 8px !important;
-      border-radius: 4px !important;
-      margin-top: 4px !important;
+      font-size: 36px !important;
+      letter-spacing: -1.5px !important;
     }
     #an-score-pointer {
       width: 16px !important;
       height: 16px !important;
-      top: -4px !important;
-    }
-    #an-score-layout > div:first-child > div > div:nth-child(4) {
-      width: 150px !important;
     }
     /* Hide vertical divider */
     #an-score-layout > div:nth-child(2) {
@@ -2003,17 +1984,21 @@
       </div>
       <div id="dash-score-layout" style="padding:16px var(--page-px) 20px;display:flex;align-items:center;gap:24px;">
         <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:10px;">
-          <canvas id="dash-radar-chart" width="280" height="280"></canvas>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
-            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);">Your Trading Score</div>
-            <div style="font-size:30px;font-weight:900;letter-spacing:-1px;line-height:1;" id="dash-score-number">—</div>
-            <div style="width:180px;height:5px;border-radius:3px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;margin-top:2px;">
-              <div id="dash-score-pointer" style="position:absolute;top:-4px;width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid var(--surface);box-shadow:0 0 6px rgba(0,0,0,.4);transform:translateX(-50%);transition:left .8s ease;left:0%;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;width:180px;">
-              <span style="font-size:9px;color:var(--muted);font-weight:600;">0</span>
-              <span style="font-size:9px;color:var(--muted);font-weight:600;">50</span>
-              <span style="font-size:9px;color:var(--muted);font-weight:600;">100</span>
+          <canvas id="dash-radar-chart" width="180" height="160"></canvas>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:200px;">
+            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--muted);">Trading Score</div>
+            <div style="font-size:42px;font-weight:900;letter-spacing:-2px;line-height:1;" id="dash-score-number">—</div>
+            <div style="font-size:10px;font-weight:600;color:var(--muted);">out of 100</div>
+            <!-- Bold gradient bar -->
+            <div style="width:200px;position:relative;margin-top:4px;">
+              <div style="height:10px;border-radius:6px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;overflow:visible;box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+                <div id="dash-score-pointer" style="position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--surface);box-shadow:0 0 0 2px rgba(255,255,255,0.4),0 2px 8px rgba(0,0,0,0.5);transform:translate(-50%,-50%);transition:left .8s ease;left:0%;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:6px;">
+                <span style="font-size:10px;color:var(--muted);font-weight:700;">0</span>
+                <span style="font-size:10px;color:var(--muted);font-weight:700;">50</span>
+                <span style="font-size:10px;color:var(--muted);font-weight:700;">100</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2410,17 +2395,23 @@
       <div id="an-score-layout" style="padding:16px var(--page-px) 20px;display:flex;align-items:center;gap:32px;">
 
         <!-- Radar + Score stacked -->
-        <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:8px;">
-          <canvas id="an-radar-chart" width="260" height="220"></canvas>
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);">Trading Score</div>
-          <div style="font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1;" id="an-score-number">—</div>
-          <div style="width:200px;height:5px;border-radius:3px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;margin-top:4px;">
-            <div id="an-score-pointer" style="position:absolute;top:-4px;width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid var(--surface);box-shadow:0 0 6px rgba(0,0,0,.4);transform:translateX(-50%);transition:left .8s ease;left:0%;"></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;width:200px;">
-            <span style="font-size:9px;color:var(--muted);font-weight:600;">0</span>
-            <span style="font-size:9px;color:var(--muted);font-weight:600;">50</span>
-            <span style="font-size:9px;color:var(--muted);font-weight:600;">100</span>
+        <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <canvas id="an-radar-chart" width="180" height="160"></canvas>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:200px;">
+            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--muted);">Trading Score</div>
+            <div style="font-size:42px;font-weight:900;letter-spacing:-2px;line-height:1;" id="an-score-number">—</div>
+            <div style="font-size:10px;font-weight:600;color:var(--muted);">out of 100</div>
+            <!-- Bold gradient bar -->
+            <div style="width:200px;position:relative;margin-top:4px;">
+              <div style="height:10px;border-radius:6px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;overflow:visible;box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+                <div id="an-score-pointer" style="position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--surface);box-shadow:0 0 0 2px rgba(255,255,255,0.4),0 2px 8px rgba(0,0,0,0.5);transform:translate(-50%,-50%);transition:left .8s ease;left:0%;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:6px;">
+                <span style="font-size:10px;color:var(--muted);font-weight:700;">0</span>
+                <span style="font-size:10px;color:var(--muted);font-weight:700;">50</span>
+                <span style="font-size:10px;color:var(--muted);font-weight:700;">100</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -5245,15 +5236,16 @@ function renderTradingScore(prefix) {
   if (metricsEl) {
     metricsEl.innerHTML = metrics.map(m => {
       const barW = Math.round(m.score);
-      return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">${m.label}</span>
-          <span style="font-size:13px;font-weight:800;color:var(--text);">${m.raw}</span>
+      const barColor = barW >= 70 ? 'var(--green)' : barW >= 45 ? 'var(--yellow)' : 'var(--red)';
+      return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);">${m.label}</span>
+          <span style="font-size:16px;font-weight:900;color:var(--text);letter-spacing:-0.5px;">${m.raw}</span>
         </div>
-        <div style="height:4px;border-radius:2px;background:var(--border2);overflow:hidden;margin-bottom:5px;">
-          <div style="height:100%;width:${barW}%;background:var(--accent);border-radius:2px;transition:width .8s ease;"></div>
+        <div style="height:7px;border-radius:4px;background:var(--border2);overflow:hidden;margin-bottom:7px;">
+          <div style="height:100%;width:${barW}%;background:${barColor};border-radius:4px;transition:width .8s ease;box-shadow:0 0 6px ${barColor};"></div>
         </div>
-        <div style="font-size:9px;color:var(--muted);font-weight:500;">${m.hint}</div>
+        <div style="font-size:9px;color:var(--muted);font-weight:600;letter-spacing:0.3px;">${m.hint}</div>
       </div>`;
     }).join('');
   }
@@ -5279,20 +5271,20 @@ function _drawRadar(canvas, scores, prefix) {
       labels,
       datasets: [{
         data: scores,
-        backgroundColor: 'rgba(99,102,241,0.15)',
-        borderColor: 'rgba(99,102,241,0.7)',
-        borderWidth: 1.5,
-        pointBackgroundColor: 'rgba(99,102,241,0.9)',
-        pointBorderColor: 'transparent',
-        pointBorderWidth: 0,
-        pointRadius: 3,
+        backgroundColor: 'rgba(99,102,241,0.2)',
+        borderColor: 'rgba(99,102,241,0.85)',
+        borderWidth: 2,
+        pointBackgroundColor: '#6366f1',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 1.5,
+        pointRadius: 3.5,
         pointHoverRadius: 5,
       }]
     },
     options: {
       responsive: false,
       animation: { duration: 800, easing: 'easeOutQuart' },
-      layout: { padding: { top: 16, bottom: 16, left: 44, right: 44 } },
+      layout: { padding: { top: 10, bottom: 10, left: 36, right: 36 } },
       scales: {
         r: {
           min: 0, max: 100,
@@ -5300,9 +5292,9 @@ function _drawRadar(canvas, scores, prefix) {
           grid: { color: gridColor, lineWidth: 1 },
           angleLines: { color: gridColor, lineWidth: 1 },
           pointLabels: {
-            font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: '600' },
+            font: { family: "'Plus Jakarta Sans', sans-serif", size: 10, weight: '700' },
             color: labelColor,
-            padding: 10,
+            padding: 6,
           }
         }
       },
