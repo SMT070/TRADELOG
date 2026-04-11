@@ -1984,7 +1984,7 @@
       </div>
       <div id="dash-score-layout" style="padding:16px var(--page-px) 20px;display:flex;align-items:center;gap:24px;">
         <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:12px;">
-          <canvas id="dash-radar-chart" width="240" height="220"></canvas>
+          <canvas id="dash-radar-chart" width="260" height="240"></canvas>
           <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:180px;">
             <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--muted);">Trading Score</div>
             <div style="font-size:32px;font-weight:900;letter-spacing:-1.5px;line-height:1;" id="dash-score-number">—</div>
@@ -2396,7 +2396,7 @@
 
         <!-- Radar + Score stacked -->
         <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:12px;">
-          <canvas id="an-radar-chart" width="240" height="220"></canvas>
+          <canvas id="an-radar-chart" width="260" height="240"></canvas>
           <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:180px;">
             <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--muted);">Trading Score</div>
             <div style="font-size:32px;font-weight:900;letter-spacing:-1.5px;line-height:1;" id="an-score-number">—</div>
@@ -5239,15 +5239,15 @@ function renderTradingScore(prefix) {
   if (metricsEl) {
     metricsEl.innerHTML = metrics.map(m => {
       const barW = Math.round(m.score);
-      return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);">${m.label}</span>
-          <span style="font-size:16px;font-weight:900;color:var(--text);letter-spacing:-0.5px;">${m.raw}</span>
+      return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);">${m.label}</span>
+          <span style="font-size:13px;font-weight:900;color:var(--text);letter-spacing:-0.3px;">${m.raw}</span>
         </div>
-        <div style="height:6px;border-radius:3px;background:var(--border2);overflow:hidden;margin-bottom:7px;">
+        <div style="height:5px;border-radius:3px;background:var(--border2);overflow:hidden;margin-bottom:6px;">
           <div style="height:100%;width:${barW}%;background:var(--accent);border-radius:3px;transition:width .8s ease;"></div>
         </div>
-        <div style="font-size:9px;color:var(--muted);font-weight:600;letter-spacing:0.3px;">${m.hint}</div>
+        <div style="font-size:8px;color:var(--muted);font-weight:600;letter-spacing:0.3px;">${m.hint}</div>
       </div>`;
     }).join('');
   }
@@ -5264,8 +5264,18 @@ function _drawRadar(canvas, scores, prefix) {
 
   const labels = ['Win %', 'Profit Factor', 'Avg Win/Loss', 'Recovery Factor', 'Max Drawdown', 'Consistency'];
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  const gridColor  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const gridColor  = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
   const labelColor = isDark ? '#94a3b8' : '#64748b';
+
+  // ── Sharp canvas: scale by device pixel ratio ──
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = 260, cssH = 240;
+  canvas.width  = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width  = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  const ctx2d = canvas.getContext('2d');
+  ctx2d.scale(dpr, dpr);
 
   _radarChartInst[prefix] = new Chart(canvas, {
     type: 'radar',
@@ -5273,30 +5283,30 @@ function _drawRadar(canvas, scores, prefix) {
       labels,
       datasets: [{
         data: scores,
-        backgroundColor: 'rgba(99,102,241,0.18)',
+        backgroundColor: 'rgba(99,102,241,0.15)',
         borderColor: 'rgba(99,102,241,0.9)',
         borderWidth: 2,
         pointBackgroundColor: '#6366f1',
-        pointBorderColor: 'var(--surface)',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        pointBorderColor: isDark ? '#0b0f1a' : '#ffffff',
+        pointBorderWidth: 1.5,
+        pointRadius: 3,
+        pointHoverRadius: 5,
       }]
     },
     options: {
       responsive: false,
       animation: { duration: 800, easing: 'easeOutQuart' },
-      layout: { padding: { top: 14, bottom: 14, left: 40, right: 40 } },
+      layout: { padding: { top: 12, bottom: 12, left: 38, right: 38 } },
       scales: {
         r: {
           min: 0, max: 100,
-          ticks: { display: false, stepSize: 25 },
-          grid: { color: gridColor, lineWidth: 0.5, circular: false },
+          ticks: { display: false },
+          grid: { color: gridColor, lineWidth: 1 },
           angleLines: { display: false },
           pointLabels: {
             font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: '700' },
             color: labelColor,
-            padding: 8,
+            padding: 6,
           }
         }
       },
