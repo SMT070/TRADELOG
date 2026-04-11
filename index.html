@@ -2325,23 +2325,20 @@
           <button class="info-btn" onmouseenter="showInfo(this,'Trading Score','Weighted score: Profit Factor 25%, Win% 20%, Avg Win/Loss 20%, Consistency 15%, Drawdown 10%, Recovery 10%.')" onmouseleave="hideInfo()">i</button>
         </div>
       </div>
-      <div id="an-score-layout" style="padding:20px var(--page-px) 24px;display:flex;align-items:center;gap:32px;">
+      <div id="an-score-layout" style="padding:16px var(--page-px) 20px;display:flex;align-items:center;gap:32px;">
 
-        <!-- Radar -->
-        <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:12px;">
-          <canvas id="an-radar-chart" width="160" height="160"></canvas>
-          <!-- Score number + slider -->
-          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);">Trading Score</div>
-            <div style="font-size:42px;font-weight:900;letter-spacing:-2px;line-height:1;" id="an-score-number">—</div>
-            <div style="width:160px;height:6px;border-radius:3px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;margin-top:6px;">
-              <div id="an-score-pointer" style="position:absolute;top:-4px;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--surface);box-shadow:0 0 8px rgba(0,0,0,.4);transform:translateX(-50%);transition:left .8s ease;left:0%;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;width:160px;">
-              <span style="font-size:9px;color:var(--muted);font-weight:600;">0</span>
-              <span style="font-size:9px;color:var(--muted);font-weight:600;">50</span>
-              <span style="font-size:9px;color:var(--muted);font-weight:600;">100</span>
-            </div>
+        <!-- Radar + Score stacked -->
+        <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <canvas id="an-radar-chart" width="220" height="220"></canvas>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);">Trading Score</div>
+          <div style="font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1;" id="an-score-number">—</div>
+          <div style="width:180px;height:5px;border-radius:3px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;margin-top:4px;">
+            <div id="an-score-pointer" style="position:absolute;top:-4px;width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid var(--surface);box-shadow:0 0 6px rgba(0,0,0,.4);transform:translateX(-50%);transition:left .8s ease;left:0%;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;width:180px;">
+            <span style="font-size:9px;color:var(--muted);font-weight:600;">0</span>
+            <span style="font-size:9px;color:var(--muted);font-weight:600;">50</span>
+            <span style="font-size:9px;color:var(--muted);font-weight:600;">100</span>
           </div>
         </div>
 
