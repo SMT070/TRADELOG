@@ -2268,7 +2268,7 @@
     </div>
 
     <!-- ── SECOND STAT ROW ── -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">
 
       <div class="an-stat-card" style="--ac:#6366f1;">
         <div class="an-stat-label">Avg Holding Time</div>
@@ -2306,6 +2306,15 @@
         </div>
       </div>
 
+      <div class="an-stat-card" style="--ac:var(--green);">
+        <div class="an-stat-label">Best Day to Trade</div>
+        <div class="an-stat-value color-green" id="sp-best-dow" style="font-size:22px;">—</div>
+        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <div><div class="an-mini-val color-green" id="sp-best-dow-wr">—</div><div class="an-mini-label">Win Rate</div></div>
+          <div><div class="an-mini-val" id="sp-best-dow-trades">—</div><div class="an-mini-label">Trades</div></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Hidden today strip elements (kept for JS compatibility) -->
@@ -2329,13 +2338,13 @@
 
         <!-- Radar + Score stacked -->
         <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:8px;">
-          <canvas id="an-radar-chart" width="220" height="220"></canvas>
+          <canvas id="an-radar-chart" width="260" height="260"></canvas>
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);">Trading Score</div>
           <div style="font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1;" id="an-score-number">—</div>
-          <div style="width:180px;height:5px;border-radius:3px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;margin-top:4px;">
+          <div style="width:200px;height:5px;border-radius:3px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;margin-top:4px;">
             <div id="an-score-pointer" style="position:absolute;top:-4px;width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid var(--surface);box-shadow:0 0 6px rgba(0,0,0,.4);transform:translateX(-50%);transition:left .8s ease;left:0%;"></div>
           </div>
-          <div style="display:flex;justify-content:space-between;width:180px;">
+          <div style="display:flex;justify-content:space-between;width:200px;">
             <span style="font-size:9px;color:var(--muted);font-weight:600;">0</span>
             <span style="font-size:9px;color:var(--muted);font-weight:600;">50</span>
             <span style="font-size:9px;color:var(--muted);font-weight:600;">100</span>
@@ -5210,7 +5219,7 @@ function _drawRadar(canvas, scores, prefix) {
     options: {
       responsive: false,
       animation: { duration: 800, easing: 'easeOutQuart' },
-      layout: { padding: { top: 20, bottom: 20, left: 30, right: 30 } },
+      layout: { padding: { top: 28, bottom: 28, left: 48, right: 48 } },
       scales: {
         r: {
           min: 0, max: 100,
@@ -5220,7 +5229,7 @@ function _drawRadar(canvas, scores, prefix) {
           pointLabels: {
             font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: '600' },
             color: labelColor,
-            padding: 8,
+            padding: 10,
           }
         }
       },
@@ -6955,6 +6964,28 @@ function renderAnalytics() {
   const cwEl = document.getElementById('sp-cw');     if(cwEl)  { cwEl.textContent  = s.mcw; cwEl.style.color  = 'var(--green)'; }
   const cwsEl = document.getElementById('sp-cw-sub'); if(cwsEl) { cwsEl.textContent = s.mcw; cwsEl.style.color = 'var(--green)'; }
   const clEl  = document.getElementById('sp-cl');     if(clEl)  { clEl.textContent  = s.mcl; clEl.style.color  = 'var(--red)';   }
+
+  // ── BEST DAY OF WEEK ──
+  const dowNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dowMap = {};
+  trades.forEach(t => {
+    const d = (t.date||'').slice(0,10); if(!d) return;
+    const dow = new Date(d).getDay();
+    if(!dowMap[dow]) dowMap[dow] = { wins:0, total:0 };
+    dowMap[dow].total++;
+    if(getPnl(t) > 0) dowMap[dow].wins++;
+  });
+  const dowEntries = Object.entries(dowMap).filter(([,v]) => v.total >= 2);
+  if(dowEntries.length) {
+    const bestDow = dowEntries.reduce((a,b) => (b[1].wins/b[1].total) > (a[1].wins/a[1].total) ? b : a);
+    const wr = Math.round(bestDow[1].wins / bestDow[1].total * 100);
+    const dowEl = document.getElementById('sp-best-dow');
+    if(dowEl) { dowEl.textContent = dowNames[bestDow[0]]; dowEl.style.color = 'var(--green)'; }
+    const dowWrEl = document.getElementById('sp-best-dow-wr');
+    if(dowWrEl) { dowWrEl.textContent = wr + '%'; dowWrEl.style.color = 'var(--green)'; }
+    const dowTEl = document.getElementById('sp-best-dow-trades');
+    if(dowTEl) dowTEl.textContent = bestDow[1].total;
+  }
 
   // ── TODAY STRIP ──
   const today = new Date().toISOString().slice(0,10);
