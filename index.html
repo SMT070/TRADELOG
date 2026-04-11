@@ -2391,7 +2391,7 @@
   </div>
 
   <!-- Body: grid + side panel -->
-  <div style="display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden;min-height:0;">
+  <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden;min-height:0;">
 
     <!-- Left: calendar -->
     <div style="display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border);">
@@ -7370,6 +7370,13 @@ function setCalView(v) {
   const navNext = document.getElementById('cal-nav-next');
   if (navPrev) navPrev.style.visibility = v === 'alltime' ? 'hidden' : 'visible';
   if (navNext) navNext.style.visibility = v === 'alltime' ? 'hidden' : 'visible';
+  // Show/hide right day panel (PC only)
+  const dayPanel = document.getElementById('cal-day-panel');
+  const bodyGrid = document.getElementById('cal-body-grid');
+  const calLeft  = bodyGrid ? bodyGrid.firstElementChild : null;
+  if (dayPanel) dayPanel.style.display = v === 'month' ? '' : 'none';
+  if (bodyGrid) bodyGrid.style.gridTemplateColumns = v === 'month' ? '1fr 300px' : '1fr';
+  if (calLeft)  calLeft.style.borderRight = v === 'month' ? '1px solid var(--border)' : 'none';
   // Grid layout
   const dowRow = document.getElementById('cal-dow-row');
   const grid   = document.getElementById('cal-grid');
