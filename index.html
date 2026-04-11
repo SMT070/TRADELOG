@@ -5069,15 +5069,14 @@ function renderTradingScore(prefix) {
 
   if (metricsEl) {
     metricsEl.innerHTML = metrics.map(m => {
-      const c = m.score >= 70 ? 'var(--green)' : m.score >= 45 ? 'var(--yellow)' : 'var(--red)';
       const barW = Math.round(m.score);
       return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">${m.label}</span>
-          <span style="font-size:13px;font-weight:800;color:${c};">${m.raw}</span>
+          <span style="font-size:13px;font-weight:800;color:var(--text);">${m.raw}</span>
         </div>
         <div style="height:4px;border-radius:2px;background:var(--border2);overflow:hidden;margin-bottom:5px;">
-          <div style="height:100%;width:${barW}%;background:${c};border-radius:2px;transition:width .8s ease;"></div>
+          <div style="height:100%;width:${barW}%;background:var(--accent);border-radius:2px;transition:width .8s ease;"></div>
         </div>
         <div style="font-size:9px;color:var(--muted);font-weight:500;">${m.hint}</div>
       </div>`;
@@ -6823,13 +6822,13 @@ function renderAnalytics() {
   const grossEl = document.getElementById('sp-gross'); if(grossEl) grossEl.textContent = fmt(grossPnl);
   const commEl = document.getElementById('sp-commission'); if(commEl) commEl.textContent = fmt(totalComm);
 
-  const wrEl = document.getElementById('sp-wr-pct'); if(wrEl) { wrEl.textContent = s.wr.toFixed(1)+'%'; wrEl.style.color = s.wr >= 50 ? 'var(--green)' : 'var(--red)'; }
+  const wrEl = document.getElementById('sp-wr-pct'); if(wrEl) { wrEl.textContent = s.wr.toFixed(1)+'%'; wrEl.style.color = 'var(--text)'; }
   const winsEl = document.getElementById('sp-wins'); if(winsEl) winsEl.textContent = s.wins;
   const lossEl = document.getElementById('sp-losses'); if(lossEl) lossEl.textContent = s.losses;
   const totEl = document.getElementById('sp-total'); if(totEl) totEl.textContent = trades.length;
 
   const pfEl = document.getElementById('sp-pf');
-  if (pfEl) { pfEl.textContent = s.pf ? s.pf.toFixed(2) : '—'; pfEl.style.color = s.pf >= 1.5 ? 'var(--green)' : s.pf >= 1 ? 'var(--yellow)' : 'var(--red)'; }
+  if (pfEl) { pfEl.textContent = s.pf ? s.pf.toFixed(2) : '—'; pfEl.style.color = 'var(--text)'; }
   const awEl = document.getElementById('sp-avgwin'); if(awEl) { awEl.textContent = fmt(s.avgWin); awEl.style.color = 'var(--green)'; }
   const alEl = document.getElementById('sp-avgloss'); if(alEl) { alEl.textContent = fmt(Math.abs(s.avgLoss)); alEl.style.color = 'var(--red)'; }
 
@@ -6837,9 +6836,9 @@ function renderAnalytics() {
   const lossRate = 1 - winRate;
   const expectancy = (winRate * s.avgWin) + (lossRate * s.avgLoss);
   const expEl = document.getElementById('sp-expectancy');
-  if (expEl) { expEl.textContent = (expectancy>=0?'+':'')+getCurrencySymbol()+Math.abs(expectancy).toFixed(2); expEl.style.color = expectancy >= 0 ? 'var(--green)' : 'var(--red)'; }
+  if (expEl) { expEl.textContent = (expectancy>=0?'+':'')+getCurrencySymbol()+Math.abs(expectancy).toFixed(2); expEl.style.color = 'var(--text)'; }
   const efEl = document.getElementById('sp-expect-formula');
-  if (efEl) efEl.textContent = `(${(winRate*100).toFixed(0)}% × ${fmt(s.avgWin)}) − (${(lossRate*100).toFixed(0)}% × ${fmt(Math.abs(s.avgLoss))})`;
+  if (efEl) efEl.textContent = 'per trade';
 
   const ddEl = document.getElementById('sp-dd'); if(ddEl) ddEl.textContent = fmt(s.maxDD);
   const totalLots = trades.reduce((sum,t)=>sum+(parseFloat(t.lots)||0),0);
