@@ -1030,20 +1030,15 @@
     /* ══ ANALYTICS PAGE ══ */
     #page-analytics .container { padding: 10px !important; }
 
-    /* ── ROW 1: Net P&L, Win Rate, Profit Factor, Expectancy, Max Drawdown ── */
-    /* Symmetric 2-col. Expectancy + Max Drawdown swap so Max DD pairs with Profit Factor */
+    /* ── ROW 1: Net P&L, Win Rate, Profit Factor, Expectancy, Best Day ── */
     #an-stat-row-1 {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
       margin-bottom: 8px !important;
     }
     #an-stat-row-1 > div { grid-column: unset !important; }
-    /* Swap card 4 (Expectancy) and card 5 (Max Drawdown) */
-    #an-stat-row-1 > div:nth-child(4) { order: 5 !important; }
-    #an-stat-row-1 > div:nth-child(5) { order: 4 !important; }
 
-    /* ── ROW 2: Avg Holding, Best Day, Worst Day, Streaks, Best Day to Trade ── */
-    /* Symmetric 2-col. Best Day to Trade pairs with Streaks on same row */
+    /* ── ROW 2: Best Day to Trade, Max Drawdown, Worst Day, Avg Holding, Streaks ── */
     #an-stat-row-2 {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
@@ -2340,6 +2335,32 @@
         </div>
       </div>
 
+      <!-- Best Day — winner, pairs with Best Day to Trade on mobile -->
+      <div class="an-stat-card" style="--ac:var(--green);">
+        <div class="an-stat-label">Best Day</div>
+        <div class="an-stat-value color-green" id="sp-bestday-pnl">$0.00</div>
+        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <div><div class="an-mini-val" id="sp-bestday-date" style="font-size:11px;">—</div><div class="an-mini-label">Date</div></div>
+          <div><div class="an-mini-val" id="sp-bestday-trades">0</div><div class="an-mini-label">Trades</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── SECOND STAT ROW ── -->
+    <div id="an-stat-row-2" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">
+
+      <!-- Best Day to Trade — winner, pairs with Best Day above on mobile -->
+      <div class="an-stat-card" style="--ac:var(--green);">
+        <div class="an-stat-label">Best Day to Trade</div>
+        <div class="an-stat-value color-green" id="sp-best-dow" style="font-size:22px;">—</div>
+        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <div><div class="an-mini-val color-green" id="sp-best-dow-wr">—</div><div class="an-mini-label">Win Rate</div></div>
+          <div><div class="an-mini-val" id="sp-best-dow-trades">—</div><div class="an-mini-label">Trades</div></div>
+        </div>
+      </div>
+
+      <!-- Max Drawdown — loser, pairs with Worst Day on mobile -->
       <div class="an-stat-card" style="--ac:var(--red);">
         <div class="an-stat-label">Max Drawdown</div>
         <div class="an-stat-value color-red" id="sp-dd">$0.00</div>
@@ -2348,10 +2369,15 @@
         </div>
       </div>
 
-    </div>
-
-    <!-- ── SECOND STAT ROW ── -->
-    <div id="an-stat-row-2" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">
+      <!-- Worst Day — loser, pairs with Max Drawdown on mobile -->
+      <div class="an-stat-card" style="--ac:var(--red);">
+        <div class="an-stat-label">Worst Day</div>
+        <div class="an-stat-value color-red" id="sp-worstday-pnl">$0.00</div>
+        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <div><div class="an-mini-val" id="sp-worstday-date" style="font-size:11px;">—</div><div class="an-mini-label">Date</div></div>
+          <div><div class="an-mini-val" id="sp-worstday-trades">0</div><div class="an-mini-label">Trades</div></div>
+        </div>
+      </div>
 
       <div class="an-stat-card" style="--ac:#6366f1;">
         <div class="an-stat-label">Avg Holding Time</div>
@@ -2362,39 +2388,12 @@
         </div>
       </div>
 
-      <div class="an-stat-card" style="--ac:var(--green);">
-        <div class="an-stat-label">Best Day</div>
-        <div class="an-stat-value color-green" id="sp-bestday-pnl">$0.00</div>
-        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-          <div><div class="an-mini-val" id="sp-bestday-date" style="font-size:11px;">—</div><div class="an-mini-label">Date</div></div>
-          <div><div class="an-mini-val" id="sp-bestday-trades">0</div><div class="an-mini-label">Trades</div></div>
-        </div>
-      </div>
-
-      <div class="an-stat-card" style="--ac:var(--red);">
-        <div class="an-stat-label">Worst Day</div>
-        <div class="an-stat-value color-red" id="sp-worstday-pnl">$0.00</div>
-        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-          <div><div class="an-mini-val" id="sp-worstday-date" style="font-size:11px;">—</div><div class="an-mini-label">Date</div></div>
-          <div><div class="an-mini-val" id="sp-worstday-trades">0</div><div class="an-mini-label">Trades</div></div>
-        </div>
-      </div>
-
       <div class="an-stat-card" style="--ac:var(--yellow);">
         <div class="an-stat-label">Streaks</div>
         <div class="an-stat-value color-green" id="sp-cw">0</div>
         <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
           <div><div class="an-mini-val color-green" id="sp-cw-sub">0</div><div class="an-mini-label">Win Streak</div></div>
           <div><div class="an-mini-val color-red" id="sp-cl">0</div><div class="an-mini-label">Loss Streak</div></div>
-        </div>
-      </div>
-
-      <div class="an-stat-card" style="--ac:var(--green);">
-        <div class="an-stat-label">Best Day to Trade</div>
-        <div class="an-stat-value color-green" id="sp-best-dow" style="font-size:22px;">—</div>
-        <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-          <div><div class="an-mini-val color-green" id="sp-best-dow-wr">—</div><div class="an-mini-label">Win Rate</div></div>
-          <div><div class="an-mini-val" id="sp-best-dow-trades">—</div><div class="an-mini-label">Trades</div></div>
         </div>
       </div>
 
