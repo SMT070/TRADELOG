@@ -4246,7 +4246,7 @@ function uploadTradePhoto(ev, id) {
 function saveTradePhoto(file, id) {
   if (!file || !file.type.startsWith('image/')) return;
   const r = new FileReader();
-  r.onload = e => {
+  r.onload = async e => {
     const idx = trades.findIndex(t => t.id === id);
     if (idx === -1) return;
     trades[idx].screenshot = e.target.result;
@@ -4254,6 +4254,7 @@ function saveTradePhoto(file, id) {
     showTradeDetail(id);
     if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
     toast('Photo saved', 'success');
+    try { await guaranteedSaveToSupabase(trades[idx]); } catch(err) { console.error('TradeLog: photo sync failed', err); }
   };
   r.readAsDataURL(file);
 }
@@ -4277,7 +4278,7 @@ function handlePhotoZoneDrop(ev, id) {
   if (file) saveTradePhoto(file, id);
 }
 
-function removeTradePhoto(id) {
+async function removeTradePhoto(id) {
   const idx = trades.findIndex(t => t.id === id);
   if (idx === -1) return;
   trades[idx].screenshot = null;
@@ -4285,6 +4286,7 @@ function removeTradePhoto(id) {
   showTradeDetail(id);
   if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
   toast('Photo removed', '');
+  try { await guaranteedSaveToSupabase(trades[idx]); } catch(err) { console.error('TradeLog: photo remove sync failed', err); }
 }
 
 function openPhotoLightbox(id) {
