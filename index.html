@@ -972,10 +972,20 @@
       min-height: 60px !important;
     }
 
-    /* ── EQUITY + PERFORMANCE: stack ── */
-    .two-col {
-      grid-template-columns: 1fr !important;
-      gap: 8px !important;
+    /* ── TRADING SCORE: stack vertically on mobile ── */
+    #dash-score-layout {
+      flex-direction: column !important;
+      align-items: center !important;
+      padding: 16px 12px 20px !important;
+      gap: 20px !important;
+    }
+    #dash-radar-chart {
+      width: 220px !important;
+      height: 220px !important;
+    }
+    #dash-score-metrics {
+      grid-template-columns: 1fr 1fr !important;
+      width: 100% !important;
     }
 
     /* ── RECENT TRADES TABLE: minimal columns ── */
@@ -991,6 +1001,22 @@
 
     /* ══ ANALYTICS PAGE ══ */
     #page-analytics .container { padding: 10px !important; }
+
+    /* Analytics trading score: stack on mobile */
+    #an-score-layout {
+      flex-direction: column !important;
+      align-items: center !important;
+      padding: 16px 12px 20px !important;
+      gap: 20px !important;
+    }
+    #an-radar-chart {
+      width: 220px !important;
+      height: 220px !important;
+    }
+    #an-score-metrics {
+      grid-template-columns: 1fr 1fr !important;
+      width: 100% !important;
+    }
 
     /* Top 5 stat cards: 2 cols */
     #page-analytics > div > div[style*="repeat(5"] {
@@ -1090,32 +1116,32 @@
     #cal-view-year, #cal-view-alltime { display: none !important; }
     /* Cal cells */
     .cal-cell {
-      min-height: 60px !important;
-      padding: 4px 2px !important;
+      min-height: 72px !important;
+      padding: 6px 4px 4px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
-      justify-content: center !important;
+      justify-content: flex-start !important;
       text-align: center !important;
-      border-radius: 6px !important;
+      border-radius: 8px !important;
     }
-    .cal-day-num { font-size: 10px !important; margin-bottom: 2px !important; }
-    .cal-pnl { font-size: 10px !important; margin-top: 0 !important; margin-bottom: 0 !important; }
+    .cal-day-num { font-size: 11px !important; margin-bottom: 3px !important; font-weight: 700 !important; }
+    .cal-pnl { font-size: 10px !important; margin-top: auto !important; margin-bottom: 1px !important; letter-spacing: -0.3px !important; }
     .cal-trades { font-size: 8px !important; }
     .cal-cell-bar { display: none !important; }
-    /* Grid aligned with header */
+    /* Grid — transparent background, small gap so rounded corners show */
     #cal-grid {
-      gap: 2px !important;
-      background: var(--border) !important;
-      padding: 0 !important;
+      gap: 3px !important;
+      background: transparent !important;
+      padding: 3px !important;
       grid-template-columns: repeat(7, 1fr) !important;
     }
     #cal-dow-row {
       grid-template-columns: repeat(7, 1fr) !important;
-      gap: 2px !important;
-      padding: 0 !important;
+      gap: 3px !important;
+      padding: 0 3px !important;
     }
-    .cal-dow { padding: 8px 0 6px !important; font-size: 10px !important; }
+    .cal-dow { padding: 6px 0 5px !important; font-size: 10px !important; }
 
     /* ══ MINDSET PAGE ══ */
     #page-mindset.active {
@@ -1901,7 +1927,7 @@
           <button class="info-btn" onmouseenter="showInfo(this,'Trading Score','A weighted score across 6 key metrics. Profit Factor 25%, Win% 20%, Avg Win/Loss 20%, Consistency 15%, Drawdown 10%, Recovery 10%.')" onmouseleave="hideInfo()">i</button>
         </div>
       </div>
-      <div style="padding:16px var(--page-px) 20px;display:flex;align-items:center;gap:24px;">
+      <div id="dash-score-layout" style="padding:16px var(--page-px) 20px;display:flex;align-items:center;gap:24px;">
         <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:10px;">
           <canvas id="dash-radar-chart" width="280" height="280"></canvas>
           <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
@@ -2312,9 +2338,7 @@
           <button class="info-btn" onmouseenter="showInfo(this,'Trading Score','Weighted score: Profit Factor 25%, Win% 20%, Avg Win/Loss 20%, Consistency 15%, Drawdown 10%, Recovery 10%.')" onmouseleave="hideInfo()">i</button>
         </div>
       </div>
-      <div style="padding:16px var(--page-px) 20px;display:flex;align-items:center;gap:24px;">
-        <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:10px;">
-          <canvas id="an-radar-chart" width="280" height="280"></canvas>
+      <div id="an-score-layout" style="padding:16px var(--page-px) 20px;display:flex;align-items:center;gap:24px;">
           <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
             <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);">Your Trading Score</div>
             <div style="font-size:30px;font-weight:900;letter-spacing:-1px;line-height:1;" id="an-score-number">—</div>
