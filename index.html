@@ -1899,23 +1899,23 @@
           <button class="info-btn" onmouseenter="showInfo(this,'Trading Score','A weighted score across 6 key metrics. Profit Factor 25%, Win% 20%, Avg Win/Loss 20%, Consistency 15%, Drawdown 10%, Recovery 10%.')" onmouseleave="hideInfo()">i</button>
         </div>
       </div>
-      <div style="padding:20px var(--page-px) 24px;display:flex;align-items:center;gap:40px;">
-        <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:14px;">
-          <canvas id="dash-radar-chart" width="220" height="220"></canvas>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);">Your Trading Score</div>
-            <div style="font-size:36px;font-weight:900;letter-spacing:-1.5px;" id="dash-score-number">—</div>
-            <div style="width:200px;height:8px;border-radius:4px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);overflow:hidden;position:relative;">
-              <div id="dash-score-pointer" style="position:absolute;top:-3px;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--surface);box-shadow:0 0 6px rgba(0,0,0,.4);transform:translateX(-50%);transition:left .8s ease;left:0%;"></div>
+      <div style="padding:24px var(--page-px) 28px;display:flex;align-items:flex-start;gap:32px;">
+        <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:16px;background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:20px 24px;">
+          <canvas id="dash-radar-chart" width="300" height="300"></canvas>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);">Your Trading Score</div>
+            <div style="font-size:44px;font-weight:900;letter-spacing:-2px;line-height:1;" id="dash-score-number">—</div>
+            <div style="width:220px;height:7px;border-radius:4px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;margin-top:4px;">
+              <div id="dash-score-pointer" style="position:absolute;top:-4px;width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--surface);box-shadow:0 0 8px rgba(0,0,0,.5);transform:translateX(-50%);transition:left .8s ease;left:0%;"></div>
             </div>
-            <div style="display:flex;justify-content:space-between;width:200px;">
+            <div style="display:flex;justify-content:space-between;width:220px;">
               <span style="font-size:9px;color:var(--muted);font-weight:600;">0</span>
               <span style="font-size:9px;color:var(--muted);font-weight:600;">50</span>
               <span style="font-size:9px;color:var(--muted);font-weight:600;">100</span>
             </div>
           </div>
         </div>
-        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="dash-score-metrics">
+        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start;" id="dash-score-metrics">
           <!-- filled by JS -->
         </div>
       </div>
@@ -2310,14 +2310,14 @@
           <button class="info-btn" onmouseenter="showInfo(this,'Trading Score','Weighted score: Profit Factor 25%, Win% 20%, Avg Win/Loss 20%, Consistency 15%, Drawdown 10%, Recovery 10%.')" onmouseleave="hideInfo()">i</button>
         </div>
       </div>
-      <div style="padding:20px var(--page-px) 24px;display:flex;align-items:center;gap:40px;">
-        <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:14px;">
-          <canvas id="an-radar-chart" width="240" height="240"></canvas>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);">Your Trading Score</div>
-            <div style="font-size:40px;font-weight:900;letter-spacing:-1.5px;" id="an-score-number">—</div>
-            <div style="width:220px;height:8px;border-radius:4px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);overflow:hidden;position:relative;">
-              <div id="an-score-pointer" style="position:absolute;top:-3px;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--surface);box-shadow:0 0 6px rgba(0,0,0,.4);transform:translateX(-50%);transition:left .8s ease;left:0%;"></div>
+      <div style="padding:24px var(--page-px) 28px;display:flex;align-items:flex-start;gap:32px;">
+        <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:16px;background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:20px 24px;">
+          <canvas id="an-radar-chart" width="300" height="300"></canvas>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);">Your Trading Score</div>
+            <div style="font-size:44px;font-weight:900;letter-spacing:-2px;line-height:1;" id="an-score-number">—</div>
+            <div style="width:220px;height:7px;border-radius:4px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;margin-top:4px;">
+              <div id="an-score-pointer" style="position:absolute;top:-4px;width:15px;height:15px;border-radius:50%;background:#fff;border:2px solid var(--surface);box-shadow:0 0 8px rgba(0,0,0,.5);transform:translateX(-50%);transition:left .8s ease;left:0%;"></div>
             </div>
             <div style="display:flex;justify-content:space-between;width:220px;">
               <span style="font-size:9px;color:var(--muted);font-weight:600;">0</span>
@@ -2326,7 +2326,7 @@
             </div>
           </div>
         </div>
-        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;" id="an-score-metrics">
+        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-content:start;" id="an-score-metrics">
           <!-- filled by JS -->
         </div>
       </div>
@@ -5160,7 +5160,6 @@ function renderTradingScore(prefix) {
 }
 
 function _drawRadar(canvas, scores, prefix) {
-  // Destroy previous instance
   if (_radarChartInst[prefix]) {
     _radarChartInst[prefix].destroy();
     delete _radarChartInst[prefix];
@@ -5168,11 +5167,12 @@ function _drawRadar(canvas, scores, prefix) {
 
   const labels = ['Win %', 'Profit Factor', 'Avg Win/Loss', 'Consistency', 'Max Drawdown', 'Recovery'];
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  const gridColor  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)';
-  const labelColor = isDark ? '#64748b' : '#94a3b8';
-  const fillColor  = 'rgba(99,102,241,0.25)';
-  const lineColor  = '#6366f1';
-  const pointColor = '#6366f1';
+  const gridColor   = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const angleColor  = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.09)';
+  const labelColor  = isDark ? '#94a3b8' : '#64748b';
+  const fillColor   = 'rgba(99,102,241,0.18)';
+  const lineColor   = '#6366f1';
+  const pointColor  = '#818cf8';
 
   _radarChartInst[prefix] = new Chart(canvas, {
     type: 'radar',
@@ -5182,34 +5182,44 @@ function _drawRadar(canvas, scores, prefix) {
         data: scores,
         backgroundColor: fillColor,
         borderColor: lineColor,
-        borderWidth: 2,
+        borderWidth: 2.5,
         pointBackgroundColor: pointColor,
-        pointBorderColor: '#fff',
-        pointBorderWidth: 1.5,
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        pointBorderColor: isDark ? '#1a2235' : '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: lineColor,
       }]
     },
     options: {
       responsive: false,
-      animation: { duration: 800, easing: 'easeOutQuart' },
+      animation: { duration: 900, easing: 'easeOutQuart' },
+      layout: { padding: { top: 18, bottom: 18, left: 24, right: 24 } },
       scales: {
         r: {
           min: 0, max: 100,
           ticks: { display: false, stepSize: 25 },
-          grid: { color: gridColor },
-          angleLines: { color: gridColor },
+          grid: { color: gridColor, lineWidth: 1 },
+          angleLines: { color: angleColor, lineWidth: 1 },
           pointLabels: {
-            font: { family: "'Plus Jakarta Sans', sans-serif", size: 11, weight: '700' },
+            font: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: '700' },
             color: labelColor,
+            padding: 10,
           }
         }
       },
       plugins: {
         legend: { display: false },
         tooltip: {
+          backgroundColor: isDark ? '#1a2235' : '#fff',
+          borderColor: '#6366f1',
+          borderWidth: 1,
+          titleColor: isDark ? '#f1f5f9' : '#0f172a',
+          bodyColor: '#94a3b8',
+          padding: 10,
           callbacks: {
-            label: ctx => ' Score: ' + Math.round(ctx.raw) + '/100'
+            label: ctx => '  Score: ' + Math.round(ctx.raw) + ' / 100'
           }
         }
       }
