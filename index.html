@@ -2304,30 +2304,13 @@
 
     </div>
 
-    <!-- ── TODAY STRIP ── -->
-    <div class="panel" style="margin-bottom:16px;">
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);divide-x:1px solid var(--border);">
-        <div style="padding:14px 20px;border-right:1px solid var(--border);">
-          <div class="an-mini-label" style="margin-bottom:4px;">Today's P&L</div>
-          <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;" id="sp-today-pnl">$0.00</div>
-        </div>
-        <div style="padding:14px 20px;border-right:1px solid var(--border);">
-          <div class="an-mini-label" style="margin-bottom:4px;">Today's Trades</div>
-          <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--text);" id="sp-today-sub">0</div>
-        </div>
-        <div style="padding:14px 20px;border-right:1px solid var(--border);">
-          <div class="an-mini-label" style="margin-bottom:4px;">Today Wins</div>
-          <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--green);" id="sp-today-wins">0</div>
-        </div>
-        <div style="padding:14px 20px;border-right:1px solid var(--border);">
-          <div class="an-mini-label" style="margin-bottom:4px;">Today Losses</div>
-          <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--red);" id="sp-today-losses">0</div>
-        </div>
-        <div style="padding:14px 20px;">
-          <div class="an-mini-label" style="margin-bottom:4px;">Avg R Multiple</div>
-          <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--yellow);" id="sp-avgr">—</div>
-        </div>
-      </div>
+    <!-- Hidden today strip elements (kept for JS compatibility) -->
+    <div style="display:none;">
+      <span id="sp-today-pnl"></span>
+      <span id="sp-today-sub"></span>
+      <span id="sp-today-wins"></span>
+      <span id="sp-today-losses"></span>
+      <span id="sp-avgr"></span>
     </div>
 
     <!-- ── TRADING SCORE ── -->
@@ -2339,20 +2322,23 @@
         </div>
       </div>
       <div id="an-score-layout" style="padding:16px var(--page-px) 20px;display:flex;align-items:center;gap:24px;">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
-            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);">Your Trading Score</div>
-            <div style="font-size:30px;font-weight:900;letter-spacing:-1px;line-height:1;" id="an-score-number">—</div>
-            <div style="width:180px;height:5px;border-radius:3px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;margin-top:2px;">
-              <div id="an-score-pointer" style="position:absolute;top:-4px;width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid var(--surface);box-shadow:0 0 6px rgba(0,0,0,.4);transform:translateX(-50%);transition:left .8s ease;left:0%;"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;width:180px;">
-              <span style="font-size:9px;color:var(--muted);font-weight:600;">0</span>
-              <span style="font-size:9px;color:var(--muted);font-weight:600;">50</span>
-              <span style="font-size:9px;color:var(--muted);font-weight:600;">100</span>
+          <div style="flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:10px;">
+            <canvas id="an-radar-chart" width="220" height="220"></canvas>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+              <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);">Your Trading Score</div>
+              <div style="font-size:30px;font-weight:900;letter-spacing:-1px;line-height:1;" id="an-score-number">—</div>
+              <div style="width:180px;height:5px;border-radius:3px;background:linear-gradient(to right,#FF3B5C,#f59e0b,#00FFBB);position:relative;margin-top:2px;">
+                <div id="an-score-pointer" style="position:absolute;top:-4px;width:13px;height:13px;border-radius:50%;background:#fff;border:2px solid var(--surface);box-shadow:0 0 6px rgba(0,0,0,.4);transform:translateX(-50%);transition:left .8s ease;left:0%;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;width:180px;">
+                <span style="font-size:9px;color:var(--muted);font-weight:600;">0</span>
+                <span style="font-size:9px;color:var(--muted);font-weight:600;">50</span>
+                <span style="font-size:9px;color:var(--muted);font-weight:600;">100</span>
+              </div>
             </div>
           </div>
         </div>
-        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-content:start;" id="an-score-metrics">
+        <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start;" id="an-score-metrics">
           <!-- filled by JS -->
         </div>
       </div>
@@ -2442,8 +2428,8 @@
   </div>
 </div>
 
-<div class="page" id="page-calendar" style="padding:20px 24px;box-sizing:border-box;">
-  <div style="display:flex;flex-direction:column;flex:1;border-radius:16px;overflow:hidden;border:1px solid var(--border);min-height:0;">
+<div class="page" id="page-calendar" style="padding:0;box-sizing:border-box;">
+  <div style="display:flex;flex-direction:column;flex:1;border-radius:0;overflow:hidden;border:none;min-height:0;border-top:1px solid var(--border);">
 
   <!-- Header bar -->
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);">
