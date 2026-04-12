@@ -2598,8 +2598,12 @@
           <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT5 CSV</span>
           <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT5 HTML</span>
           <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT4 HTML</span>
+          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">FundedNext HTML</span>
+          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">Replay Trading CSV/XLSX</span>
           <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">cTrader CSV</span>
           <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">TradingView CSV</span>
+          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">DXTrade</span>
+          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">Any CSV with headers</span>
           <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">Excel</span>
           <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">JSON</span>
         </div>
@@ -2608,10 +2612,12 @@
 
       <div style="padding:0 20px 20px;">
         <div class="import-sub" style="margin-bottom:12px;font-size:11px;color:var(--muted);">
-          <strong style="color:var(--text);">MT5 CSV:</strong> Terminal → Account History → right-click → Save as Report (CSV)<br>
-          <strong style="color:var(--text);">MT5 / MT4 HTML:</strong> Terminal → Account History → right-click → Save as Report (HTML)<br>
+          <strong style="color:var(--text);">MT5 / MT4 CSV:</strong> Terminal → Account History → right-click → Save as Report (CSV)<br>
+          <strong style="color:var(--text);">MT5 / MT4 / FundedNext HTML:</strong> Terminal → Account History → right-click → Save as Report (HTML)<br>
+          <strong style="color:var(--text);">Replay Trading / TradingSimulator:</strong> Export CSV or XLSX — auto-detected<br>
           <strong style="color:var(--text);">cTrader:</strong> History → Export → CSV<br>
           <strong style="color:var(--text);">TradingView:</strong> Strategy Tester → List of Trades → Export<br>
+          <strong style="color:var(--text);">Any broker CSV:</strong> Any file with a header row containing Symbol, Type, Profit columns<br>
           <strong style="color:var(--text);">Excel / JSON:</strong> Any spreadsheet or JSON export with trade columns
         </div>
         <div id="import-preview" style="display:none;">
@@ -2633,8 +2639,17 @@
     <div class="panel">
       <div class="panel-header"><div class="panel-header-left"><div class="panel-title">Paste CSV Data</div></div></div>
       <div style="padding:20px;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Paste raw CSV content from MT5 or any broker export below:</div>
-        <textarea id="paste-csv" rows="8" placeholder="Paste CSV data here...&#10;&#10;Expected columns: Symbol, Type/Direction, Lots/Volume, Open Price, Close Price, S/L, T/P, Profit, Comment, Open Time..."></textarea>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">
+          Paste trade data from <strong style="color:var(--text2);">any broker or platform</strong> — tab, comma, or semicolon separated. Auto-detects format.<br>
+          <span style="color:var(--muted);">Works with: MT5, MT4, FundedNext, FTMO, cTrader, TradingView, MyFXBook, DXTrade, or any CSV with a header row.</span>
+        </div>
+        <textarea id="paste-csv" rows="8" placeholder="Paste CSV or tab-separated data here...
+
+Examples of accepted formats:
+• MT5 tab export:  2026.04.10 16:42  212053993  NDX100  buy  0.2  24190.41  ...  -110.50
+• Any CSV with headers:  Symbol, Type, Volume, Open Price, Close Price, Profit, Open Time
+• Replay Trading:  Trade #, Type, Date and time, Price USD, Size (qty), Net P&L USD
+• cTrader, TradingView, DXTrade — paste directly, format auto-detected"></textarea>
         <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end;">
           <button class="btn btn-ghost" onclick="document.getElementById('paste-csv').value=''">Clear</button>
           <button class="btn btn-primary" onclick="parsePastedCSV()">Parse & Preview</button>
@@ -7156,19 +7171,157 @@ function parseReplayTradingCSV(lines) {
   return parseReplayTradingRows(raw);
 }
 
+// ── GENERIC HEADER-BASED CSV PARSER ──────────────────────────────────────────
+// Handles any CSV/TSV where the first row is a header.
+// Maps columns by name — works with comma, semicolon, or tab delimiters.
+// Understands common aliases from MT4, MT5, FTMO, MyFXBook, DXTrade, cTrader, etc.
+function parseGenericHeaderCSV(lines) {
+  if (lines.length < 2) return [];
+  const delim = detectDelimiter(lines[0]);
+  const rawHeaders = splitCSVLine(lines[0], delim);
+  // Normalize header names: lowercase, strip special chars
+  const headers = rawHeaders.map(h => h.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g,'_').replace(/^_|_$/g,''));
+
+  // Column aliases: what field does this header map to?
+  const ALIASES = {
+    symbol:     ['symbol','instrument','pair','ticker','market','asset'],
+    dir:        ['type','direction','side','dir','action','trade_type','order_type','position_type'],
+    lots:       ['lots','volume','qty','quantity','size','amount','contracts','units'],
+    entry:      ['entry','open_price','open','entry_price','price_open','opening_price','open_rate'],
+    exit:       ['exit','close_price','close','exit_price','price_close','closing_price','close_rate'],
+    sl:         ['sl','stop_loss','stoploss','stop','s_l'],
+    tp:         ['tp','take_profit','takeprofit','target','t_p'],
+    pnl:        ['profit','pnl','pl','net_profit','net_p_l','realized_pnl','gain_loss','return','p_l','gross_profit'],
+    commission: ['commission','commissions','fee','fees','cost','charges'],
+    swap:       ['swap','rollover','financing','overnight'],
+    date:       ['open_time','open_date','entry_time','entry_date','date_time','time','date','open','opened_at','created_at'],
+    closeDate:  ['close_time','close_date','exit_time','exit_date','closing_time','closing_date','closed_at'],
+    ticket:     ['ticket','position','position_id','positionid','order_id','trade_id','id','deal','ref','reference'],
+    notes:      ['comment','comments','note','notes','description','remarks','label'],
+  };
+
+  // Build column index map
+  const colMap = {};
+  for (const [field, aliases] of Object.entries(ALIASES)) {
+    for (const alias of aliases) {
+      const idx = headers.indexOf(alias);
+      if (idx !== -1 && colMap[field] === undefined) { colMap[field] = idx; break; }
+    }
+  }
+
+  // Need at least symbol + some price/pnl data
+  if (colMap.symbol === undefined && colMap.entry === undefined && colMap.pnl === undefined) return [];
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = splitCSVLine(lines[i], delim);
+    if (parts.length < 3) continue;
+
+    const get = field => colMap[field] !== undefined ? (parts[colMap[field]] || '').trim() : '';
+    const getF = field => parseFloat(get(field).replace(/[^\d.\-]/g,'')) || 0;
+
+    const symbol = get('symbol').toUpperCase();
+    if (!symbol) continue;
+
+    const dirRaw = get('dir').toUpperCase();
+    const dir = (dirRaw.includes('SELL') || dirRaw.includes('SHORT') || dirRaw === 'S') ? 'SELL' : 'BUY';
+
+    const pnl = getF('pnl');
+    const commission = Math.abs(getF('commission'));
+    const swap = getF('swap');
+    const netPnl = pnl - commission + swap;
+    const entry = getF('entry');
+    const exit  = getF('exit');
+    const sl    = getF('sl');
+    const tp    = getF('tp');
+    const lots  = getF('lots') || 1;
+
+    // Date normalization: handle YYYY.MM.DD, YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY
+    const normalizeDate = raw => {
+      if (!raw) return '';
+      // Already ISO-ish: YYYY-MM-DD or YYYY.MM.DD
+      raw = raw.replace(/\./g, '-');
+      if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.replace(' ', 'T').slice(0, 16);
+      // DD/MM/YYYY or MM/DD/YYYY
+      const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)/);
+      if (m) {
+        const [,a,b,yr,rest] = m;
+        // Heuristic: if first part > 12 it must be day
+        const [day,mon] = parseInt(a) > 12 ? [a,b] : [b,a];
+        return yr + '-' + mon.padStart(2,'0') + '-' + day.padStart(2,'0') + (rest ? 'T' + rest.trim().slice(0,5) : '');
+      }
+      return raw.slice(0, 16);
+    };
+
+    const date = normalizeDate(get('date'));
+    const closeDate = normalizeDate(get('closeDate'));
+    const ticket = get('ticket');
+    const notes  = get('notes');
+
+    // Skip rows that look like totals/summaries (no symbol or all-zero prices)
+    if (!symbol || (!entry && !exit && !pnl)) continue;
+
+    let r = 0;
+    if (sl && entry && exit) {
+      const rk = Math.abs(entry - sl);
+      const rw = Math.abs(exit - entry);
+      r = rk ? +(rw / rk).toFixed(2) : 0;
+    }
+
+    rows.push({
+      id: uid(), date, closeDate, ticket, symbol, dir, lots,
+      entry, exit, sl, tp, pnl, commission, swap, netPnl, r,
+      notes, strategies: [], emotion: '', confidence: 0, screenshot: null,
+      result: netPnl === 0 ? 'be' : (netPnl > 0 ? 'win' : 'loss')
+    });
+  }
+  return rows;
+}
+
 // ── CSV SNIFFER (MT5 CSV / cTrader / TradingView) ─────────────────────────────
+// Detect the delimiter used in a line
+function detectDelimiter(line) {
+  const counts = { '\t': 0, ',': 0, ';': 0 };
+  // Count outside quotes
+  let inQ = false;
+  for (const ch of line) {
+    if (ch === '"') { inQ = !inQ; continue; }
+    if (!inQ && counts[ch] !== undefined) counts[ch]++;
+  }
+  if (counts['\t'] >= 3) return '\t';
+  if (counts[';'] > counts[',']) return ';';
+  if (counts[','] >= 2) return ',';
+  return '\t'; // default
+}
+
+// Split a CSV line respecting quoted fields
+function splitCSVLine(line, delim) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQ = !inQ; continue; }
+    if (ch === delim && !inQ) { result.push(cur.trim()); cur = ''; continue; }
+    cur += ch;
+  }
+  result.push(cur.trim());
+  return result;
+}
+
 function sniffCSVFormat(lines) {
   if (!lines.length) return 'unknown';
   const header = lines[0].toLowerCase();
-  // Replay Trading / TradingSimulator: has "Trade #" and "Type" and "Price USD"
+  // Replay Trading / TradingSimulator: has "Trade #" and "Price USD"
   if (header.includes('trade #') && header.includes('price usd')) return 'replaytrading';
   // TradingView: has "trade #" and "signal" but no "price usd"
   if (header.includes('trade #') || header.includes('signal')) return 'tradingview';
   if (header.includes('positionid') || header.includes('position id') || header.includes('closing direction')) return 'ctrader';
-  // MT5 CSV is tab-separated with no real header, first field looks like a date
+  // MT5 tab-CSV: no header, first field is a date like 2025.03.11
   if (/^\d{4}\.\d{2}\.\d{2}/.test(lines[0])) return 'mt5csv';
-  // Try tab-separated date in second line
   if (lines.length > 1 && /^\d{4}\.\d{2}\.\d{2}/.test(lines[1])) return 'mt5csv';
+  // Has recognizable trade headers → generic header-based
+  if (header.includes('symbol') || header.includes('profit') || header.includes('open time') ||
+      header.includes('entry') || header.includes('close time') || header.includes('open price')) return 'generic_header';
   return 'generic';
 }
 
@@ -7253,7 +7406,7 @@ function _readCSVFile(file) {
 
 function parsePastedCSV() {
   const text = document.getElementById('paste-csv').value.trim();
-  if (!text) { toast('Paste some CSV data first','error'); return; }
+  if (!text) { toast('Paste some data first — any broker CSV works','error'); return; }
   parseCSVText(text);
 }
 
@@ -7266,7 +7419,7 @@ function parseCSVText(text) {
   if (format === 'ctrader') {
     const rows = parseCTraderCSV(lines);
     if (!rows.length) { toast('No valid trades found in cTrader CSV', 'error'); return; }
-    toast(`Detected: cTrader CSV — ${rows.length} trades`, 'success');
+    toast('Detected: cTrader CSV — ' + rows.length + ' trades', 'success');
     pendingImport = rows; showImportPreview(rows, []); return;
   }
   if (format === 'replaytrading') {
@@ -7278,11 +7431,18 @@ function parseCSVText(text) {
   if (format === 'tradingview') {
     const rows = parseTradingViewCSV(lines);
     if (!rows.length) { toast('No valid trades found in TradingView CSV', 'error'); return; }
-    toast(`Detected: TradingView CSV — ${rows.length} trades`, 'success');
+    toast('Detected: TradingView CSV — ' + rows.length + ' trades', 'success');
     pendingImport = rows; showImportPreview(rows, []); return;
   }
+  if (format === 'generic_header') {
+    const rows = parseGenericHeaderCSV(lines);
+    if (rows.length) {
+      toast('Detected: Generic CSV — ' + rows.length + ' trades', 'success');
+      pendingImport = rows; showImportPreview(rows, []); return;
+    }
+  }
 
-  // MT5 CSV or generic tab-separated
+  // MT5 CSV or generic tab-separated (tab, comma, or semicolon)
   const rows = [];
 
   for (let i = 0; i < lines.length; i++) {
@@ -7301,8 +7461,9 @@ function parseCSVText(text) {
     // [11] Swap            e.g. "0.00"
     // [12] Profit          e.g. "1.74"
 
-    // Split by TAB only — do NOT filter empty strings so column indices stay fixed
-    const parts = lines[i].split('\t').map(p => p.trim());
+    // Auto-detect delimiter: prefer tab (MT5 native), fall back to comma/semicolon
+    const delim = detectDelimiter(lines[i]);
+    const parts = splitCSVLine(lines[i], delim);
 
     // Skip header row or lines with too few columns
     if (parts.length < 13) continue;
