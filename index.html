@@ -5020,14 +5020,14 @@ function tradeRow(t) {
   const activeTag = document.getElementById('filter-tag').value;
   const tags = (t.strategies||[]).map(s => `<span class="trade-tag${s===activeTag?' active':''}" onclick="event.stopPropagation();setTagFilter('${s}','${s}')">${s}</span>`).join('');
   return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;" ${t.id===selectedId?'class="selected"':''}>
-    <td style="color:var(--text2);white-space:nowrap;font-size:12px;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--muted);">'+t.date.slice(11,16)+'</span>' : '—'}</td>
+    <td style="white-space:nowrap;font-size:12px;"><span style="color:var(--text);font-weight:600;">${t.date ? t.date.slice(0,10) : '—'}</span>${t.date && t.date.length>10 ? '<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,16)+'</span>' : ''}</td>
     <td style="font-weight:700;">${t.symbol}</td>
     <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
-    <td>${t.lots||'—'}</td>
-    <td>${t.entry||'—'}</td>
-    <td>${t.exit||'—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.entry||'—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.exit||'—'}</td>
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
-    <td style="color:${t.commission?'var(--red)':'var(--muted)'};font-weight:600;font-family:var(--mono);">${t.commission ? getCurrencySymbol()+parseFloat(t.commission).toFixed(2) : '—'}</td>
+    <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-weight:600;font-family:var(--mono);">${t.commission ? getCurrencySymbol()+parseFloat(t.commission).toFixed(2) : '—'}</td>
     <td style="text-align:center;">${resultBadge}</td>
     <td style="max-width:180px;"><div style="display:flex;flex-wrap:wrap;gap:4px;">${tags}</div></td>
   </tr>`;
