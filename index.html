@@ -6900,7 +6900,7 @@ function parseMT5HTML(arrayBuffer) {
   }
 
   // We only want the Positions section — ignore Orders and Deals (same trades repeated)
-  const posStart   = html.indexOf('<b>Positions</b>');
+  const posStart    = html.indexOf('<b>Positions</b>');
   const ordersStart = html.indexOf('<b>Orders</b>');
   const dealsStart  = html.indexOf('<b>Deals</b>');
 
@@ -6910,70 +6910,82 @@ function parseMT5HTML(arrayBuffer) {
     section = html.slice(posStart, end);
   }
 
-  // Parse rows — alternating #FFFFFF / #F7F7F7 rows are trade data rows
-  const rowRegex = /<tr\s+bgcolor="#(?:FFFFFF|F7F7F7)"[^>]*>([\s\S]*?)<\/tr>/gi;
-  const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-
+  const fixDate = d => d ? d.replace(/\./g, '-').replace(' ', 'T').slice(0, 16) : '';
   const rows = [];
+
+  // Strategy 1: colored rows (classic MT4/MT5 bgcolors)
+  const colorRowRegex = /<tr\s+bgcolor="#(?:FFFFFF|F7F7F7)"[^>]*>([\s\S]*?)<\/tr>/gi;
   let rowMatch;
-  while ((rowMatch = rowRegex.exec(section)) !== null) {
+  while ((rowMatch = colorRowRegex.exec(section)) !== null) {
     let rowHTML = rowMatch[1];
-
-    // MT5 inserts a spacer <td class="hidden" colspan="8"> in every Positions row
-    // to handle the dual-header layout. Strip it before extracting real cells.
     rowHTML = rowHTML.replace(/<td[^>]*class="hidden"[^>]*>[\s\S]*?<\/td>/gi, '');
-
-    // Extract cell text values
     const cells = [];
-    let cellMatch;
     const cellRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-    while ((cellMatch = cellRe.exec(rowHTML)) !== null) {
-      cells.push(cellMatch[1].replace(/<[^>]+>/g, '').trim());
+    let cm;
+    while ((cm = cellRe.exec(rowHTML)) !== null) {
+      cells.push(cm[1].replace(/<[^>]+>/g, '').replace(/&nbsp;/g,' ').trim());
     }
-
-    // Positions columns after removing hidden spacer (13 real cells):
-    // 0: Open Time, 1: Position ID, 2: Symbol, 3: Type,
-    // 4: Volume, 5: Entry Price, 6: S/L, 7: T/P,
-    // 8: Close Time, 9: Close Price, 10: Commission, 11: Swap, 12: Profit
     if (cells.length < 12) continue;
-
-    const openTime  = cells[0];
-    const ticket    = cells[1];
-    const symbol    = cells[2].toUpperCase();
-    const dir       = cells[3].toUpperCase();
-    const lots      = parseFloat(cells[4]) || 0;
-    const entry     = parseFloat(cells[5]) || 0;
-    const sl        = parseFloat(cells[6]) || 0;
-    const tp        = parseFloat(cells[7]) || 0;
-    const closeTime = cells[8];
-    const exitPrice = parseFloat(cells[9]) || 0;
-    const commission= Math.abs(parseFloat(cells[10]) || 0);
-    const swap      = parseFloat(cells[11]) || 0;
-    const pnl       = parseFloat((cells[12] || '').replace(/\s/g, '')) || 0;
-
+    const openTime = cells[0];
+    if (!/\d{4}[.\-]\d{2}[.\-]\d{2}/.test(openTime)) continue;
+    const ticket = cells[1], symbol = cells[2].toUpperCase(), dir = cells[3].toUpperCase();
+    const lots = parseFloat(cells[4])||0, entry = parseFloat(cells[5])||0;
+    const sl = parseFloat(cells[6])||0, tp = parseFloat(cells[7])||0;
+    const closeTime = cells[8], exitPrice = parseFloat(cells[9])||0;
+    const commission = Math.abs(parseFloat(cells[10])||0);
+    const swap = parseFloat(cells[11])||0;
+    const pnl = parseFloat((cells[12]||'').replace(/\s/g,''))||0;
     if (!symbol || !openTime) continue;
-
-    const fixDate = d => d ? d.replace(/\./g, '-').slice(0, 16) : '';
-    const netPnl  = pnl - commission + swap;
+    const netPnl = pnl - commission + swap;
     let r = 0;
-    if (sl && entry && exitPrice) {
-      const risk = Math.abs(entry - sl);
-      const reward = Math.abs(exitPrice - entry);
-      r = risk ? +(reward / risk).toFixed(2) : 0;
-    }
+    if (sl && entry && exitPrice) { const rk=Math.abs(entry-sl); const rw=Math.abs(exitPrice-entry); r=rk?+(rw/rk).toFixed(2):0; }
+    rows.push({ id:uid(), date:fixDate(openTime), closeDate:fixDate(closeTime), ticket, symbol,
+      dir:(dir==='BUY'||dir==='LONG')?'BUY':'SELL', lots, entry, exit:exitPrice, sl, tp, pnl,
+      commission, swap, netPnl, r, strategies:[], emotion:'', confidence:0, notes:'', screenshot:null,
+      result: netPnl===0?'be':(netPnl>0?'win':'loss') });
+  }
 
-    rows.push({
-      id: uid(), date: fixDate(openTime), closeDate: fixDate(closeTime),
-      ticket, symbol,
-      dir: (dir === 'BUY' || dir === 'LONG') ? 'BUY' : 'SELL',
-      lots, entry, exit: exitPrice, sl, tp, pnl, commission, swap, netPnl, r,
-      strategies: [], emotion: '', confidence: 0, notes: '', screenshot: null,
-      result: netPnl === 0 ? 'be' : (netPnl > 0 ? 'win' : 'loss')
-    });
+  // Strategy 2: plain <tr> rows (FundedNext / newer MT5 style) — no bgcolor
+  if (!rows.length) {
+    const plainRowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+    let pm;
+    while ((pm = plainRowRegex.exec(html)) !== null) {
+      const rowHTML = pm[1];
+      const cells = [];
+      const cellRe2 = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
+      let cm2;
+      while ((cm2 = cellRe2.exec(rowHTML)) !== null) {
+        cells.push(cm2[1].replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').trim());
+      }
+      if (cells.length < 13) continue;
+      const openTime = cells[0];
+      if (!/\d{4}[.\-]\d{2}[.\-]\d{2}/.test(openTime)) continue;
+      // Skip Deals rows: cell[4] is 'in' or 'out' (not empty/numeric)
+      const c4 = (cells[4]||'').trim();
+      if (c4 && isNaN(parseFloat(c4))) continue;
+      const ticket = cells[1], symbol = cells[2].toUpperCase(), dir = cells[3].toUpperCase();
+      // cells[4] may be empty spacer — shift base to 5 if so
+      const base = (c4 === '') ? 5 : 4;
+      if (base + 8 >= cells.length) continue;
+      const lots = parseFloat(cells[base])||0, entry = parseFloat(cells[base+1])||0;
+      const sl = parseFloat(cells[base+2])||0, tp = parseFloat(cells[base+3])||0;
+      const closeTime = cells[base+4], exitPrice = parseFloat(cells[base+5])||0;
+      const commission = Math.abs(parseFloat(cells[base+6])||0);
+      const swap = parseFloat(cells[base+7])||0;
+      const pnl = parseFloat((cells[base+8]||'').replace(/\s/g,''))||0;
+      if (!symbol || !openTime || !lots) continue;
+      const netPnl = pnl - commission + swap;
+      let r = 0;
+      if (sl && entry && exitPrice) { const rk=Math.abs(entry-sl); const rw=Math.abs(exitPrice-entry); r=rk?+(rw/rk).toFixed(2):0; }
+      rows.push({ id:uid(), date:fixDate(openTime), closeDate:fixDate(closeTime), ticket, symbol,
+        dir:(dir==='BUY'||dir==='LONG')?'BUY':'SELL', lots, entry, exit:exitPrice, sl, tp, pnl,
+        commission, swap, netPnl, r, strategies:[], emotion:'', confidence:0, notes:'', screenshot:null,
+        result: netPnl===0?'be':(netPnl>0?'win':'loss') });
+    }
   }
 
   if (!rows.length) { toast('No trades found in HTML — is this an MT5/MT4 report?', 'error'); return; }
-  toast(`Detected: MT5/MT4 HTML — ${rows.length} trades`, 'success');
+  toast('Detected: MT5/MT4 HTML — ' + rows.length + ' trades', 'success');
   pendingImport = rows;
   showImportPreview(rows, []);
 }
@@ -7034,27 +7046,123 @@ function _doParseExcel(file) {
   const r = new FileReader();
   r.onload = ev => {
     try {
-      const wb = XLSX.read(ev.target.result, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
+      const wb = XLSX.read(ev.target.result, { type: 'array', cellDates: true });
+      // Prefer "List of trades" sheet (Replay Trading format), fall back to first sheet
+      const sheetName = wb.SheetNames.find(n => /list.of.trades/i.test(n)) || wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
       const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
       if (!data.length) { toast('Empty Excel sheet', 'error'); return; }
-      // Normalize keys to lowercase
+      // Detect Replay Trading format: has "Trade #", "Type", "Price USD" columns
+      const keys = Object.keys(data[0] || {}).join('|').toLowerCase();
+      if (keys.includes('trade') && (keys.includes('price usd') || keys.includes('net p'))) {
+        const rows = parseReplayTradingRows(data);
+        if (rows.length) {
+          toast('Detected: Replay Trading XLSX — ' + rows.length + ' trades', 'success');
+          pendingImport = rows; showImportPreview(rows, []); return;
+        }
+      }
+      // Generic: normalize keys to lowercase
       const norm = data.map(row => {
         const o = {};
-        Object.keys(row).forEach(k => o[k.toLowerCase().replace(/[\s\/\-]/g,'_')] = row[k]);
+        Object.keys(row).forEach(k => o[k.toLowerCase().replace(/[\s\/\-#]/g,'_')] = row[k]);
         return o;
       });
-      // Reuse JSON parser logic by passing normalized objects
       parseJSONFile(JSON.stringify(norm));
-    } catch(e) { toast('Could not parse Excel file', 'error'); }
+    } catch(e) { toast('Could not parse Excel file: ' + e.message, 'error'); }
   };
   r.readAsArrayBuffer(file);
+}
+
+// ── REPLAY TRADING / TRADINGSIMULATOR PARSER ─────────────────────────────────
+// Format: Entry + Exit rows paired by "Trade #". Columns:
+// Trade #, Type (Entry long / Exit long / Entry short / Exit short),
+// Date and time, Signal, Price USD, Size (qty), Net P&L USD
+function parseReplayTradingRows(data) {
+  const rows = [];
+  // Group by Trade # — collect all rows per trade number
+  const tradeMap = {};
+  data.forEach(row => {
+    const num = String(row['Trade #'] ?? row['trade_#'] ?? row['trade #'] ?? '').trim();
+    if (!num) return;
+    if (!tradeMap[num]) tradeMap[num] = [];
+    tradeMap[num].push(row);
+  });
+
+  Object.keys(tradeMap).sort((a,b) => +a - +b).forEach(num => {
+    const group = tradeMap[num];
+    // Find entry and exit rows by Type field
+    const entryRow = group.find(r => {
+      const t = String(r['Type'] ?? r['type'] ?? '').toLowerCase();
+      return t.includes('entry');
+    });
+    const exitRow = group.find(r => {
+      const t = String(r['Type'] ?? r['type'] ?? '').toLowerCase();
+      return t.includes('exit');
+    });
+    if (!entryRow) return; // skip if no entry
+
+    const typeStr = String(entryRow['Type'] ?? entryRow['type'] ?? '').toLowerCase();
+    const dir = typeStr.includes('short') ? 'SELL' : 'BUY';
+
+    // Date handling: may be a JS Date object (from XLSX cellDates) or string
+    const fmtDate = val => {
+      if (!val) return '';
+      if (val instanceof Date) {
+        const pad = n => String(n).padStart(2,'0');
+        return val.getFullYear() + '-' + pad(val.getMonth()+1) + '-' + pad(val.getDate())
+          + 'T' + pad(val.getHours()) + ':' + pad(val.getMinutes());
+      }
+      return String(val).replace(' ','T').slice(0,16);
+    };
+
+    const entryDate = fmtDate(entryRow['Date and time'] ?? entryRow['date_and_time'] ?? entryRow['Date']);
+    const exitDate  = exitRow  ? fmtDate(exitRow['Date and time']  ?? exitRow['date_and_time']  ?? exitRow['Date'])  : '';
+    const entryPrice = parseFloat(entryRow['Price USD'] ?? entryRow['price_usd'] ?? entryRow['Price'] ?? 0);
+    const exitPrice  = exitRow  ? parseFloat(exitRow['Price USD']  ?? exitRow['price_usd']  ?? exitRow['Price'] ?? 0) : 0;
+    const lots = parseFloat(entryRow['Size (qty)'] ?? entryRow['size__qty_'] ?? entryRow['Qty'] ?? entryRow['Volume'] ?? 1);
+
+    // P&L comes from exit row (it holds the realized P&L)
+    const pnlRaw = exitRow
+      ? (exitRow['Net P&L USD'] ?? exitRow['net_p&l_usd'] ?? exitRow['Net P&L'] ?? exitRow['Profit'] ?? 0)
+      : (entryRow['Net P&L USD'] ?? entryRow['net_p&l_usd'] ?? 0);
+    const pnl = parseFloat(String(pnlRaw).replace(/[^\d.\-]/g,'')) || 0;
+
+    const symbol = String(entryRow['Symbol'] ?? entryRow['Instrument'] ?? entryRow['symbol'] ?? 'NDX100').toUpperCase();
+
+    rows.push({
+      id: uid(), date: entryDate, closeDate: exitDate,
+      ticket: String(num),
+      symbol: symbol || 'NDX100',
+      dir, lots, entry: entryPrice, exit: exitPrice,
+      sl: 0, tp: 0, pnl, commission: 0, swap: 0, netPnl: pnl, r: 0,
+      strategies: [], emotion: '', confidence: 0, notes: '', screenshot: null,
+      result: pnl === 0 ? 'be' : (pnl > 0 ? 'win' : 'loss')
+    });
+  });
+  return rows;
+}
+
+function parseReplayTradingCSV(lines) {
+  if (!lines.length) return [];
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
+  const raw = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',').map(p => p.trim().replace(/^"|"$/g,''));
+    if (parts.length < 5) continue;
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = parts[idx] ?? '');
+    raw.push(obj);
+  }
+  return parseReplayTradingRows(raw);
 }
 
 // ── CSV SNIFFER (MT5 CSV / cTrader / TradingView) ─────────────────────────────
 function sniffCSVFormat(lines) {
   if (!lines.length) return 'unknown';
   const header = lines[0].toLowerCase();
+  // Replay Trading / TradingSimulator: has "Trade #" and "Type" and "Price USD"
+  if (header.includes('trade #') && header.includes('price usd')) return 'replaytrading';
+  // TradingView: has "trade #" and "signal" but no "price usd"
   if (header.includes('trade #') || header.includes('signal')) return 'tradingview';
   if (header.includes('positionid') || header.includes('position id') || header.includes('closing direction')) return 'ctrader';
   // MT5 CSV is tab-separated with no real header, first field looks like a date
@@ -7159,6 +7267,12 @@ function parseCSVText(text) {
     const rows = parseCTraderCSV(lines);
     if (!rows.length) { toast('No valid trades found in cTrader CSV', 'error'); return; }
     toast(`Detected: cTrader CSV — ${rows.length} trades`, 'success');
+    pendingImport = rows; showImportPreview(rows, []); return;
+  }
+  if (format === 'replaytrading') {
+    const rows = parseReplayTradingCSV(lines);
+    if (!rows.length) { toast('No valid trades found in Replay Trading CSV', 'error'); return; }
+    toast('Detected: Replay Trading CSV — ' + rows.length + ' trades', 'success');
     pendingImport = rows; showImportPreview(rows, []); return;
   }
   if (format === 'tradingview') {
