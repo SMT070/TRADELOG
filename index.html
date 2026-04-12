@@ -5000,7 +5000,7 @@ function renderRecentTable() {
     const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
     const pnlStr = (pnl>=0?'+'+getCurrencySymbol():'-'+getCurrencySymbol())+Math.abs(pnl).toFixed(2);
     return `<tr data-id="${t.id}" onclick="switchPage('trades');setTimeout(()=>selectTrade('${t.id}'),300)" style="cursor:pointer;">
-      <td style="color:var(--text2);white-space:nowrap;font-size:12px;">${t.date ? t.date.slice(0,10)+'<span style="color:var(--muted);margin:0 2px;">·</span>'+t.date.slice(11,16) : '—'}</td>
+      <td style="white-space:nowrap;font-size:12px;"><span style="color:var(--text);font-weight:600;">${t.date ? t.date.slice(0,10) : '—'}</span>${t.date && t.date.length>10 ? '<span style="color:var(--text2);margin-left:4px;font-weight:500;">'+t.date.slice(11,16)+'</span>' : ''}</td>
       <td style="font-weight:700;">${t.symbol}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
       <td>${t.lots||'—'}</td>
@@ -5380,14 +5380,14 @@ function renderTrades() {
       : `<span style="color:var(--red);font-size:10px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:4px;">LOSS</span>`;
     const isSelected = t.id===selectedId;
     return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;"${isSelected?' class="selected"':''}>
-      <td style="color:var(--text2);font-size:12px;white-space:nowrap;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--muted);">'+t.date.slice(11,16)+'</span>' : '—'}</td>
+      <td style="white-space:nowrap;font-size:12px;"><span style="color:var(--text);font-weight:600;">${t.date ? t.date.slice(0,10) : '—'}</span>${t.date && t.date.length>10 ? '<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,16)+'</span>' : ''}</td>
       <td style="font-weight:600;">${t.symbol}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
-      <td>${t.lots||'—'}</td>
-      <td>${t.entry||'—'}</td>
-      <td>${t.exit||'—'}</td>
+      <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
+      <td style="color:var(--text);font-weight:500;">${t.entry||'—'}</td>
+      <td style="color:var(--text);font-weight:500;">${t.exit||'—'}</td>
       <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
-      <td style="color:${t.commission?'var(--red)':'var(--muted)'};font-family:var(--mono);">${t.commission ? getCurrencySymbol()+parseFloat(t.commission).toFixed(2) : '—'}</td>
+      <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-family:var(--mono);font-weight:600;">${t.commission ? getCurrencySymbol()+parseFloat(t.commission).toFixed(2) : '—'}</td>
       <td>${badge}</td>
       <td data-col="tags" style="max-width:110px;overflow:hidden;">${renderRowTagsHTML(t.strategies)}</td>
     </tr>`;
@@ -7575,6 +7575,16 @@ function renderCalendar() {
   const startDow = (firstDay.getDay() + 6) % 7;
   const totalDays = lastDay.getDate();
 
+  // Helper: get ISO week number for a date string
+  function getISOWeek(dateStr) {
+    const d = new Date(dateStr);
+    const jan4 = new Date(d.getFullYear(), 0, 4);
+    const startOfWeek1 = new Date(jan4);
+    startOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+    const diff = d - startOfWeek1;
+    return Math.floor(diff / (7 * 24 * 3600 * 1000)) + 1;
+  }
+
   // Build all cells including empty padding
   const cells = [];
   for (let i = 0; i < startDow; i++) cells.push(null);
@@ -7583,6 +7593,11 @@ function renderCalendar() {
   }
   const remainder = cells.length % 7;
   if (remainder !== 0) for (let i = 0; i < 7 - remainder; i++) cells.push(null);
+
+  // Trim trailing all-null weeks (no month days in them)
+  while (cells.length >= 7 && cells.slice(-7).every(c => c === null)) {
+    cells.splice(-7);
+  }
 
   let html = '';
   for (let i = 0; i < cells.length; i++) {
@@ -7618,8 +7633,10 @@ function renderCalendar() {
     }
     // After every 7 cells, inject week total
     if ((i + 1) % 7 === 0) {
-      const weekNum = Math.floor(i / 7) + 1;
       const weekDates = cells.slice(i - 6, i + 1).filter(Boolean);
+      // Get ISO week number from the first real date in this row
+      const firstReal = weekDates[0];
+      const isoWeek = firstReal ? getISOWeek(firstReal) : (Math.floor(i/7)+1);
       const weekPnl = weekDates.reduce((s, ds) => s + (dayMap[ds] ? dayMap[ds].pnl : 0), 0);
       const weekTradeDays = weekDates.filter(ds => dayMap[ds]).length;
       const hasTrades = weekDates.some(ds => dayMap[ds]);
@@ -7628,13 +7645,13 @@ function renderCalendar() {
       const borderColor = weekPnl >= 0 ? 'rgba(0,255,187,0.2)' : 'rgba(255,59,92,0.2)';
       if (hasTrades) {
         html += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;margin:2px 0 2px 4px;border-radius:10px;background:' + bgColor + ';border:1px solid ' + borderColor + ';padding:10px 6px;">';
-        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Week ' + weekNum + '</div>';
+        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">W' + isoWeek + '</div>';
         html += '<div style="font-size:13px;font-weight:900;color:' + pnlColor + ';text-align:center;letter-spacing:-0.5px;">' + fmt(weekPnl) + '</div>';
         html += '<div style="font-size:9px;color:var(--muted);font-weight:600;">' + weekTradeDays + ' day' + (weekTradeDays !== 1 ? 's' : '') + '</div>';
         html += '</div>';
       } else {
         html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;">';
-        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Week ' + weekNum + '</div>';
+        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">W' + isoWeek + '</div>';
         html += '<div style="font-size:11px;font-weight:700;color:var(--border2);">—</div>';
         html += '</div>';
       }
