@@ -5000,7 +5000,7 @@ function renderRecentTable() {
     const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
     const pnlStr = (pnl>=0?'+'+getCurrencySymbol():'-'+getCurrencySymbol())+Math.abs(pnl).toFixed(2);
     return `<tr data-id="${t.id}" onclick="switchPage('trades');setTimeout(()=>selectTrade('${t.id}'),300)" style="cursor:pointer;">
-      <td style="color:var(--muted);white-space:nowrap;font-size:12px;">${t.date ? t.date.slice(0,10)+'<span style="color:var(--border2);margin:0 2px;">·</span>'+t.date.slice(11,16) : '—'}</td>
+      <td style="color:var(--text2);white-space:nowrap;font-size:12px;">${t.date ? t.date.slice(0,10)+'<span style="color:var(--muted);margin:0 2px;">·</span>'+t.date.slice(11,16) : '—'}</td>
       <td style="font-weight:700;">${t.symbol}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
       <td>${t.lots||'—'}</td>
@@ -5020,7 +5020,7 @@ function tradeRow(t) {
   const activeTag = document.getElementById('filter-tag').value;
   const tags = (t.strategies||[]).map(s => `<span class="trade-tag${s===activeTag?' active':''}" onclick="event.stopPropagation();setTagFilter('${s}','${s}')">${s}</span>`).join('');
   return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;" ${t.id===selectedId?'class="selected"':''}>
-    <td style="color:var(--muted);white-space:nowrap;font-size:12px;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--border2);">'+t.date.slice(11,16)+'</span>' : '—'}</td>
+    <td style="color:var(--text2);white-space:nowrap;font-size:12px;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--muted);">'+t.date.slice(11,16)+'</span>' : '—'}</td>
     <td style="font-weight:700;">${t.symbol}</td>
     <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
     <td>${t.lots||'—'}</td>
@@ -5380,7 +5380,7 @@ function renderTrades() {
       : `<span style="color:var(--red);font-size:10px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:4px;">LOSS</span>`;
     const isSelected = t.id===selectedId;
     return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;"${isSelected?' class="selected"':''}>
-      <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--border2);">'+t.date.slice(11,16)+'</span>' : '—'}</td>
+      <td style="color:var(--text2);font-size:12px;white-space:nowrap;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--muted);">'+t.date.slice(11,16)+'</span>' : '—'}</td>
       <td style="font-weight:600;">${t.symbol}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
       <td>${t.lots||'—'}</td>
