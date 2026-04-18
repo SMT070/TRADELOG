@@ -1993,7 +1993,7 @@
         <!-- Search — grows to fill -->
         <div style="position:relative;flex:1;min-width:0;">
           <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="search-input" placeholder="Search symbol, notes..." style="width:100%;padding:7px 10px 7px 30px;font-size:12px;border-radius:var(--r-sm);" oninput="renderTrades()">
+          <input type="text" id="search-input" placeholder="Search symbol, notes..." style="width:100%;padding:7px 10px 7px 30px;font-size:12px;border-radius:var(--r-sm);" oninput="clearTimeout(window._searchTimer);window._searchTimer=setTimeout(()=>renderTrades(true),200)">
         </div>
 
         <!-- Divider -->
@@ -3363,6 +3363,10 @@ async function backgroundSync() {
     // Re-fetch trades and user data
     const { data, error } = await sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false });
     if (!error && data) {
+      // Only refresh UI if data actually changed (compare trade count and last modified id)
+      const newIds = data.map(r => r.id).join(',');
+      const oldIds = trades.map(r => r.id).join(',');
+      const dataChanged = newIds !== oldIds || data.length !== trades.length;
       trades = data.map(r => ({
         id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
         dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
@@ -3371,10 +3375,12 @@ async function backgroundSync() {
         notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
-      refreshDashboard();
-      renderTrades();
-      if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
-      if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+      if (dataChanged) {
+        refreshDashboard();
+        if (document.getElementById('page-trades').classList.contains('active')) renderTrades();
+        if (document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
+        if (document.getElementById('page-analytics').classList.contains('active')) renderAnalytics();
+      }
     }
   } catch(e) {
     console.warn('TradeLog: backgroundSync failed', e);
@@ -3439,7 +3445,6 @@ function getResult(t) {
 function getBalance() { return parseFloat(localStorage.getItem(BAL_KEY)) || 0; }
 
 function load() { try { trades = JSON.parse(localStorage.getItem(KEY)) || []; } catch { trades = []; } }
-function save() { localStorage.setItem(KEY, JSON.stringify(trades)); }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
 // ── THEME ────────────────────────────────────────────────────────────────────
@@ -3862,7 +3867,12 @@ async function loadUserDataFromSupabase() { /* handled by loadAllFromSupabase */
 
 // ── TRADES ────────────────────────────────────────────────────────────────────
 function load() { /* no-op — data loaded from Supabase on boot */ }
-function save() { localStorage.setItem(KEY, JSON.stringify(trades)); }
+let _saveTimer = null;
+function save() {
+  invalidateStatCache();
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => { localStorage.setItem(KEY, JSON.stringify(trades)); }, 500);
+}
 
 async function saveTradeToSupabase(t) {
   const uid = await getValidUid();
@@ -3944,19 +3954,9 @@ window.addEventListener('load', () => {
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
   try {
-  // Pre-render trades before showing the page to avoid layout flash
-  if (name === 'trades') renderTrades();
-  if (name === 'analytics') renderAnalytics();
-  if (name === 'forecast') {
-    renderForecast();
-    setTimeout(() => {
-    }, 0);
-  }
-
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
   if (!nextPage) { console.warn('switchPage: no page found for', name); return; }
-  void nextPage.offsetWidth;
   nextPage.classList.add('active');
   const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import Trades', mindset:'Mindset', forecast:'Forecast' };
   document.querySelectorAll('.sidebar-item[data-label]').forEach(btn => {
@@ -3964,8 +3964,11 @@ function switchPage(name) {
     btn.classList.toggle('active', map[name] === btn.getAttribute('data-label'));
   });
   if (name === 'dashboard') refreshDashboard();
-  if (name === 'calendar') renderCalendar();
-  if (name === 'mindset') initMindsetPage();
+  if (name === 'trades')    renderTrades();
+  if (name === 'analytics') renderAnalytics();
+  if (name === 'forecast')  renderForecast();
+  if (name === 'calendar')  renderCalendar();
+  if (name === 'mindset')   initMindsetPage();
   if (name === 'add') { if (!document.getElementById('edit-id').value) clearForm(); }
   } catch(e) { console.warn('switchPage error:', name, e); }
 }
@@ -4397,25 +4400,30 @@ async function saveTrade() {
   const entry = parseFloat(document.getElementById('f-entry').value) || 0;
   const exit = parseFloat(document.getElementById('f-exit').value) || 0;
   const sl = parseFloat(document.getElementById('f-sl').value) || 0;
+  const dir = document.getElementById('f-dir').value;
   let r = 0;
   if (sl && entry && exit) {
     const risk = Math.abs(entry - sl);
     const reward = Math.abs(exit - entry);
-    r = risk ? +(reward/risk).toFixed(2) : 0;
+    const rawR = risk ? +(reward/risk).toFixed(2) : 0;
+    // Sign R by actual P&L direction, not just price movement
+    r = pnl >= 0 ? rawR : -rawR;
   }
+  const commission = parseFloat(document.getElementById('f-commission').value) || 0;
+  const netPnl = pnl - commission;
   const editId = document.getElementById('edit-id').value;
   const trade = {
     id: editId || uid(),
     symbol: sym,
     date: document.getElementById('f-date').value,
     closeDate: document.getElementById('f-close-date').value || null,
-    dir: document.getElementById('f-dir').value,
+    dir,
     lots: parseFloat(document.getElementById('f-lots').value) || 0,
     entry, exit, sl,
     tp: parseFloat(document.getElementById('f-tp').value) || 0,
     pnl,
-    commission: parseFloat(document.getElementById('f-commission').value) || 0,
-    netPnl: pnl - (parseFloat(document.getElementById('f-commission').value) || 0),
+    commission,
+    netPnl,
     r,
     strategies: [...strategyTags],
     emotion: selectedEmotion,
@@ -4423,7 +4431,6 @@ async function saveTrade() {
     notes: document.getElementById('f-notes').value.trim(),
     screenshot: editingScreenshot || null,
   };
-  const netPnl = trade.netPnl;
   trade.result = netPnl === 0 ? 'be' : (selectedResult ? selectedResult : (netPnl > 0 ? 'win' : 'loss'));
   if (editId) {
     const idx = trades.findIndex(t => t.id === editId);
@@ -4431,14 +4438,14 @@ async function saveTrade() {
   } else {
     trades.unshift(trade);
   }
+  // Optimistic update: save locally and refresh UI immediately
   save();
   clearForm();
-  toast(editId ? '⏳ Saving...' : '⏳ Saving...', '');
   switchPage(editId ? 'trades' : 'dashboard');
-  // Await the Supabase write — this is critical on mobile
+  toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
+  // Async Supabase write — does not block the UI
   try {
     await guaranteedSaveToSupabase(trade);
-    toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
   } catch(e) {
     toast('⚠️ Saved locally — sync failed, will retry', 'error');
     console.error('TradeLog: saveTrade sync failed', e);
@@ -4494,32 +4501,56 @@ function openEditSelected() {
 }
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
+let _statCache = null;
+let _statCacheLen = -1;
+let _statCacheKey = '';
+
 function calcStats() {
-  if (!trades.length) return null;
+  if (!trades.length) { _statCache = null; return null; }
+  // Fast cache key: trade count + first+last id
+  const cacheKey = trades.length + '|' + (trades[0]?.id||'') + '|' + (trades[trades.length-1]?.id||'');
+  if (_statCache && _statCacheKey === cacheKey) return _statCache;
+
+  // Single-pass over trades for all aggregates
   const sorted = [...trades].sort((a,b) => new Date(a.date)-new Date(b.date));
-  const totalPnl = trades.reduce((s,t) => s + getPnl(t), 0);
-  const wins   = trades.filter(t => getResult(t) === 'win');
-  const losses = trades.filter(t => getResult(t) === 'loss');
-  const bes    = trades.filter(t => getResult(t) === 'be');
-  const decided = wins.length + losses.length;
-  const wr = decided ? (wins.length / decided * 100) : 0;
-  const avgWin  = wins.length   ? wins.reduce((s,t)=>s+getPnl(t),0)/wins.length   : 0;
-  const avgLoss = losses.length ? losses.reduce((s,t)=>s+getPnl(t),0)/losses.length : 0;
-  const grossWin  = wins.reduce((s,t)=>s+getPnl(t),0);
-  const grossLoss = Math.abs(losses.reduce((s,t)=>s+getPnl(t),0));
-  const pf = grossLoss > 0 ? +(grossWin/grossLoss).toFixed(2) : null;
-  const best  = Math.max(...trades.map(t=>getPnl(t)));
-  const worst = Math.min(...trades.map(t=>getPnl(t)));
-  let eq=0, peak=0, maxDD=0;
-  const equity = sorted.map(t => { eq+=getPnl(t); if(eq>peak)peak=eq; maxDD=Math.min(maxDD,eq-peak); return +eq.toFixed(2); });
+  let totalPnl=0, grossWin=0, grossLoss=0, wCount=0, lCount=0, beCount=0;
+  let avgWinSum=0, avgLossSum=0;
+  let bestVal=-Infinity, worstVal=Infinity;
   let mcw=0,mcl=0,curW=0,curL=0;
-  sorted.forEach(t => {
-    const r = getResult(t);
-    if(r==='win'){curW++;curL=0;mcw=Math.max(mcw,curW);}
-    else if(r==='loss'){curL++;curW=0;mcl=Math.max(mcl,curL);}
-  });
-  return { totalPnl, wins:wins.length, losses:losses.length, bes:bes.length, wr, avgWin, avgLoss, pf, best, worst, maxDD, equity, sorted, mcw, mcl };
+  let eq=0, peak=0, maxDD=0;
+  const equity = new Array(sorted.length);
+
+  for (let i=0; i<sorted.length; i++) {
+    const t = sorted[i];
+    const pnl = getPnl(t);
+    const res = getResult(t);
+    totalPnl += pnl;
+    if (pnl > bestVal) bestVal = pnl;
+    if (pnl < worstVal) worstVal = pnl;
+    if (res === 'win') { wCount++; grossWin += pnl; avgWinSum += pnl; curW++; curL=0; mcw=Math.max(mcw,curW); }
+    else if (res === 'loss') { lCount++; grossLoss += pnl; avgLossSum += pnl; curL++; curW=0; mcl=Math.max(mcl,curL); }
+    else { beCount++; curW=0; curL=0; }
+    eq += pnl;
+    if (eq > peak) peak = eq;
+    if (eq - peak < maxDD) maxDD = eq - peak;
+    equity[i] = +eq.toFixed(2);
+  }
+
+  const decided = wCount + lCount;
+  const wr = decided ? (wCount / decided * 100) : 0;
+  const avgWin  = wCount  ? avgWinSum  / wCount  : 0;
+  const avgLoss = lCount  ? avgLossSum / lCount  : 0;
+  const absGrossLoss = Math.abs(grossLoss);
+  const pf = absGrossLoss > 0 ? +(grossWin / absGrossLoss).toFixed(2) : null;
+
+  _statCache = { totalPnl, wins:wCount, losses:lCount, bes:beCount, wr, avgWin, avgLoss, pf,
+    best:bestVal===- Infinity?0:bestVal, worst:worstVal===Infinity?0:worstVal,
+    maxDD, equity, sorted, mcw, mcl };
+  _statCacheKey = cacheKey;
+  return _statCache;
 }
+
+function invalidateStatCache() { _statCache = null; _statCacheKey = ''; }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 let equityChartInst = null;
@@ -4537,6 +4568,9 @@ function setEquityRange(range) {
 
 
 function refreshDashboard() {
+  // Don't rebuild the chart if the dashboard isn't visible — it'll refresh when shown
+  const dashPage = document.getElementById('page-dashboard');
+  if (dashPage && !dashPage.classList.contains('active')) return;
   const s = calcStats();
   if (!s) {
     // ── RESET ALL CARDS ──
@@ -4778,7 +4812,7 @@ function refreshDashboard() {
   const eqSnap = eq.slice();
 
   const segmentPlugin = {
-    id: 'segmentColor_' + Date.now(),
+    id: 'segmentColor',
     afterDatasetsDraw(chart) {
       const { ctx: c, chartArea, scales } = chart;
       const points = chart.getDatasetMeta(0).data;
@@ -5007,13 +5041,15 @@ function refreshDashboard() {
 
 function renderRecentTable() {
   const tbody = document.getElementById('recent-tbody');
-  const recent = [...trades].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,5);
+  const s = calcStats();
+  const recent = s ? s.sorted.slice(-5).reverse() : [];
   if (!recent.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><h3>No trades yet</h3><p>Add your first trade or import from MT5</p></div></td></tr>'; return; }
+  const sym = getCurrencySymbol();
   tbody.innerHTML = recent.map(t => {
     const pnl = getPnl(t);
     const result = getResult(t);
     const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
-    const pnlStr = (pnl>=0?'+'+getCurrencySymbol():'-'+getCurrencySymbol())+Math.abs(pnl).toFixed(2);
+    const pnlStr = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
     return `<tr data-id="${t.id}" onclick="switchPage('trades');setTimeout(()=>selectTrade('${t.id}'),300)" style="cursor:pointer;">
       <td style="color:var(--text);white-space:nowrap;font-size:12px;font-weight:600;">${t.date ? t.date.slice(0,10)+'<span style="color:var(--text2);margin:0 2px;">·</span>'+t.date.slice(11,16) : '—'}</td>
       <td style="font-weight:700;">${t.symbol}</td>
@@ -5293,8 +5329,8 @@ document.addEventListener('click', e => {
   }
 });
 
-function renderTrades() {
-  rebuildTagDropdown();
+function renderTrades(skipTagRebuild) {
+  if (!skipTagRebuild) rebuildTagDropdown();
   const q   = (document.getElementById('search-input').value||'').toLowerCase();
   const dir = document.getElementById('filter-dir').value;
   const res = document.getElementById('filter-result').value;
@@ -5339,7 +5375,10 @@ function renderTrades() {
   // Update summary bar
   const totalPnl = list.reduce((s,t) => s+getPnl(t), 0);
   const wins = list.filter(t => getResult(t) === 'win');
-  const wr = list.length ? Math.round(wins.length/list.length*100) : 0;
+  const losses = list.filter(t => getResult(t) === 'loss');
+  const bes    = list.filter(t => getResult(t) === 'be');
+  const decided = wins.length + losses.length;
+  const wr = decided ? Math.round(wins.length/decided*100) : 0;
   const avg = list.length ? totalPnl/list.length : 0;
   const tbCount = document.getElementById('tb-count');
   const tbPnl   = document.getElementById('tb-pnl');
@@ -5350,8 +5389,6 @@ function renderTrades() {
   if (tbWr)    { tbWr.textContent = wr+'%'; tbWr.style.color = wr>=50?'var(--green)':'var(--red)'; }
   const tbBal = document.getElementById('tb-balance');
   if (tbBal) { const bal = getBalance(); const acct = bal > 0 ? bal + totalPnl : null; tbBal.textContent = acct !== null ? 'Balance: '+getCurrencySymbol()+acct.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) : 'Balance: —'; }
-  const losses = list.filter(t => getResult(t) === 'loss');
-  const bes    = list.filter(t => getResult(t) === 'be');
   const tbWins   = document.getElementById('tb-wins');
   const tbLosses = document.getElementById('tb-losses');
   const tbBes    = document.getElementById('tb-bes');
@@ -5383,11 +5420,12 @@ function renderTrades() {
 
   const tbody = document.getElementById('all-tbody');
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><h3>No trades found</h3></div></td></tr>'; return; }
+  const sym = getCurrencySymbol();
   tbody.innerHTML = list.map(t => {
     const pnl = getPnl(t);
     const result = getResult(t);
     const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
-    const pnlStr = (pnl>=0?'+'+getCurrencySymbol():'-'+getCurrencySymbol())+Math.abs(pnl).toFixed(2);
+    const pnlStr = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
     const badge = result === 'be'
       ? `<span style="color:var(--yellow);font-size:10px;font-weight:700;background:rgba(245,158,11,.15);padding:2px 8px;border-radius:4px;">BE</span>`
       : result === 'win'
@@ -5402,7 +5440,7 @@ function renderTrades() {
       <td style="color:var(--text);font-weight:500;">${t.entry||'—'}</td>
       <td style="color:var(--text);font-weight:500;">${t.exit||'—'}</td>
       <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
-      <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-family:var(--mono);font-weight:600;">${t.commission ? getCurrencySymbol()+parseFloat(t.commission).toFixed(2) : '—'}</td>
+      <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-family:var(--mono);font-weight:600;">${t.commission ? sym+parseFloat(t.commission).toFixed(2) : '—'}</td>
       <td>${badge}</td>
       <td data-col="tags" style="max-width:110px;overflow:hidden;">${renderRowTagsHTML(t.strategies)}</td>
     </tr>`;
@@ -5423,11 +5461,17 @@ function selectTrade(id) {
       _lastTap = 0; _lastTapId = '';
     } else {
       _lastTap = now; _lastTapId = id;
-      renderTrades(); // just highlight row
+      // Just toggle the selected class — no full re-render
+      document.querySelectorAll('#all-tbody tr.selected').forEach(r => r.classList.remove('selected'));
+      const row = document.querySelector(`#all-tbody tr[data-id="${id}"]`);
+      if (row) row.classList.add('selected');
     }
     return;
   }
-  renderTrades();
+  // Toggle selected row highlight without full re-render
+  document.querySelectorAll('#all-tbody tr.selected').forEach(r => r.classList.remove('selected'));
+  const row = document.querySelector(`#all-tbody tr[data-id="${id}"]`);
+  if (row) row.classList.add('selected');
   showTradeDetail(id);
 }
 
@@ -6545,15 +6589,14 @@ async function saveInlineEdit(id) {
   }
   save();
   collapseDetailPanel();
-  renderTrades();
+  renderTrades(true); // skip tag rebuild — tags just saved above
   refreshDashboard();
   showTradeDetail(id);
   const overlayNotes = document.getElementById('overlay-notes-input');
   if (overlayNotes) overlayNotes.value = t.notes || '';
-  toast('⏳ Saving...', '');
+  toast('✓ Trade updated', 'success');
   try {
     await guaranteedSaveToSupabase(t);
-    toast('✓ Trade updated', 'success');
   } catch(e) {
     toast('⚠️ Saved locally — sync failed', 'error');
   }
