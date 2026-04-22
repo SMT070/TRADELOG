@@ -1144,6 +1144,11 @@
     #page-add .container { padding: 10px !important; }
     #page-import .container { padding: 10px !important; }
 
+    /* ── DASHBOARD NEWS GRID ── */
+    #dash-news-grid {
+      grid-template-columns: 1fr !important;
+    }
+
     /* ── DASHBOARD HEADER ── */
     .dash-header { margin-bottom: 12px !important; flex-wrap: wrap; gap: 8px; }
     .dash-title { font-size: 18px !important; }
@@ -2126,21 +2131,39 @@
       </div>
     </div>
 
-    <!-- ── ECONOMIC CALENDAR ── -->
-    <div class="panel" style="margin-bottom:4px;overflow:hidden;">
-      <div class="panel-header" style="cursor:pointer;user-select:none;" onclick="toggleDashNews()">
-        <div class="panel-header-left">
-          <div class="panel-title">Economic Calendar</div>
-          <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:20px;font-weight:600;border:1px solid var(--border);">TradingView</span>
+    <!-- ── ECONOMIC CALENDAR + NEWS ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;" id="dash-news-grid">
+
+      <!-- Economic Calendar -->
+      <div class="panel" style="overflow:hidden;">
+        <div class="panel-header" style="cursor:pointer;user-select:none;" onclick="toggleDashNews()">
+          <div class="panel-header-left">
+            <div class="panel-title">Economic Calendar</div>
+            <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:20px;font-weight:600;border:1px solid var(--border);">TradingView</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="dash-news-toggle-label" style="font-size:10px;color:var(--muted);font-weight:600;">Collapse</span>
+            <svg id="dash-news-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--muted);transition:transform .3s;flex-shrink:0;transform:rotate(180deg);"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span id="dash-news-toggle-label" style="font-size:10px;color:var(--muted);font-weight:600;">Collapse</span>
-          <svg id="dash-news-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--muted);transition:transform .3s;flex-shrink:0;transform:rotate(180deg);"><polyline points="6 9 12 15 18 9"/></svg>
+        <div id="dash-news-body" style="height:550px;overflow:hidden;transition:height .35s cubic-bezier(.4,0,.2,1);">
+          <div id="dash-tv-widget-wrap" style="height:550px;position:relative;"></div>
         </div>
       </div>
-      <div id="dash-news-body" style="height:440px;overflow:hidden;transition:height .35s cubic-bezier(.4,0,.2,1);">
-        <div id="dash-tv-widget-wrap" style="height:440px;position:relative;"></div>
+
+      <!-- Market News Timeline -->
+      <div class="panel" style="overflow:hidden;">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <div class="panel-title">Market News</div>
+            <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:20px;font-weight:600;border:1px solid var(--border);">TradingView</span>
+          </div>
+        </div>
+        <div style="height:550px;overflow:hidden;">
+          <div id="dash-news-timeline-wrap" style="height:550px;position:relative;"></div>
+        </div>
       </div>
+
     </div>
 
     <!-- ── RECENT TRADES ── -->
@@ -2699,15 +2722,15 @@
   </div>
 
   <!-- Economic News overlay panel (slides in from right over full height) -->
-  <div id="cal-news-overlay" style="display:none;position:absolute;top:0;right:0;bottom:0;width:420px;z-index:50;background:var(--surface);border-left:1px solid var(--border);border-radius:0 0 0 0;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.25);transition:transform .3s cubic-bezier(.4,0,.2,1);transform:translateX(100%);overflow:hidden;">
+  <div id="cal-news-overlay" style="display:none;position:absolute;top:0;right:0;bottom:0;width:820px;max-width:90%;z-index:50;background:var(--surface);border-left:1px solid var(--border);border-radius:0 0 0 0;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.25);transition:transform .3s cubic-bezier(.4,0,.2,1);transform:translateX(100%);overflow:hidden;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;">
       <div>
-        <div style="font-size:14px;font-weight:800;color:var(--text);">Economic Calendar</div>
+        <div style="font-size:14px;font-weight:800;color:var(--text);">Economic Calendar & Market News</div>
         <div style="font-size:10px;color:var(--muted);margin-top:2px;">Powered by TradingView</div>
       </div>
       <button onclick="toggleCalEventsPanel()" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;">×</button>
     </div>
-    <div id="cal-tv-widget-wrap" style="flex:1;overflow:hidden;position:relative;"></div>
+    <div id="cal-tv-widget-wrap" style="flex:1;overflow:hidden;position:relative;min-height:0;"></div>
   </div>
 
 </div>
@@ -8041,26 +8064,63 @@ function loadTVWidget() {
   _tvWidgetLoaded = true;
   const theme = localStorage.getItem('tradelog_theme') || 'dark';
   const colorTheme = theme === 'light' ? 'light' : 'dark';
+
+  // Show both Economic Calendar and News Timeline side by side
+  wrap.style.display = 'flex';
+  wrap.style.flexDirection = 'column';
+  wrap.style.height = '100%';
+
   wrap.innerHTML = `
-    <div class="tradingview-widget-container" style="width:100%;height:100%;display:flex;flex-direction:column;">
-      <div class="tradingview-widget-container__widget" style="flex:1;"></div>
-      <div class="tradingview-widget-copyright" style="padding:6px 12px;font-size:10px;color:var(--muted);flex-shrink:0;">
-        <a href="https://www.tradingview.com/economic-calendar/" rel="noopener nofollow" target="_blank" style="color:var(--accent);text-decoration:none;">Economic Calendar</a> by TradingView
+    <div style="display:grid;grid-template-columns:1fr 1fr;height:100%;min-height:0;gap:0;">
+
+      <!-- Economic Calendar -->
+      <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0;">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;">
+          <div style="font-size:11px;font-weight:800;color:var(--text);">Economic Calendar</div>
+        </div>
+        <div style="flex:1;min-height:0;position:relative;" id="cal-tv-events-inner">
+          <div class="tradingview-widget-container" style="width:100%;height:100%;">
+            <div class="tradingview-widget-container__widget" style="height:100%;"></div>
+          </div>
+        </div>
       </div>
+
+      <!-- Market News -->
+      <div style="display:flex;flex-direction:column;min-height:0;">
+        <div style="padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;">
+          <div style="font-size:11px;font-weight:800;color:var(--text);">Market News</div>
+        </div>
+        <div style="flex:1;min-height:0;position:relative;" id="cal-tv-news-inner">
+          <div class="tradingview-widget-container" style="width:100%;height:100%;">
+            <div class="tradingview-widget-container__widget" style="height:100%;"></div>
+          </div>
+        </div>
+      </div>
+
     </div>`;
-  const script = document.createElement('script');
-  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
-  script.async = true;
-  script.innerHTML = JSON.stringify({
-    colorTheme,
-    isTransparent: true,
-    locale: 'en',
-    countryFilter: 'us,eu,gb,jp,nz,au',
-    importanceFilter: '0,1',
-    width: '100%',
-    height: '100%'
+
+  // Load Economic Calendar script
+  const s1 = document.createElement('script');
+  s1.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+  s1.async = true;
+  s1.innerHTML = JSON.stringify({
+    colorTheme, isTransparent: true, locale: 'en',
+    countryFilter: 'us,eu,gb,jp,nz,au', importanceFilter: '0,1',
+    width: '100%', height: '100%'
   });
-  wrap.querySelector('.tradingview-widget-container').appendChild(script);
+  document.getElementById('cal-tv-events-inner').querySelector('.tradingview-widget-container').appendChild(s1);
+
+  // Load News Timeline script
+  const s2 = document.createElement('script');
+  s2.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js';
+  s2.async = true;
+  s2.innerHTML = JSON.stringify({
+    displayMode: 'regular',
+    feedMode: 'all_symbols',
+    colorTheme, isTransparent: true, locale: 'en',
+    width: '100%', height: '100%'
+  });
+  document.getElementById('cal-tv-news-inner').querySelector('.tradingview-widget-container').appendChild(s2);
 }
 
 // Re-load widget if theme changes so color matches
@@ -8070,13 +8130,15 @@ function loadTVWidget() {
     _orig(t);
     _tvWidgetLoaded = false;
     const wrap = document.getElementById('cal-tv-widget-wrap');
-    if (wrap) wrap.innerHTML = '';
+    if (wrap) { wrap.innerHTML = ''; }
     if (calNewsOpen) loadTVWidget();
     // Also reload dashboard news widget if open
     if (_dashNewsOpen && _dashTvLoaded) {
       _dashTvLoaded = false;
       const dwrap = document.getElementById('dash-tv-widget-wrap');
-      if (dwrap) dwrap.innerHTML = '';
+      if (dwrap) { dwrap.innerHTML = ''; dwrap._loaded = false; }
+      const nwrap = document.getElementById('dash-news-timeline-wrap');
+      if (nwrap) { nwrap.innerHTML = ''; nwrap._loaded = false; }
       loadDashTvWidget();
     }
   };
@@ -8091,14 +8153,17 @@ function toggleDashNews() {
   const body    = document.getElementById('dash-news-body');
   const chevron = document.getElementById('dash-news-chevron');
   const label   = document.getElementById('dash-news-toggle-label');
+  const grid    = document.getElementById('dash-news-grid');
   if (!body) return;
   if (_dashNewsOpen) {
-    body.style.height = '440px';
+    body.style.height = '550px';
+    if (grid) grid.style.display = 'grid';
     chevron.style.transform = 'rotate(180deg)';
     if (label) label.textContent = 'Collapse';
     if (!_dashTvLoaded) loadDashTvWidget();
   } else {
     body.style.height = '0';
+    if (grid) grid.style.display = 'none';
     chevron.style.transform = 'rotate(0deg)';
     if (label) label.textContent = 'Expand';
   }
@@ -8106,30 +8171,56 @@ function toggleDashNews() {
 
 function loadDashTvWidget() {
   _dashTvLoaded = true;
-  const wrap = document.getElementById('dash-tv-widget-wrap');
-  if (!wrap) return;
   const theme = localStorage.getItem('tradelog_theme') || 'dark';
   const colorTheme = theme === 'light' ? 'light' : 'dark';
-  wrap.innerHTML = `
-    <div class="tradingview-widget-container" style="width:100%;height:100%;display:flex;flex-direction:column;">
-      <div class="tradingview-widget-container__widget" style="flex:1;min-height:0;"></div>
-      <div style="padding:5px 18px;font-size:10px;color:var(--muted);flex-shrink:0;">
-        <a href="https://www.tradingview.com/economic-calendar/" rel="noopener nofollow" target="_blank" style="color:var(--accent);text-decoration:none;">Economic Calendar</a> by TradingView
-      </div>
-    </div>`;
-  const script = document.createElement('script');
-  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
-  script.async = true;
-  script.innerHTML = JSON.stringify({
-    colorTheme,
-    isTransparent: true,
-    locale: 'en',
-    countryFilter: 'us,eu,gb,jp,nz,au',
-    importanceFilter: '0,1',
-    width: '100%',
-    height: '100%'
-  });
-  wrap.querySelector('.tradingview-widget-container').appendChild(script);
+
+  // ── Economic Calendar ──
+  const wrap = document.getElementById('dash-tv-widget-wrap');
+  if (wrap && !wrap._loaded) {
+    wrap._loaded = true;
+    wrap.innerHTML = `
+      <div class="tradingview-widget-container" style="width:100%;height:100%;display:flex;flex-direction:column;">
+        <div class="tradingview-widget-container__widget" style="flex:1;min-height:0;"></div>
+        <div style="padding:5px 18px;font-size:10px;color:var(--muted);flex-shrink:0;">
+          <a href="https://www.tradingview.com/economic-calendar/" rel="noopener nofollow" target="_blank" style="color:var(--accent);text-decoration:none;">Economic Calendar</a> by TradingView
+        </div>
+      </div>`;
+    const s1 = document.createElement('script');
+    s1.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+    s1.async = true;
+    s1.innerHTML = JSON.stringify({
+      colorTheme, isTransparent: true, locale: 'en',
+      countryFilter: 'us,eu,gb,jp,nz,au', importanceFilter: '0,1',
+      width: '100%', height: '100%'
+    });
+    wrap.querySelector('.tradingview-widget-container').appendChild(s1);
+  }
+
+  // ── Market News Timeline ──
+  const newsWrap = document.getElementById('dash-news-timeline-wrap');
+  if (newsWrap && !newsWrap._loaded) {
+    newsWrap._loaded = true;
+    newsWrap.innerHTML = `
+      <div class="tradingview-widget-container" style="width:100%;height:100%;display:flex;flex-direction:column;">
+        <div class="tradingview-widget-container__widget" style="flex:1;min-height:0;"></div>
+        <div style="padding:5px 18px;font-size:10px;color:var(--muted);flex-shrink:0;">
+          <a href="https://www.tradingview.com/news/top-providers/tradingview/" rel="noopener nofollow" target="_blank" style="color:var(--accent);text-decoration:none;">Top stories</a><span style="color:var(--muted);"> by TradingView</span>
+        </div>
+      </div>`;
+    const s2 = document.createElement('script');
+    s2.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js';
+    s2.async = true;
+    s2.innerHTML = JSON.stringify({
+      displayMode: 'regular',
+      feedMode: 'all_symbols',
+      colorTheme,
+      isTransparent: true,
+      locale: 'en',
+      width: '100%',
+      height: '100%'
+    });
+    newsWrap.querySelector('.tradingview-widget-container').appendChild(s2);
+  }
 }
 
 // Auto-load on dashboard open
