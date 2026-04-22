@@ -2152,8 +2152,25 @@
       </div>
     </div>
 
-    <!-- Recent Trades -->
-    <div class="panel">
+    <!-- ── ECONOMIC CALENDAR ── -->
+    <div class="panel" style="margin-bottom:4px;overflow:hidden;">
+      <div class="panel-header" style="cursor:pointer;user-select:none;" onclick="toggleDashNews()">
+        <div class="panel-header-left">
+          <div class="panel-title">Economic Calendar</div>
+          <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:20px;font-weight:600;border:1px solid var(--border);">TradingView</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="dash-news-toggle-label" style="font-size:10px;color:var(--muted);font-weight:600;">Collapse</span>
+          <svg id="dash-news-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--muted);transition:transform .3s;flex-shrink:0;transform:rotate(180deg);"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div id="dash-news-body" style="height:440px;overflow:hidden;transition:height .35s cubic-bezier(.4,0,.2,1);">
+        <div id="dash-tv-widget-wrap" style="height:440px;position:relative;"></div>
+      </div>
+    </div>
+
+    <!-- ── RECENT TRADES ── -->
+    <div class="panel" style="margin-top:16px;">
       <div class="panel-header">
         <div class="panel-header-left">
           <div class="panel-title">Recent Trades</div>
@@ -2176,23 +2193,6 @@
           </thead>
           <tbody id="recent-tbody"></tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- ── ECONOMIC CALENDAR ── -->
-    <div class="panel" style="margin-top:0;overflow:hidden;">
-      <div class="panel-header" style="cursor:pointer;user-select:none;" onclick="toggleDashNews()">
-        <div class="panel-header-left">
-          <div class="panel-title">Economic Calendar</div>
-          <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:20px;font-weight:600;border:1px solid var(--border);">TradingView</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span id="dash-news-toggle-label" style="font-size:10px;color:var(--muted);font-weight:600;">Expand</span>
-          <svg id="dash-news-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--muted);transition:transform .25s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-      </div>
-      <div id="dash-news-body" style="height:0;overflow:hidden;transition:height .35s cubic-bezier(.4,0,.2,1);">
-        <div id="dash-tv-widget-wrap" style="height:440px;position:relative;"></div>
       </div>
     </div>
 
@@ -8109,7 +8109,7 @@ function loadTVWidget() {
 })();
 
 // ── DASHBOARD ECONOMIC CALENDAR ───────────────────────────────────────────────
-let _dashNewsOpen = false;
+let _dashNewsOpen = true;   // open by default
 let _dashTvLoaded = false;
 
 function toggleDashNews() {
@@ -8157,6 +8157,17 @@ function loadDashTvWidget() {
   });
   wrap.querySelector('.tradingview-widget-container').appendChild(script);
 }
+
+// Auto-load on dashboard open
+const _origRefreshDashboard = refreshDashboard;
+let _dashNewsBootstrapped = false;
+refreshDashboard = function() {
+  _origRefreshDashboard.apply(this, arguments);
+  if (!_dashNewsBootstrapped && _dashNewsOpen) {
+    _dashNewsBootstrapped = true;
+    setTimeout(loadDashTvWidget, 200);
+  }
+};
 
 function calNav(dir) {
   const now = new Date();
