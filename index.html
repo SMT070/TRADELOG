@@ -1324,6 +1324,7 @@
       gap: 3px !important;
       padding: 0 3px !important;
     }
+    .cal-dow { padding: 6px 0 5px !important; font-size: 10px !important; }
 
     /* ══ MINDSET PAGE ══ */
     #page-mindset.active {
@@ -2600,8 +2601,8 @@
   </div>
 </div>
 
-<div class="page" id="page-calendar" style="padding:0;box-sizing:border-box;">
-  <div style="display:flex;flex-direction:column;flex:1;border-radius:0;overflow:hidden;border:none;min-height:0;">
+<div class="page" id="page-calendar" style="padding:0;box-sizing:border-box;background:var(--bg);">
+  <div style="display:flex;flex-direction:column;flex:1;border-radius:0;overflow:hidden;border:none;min-height:0;background:var(--bg);">
 
   <!-- Header bar -->
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px var(--page-px);border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);">
@@ -2622,13 +2623,13 @@
   </div>
 
   <!-- Body: grid + side panel -->
-  <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden;min-height:0;">
+  <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden;min-height:0;background:var(--bg);">
 
     <!-- Left: calendar -->
     <div style="display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border);">
 
       <!-- Day-of-week headers -->
-      <div id="cal-dow-row" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <div id="cal-dow-row" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);">
         <div class="cal-dow weekend">Sun</div>
         <div class="cal-dow">Mon</div>
         <div class="cal-dow">Tue</div>
@@ -2640,7 +2641,7 @@
       </div>
 
       <!-- Calendar grid -->
-      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;gap:4px;background:transparent;flex:1;padding:4px;"></div>
+      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;gap:4px;background:var(--bg);flex:1;padding:4px;overflow-y:auto;"></div>
     </div>
 
     <!-- Right: day detail -->
@@ -7955,7 +7956,7 @@ function setCalView(v) {
   if (v === 'month') {
     if (dowRow) dowRow.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(7,1fr) 80px';
-    grid.style.background = 'var(--border)';
+    grid.style.background = 'var(--bg)';
   } else {
     if (dowRow) dowRow.style.display = 'none';
     grid.style.gridTemplateColumns = '1fr';
@@ -8137,38 +8138,35 @@ function renderCalendar() {
     return;
   }
 
-  // ── MONTH VIEW ── (Sunday = first column)
+  // ── MONTH VIEW ── (Sunday = first column, ghost days from prev/next month)
   if (prevBtn) { prevBtn.style.opacity = ''; prevBtn.style.pointerEvents = ''; }
   document.getElementById('cal-month-label').textContent = monthNames[calMonth] + ' ' + calYear;
   const isCurrentMonth = calYear === today.getFullYear() && calMonth === today.getMonth();
   if (fwdBtn) { fwdBtn.style.opacity = isCurrentMonth ? '0.3' : ''; fwdBtn.style.pointerEvents = isCurrentMonth ? 'none' : ''; }
   const firstDay = new Date(calYear, calMonth, 1);
   const lastDay  = new Date(calYear, calMonth + 1, 0);
-  // Sunday=0 is already column 0, so no offset math needed
-  const startDow = firstDay.getDay(); // 0=Sun … 6=Sat
+  // Sunday=0 is column 0 — no offset needed
+  const startDow  = firstDay.getDay();
   const totalDays = lastDay.getDate();
   const prevMonthLastDay = new Date(calYear, calMonth, 0).getDate();
   const prevYear  = calMonth === 0 ? calYear - 1 : calYear;
-  const prevMonth = calMonth === 0 ? 12 : calMonth;
+  const prevMo    = calMonth === 0 ? 12 : calMonth;
   const nextYear  = calMonth === 11 ? calYear + 1 : calYear;
-  const nextMonth = calMonth === 11 ? 1 : calMonth + 2;
+  const nextMo    = calMonth === 11 ? 1 : calMonth + 2;
 
-  // Build cell list: objects with { dateStr, ghost }
+  // Build cell list: { dateStr, ghost }
   const cells = [];
-  // Leading ghost days from prev month
   for (let i = 0; i < startDow; i++) {
     const d = prevMonthLastDay - startDow + 1 + i;
-    cells.push({ dateStr: prevYear + '-' + String(prevMonth).padStart(2,'0') + '-' + String(d).padStart(2,'0'), ghost: true });
+    cells.push({ dateStr: prevYear + '-' + String(prevMo).padStart(2,'0') + '-' + String(d).padStart(2,'0'), ghost: true });
   }
-  // Current month
   for (let d = 1; d <= totalDays; d++) {
     cells.push({ dateStr: calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0'), ghost: false });
   }
-  // Trailing ghost days from next month
-  const remainder = cells.length % 7;
-  if (remainder !== 0) {
-    for (let i = 1; i <= 7 - remainder; i++) {
-      cells.push({ dateStr: nextYear + '-' + String(nextMonth).padStart(2,'0') + '-' + String(i).padStart(2,'0'), ghost: true });
+  const rem2 = cells.length % 7;
+  if (rem2 !== 0) {
+    for (let i = 1; i <= 7 - rem2; i++) {
+      cells.push({ dateStr: nextYear + '-' + String(nextMo).padStart(2,'0') + '-' + String(i).padStart(2,'0'), ghost: true });
     }
   }
 
@@ -8178,24 +8176,25 @@ function renderCalendar() {
     const isToday   = dateStr === todayStr;
     const isPast    = dateStr < todayStr;
     const data      = !ghost ? dayMap[dateStr] : null;
-    const dow       = new Date(dateStr + 'T12:00:00').getDay(); // 0=Sun,6=Sat
+    const dow       = new Date(dateStr + 'T12:00:00').getDay();
     const isWeekend = dow === 0 || dow === 6;
     const d         = parseInt(dateStr.slice(8));
 
     if (ghost) {
-      // Ghost cells from prev/next month — very dim, no click
-      html += `<div class="cal-cell" style="opacity:0.15;cursor:default;background:transparent;pointer-events:none;">
+      // Ghost cell — dim, no interaction, shows prev/next month day number
+      html += `<div class="cal-cell" style="opacity:0.12;cursor:default;pointer-events:none;background:transparent;">
         <div class="cal-day-num" style="color:var(--muted);">${d}</div>
       </div>`;
     } else {
       // Dim past days with no trades
-      const dimStyle = (isPast && !isToday && !data) ? 'opacity:0.4;' : '';
-      let cellClass  = 'cal-cell';
+      const dimStyle = (isPast && !isToday && !data) ? 'opacity:0.38;' : '';
+      let cellClass = 'cal-cell';
       if (isToday)   cellClass += ' today';
       if (isWeekend && !isToday) cellClass += ' weekend-cell';
       if (data)      cellClass += data.pnl >= 0 ? ' has-win' : ' has-loss';
 
-      let inner = `<div class="cal-day-num" style="${isPast && !isToday && !data ? 'color:var(--muted);' : ''}">${d}</div>`;
+      const dayNumStyle = isPast && !isToday && !data ? 'color:var(--muted);' : '';
+      let inner = `<div class="cal-day-num" style="${dayNumStyle}">${d}</div>`;
       if (data) {
         const pnlClass = data.pnl >= 0 ? 'pos' : 'neg';
         const abs  = Math.abs(data.pnl);
@@ -8210,13 +8209,12 @@ function renderCalendar() {
         inner += '<div class="cal-trades">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
         inner += '<div class="cal-cell-bar ' + pnlClass + '"></div>';
       }
-      html += '<div class="' + cellClass + '" style="' + dimStyle + '" onclick="selectCalDay(\'' + dateStr + '\')">' + inner + '</div>';
+      html += `<div class="${cellClass}" style="${dimStyle}" onclick="selectCalDay('${dateStr}')">${inner}</div>`;
     }
 
     // After every 7 cells inject week total column
     if ((i + 1) % 7 === 0) {
       const weekNum   = Math.floor(i / 7) + 1;
-      // Only count real (non-ghost) dates for the week total
       const weekDates = cells.slice(i - 6, i + 1).filter(c => !c.ghost).map(c => c.dateStr);
       const weekPnl   = weekDates.reduce((s, ds) => s + (dayMap[ds] ? dayMap[ds].pnl : 0), 0);
       const weekTradeDays = weekDates.filter(ds => dayMap[ds]).length;
@@ -8231,7 +8229,7 @@ function renderCalendar() {
         html += '<div style="font-size:9px;color:var(--muted);font-weight:600;">' + weekTradeDays + 'd</div>';
         html += '</div>';
       } else {
-        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;opacity:0.4;">';
+        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:transparent;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;opacity:0.35;">';
         html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Wk ' + weekNum + '</div>';
         html += '<div style="font-size:11px;font-weight:700;color:var(--border2);">—</div>';
         html += '</div>';
