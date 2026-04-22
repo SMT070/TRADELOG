@@ -2179,6 +2179,23 @@
       </div>
     </div>
 
+    <!-- ── ECONOMIC CALENDAR ── -->
+    <div class="panel" style="margin-top:0;overflow:hidden;">
+      <div class="panel-header" style="cursor:pointer;user-select:none;" onclick="toggleDashNews()">
+        <div class="panel-header-left">
+          <div class="panel-title">Economic Calendar</div>
+          <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:20px;font-weight:600;border:1px solid var(--border);">TradingView</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="dash-news-toggle-label" style="font-size:10px;color:var(--muted);font-weight:600;">Expand</span>
+          <svg id="dash-news-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--muted);transition:transform .25s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div id="dash-news-body" style="height:0;overflow:hidden;transition:height .35s cubic-bezier(.4,0,.2,1);">
+        <div id="dash-tv-widget-wrap" style="height:440px;position:relative;"></div>
+      </div>
+    </div>
+
   </div>
   </div> <!-- /dashboard-content -->
 </div>
@@ -8081,8 +8098,65 @@ function loadTVWidget() {
     const wrap = document.getElementById('cal-tv-widget-wrap');
     if (wrap) wrap.innerHTML = '';
     if (calNewsOpen) loadTVWidget();
+    // Also reload dashboard news widget if open
+    if (_dashNewsOpen && _dashTvLoaded) {
+      _dashTvLoaded = false;
+      const dwrap = document.getElementById('dash-tv-widget-wrap');
+      if (dwrap) dwrap.innerHTML = '';
+      loadDashTvWidget();
+    }
   };
 })();
+
+// ── DASHBOARD ECONOMIC CALENDAR ───────────────────────────────────────────────
+let _dashNewsOpen = false;
+let _dashTvLoaded = false;
+
+function toggleDashNews() {
+  _dashNewsOpen = !_dashNewsOpen;
+  const body    = document.getElementById('dash-news-body');
+  const chevron = document.getElementById('dash-news-chevron');
+  const label   = document.getElementById('dash-news-toggle-label');
+  if (!body) return;
+  if (_dashNewsOpen) {
+    body.style.height = '440px';
+    chevron.style.transform = 'rotate(180deg)';
+    if (label) label.textContent = 'Collapse';
+    if (!_dashTvLoaded) loadDashTvWidget();
+  } else {
+    body.style.height = '0';
+    chevron.style.transform = 'rotate(0deg)';
+    if (label) label.textContent = 'Expand';
+  }
+}
+
+function loadDashTvWidget() {
+  _dashTvLoaded = true;
+  const wrap = document.getElementById('dash-tv-widget-wrap');
+  if (!wrap) return;
+  const theme = localStorage.getItem('tradelog_theme') || 'dark';
+  const colorTheme = theme === 'light' ? 'light' : 'dark';
+  wrap.innerHTML = `
+    <div class="tradingview-widget-container" style="width:100%;height:100%;display:flex;flex-direction:column;">
+      <div class="tradingview-widget-container__widget" style="flex:1;min-height:0;"></div>
+      <div style="padding:5px 18px;font-size:10px;color:var(--muted);flex-shrink:0;">
+        <a href="https://www.tradingview.com/economic-calendar/" rel="noopener nofollow" target="_blank" style="color:var(--accent);text-decoration:none;">Economic Calendar</a> by TradingView
+      </div>
+    </div>`;
+  const script = document.createElement('script');
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+  script.async = true;
+  script.innerHTML = JSON.stringify({
+    colorTheme,
+    isTransparent: true,
+    locale: 'en',
+    countryFilter: 'us,eu,gb,jp,nz,au',
+    importanceFilter: '0,1',
+    width: '100%',
+    height: '100%'
+  });
+  wrap.querySelector('.tradingview-widget-container').appendChild(script);
+}
 
 function calNav(dir) {
   const now = new Date();
