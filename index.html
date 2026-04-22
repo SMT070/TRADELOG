@@ -177,7 +177,9 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
   }
 
   .sidebar-item {
@@ -1639,9 +1641,7 @@
     #notebooks-main { grid-template-columns:1fr !important; }
     #notebook-editor-panel { min-height:300px !important; }
 
-    /* Tools group on mobile */
-    #sidebar.collapsed .sidebar-group-trigger .sidebar-label { display:none !important; }
-    #sidebar.collapsed .sidebar-sub { display:none !important; }
+
 
     /* Sidebar items: events/playbook etc hidden labels */
 
@@ -1723,42 +1723,26 @@
 
     <div class="sidebar-divider"></div>
 
-    <!-- ── TOOLS GROUP (double menu) ── -->
-    <div class="sidebar-group" id="tools-group">
-      <button class="sidebar-group-trigger" id="tools-trigger" data-label="Tools" onclick="toggleToolsGroup()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-        <span class="sidebar-label">Tools</span>
-        <svg class="group-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-        <span class="group-dot"></span>
-      </button>
-      <div class="sidebar-sub" id="tools-sub">
-        <button class="sidebar-sub-item" data-label="Events" onclick="switchPage('events')">
-          <span class="sub-dot"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="16" r="1" fill="currentColor"/></svg>
-          <span class="sidebar-label">Events</span>
-        </button>
-        <button class="sidebar-sub-item" data-label="Playbook" onclick="switchPage('playbook')">
-          <span class="sub-dot"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-          <span class="sidebar-label">Playbook</span>
-        </button>
-        <button class="sidebar-sub-item" data-label="Checklist" onclick="switchPage('checklist')">
-          <span class="sub-dot"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          <span class="sidebar-label">Checklist</span>
-        </button>
-        <button class="sidebar-sub-item" data-label="Rules" onclick="switchPage('rules')">
-          <span class="sub-dot"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          <span class="sidebar-label">Rules</span>
-        </button>
-        <button class="sidebar-sub-item" data-label="Notebooks" onclick="switchPage('notebooks')">
-          <span class="sub-dot"></span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="12" y1="7" x2="16" y2="7"/><line x1="12" y1="11" x2="16" y2="11"/></svg>
-          <span class="sidebar-label">Notebooks</span>
-        </button>
-      </div>
-    </div>
+    <button class="sidebar-item" data-label="Events" onclick="switchPage('events')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="16" r="1" fill="currentColor"/></svg>
+      <span class="sidebar-label">Events</span>
+    </button>
+    <button class="sidebar-item" data-label="Playbook" onclick="switchPage('playbook')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <span class="sidebar-label">Playbook</span>
+    </button>
+    <button class="sidebar-item" data-label="Checklist" onclick="switchPage('checklist')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span class="sidebar-label">Checklist</span>
+    </button>
+    <button class="sidebar-item" data-label="Rules" onclick="switchPage('rules')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <span class="sidebar-label">Rules</span>
+    </button>
+    <button class="sidebar-item" data-label="Notebooks" onclick="switchPage('notebooks')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="12" y1="7" x2="16" y2="7"/><line x1="12" y1="11" x2="16" y2="11"/></svg>
+      <span class="sidebar-label">Notebooks</span>
+    </button>
 
     <div class="sidebar-divider"></div>
 
@@ -1766,7 +1750,7 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       <span class="sidebar-label">Add Trade</span>
     </button>
-    <button class="sidebar-item" data-label="Import MT5" onclick="switchPage('import')">
+    <button class="sidebar-item" data-label="Import Trades" onclick="switchPage('import')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <span class="sidebar-label">Import Trades</span>
     </button>
@@ -3688,6 +3672,20 @@ function getResult(t) {
   if (pnl === 0) return 'be';
   return pnl > 0 ? 'win' : 'loss';
 }
+// ── CANONICAL R CALCULATOR ────────────────────────────────────────────────────
+// Returns signed R: positive = profit, negative = loss. null if no SL/entry/exit.
+function computeR(t) {
+  if (!t.entry || !t.sl || !t.exit) return null;
+  const riskPts = Math.abs(t.entry - t.sl);
+  if (!riskPts) return null;
+  const rewardPts = t.dir === 'SELL' ? (t.entry - t.exit) : (t.exit - t.entry);
+  return +( rewardPts / riskPts ).toFixed(2);
+}
+// Returns stored R if set (non-zero), else recomputes from price data.
+function getR(t) {
+  if (t.r !== undefined && t.r !== null && t.r !== 0) return t.r;
+  return computeR(t);
+}
 function getBalance() { return parseFloat(localStorage.getItem(BAL_KEY)) || 0; }
 
 function load() { try { trades = JSON.parse(localStorage.getItem(KEY)) || []; } catch { trades = []; } }
@@ -4205,9 +4203,10 @@ function switchPage(name) {
   if (!nextPage) { console.warn('switchPage: no page found for', name); return; }
   nextPage.classList.add('active');
   const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import Trades', mindset:'Mindset', forecast:'Forecast', events:'Events', playbook:'Playbook', checklist:'Checklist', rules:'Rules', notebooks:'Notebooks' };
+  const activeLabel = map[name] || '';
   document.querySelectorAll('.sidebar-item[data-label]').forEach(btn => {
     if (btn.id === 'settings-sidebar-btn') return;
-    btn.classList.toggle('active', map[name] === btn.getAttribute('data-label'));
+    btn.classList.toggle('active', activeLabel === btn.getAttribute('data-label'));
   });
   if (name === 'dashboard') refreshDashboard();
   if (name === 'trades')    renderTrades();
@@ -4600,11 +4599,12 @@ function saveTradePhoto(file, id) {
 }
 
 function handlePhotoZonePaste(ev, id) {
+  ev.preventDefault();
+  ev.stopPropagation();
   const items = ev.clipboardData && ev.clipboardData.items;
   if (!items) return;
   for (const item of items) {
     if (item.type.startsWith('image/')) {
-      ev.preventDefault();
       saveTradePhoto(item.getAsFile(), id);
       return;
     }
@@ -4649,11 +4649,9 @@ async function saveTrade() {
   const dir = document.getElementById('f-dir').value;
   let r = 0;
   if (sl && entry && exit) {
-    const risk = Math.abs(entry - sl);
-    const reward = Math.abs(exit - entry);
-    const rawR = risk ? +(reward/risk).toFixed(2) : 0;
-    // Sign R by actual P&L direction, not just price movement
-    r = pnl >= 0 ? rawR : -rawR;
+    const riskPts   = Math.abs(entry - sl);
+    const rewardPts = dir === 'BUY' ? (exit - entry) : (entry - exit);
+    r = riskPts ? +( rewardPts / riskPts ).toFixed(2) : 0;
   }
   const commission = parseFloat(document.getElementById('f-commission').value) || 0;
   const netPnl = pnl - commission;
@@ -5779,7 +5777,7 @@ function openMobileTradeSheet(id) {
       </div>
       <div style="text-align:right;">
         <div style="font-size:30px;font-weight:900;color:${pnlColor};letter-spacing:-1px;">${pnlStr}</div>
-        ${t.r ? `<div style="font-size:13px;font-weight:700;color:${pnl>=0?'var(--green)':'var(--red)'};">${pnl>=0?'+':''}${t.r}R</div>` : ''}
+        ${(function(){ const _mr = getR(t); return _mr !== null ? `<div style="font-size:13px;font-weight:700;color:${_mr>=0?'var(--green)':'var(--red)'};">${_mr>=0?'+':''}${_mr.toFixed(2)}R</div>` : ''; })()}
       </div>
     </div>
 
@@ -5971,25 +5969,21 @@ function showTradeDetail(id) {
   }
 
   // R-Multiple
+  // Realised R — direction-aware via shared getR()
+  const computedR = getR(t);
   let rStr = '—';
   let rColor = 'var(--text)';
-  if (t.r) {
-    rStr = (t.r >= 0 ? '+' : '') + t.r.toFixed(2) + 'R';
-    rColor = t.r >= 0 ? 'var(--green)' : 'var(--red)';
-  } else if (t.entry && t.sl && t.exit) {
-    const risk = Math.abs(t.entry - t.sl);
-    const reward = Math.abs(t.exit - t.entry);
-    const r = risk ? +(reward / risk).toFixed(2) : 0;
-    rStr = (pnl >= 0 ? '+' : '-') + r + 'R';
-    rColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+  if (computedR !== null) {
+    rStr = (computedR >= 0 ? '+' : '') + computedR.toFixed(2) + 'R';
+    rColor = computedR >= 0 ? 'var(--green)' : 'var(--red)';
   }
 
-  // Risk/Reward ratio
+  // Planned Risk/Reward ratio (entry→SL vs entry→TP, always positive ratio for display)
   let rrStr = '—';
   if (t.entry && t.sl && t.tp) {
-    const risk   = Math.abs(t.entry - t.sl);
-    const reward = Math.abs(t.tp - t.entry);
-    if (risk) rrStr = '1 : ' + (reward / risk).toFixed(2);
+    const riskPts   = Math.abs(t.entry - t.sl);
+    const rewardPts = Math.abs(t.tp - t.entry);
+    if (riskPts) rrStr = '1 : ' + (rewardPts / riskPts).toFixed(2);
   }
 
   // SL/TP progress bar — where did exit land between SL and TP?
@@ -6150,7 +6144,7 @@ function showTradeDetail(id) {
                <img src="${t.screenshot}" alt="chart" style="width:100%;display:block;border-radius:10px;">
                <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
              </div>`
-          : `<div tabindex="0"
+          : `<div tabindex="0" data-photo-id="${t.id}"
                onclick="document.getElementById('detail-photo-input').click()"
                onpaste="handlePhotoZonePaste(event,'${t.id}')"
                ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
@@ -6192,13 +6186,12 @@ function openDetailOverlay() {
     ? `<span style="display:inline-block;padding:4px 14px;border-radius:8px;background:var(--green-bg);color:var(--green);font-size:11px;font-weight:800;letter-spacing:1px;border:1px solid var(--green-glow);">WIN</span>`
     : `<span style="display:inline-block;padding:4px 14px;border-radius:8px;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:800;letter-spacing:1px;border:1px solid var(--red-glow);">LOSS</span>`;
 
+  // Realised R — direction-aware via shared getR()
+  const _rVal = getR(t);
   let rStr = ''; let rColor = 'var(--text)';
-  if (t.r) { rStr = (t.r>=0?'+':'')+t.r.toFixed(2)+'R'; rColor = t.r>=0?'var(--green)':'var(--red)'; }
-  else if (t.entry && t.sl && t.exit) {
-    const risk = Math.abs(t.entry - t.sl);
-    const reward = Math.abs(t.exit - t.entry);
-    const r = risk ? +(reward/risk).toFixed(2) : 0;
-    rStr = (pnl>=0?'+':'-')+r+'R'; rColor = pnl>=0?'var(--green)':'var(--red)';
+  if (_rVal !== null) {
+    rStr = (_rVal >= 0 ? '+' : '') + _rVal.toFixed(2) + 'R';
+    rColor = _rVal >= 0 ? 'var(--green)' : 'var(--red)';
   }
 
   let durationStr = '—';
@@ -6210,10 +6203,12 @@ function openDetailOverlay() {
     }
   }
 
+  // Planned R:R (always displayed as positive ratio)
   let rrStr = '—';
   if (t.entry && t.sl && t.tp) {
-    const risk = Math.abs(t.entry - t.sl), reward = Math.abs(t.tp - t.entry);
-    if (risk) rrStr = '1 : ' + (reward/risk).toFixed(2);
+    const riskPts   = Math.abs(t.entry - t.sl);
+    const rewardPts = Math.abs(t.tp - t.entry);
+    if (riskPts) rrStr = '1 : ' + (rewardPts / riskPts).toFixed(2);
   }
 
   const row = (label, val, valStyle='') => `
@@ -6235,7 +6230,7 @@ function openDetailOverlay() {
                <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px;backdrop-filter:blur(8px);background:rgba(0,0,0,.5);border-color:rgba(255,255,255,.2);color:#fff;" onclick="event.stopPropagation();document.getElementById('overlay-photo-input').click()">&#x21BA; Replace</button>
                <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px;backdrop-filter:blur(8px);background:rgba(0,0,0,.5);border-color:rgba(255,255,255,.2);color:#ff6b6b;" onclick="event.stopPropagation();removeTradePhoto('${t.id}')">&#x2715;</button>
              </div>`
-          : `<div tabindex="0"
+          : `<div tabindex="0" data-photo-id="${t.id}"
                onclick="document.getElementById('overlay-photo-input').click()"
                onpaste="handlePhotoZonePaste(event,'${t.id}')"
                ondragover="event.preventDefault();this.style.background='var(--surface3)'"
@@ -6829,9 +6824,9 @@ async function saveInlineEdit(id) {
   t.emotion    = window._ieEmotion || '';
   t.strategies = [...(window._ieTags || [])];
   if (t.entry && t.sl && t.exit) {
-    const risk = Math.abs(t.entry - t.sl);
-    const reward = Math.abs(t.exit - t.entry);
-    t.r = risk ? +(reward / risk).toFixed(2) : 0;
+    const riskPts   = Math.abs(t.entry - t.sl);
+    const rewardPts = t.dir === 'BUY' ? (t.exit - t.entry) : (t.entry - t.exit);
+    t.r = riskPts ? +( rewardPts / riskPts ).toFixed(2) : 0;
   }
   save();
   collapseDetailPanel();
@@ -7057,10 +7052,10 @@ function renderAnalytics() {
   const twEl = document.getElementById('sp-today-wins');   if(twEl)  twEl.textContent = todayTrades.filter(t=>getPnl(t)>0).length;
   const tlEl2 = document.getElementById('sp-today-losses'); if(tlEl2) tlEl2.textContent = todayTrades.filter(t=>getPnl(t)<0).length;
 
-  const rTrades = trades.filter(t => t.r);
-  const avgR = rTrades.length ? rTrades.reduce((sum,t)=>sum+t.r,0)/rTrades.length : 0;
+  const rTrades = trades.map(t => getR(t)).filter(r => r !== null);
+  const avgR = rTrades.length ? rTrades.reduce((sum,r)=>sum+r,0)/rTrades.length : 0;
   const arEl = document.getElementById('sp-avgr');
-  if(arEl) { arEl.textContent = rTrades.length ? avgR.toFixed(2)+'R' : '—'; arEl.style.color = avgR >= 1 ? 'var(--green)' : avgR >= 0 ? 'var(--yellow)' : 'var(--red)'; }
+  if(arEl) { arEl.textContent = rTrades.length ? (avgR>=0?'+':'')+avgR.toFixed(2)+'R' : '—'; arEl.style.color = avgR >= 1 ? 'var(--green)' : avgR >= 0 ? 'var(--yellow)' : 'var(--red)'; }
 
   // ── CHARTS ──
   const style = getComputedStyle(document.documentElement);
@@ -7241,10 +7236,15 @@ function parseMT5HTML(arrayBuffer) {
     const pnl = parseFloat((cells[12]||'').replace(/\s/g,''))||0;
     if (!symbol || !openTime) continue;
     const netPnl = pnl - commission + swap;
+    const _dir1 = (dir==='BUY'||dir==='LONG')?'BUY':'SELL';
     let r = 0;
-    if (sl && entry && exitPrice) { const rk=Math.abs(entry-sl); const rw=Math.abs(exitPrice-entry); r=rk?+(rw/rk).toFixed(2):0; }
+    if (sl && entry && exitPrice) {
+      const riskPts   = Math.abs(entry - sl);
+      const rewardPts = _dir1 === 'BUY' ? (exitPrice - entry) : (entry - exitPrice);
+      r = riskPts ? +( rewardPts / riskPts ).toFixed(2) : 0;
+    }
     rows.push({ id:uid(), date:fixDate(openTime), closeDate:fixDate(closeTime), ticket, symbol,
-      dir:(dir==='BUY'||dir==='LONG')?'BUY':'SELL', lots, entry, exit:exitPrice, sl, tp, pnl,
+      dir:_dir1, lots, entry, exit:exitPrice, sl, tp, pnl,
       commission, swap, netPnl, r, strategies:[], emotion:'', confidence:0, notes:'', screenshot:null,
       result: netPnl===0?'be':(netPnl>0?'win':'loss') });
   }
@@ -7279,10 +7279,15 @@ function parseMT5HTML(arrayBuffer) {
       const pnl = parseFloat((cells[base+8]||'').replace(/\s/g,''))||0;
       if (!symbol || !openTime || !lots) continue;
       const netPnl = pnl - commission + swap;
+      const _dir2 = (dir==='BUY'||dir==='LONG')?'BUY':'SELL';
       let r = 0;
-      if (sl && entry && exitPrice) { const rk=Math.abs(entry-sl); const rw=Math.abs(exitPrice-entry); r=rk?+(rw/rk).toFixed(2):0; }
+      if (sl && entry && exitPrice) {
+        const riskPts   = Math.abs(entry - sl);
+        const rewardPts = _dir2 === 'BUY' ? (exitPrice - entry) : (entry - exitPrice);
+        r = riskPts ? +( rewardPts / riskPts ).toFixed(2) : 0;
+      }
       rows.push({ id:uid(), date:fixDate(openTime), closeDate:fixDate(closeTime), ticket, symbol,
-        dir:(dir==='BUY'||dir==='LONG')?'BUY':'SELL', lots, entry, exit:exitPrice, sl, tp, pnl,
+        dir:_dir2, lots, entry, exit:exitPrice, sl, tp, pnl,
         commission, swap, netPnl, r, strategies:[], emotion:'', confidence:0, notes:'', screenshot:null,
         result: netPnl===0?'be':(netPnl>0?'win':'loss') });
     }
@@ -7316,9 +7321,10 @@ function parseJSONFile(text) {
     const closeDate = t.closeDate ?? t.close_time ?? t.closeTime ?? '';
     let r = 0;
     if (sl && entry && exit) {
-      const risk = Math.abs(entry - sl);
-      const reward = Math.abs(exit - entry);
-      r = risk ? +(reward / risk).toFixed(2) : 0;
+      const riskPts   = Math.abs(entry - sl);
+      const normDir   = (dir === 'SELL' || dir === 'SHORT' || dir === 'S') ? 'SELL' : 'BUY';
+      const rewardPts = normDir === 'BUY' ? (exit - entry) : (entry - exit);
+      r = riskPts ? +( rewardPts / riskPts ).toFixed(2) : 0;
     }
     return {
       id: uid(), date, closeDate, ticket: String(t.ticket ?? t.id ?? t.position ?? ''),
@@ -7552,9 +7558,9 @@ function parseGenericHeaderCSV(lines) {
 
     let r = 0;
     if (sl && entry && exit) {
-      const rk = Math.abs(entry - sl);
-      const rw = Math.abs(exit - entry);
-      r = rk ? +(rw / rk).toFixed(2) : 0;
+      const riskPts   = Math.abs(entry - sl);
+      const rewardPts = dir === 'BUY' ? (exit - entry) : (entry - exit);
+      r = riskPts ? +( rewardPts / riskPts ).toFixed(2) : 0;
     }
 
     rows.push({
@@ -7779,11 +7785,12 @@ function parseCSVText(text) {
 
     const fixDate = d => d ? d.replace(/\./g, '-').slice(0, 16) : '';
     const netPnl = pnl - commission + swap;
+    const _dirCSV = dir === 'BUY' || dir === 'LONG' ? 'BUY' : 'SELL';
     let r = 0;
     if (sl && entry && exitPrice) {
-      const risk = Math.abs(entry - sl);
-      const reward = Math.abs(exitPrice - entry);
-      r = risk ? +(reward / risk).toFixed(2) : 0;
+      const riskPts   = Math.abs(entry - sl);
+      const rewardPts = _dirCSV === 'BUY' ? (exitPrice - entry) : (entry - exitPrice);
+      r = riskPts ? +( rewardPts / riskPts ).toFixed(2) : 0;
     }
 
     rows.push({
@@ -7792,7 +7799,7 @@ function parseCSVText(text) {
       closeDate: fixDate(closeTime),
       ticket,
       symbol,
-      dir: dir === 'BUY' || dir === 'LONG' ? 'BUY' : 'SELL',
+      dir: _dirCSV,
       lots,
       entry,
       exit: exitPrice,
@@ -8367,17 +8374,22 @@ document.addEventListener('keydown', e => {
 
 // Global paste → attach photo to selected trade
 document.addEventListener('paste', e => {
-  if (!selectedId) return;
+  // Allow normal paste in text inputs/textareas
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   const items = e.clipboardData && e.clipboardData.items;
   if (!items) return;
+  // Find image item
+  let imgItem = null;
   for (const item of items) {
-    if (item.type.startsWith('image/')) {
-      e.preventDefault();
-      saveTradePhoto(item.getAsFile(), selectedId);
-      return;
-    }
+    if (item.type.startsWith('image/')) { imgItem = item; break; }
   }
+  if (!imgItem) return;
+  // Determine target trade id: check photo zone data-id, then selectedId
+  const photoZone = e.target.closest('[data-photo-id]');
+  const targetId = (photoZone && photoZone.dataset.photoId) || selectedId;
+  if (!targetId) return;
+  e.preventDefault();
+  saveTradePhoto(imgItem.getAsFile(), targetId);
 });
 
 // ── EMPTY STATE ───────────────────────────────────────────────────────────────
@@ -9410,15 +9422,12 @@ function buildForecastStats() {
   const total = trades.length;
   const wr    = s.wr;
 
-  // ── R:R calculation
-  const rrTrades = trades.filter(t => t.sl && t.entry && t.exit);
-  const avgRR = rrTrades.length
-    ? rrTrades.reduce((sum, t) => {
-        const risk   = Math.abs(t.entry - t.sl);
-        const reward = Math.abs(t.exit  - t.entry);
-        return sum + (risk ? reward / risk : 0);
-      }, 0) / rrTrades.length
+  // ── R:R calculation — use shared getR() for consistency
+  const rrValues = trades.map(t => getR(t)).filter(r => r !== null);
+  const avgRR = rrValues.length
+    ? rrValues.reduce((sum, r) => sum + r, 0) / rrValues.length
     : null;
+  const rrTrades = trades.filter(t => getR(t) !== null); // for slUsage context
 
   // SL usage rate
   const slUsage = total ? trades.filter(t => t.sl).length / total : 0;
@@ -10023,40 +10032,11 @@ function renderKillerCard() {
 
 
 // ══════════════════════════════════════════════════════════════════
-// TOOLS GROUP SIDEBAR (double menu)
+// TOOLS PAGES — page data loaders (called from switchPage)
 // ══════════════════════════════════════════════════════════════════
-const TOOLS_PAGES = ['events','playbook','checklist','rules','notebooks'];
-
-function toggleToolsGroup(forceOpen) {
-  const trigger = document.getElementById('tools-trigger');
-  const sub     = document.getElementById('tools-sub');
-  const isOpen  = sub.classList.contains('open');
-  const open    = forceOpen !== undefined ? forceOpen : !isOpen;
-  sub.classList.toggle('open', open);
-  trigger.classList.toggle('open', open);
-}
-
-function updateToolsGroupState(page) {
-  const trigger = document.getElementById('tools-trigger');
-  const isToolsPage = TOOLS_PAGES.includes(page);
-  // Update sub-item active states
-  document.querySelectorAll('.sidebar-sub-item').forEach(btn => {
-    const label = btn.getAttribute('data-label') || '';
-    btn.classList.toggle('active', label.toLowerCase() === page);
-  });
-  // Update group trigger active state
-  if (trigger) trigger.classList.toggle('active', isToolsPage);
-  if (trigger) trigger.classList.toggle('has-active', isToolsPage);
-  // Auto-expand if navigating to a tools page
-  if (isToolsPage) toggleToolsGroup(true);
-}
-
-// Patch switchPage to handle tools group state
 const _origSwitchPage = switchPage;
 window.switchPage = function(name) {
   _origSwitchPage(name);
-  updateToolsGroupState(name);
-  // Load page data
   if (name === 'events')    renderEvents();
   if (name === 'playbook')  renderPlaybook();
   if (name === 'checklist') renderChecklist();
