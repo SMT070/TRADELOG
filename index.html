@@ -644,7 +644,7 @@
   .page { display:none !important; }
   .page.active { display:block !important; }
   #page-trades.active { display:flex !important; flex-direction:column; height:100vh; overflow:hidden; }
-  #page-calendar.active { display:flex !important; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+  #page-calendar.active { display:flex !important; flex-direction:column; gap:12px; overflow:hidden; }
   #page-mindset.active { display:flex !important; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 
   .page.active {
@@ -1264,24 +1264,16 @@
 
     /* ══ CALENDAR PAGE ══ */
     #page-calendar.active {
-      padding: 0 !important;
+      padding: 8px !important;
       height: 100vh !important;
       display: flex !important;
       flex-direction: column !important;
-    }
-    #page-calendar.active > div {
-      border-radius: 0 !important;
-      border-left: none !important;
-      border-right: none !important;
-      flex: 1 !important;
-      display: flex !important;
-      flex-direction: column !important;
+      gap: 8px !important;
     }
     /* Hide side panel on mobile */
     #cal-day-panel { display: none !important; }
-    /* Calendar grid takes full width */
-    #page-calendar > div > div[style*="grid-template-columns:1fr 300px"],
-    #page-calendar > div > div[style*="grid-template-columns: 1fr 300px"] {
+    /* Body grid full width */
+    #cal-body-grid {
       grid-template-columns: 1fr !important;
       flex: 1 !important;
       overflow: hidden !important;
@@ -1292,8 +1284,8 @@
     #cal-grid { grid-template-columns: repeat(7, 1fr) !important; }
     /* Remove week totals (every 8th cell) */
     #cal-grid > div:nth-child(8n) { display: none !important; }
-    /* Header: compact */
-    #page-calendar > div > div:first-child { padding: 10px 12px !important; }
+    /* Header nav: compact */
+    #page-calendar > div:first-child { padding: 10px 14px !important; border-radius: 10px !important; }
     #cal-month-label { font-size: 16px !important; }
     /* Hide year/alltime view buttons */
     #cal-view-year, #cal-view-alltime { display: none !important; }
@@ -2601,11 +2593,10 @@
   </div>
 </div>
 
-<div class="page" id="page-calendar" style="padding:var(--page-py) var(--page-px);box-sizing:border-box;background:var(--bg);">
-  <div style="display:flex;flex-direction:column;flex:1;border-radius:0;overflow:hidden;border:none;min-height:0;background:var(--bg);">
+<div class="page" id="page-calendar" style="padding:var(--page-py) var(--page-px);box-sizing:border-box;background:var(--bg);display:flex;flex-direction:column;gap:12px;overflow:hidden;">
 
-  <!-- Header bar -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px var(--page-px);border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);">
+  <!-- TOP NAV BAR: separate rounded container -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;flex-shrink:0;">
     <div style="display:flex;align-items:center;gap:12px;">
       <button id="cal-nav-prev" class="cal-nav-btn" onclick="calNav(-1)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -2615,21 +2606,21 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
     </div>
-    <div style="display:flex;background:var(--surface2);border-radius:8px;padding:3px;gap:2px;">
-      <button id="cal-view-month"    onclick="setCalView('month')"    style="padding:5px 14px;border-radius:6px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;">Month</button>
-      <button id="cal-view-year"     onclick="setCalView('year')"     style="padding:5px 14px;border-radius:6px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Year</button>
-      <button id="cal-view-alltime"  onclick="setCalView('alltime')"  style="padding:5px 14px;border-radius:6px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">All Time</button>
+    <div style="display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;border:1px solid var(--border);">
+      <button id="cal-view-month"   onclick="setCalView('month')"   style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;">Month</button>
+      <button id="cal-view-year"    onclick="setCalView('year')"    style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Year</button>
+      <button id="cal-view-alltime" onclick="setCalView('alltime')" style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">All Time</button>
     </div>
   </div>
 
-  <!-- Body: grid + side panel -->
-  <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden;min-height:0;background:var(--bg);">
+  <!-- BODY ROW: calendar grid + side panel, both rounded -->
+  <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;gap:12px;flex:1;overflow:hidden;min-height:0;">
 
-    <!-- Left: calendar -->
-    <div style="display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border);">
+    <!-- Left: calendar container -->
+    <div style="display:flex;flex-direction:column;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:14px;">
 
       <!-- Day-of-week headers -->
-      <div id="cal-dow-row" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);">
+      <div id="cal-dow-row" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);border-radius:14px 14px 0 0;">
         <div class="cal-dow weekend">Sun</div>
         <div class="cal-dow">Mon</div>
         <div class="cal-dow">Tue</div>
@@ -2641,15 +2632,15 @@
       </div>
 
       <!-- Calendar grid -->
-      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;gap:4px;background:var(--bg);flex:1;padding:4px;overflow-y:auto;"></div>
+      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;gap:4px;background:var(--bg);flex:1;padding:6px;overflow-y:auto;border-radius:0 0 14px 14px;"></div>
     </div>
 
-    <!-- Right: day detail -->
-    <div id="cal-day-panel" style="overflow-y:auto;background:var(--surface);">
-      <div style="padding:16px;border-bottom:1px solid var(--border);">
+    <!-- Right: day detail panel -->
+    <div id="cal-day-panel" style="overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--border);flex-shrink:0;">
         <div style="font-size:14px;font-weight:800;color:var(--text);" id="cal-day-panel-title">Select a Day</div>
       </div>
-      <div id="cal-day-body">
+      <div id="cal-day-body" style="flex:1;">
         <div class="empty-state" style="padding:40px 20px;">
           <h3 style="font-size:15px;">📅 Click any day</h3>
           <p>See that day's trades here</p>
@@ -2659,7 +2650,6 @@
 
   </div>
 
-  </div>
 </div>
 
 <div class="page" id="page-add">
