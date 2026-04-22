@@ -141,6 +141,7 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
+    height: 100vh;
   }
 
   .sidebar-logo {
@@ -644,7 +645,7 @@
   .page { display:none !important; }
   .page.active { display:block !important; }
   #page-trades.active { display:flex !important; flex-direction:column; height:100vh; overflow:hidden; }
-  #page-calendar.active { display:flex !important; flex-direction:column; gap:12px; overflow:hidden; }
+  #page-calendar.active { display:flex !important; flex-direction:column; gap:12px; overflow:hidden; height:100%; }
   #page-mindset.active { display:flex !important; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 
   .page.active {
@@ -2593,7 +2594,7 @@
   </div>
 </div>
 
-<div class="page" id="page-calendar" style="padding:var(--page-py) var(--page-px);box-sizing:border-box;background:var(--bg);display:flex;flex-direction:column;gap:12px;overflow:hidden;">
+<div class="page" id="page-calendar" style="padding:var(--page-py) var(--page-px);box-sizing:border-box;background:var(--bg);display:flex;flex-direction:column;gap:12px;overflow:hidden;height:100%;">
 
   <!-- TOP NAV BAR: separate rounded container -->
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;flex-shrink:0;">
@@ -2617,7 +2618,7 @@
   <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;gap:12px;flex:1;overflow:hidden;min-height:0;">
 
     <!-- Left: calendar container -->
-    <div style="display:flex;flex-direction:column;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:14px;">
+    <div style="display:flex;flex-direction:column;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:14px;min-height:0;">
 
       <!-- Day-of-week headers -->
       <div id="cal-dow-row" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);border-radius:14px 14px 0 0;">
@@ -2632,7 +2633,7 @@
       </div>
 
       <!-- Calendar grid -->
-      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;gap:4px;background:var(--bg);flex:1;padding:6px;overflow-y:auto;border-radius:0 0 14px 14px;"></div>
+      <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;grid-auto-rows:1fr;gap:4px;background:var(--bg);flex:1;padding:6px;overflow-y:auto;border-radius:0 0 14px 14px;min-height:0;"></div>
     </div>
 
     <!-- Right: day detail panel -->
@@ -7936,21 +7937,23 @@ function setCalView(v) {
   // Show/hide right day panel (PC only)
   const dayPanel = document.getElementById('cal-day-panel');
   const bodyGrid = document.getElementById('cal-body-grid');
-  const calLeft  = bodyGrid ? bodyGrid.firstElementChild : null;
   if (dayPanel) dayPanel.style.display = v === 'month' ? '' : 'none';
   if (bodyGrid) bodyGrid.style.gridTemplateColumns = v === 'month' ? '1fr 300px' : '1fr';
-  if (calLeft)  calLeft.style.borderRight = v === 'month' ? '1px solid var(--border)' : 'none';
   // Grid layout
   const dowRow = document.getElementById('cal-dow-row');
   const grid   = document.getElementById('cal-grid');
   if (v === 'month') {
     if (dowRow) dowRow.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(7,1fr) 80px';
+    grid.style.gridAutoRows = '1fr';
     grid.style.background = 'var(--bg)';
+    grid.style.borderRadius = '0 0 14px 14px';
   } else {
     if (dowRow) dowRow.style.display = 'none';
     grid.style.gridTemplateColumns = '1fr';
+    grid.style.gridAutoRows = 'auto';
     grid.style.background = 'transparent';
+    grid.style.borderRadius = '0 0 14px 14px';
   }
   renderCalendar();
 }
