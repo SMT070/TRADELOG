@@ -83,8 +83,8 @@
   /* ── GLOBAL SCALE UP ── */
   html { font-size: 111%; }
   :root {
-    --page-px: 32px;
-    --page-py: 28px;
+    --page-px: 80px;
+    --page-py: 40px;
   }
 
   body {
@@ -1120,6 +1120,13 @@
     .container { padding: 10px !important; }
     #main-content { overflow-x: hidden; }
 
+    /* ── PAGE-LEVEL PADDING RESET (these use inline var(--page-px/py)) ── */
+    #page-trades    { padding: 10px !important; }
+    #page-forecast  { padding: 14px 12px 60px !important; }
+    #page-mindset   { padding: 10px 10px 0 !important; }
+    #page-add .container { padding: 10px !important; }
+    #page-import .container { padding: 10px !important; }
+
     /* ── DASHBOARD HEADER ── */
     .dash-header { margin-bottom: 12px !important; flex-wrap: wrap; gap: 8px; }
     .dash-title { font-size: 18px !important; }
@@ -1518,11 +1525,6 @@
 
     /* ══ FORECAST PAGE ══ */
 
-    /* Page padding tighter on mobile */
-    #page-forecast {
-      padding: 14px 12px 60px !important;
-    }
-
     /* Header smaller */
     #page-forecast > div > div:first-child > div:first-child {
       font-size: 18px !important;
@@ -1625,11 +1627,11 @@
     }
 
     /* New pages mobile */
-    #page-events .container,
-    #page-playbook .container,
-    #page-checklist .container,
-    #page-rules .container,
-    #page-notebooks .container { padding: 10px !important; }
+    #page-events,
+    #page-playbook,
+    #page-checklist,
+    #page-rules,
+    #page-notebooks { padding: 14px !important; }
 
     .new-page-header { flex-wrap:wrap; gap:8px; margin-bottom:14px !important; }
     .new-page-title { font-size:18px !important; }
@@ -2603,7 +2605,7 @@
   <div style="display:flex;flex-direction:column;flex:1;border-radius:0;overflow:hidden;border:none;min-height:0;">
 
   <!-- Header bar -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px var(--page-px);border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface);">
     <div style="display:flex;align-items:center;gap:12px;">
       <button id="cal-nav-prev" class="cal-nav-btn" onclick="calNav(-1)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
@@ -10801,8 +10803,8 @@ handleNotebooksMobile();
 <!-- ══════════════════════════════════════════ -->
 <!--  EVENTS PAGE                              -->
 <!-- ══════════════════════════════════════════ -->
-<div class="page" id="page-events" style="overflow-y:auto;">
-  <div class="container">
+<div class="page" id="page-events" style="overflow-y:auto;padding:var(--page-py) var(--page-px);box-sizing:border-box;">
+  <div style="position:relative;z-index:1;">
 
     <div class="new-page-header">
       <div>
@@ -10887,8 +10889,8 @@ handleNotebooksMobile();
 <!-- ══════════════════════════════════════════ -->
 <!--  PLAYBOOK PAGE                             -->
 <!-- ══════════════════════════════════════════ -->
-<div class="page" id="page-playbook" style="overflow-y:auto;">
-  <div class="container">
+<div class="page" id="page-playbook" style="overflow-y:auto;padding:var(--page-py) var(--page-px);box-sizing:border-box;">
+  <div style="position:relative;z-index:1;">
 
     <div class="new-page-header">
       <div>
@@ -10990,8 +10992,8 @@ handleNotebooksMobile();
 <!-- ══════════════════════════════════════════ -->
 <!--  CHECKLIST PAGE                            -->
 <!-- ══════════════════════════════════════════ -->
-<div class="page" id="page-checklist" style="overflow-y:auto;">
-  <div class="container">
+<div class="page" id="page-checklist" style="overflow-y:auto;padding:var(--page-py) var(--page-px);box-sizing:border-box;">
+  <div style="position:relative;z-index:1;">
 
     <div class="new-page-header">
       <div>
@@ -11027,8 +11029,8 @@ handleNotebooksMobile();
 <!-- ══════════════════════════════════════════ -->
 <!--  RULES PAGE                                -->
 <!-- ══════════════════════════════════════════ -->
-<div class="page" id="page-rules" style="overflow-y:auto;">
-  <div class="container">
+<div class="page" id="page-rules" style="overflow-y:auto;padding:var(--page-py) var(--page-px);box-sizing:border-box;">
+  <div style="position:relative;z-index:1;">
 
     <div class="new-page-header">
       <div>
@@ -11123,8 +11125,8 @@ handleNotebooksMobile();
 <!-- ══════════════════════════════════════════ -->
 <!--  NOTEBOOKS PAGE                            -->
 <!-- ══════════════════════════════════════════ -->
-<div class="page" id="page-notebooks" style="overflow-y:auto;">
-  <div class="container">
+<div class="page" id="page-notebooks" style="overflow-y:auto;padding:var(--page-py) var(--page-px);box-sizing:border-box;">
+  <div style="position:relative;z-index:1;">
 
     <div class="new-page-header">
       <div>
