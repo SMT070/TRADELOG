@@ -901,6 +901,22 @@
   .cal-summary-value { font-size:36px; font-weight:800; letter-spacing:-1.5px; line-height:1; margin-bottom:6px; font-family: var(--mono); }
   .cal-summary-sub   { font-size: 12px; color: var(--muted); font-weight: 500; }
 
+  /* ── CALENDAR NEWS OVERLAY ── */
+  #cal-news-overlay {
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  #page-calendar #cal-panel-tab-day,
+  #page-calendar #cal-panel-tab-events {
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+    font-family: var(--sans);
+  }
+  #page-calendar #cal-panel-tab-day:hover,
+  #page-calendar #cal-panel-tab-events:hover {
+    background: var(--surface2);
+  }
+
   /* ── INFO TOOLTIP ── */
   .info-btn {
     width: 16px; height: 16px; border-radius: 50%;
@@ -1273,6 +1289,10 @@
     }
     /* Hide side panel on mobile */
     #cal-day-panel { display: none !important; }
+    /* Hide news overlay on mobile */
+    #cal-news-overlay { display: none !important; }
+    /* Hide Events toggle on mobile */
+    #cal-events-toggle { display: none !important; }
     /* Body grid full width */
     #cal-body-grid {
       grid-template-columns: 1fr !important;
@@ -2594,7 +2614,7 @@
   </div>
 </div>
 
-<div class="page" id="page-calendar" style="padding:var(--page-py) var(--page-px);box-sizing:border-box;background:var(--bg);display:flex;flex-direction:column;gap:12px;overflow:hidden;height:100%;">
+<div class="page" id="page-calendar" style="padding:var(--page-py) var(--page-px);box-sizing:border-box;background:var(--bg);display:flex;flex-direction:column;gap:12px;overflow:hidden;height:100%;position:relative;">
 
   <!-- TOP NAV BAR: separate rounded container -->
   <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;flex-shrink:0;">
@@ -2607,10 +2627,17 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
     </div>
-    <div style="display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;border:1px solid var(--border);">
-      <button id="cal-view-month"   onclick="setCalView('month')"   style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;">Month</button>
-      <button id="cal-view-year"    onclick="setCalView('year')"    style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Year</button>
-      <button id="cal-view-alltime" onclick="setCalView('alltime')" style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">All Time</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <!-- Events toggle button -->
+      <button id="cal-events-toggle" onclick="toggleCalEventsPanel()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="if(!this.classList.contains('cal-events-active')){this.style.borderColor='var(--border2)';this.style.color='var(--text2)';}" onmouseleave="if(!this.classList.contains('cal-events-active')){this.style.borderColor='var(--border)';this.style.color='var(--muted)';}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="16" r="1" fill="currentColor"/></svg>
+        News & Events
+      </button>
+      <div style="display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;border:1px solid var(--border);">
+        <button id="cal-view-month"   onclick="setCalView('month')"   style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;">Month</button>
+        <button id="cal-view-year"    onclick="setCalView('year')"    style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Year</button>
+        <button id="cal-view-alltime" onclick="setCalView('alltime')" style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">All Time</button>
+      </div>
     </div>
   </div>
 
@@ -2636,19 +2663,60 @@
       <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;grid-auto-rows:1fr;gap:4px;background:var(--bg);flex:1;padding:6px;overflow-y:auto;border-radius:0 0 14px 14px;min-height:0;"></div>
     </div>
 
-    <!-- Right: day detail panel -->
-    <div id="cal-day-panel" style="overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;">
-      <div style="padding:16px 18px;border-bottom:1px solid var(--border);flex-shrink:0;">
-        <div style="font-size:14px;font-weight:800;color:var(--text);" id="cal-day-panel-title">Select a Day</div>
+    <!-- Right: tabbed panel (Day Detail | Economic Events) -->
+    <div id="cal-day-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+
+      <!-- Tab bar -->
+      <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <button id="cal-panel-tab-day" onclick="setCalPanelTab('day')" style="flex:1;padding:12px 8px;border:none;background:transparent;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);color:var(--accent);border-bottom:2px solid var(--accent);transition:all .15s;">
+          📅 Day Detail
+        </button>
+        <button id="cal-panel-tab-events" onclick="setCalPanelTab('events')" style="flex:1;padding:12px 8px;border:none;background:transparent;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;">
+          📰 My Events
+        </button>
       </div>
-      <div id="cal-day-body" style="flex:1;">
-        <div class="empty-state" style="padding:40px 20px;">
-          <h3 style="font-size:15px;">📅 Click any day</h3>
-          <p>See that day's trades here</p>
+
+      <!-- Day detail content -->
+      <div id="cal-panel-day" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;">
+          <div style="font-size:14px;font-weight:800;color:var(--text);" id="cal-day-panel-title">Select a Day</div>
+        </div>
+        <div id="cal-day-body" style="flex:1;">
+          <div class="empty-state" style="padding:40px 20px;">
+            <h3 style="font-size:15px;">📅 Click any day</h3>
+            <p>See that day's trades here</p>
+          </div>
         </div>
       </div>
+
+      <!-- My Events content -->
+      <div id="cal-panel-events" style="flex:1;display:none;flex-direction:column;overflow:hidden;">
+        <!-- Header with Add button -->
+        <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+          <div style="font-size:12px;font-weight:800;color:var(--text);">Upcoming Events</div>
+          <button onclick="openEventModal()" style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;border:1px solid var(--accent);background:rgba(99,102,241,.1);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add
+          </button>
+        </div>
+        <!-- Events list -->
+        <div id="cal-events-list" style="flex:1;overflow-y:auto;padding:10px 10px;"></div>
+      </div>
+
     </div>
 
+  </div>
+
+  <!-- Economic News overlay panel (slides in from right over full height) -->
+  <div id="cal-news-overlay" style="display:none;position:absolute;top:0;right:0;bottom:0;width:420px;z-index:50;background:var(--surface);border-left:1px solid var(--border);border-radius:0 0 0 0;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.25);transition:transform .3s cubic-bezier(.4,0,.2,1);transform:translateX(100%);overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <div>
+        <div style="font-size:14px;font-weight:800;color:var(--text);">Economic Calendar</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;">Powered by TradingView</div>
+      </div>
+      <button onclick="toggleCalEventsPanel()" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div id="cal-tv-widget-wrap" style="flex:1;overflow:hidden;position:relative;"></div>
   </div>
 
 </div>
@@ -7880,8 +7948,142 @@ function exportCSV() {
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth(); // 0-indexed
 let calView = 'month'; // 'month' or 'year'
+let calPanelTab = 'day'; // 'day' or 'events'
+let calNewsOpen = false;
 
-function calNav(dir) {
+// ── CALENDAR PANEL TABS ───────────────────────────────────────────────────────
+function setCalPanelTab(tab) {
+  calPanelTab = tab;
+  const dayTab    = document.getElementById('cal-panel-tab-day');
+  const evtsTab   = document.getElementById('cal-panel-tab-events');
+  const dayPanel  = document.getElementById('cal-panel-day');
+  const evtsPanel = document.getElementById('cal-panel-events');
+  if (!dayTab) return;
+  const isDay = tab === 'day';
+  dayTab.style.color       = isDay ? 'var(--accent)' : 'var(--muted)';
+  dayTab.style.borderBottom = isDay ? '2px solid var(--accent)' : '2px solid transparent';
+  evtsTab.style.color       = !isDay ? 'var(--accent)' : 'var(--muted)';
+  evtsTab.style.borderBottom = !isDay ? '2px solid var(--accent)' : '2px solid transparent';
+  dayPanel.style.display  = isDay ? 'flex'   : 'none';
+  evtsPanel.style.display = !isDay ? 'flex'  : 'none';
+  if (!isDay) renderCalEventsList();
+}
+
+function renderCalEventsList() {
+  const el = document.getElementById('cal-events-list');
+  if (!el) return;
+  const events = loadData(EVENTS_KEY);
+  const today = new Date().toISOString().slice(0,10);
+  // Show upcoming + recent (last 7 days)
+  const since = new Date(); since.setDate(since.getDate() - 7);
+  const sinceStr = since.toISOString().slice(0,10);
+  const filtered = events.filter(e => e.date >= sinceStr).sort((a,b) => a.date.localeCompare(b.date));
+  if (!filtered.length) {
+    el.innerHTML = `<div style="text-align:center;padding:40px 16px;color:var(--muted);">
+      <div style="font-size:28px;margin-bottom:10px;">📅</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px;">No upcoming events</div>
+      <div style="font-size:11px;line-height:1.6;">Click + Add to track macro events, news, and earnings.</div>
+    </div>`;
+    return;
+  }
+  const impactCfg = {
+    high:     { emoji:'🔴', color:'var(--red)' },
+    medium:   { emoji:'🟡', color:'var(--yellow)' },
+    low:      { emoji:'🟢', color:'var(--green)' },
+    earnings: { emoji:'📊', color:'var(--accent)' },
+  };
+  el.innerHTML = filtered.map(e => {
+    const cfg = impactCfg[e.impact] || impactCfg.medium;
+    const d = new Date(e.date + 'T12:00:00');
+    const isToday = e.date === today;
+    const isPast  = e.date < today;
+    const dayStr  = d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    return `<div onclick="openEventModal('${e.id}')" style="
+      display:flex;gap:10px;align-items:flex-start;padding:10px 12px;
+      border-radius:10px;border:1px solid ${isToday?'var(--accent)':'var(--border)'};
+      background:${isToday?'rgba(99,102,241,.06)':'var(--surface2)'};
+      margin-bottom:6px;cursor:pointer;opacity:${isPast&&!isToday?'.55':'1'};
+      transition:border-color .15s,background .15s;
+    " onmouseenter="this.style.borderColor='var(--border2)'" onmouseleave="this.style.borderColor='${isToday?'var(--accent)':'var(--border)'}'" >
+      <div style="font-size:18px;line-height:1;margin-top:1px;">${cfg.emoji}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:2px;">
+          <div style="font-size:12px;font-weight:800;color:${isPast&&!isToday?'var(--text2)':'var(--text)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title}</div>
+          ${isToday?`<span style="font-size:9px;font-weight:800;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 6px;border-radius:8px;white-space:nowrap;">TODAY</span>`:''}
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;">${dayStr}${e.time?' · '+e.time:''}${e.currency?' · '+e.currency:''}</div>
+        ${e.notes?`<div style="font-size:11px;color:var(--text2);margin-top:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${e.notes}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ECONOMIC NEWS OVERLAY (TradingView) ───────────────────────────────────────
+function toggleCalEventsPanel() {
+  calNewsOpen = !calNewsOpen;
+  const overlay = document.getElementById('cal-news-overlay');
+  const btn     = document.getElementById('cal-events-toggle');
+  if (!overlay) return;
+  if (calNewsOpen) {
+    overlay.style.display = 'flex';
+    // Force reflow then animate in
+    requestAnimationFrame(() => { overlay.style.transform = 'translateX(0)'; });
+    btn.classList.add('cal-events-active');
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.background  = 'rgba(99,102,241,.1)';
+    btn.style.color       = 'var(--accent)';
+    loadTVWidget();
+  } else {
+    overlay.style.transform = 'translateX(100%)';
+    btn.classList.remove('cal-events-active');
+    btn.style.borderColor = 'var(--border)';
+    btn.style.background  = 'var(--surface2)';
+    btn.style.color       = 'var(--muted)';
+    setTimeout(() => { overlay.style.display = 'none'; }, 310);
+  }
+}
+
+let _tvWidgetLoaded = false;
+function loadTVWidget() {
+  const wrap = document.getElementById('cal-tv-widget-wrap');
+  if (!wrap || _tvWidgetLoaded) return;
+  _tvWidgetLoaded = true;
+  const theme = localStorage.getItem('tradelog_theme') || 'dark';
+  const colorTheme = theme === 'light' ? 'light' : 'dark';
+  wrap.innerHTML = `
+    <div class="tradingview-widget-container" style="width:100%;height:100%;display:flex;flex-direction:column;">
+      <div class="tradingview-widget-container__widget" style="flex:1;"></div>
+      <div class="tradingview-widget-copyright" style="padding:6px 12px;font-size:10px;color:var(--muted);flex-shrink:0;">
+        <a href="https://www.tradingview.com/economic-calendar/" rel="noopener nofollow" target="_blank" style="color:var(--accent);text-decoration:none;">Economic Calendar</a> by TradingView
+      </div>
+    </div>`;
+  const script = document.createElement('script');
+  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+  script.async = true;
+  script.innerHTML = JSON.stringify({
+    colorTheme,
+    isTransparent: true,
+    locale: 'en',
+    countryFilter: 'us,eu,gb,jp,nz,au',
+    importanceFilter: '0,1',
+    width: '100%',
+    height: '100%'
+  });
+  wrap.querySelector('.tradingview-widget-container').appendChild(script);
+}
+
+// Re-load widget if theme changes so color matches
+const _origSetTheme = setTheme;
+window.setTheme = function(t) {
+  _origSetTheme(t);
+  // Reset widget so it reloads with the new theme next time the panel opens
+  _tvWidgetLoaded = false;
+  const wrap = document.getElementById('cal-tv-widget-wrap');
+  if (wrap) wrap.innerHTML = '';
+  if (calNewsOpen) loadTVWidget();
+};
+
+
   const now = new Date();
   if (calView === 'week') {
     if (window.calWeekOffset === undefined) window.calWeekOffset = 0;
@@ -10231,6 +10433,8 @@ function saveEvent() {
   saveData(EVENTS_KEY, events);
   closeEventModal();
   renderEvents();
+  // Also refresh the calendar side panel if it's showing events
+  if (calPanelTab === 'events') renderCalEventsList();
   toast('Event saved!','success');
 }
 
@@ -10238,6 +10442,7 @@ function deleteEvent(id) {
   const events = loadData(EVENTS_KEY).filter(e => e.id !== id);
   saveData(EVENTS_KEY, events);
   renderEvents();
+  if (calPanelTab === 'events') renderCalEventsList();
   toast('Event deleted','');
 }
 
