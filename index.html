@@ -2601,7 +2601,7 @@
   </div>
 </div>
 
-<div class="page" id="page-calendar" style="padding:0;box-sizing:border-box;background:var(--bg);">
+<div class="page" id="page-calendar" style="padding:var(--page-py) var(--page-px);box-sizing:border-box;background:var(--bg);">
   <div style="display:flex;flex-direction:column;flex:1;border-radius:0;overflow:hidden;border:none;min-height:0;background:var(--bg);">
 
   <!-- Header bar -->
@@ -8224,13 +8224,13 @@ function renderCalendar() {
       const bdrColor  = weekPnl >= 0 ? 'rgba(0,255,187,0.2)'  : 'rgba(255,59,92,0.2)';
       if (hasTrades) {
         html += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;margin:2px 0 2px 4px;border-radius:10px;background:' + bgColor + ';border:1px solid ' + bdrColor + ';padding:10px 6px;">';
-        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Wk ' + weekNum + '</div>';
+        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Week ' + weekNum + '</div>';
         html += '<div style="font-size:13px;font-weight:900;color:' + pnlColor + ';text-align:center;letter-spacing:-0.5px;">' + fmt(weekPnl) + '</div>';
         html += '<div style="font-size:9px;color:var(--muted);font-weight:600;">' + weekTradeDays + 'd</div>';
         html += '</div>';
       } else {
         html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:transparent;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;opacity:0.35;">';
-        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Wk ' + weekNum + '</div>';
+        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Week ' + weekNum + '</div>';
         html += '<div style="font-size:11px;font-weight:700;color:var(--border2);">—</div>';
         html += '</div>';
       }
