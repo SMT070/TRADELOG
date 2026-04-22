@@ -8073,17 +8073,18 @@ function loadTVWidget() {
 }
 
 // Re-load widget if theme changes so color matches
-const _origSetTheme = setTheme;
-window.setTheme = function(t) {
-  _origSetTheme(t);
-  // Reset widget so it reloads with the new theme next time the panel opens
-  _tvWidgetLoaded = false;
-  const wrap = document.getElementById('cal-tv-widget-wrap');
-  if (wrap) wrap.innerHTML = '';
-  if (calNewsOpen) loadTVWidget();
-};
+(function() {
+  const _orig = window.setTheme;
+  window.setTheme = function(t) {
+    _orig(t);
+    _tvWidgetLoaded = false;
+    const wrap = document.getElementById('cal-tv-widget-wrap');
+    if (wrap) wrap.innerHTML = '';
+    if (calNewsOpen) loadTVWidget();
+  };
+})();
 
-
+function calNav(dir) {
   const now = new Date();
   if (calView === 'week') {
     if (window.calWeekOffset === undefined) window.calWeekOffset = 0;
