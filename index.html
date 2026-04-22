@@ -1277,6 +1277,16 @@
       display: flex !important;
       flex-direction: column !important;
     }
+    #cal-body-grid {
+      padding: 0 !important;
+    }
+    #cal-body-grid > div:first-child {
+      margin: 0 !important;
+      border-radius: 0 !important;
+      border-left: none !important;
+      border-right: none !important;
+      border-top: none !important;
+    }
     /* Hide side panel on mobile */
     #cal-day-panel { display: none !important; }
     /* Calendar grid takes full width */
@@ -2623,10 +2633,10 @@
   </div>
 
   <!-- Body: grid + side panel -->
-  <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden;min-height:0;">
+  <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden;min-height:0;padding:0 var(--page-px);box-sizing:border-box;background:var(--bg);gap:12px;">
 
     <!-- Left: calendar -->
-    <div style="display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border);">
+    <div style="display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--border);border-radius:var(--r);margin:12px 0;background:var(--surface);">
 
       <!-- Day-of-week headers -->
       <div id="cal-dow-row" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;border-bottom:1px solid var(--border);flex-shrink:0;">
@@ -2645,7 +2655,7 @@
     </div>
 
     <!-- Right: day detail -->
-    <div id="cal-day-panel" style="overflow-y:auto;background:var(--surface);">
+    <div id="cal-day-panel" style="overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin:12px 0;">
       <div style="padding:16px;border-bottom:1px solid var(--border);">
         <div style="font-size:14px;font-weight:800;color:var(--text);" id="cal-day-panel-title">Select a Day</div>
       </div>
@@ -2813,7 +2823,7 @@
 </div>
 
 <div class="page" id="page-import">
-  <div class="container" style="max-width:700px;margin:0 auto;">
+  <div class="container" style="max-width:860px;margin:0 auto;">
     <div class="panel mb-12">
       <div class="panel-header">
         <div class="panel-header-left"><div class="panel-title">Import Trades</div></div>
@@ -2822,9 +2832,9 @@
       <div class="import-zone" id="import-zone" onclick="document.getElementById('csv-file').click()"
            ondragover="event.preventDefault();this.classList.add('dragover')"
            ondragleave="this.classList.remove('dragover')"
-           ondrop="handleDrop(event)">
-        <div class="import-icon">📂</div>
-        <div class="import-title">Drop your trade file here</div>
+           ondrop="handleDrop(event)" style="margin:24px;padding:72px 48px;">
+        <div class="import-icon" style="font-size:52px;">📂</div>
+        <div class="import-title" style="font-size:22px;">Drop your trade file here</div>
         <div class="import-sub">or click to browse — auto-detects broker format</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;">
           <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT5 CSV</span>
