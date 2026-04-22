@@ -1277,16 +1277,6 @@
       display: flex !important;
       flex-direction: column !important;
     }
-    #cal-body-grid {
-      padding: 0 !important;
-    }
-    #cal-body-grid > div:first-child {
-      margin: 0 !important;
-      border-radius: 0 !important;
-      border-left: none !important;
-      border-right: none !important;
-      border-top: none !important;
-    }
     /* Hide side panel on mobile */
     #cal-day-panel { display: none !important; }
     /* Calendar grid takes full width */
@@ -1334,7 +1324,6 @@
       gap: 3px !important;
       padding: 0 3px !important;
     }
-    .cal-dow { padding: 6px 0 5px !important; font-size: 10px !important; }
 
     /* ══ MINDSET PAGE ══ */
     #page-mindset.active {
@@ -2633,20 +2622,20 @@
   </div>
 
   <!-- Body: grid + side panel -->
-  <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden;min-height:0;padding:0 var(--page-px);box-sizing:border-box;background:var(--bg);gap:12px;">
+  <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden;min-height:0;">
 
     <!-- Left: calendar -->
-    <div style="display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--border);border-radius:var(--r);margin:12px 0;background:var(--surface);">
+    <div style="display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border);">
 
       <!-- Day-of-week headers -->
       <div id="cal-dow-row" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;border-bottom:1px solid var(--border);flex-shrink:0;">
+        <div class="cal-dow weekend">Sun</div>
         <div class="cal-dow">Mon</div>
         <div class="cal-dow">Tue</div>
         <div class="cal-dow">Wed</div>
         <div class="cal-dow">Thu</div>
         <div class="cal-dow">Fri</div>
         <div class="cal-dow weekend">Sat</div>
-        <div class="cal-dow weekend">Sun</div>
         <div class="cal-dow" style="color:var(--muted);font-size:9px;letter-spacing:0.5px;">WEEK</div>
       </div>
 
@@ -2655,7 +2644,7 @@
     </div>
 
     <!-- Right: day detail -->
-    <div id="cal-day-panel" style="overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin:12px 0;">
+    <div id="cal-day-panel" style="overflow-y:auto;background:var(--surface);">
       <div style="padding:16px;border-bottom:1px solid var(--border);">
         <div style="font-size:14px;font-weight:800;color:var(--text);" id="cal-day-panel-title">Select a Day</div>
       </div>
@@ -2823,7 +2812,7 @@
 </div>
 
 <div class="page" id="page-import">
-  <div class="container" style="max-width:860px;margin:0 auto;">
+  <div class="container" style="max-width:700px;margin:0 auto;">
     <div class="panel mb-12">
       <div class="panel-header">
         <div class="panel-header-left"><div class="panel-title">Import Trades</div></div>
@@ -2832,9 +2821,9 @@
       <div class="import-zone" id="import-zone" onclick="document.getElementById('csv-file').click()"
            ondragover="event.preventDefault();this.classList.add('dragover')"
            ondragleave="this.classList.remove('dragover')"
-           ondrop="handleDrop(event)" style="margin:24px;padding:72px 48px;">
-        <div class="import-icon" style="font-size:52px;">📂</div>
-        <div class="import-title" style="font-size:22px;">Drop your trade file here</div>
+           ondrop="handleDrop(event)">
+        <div class="import-icon">📂</div>
+        <div class="import-title">Drop your trade file here</div>
         <div class="import-sub">or click to browse — auto-detects broker format</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;">
           <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT5 CSV</span>
@@ -8148,76 +8137,102 @@ function renderCalendar() {
     return;
   }
 
-  // ── MONTH VIEW ──
+  // ── MONTH VIEW ── (Sunday = first column)
   if (prevBtn) { prevBtn.style.opacity = ''; prevBtn.style.pointerEvents = ''; }
   document.getElementById('cal-month-label').textContent = monthNames[calMonth] + ' ' + calYear;
   const isCurrentMonth = calYear === today.getFullYear() && calMonth === today.getMonth();
   if (fwdBtn) { fwdBtn.style.opacity = isCurrentMonth ? '0.3' : ''; fwdBtn.style.pointerEvents = isCurrentMonth ? 'none' : ''; }
   const firstDay = new Date(calYear, calMonth, 1);
   const lastDay  = new Date(calYear, calMonth + 1, 0);
-  const startDow = (firstDay.getDay() + 6) % 7;
+  // Sunday=0 is already column 0, so no offset math needed
+  const startDow = firstDay.getDay(); // 0=Sun … 6=Sat
   const totalDays = lastDay.getDate();
+  const prevMonthLastDay = new Date(calYear, calMonth, 0).getDate();
+  const prevYear  = calMonth === 0 ? calYear - 1 : calYear;
+  const prevMonth = calMonth === 0 ? 12 : calMonth;
+  const nextYear  = calMonth === 11 ? calYear + 1 : calYear;
+  const nextMonth = calMonth === 11 ? 1 : calMonth + 2;
 
-  // Build all cells including empty padding
+  // Build cell list: objects with { dateStr, ghost }
   const cells = [];
-  for (let i = 0; i < startDow; i++) cells.push(null);
-  for (let d = 1; d <= totalDays; d++) {
-    cells.push(calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0'));
+  // Leading ghost days from prev month
+  for (let i = 0; i < startDow; i++) {
+    const d = prevMonthLastDay - startDow + 1 + i;
+    cells.push({ dateStr: prevYear + '-' + String(prevMonth).padStart(2,'0') + '-' + String(d).padStart(2,'0'), ghost: true });
   }
+  // Current month
+  for (let d = 1; d <= totalDays; d++) {
+    cells.push({ dateStr: calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0'), ghost: false });
+  }
+  // Trailing ghost days from next month
   const remainder = cells.length % 7;
-  if (remainder !== 0) for (let i = 0; i < 7 - remainder; i++) cells.push(null);
+  if (remainder !== 0) {
+    for (let i = 1; i <= 7 - remainder; i++) {
+      cells.push({ dateStr: nextYear + '-' + String(nextMonth).padStart(2,'0') + '-' + String(i).padStart(2,'0'), ghost: true });
+    }
+  }
 
   let html = '';
   for (let i = 0; i < cells.length; i++) {
-    const dateStr = cells[i];
-    if (!dateStr) {
-      html += '<div class="cal-cell empty"></div>';
+    const { dateStr, ghost } = cells[i];
+    const isToday   = dateStr === todayStr;
+    const isPast    = dateStr < todayStr;
+    const data      = !ghost ? dayMap[dateStr] : null;
+    const dow       = new Date(dateStr + 'T12:00:00').getDay(); // 0=Sun,6=Sat
+    const isWeekend = dow === 0 || dow === 6;
+    const d         = parseInt(dateStr.slice(8));
+
+    if (ghost) {
+      // Ghost cells from prev/next month — very dim, no click
+      html += `<div class="cal-cell" style="opacity:0.15;cursor:default;background:transparent;pointer-events:none;">
+        <div class="cal-day-num" style="color:var(--muted);">${d}</div>
+      </div>`;
     } else {
-      const isToday = dateStr === todayStr;
-      const data = dayMap[dateStr];
-      const dow = new Date(dateStr).getDay();
-      const isWeekend = dow === 0 || dow === 6;
-      let cellClass = 'cal-cell';
-      if (isToday) cellClass += ' today';
-      if (isWeekend) cellClass += ' weekend-cell';
-      if (data) cellClass += data.pnl >= 0 ? ' has-win' : ' has-loss';
-      const d = parseInt(dateStr.slice(8));
-      let inner = '<div class="cal-day-num">' + d + '</div>';
+      // Dim past days with no trades
+      const dimStyle = (isPast && !isToday && !data) ? 'opacity:0.4;' : '';
+      let cellClass  = 'cal-cell';
+      if (isToday)   cellClass += ' today';
+      if (isWeekend && !isToday) cellClass += ' weekend-cell';
+      if (data)      cellClass += data.pnl >= 0 ? ' has-win' : ' has-loss';
+
+      let inner = `<div class="cal-day-num" style="${isPast && !isToday && !data ? 'color:var(--muted);' : ''}">${d}</div>`;
       if (data) {
         const pnlClass = data.pnl >= 0 ? 'pos' : 'neg';
-        const abs = Math.abs(data.pnl);
-        const sym = getCurrencySymbol();
+        const abs  = Math.abs(data.pnl);
+        const sym  = getCurrencySymbol();
         const sign = data.pnl >= 0 ? '+' : '-';
         let pnlStr;
-        if (abs >= 1000000) pnlStr = sign + sym + (abs/1000000).toFixed(1) + 'M';
+        if (abs >= 1000000)    pnlStr = sign + sym + (abs/1000000).toFixed(1) + 'M';
         else if (abs >= 10000) pnlStr = sign + sym + (abs/1000).toFixed(1) + 'K';
-        else if (abs >= 1000) pnlStr = sign + sym + (abs/1000).toFixed(2) + 'K';
-        else pnlStr = sign + sym + abs.toFixed(2);
+        else if (abs >= 1000)  pnlStr = sign + sym + (abs/1000).toFixed(2) + 'K';
+        else                   pnlStr = sign + sym + abs.toFixed(2);
         inner += '<div class="cal-pnl ' + pnlClass + '">' + pnlStr + '</div>';
         inner += '<div class="cal-trades">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
         inner += '<div class="cal-cell-bar ' + pnlClass + '"></div>';
       }
-      html += '<div class="' + cellClass + '" onclick="selectCalDay(\'' + dateStr + '\')">' + inner + '</div>';
+      html += '<div class="' + cellClass + '" style="' + dimStyle + '" onclick="selectCalDay(\'' + dateStr + '\')">' + inner + '</div>';
     }
-    // After every 7 cells, inject week total
+
+    // After every 7 cells inject week total column
     if ((i + 1) % 7 === 0) {
-      const weekNum = Math.floor(i / 7) + 1;
-      const weekDates = cells.slice(i - 6, i + 1).filter(Boolean);
-      const weekPnl = weekDates.reduce((s, ds) => s + (dayMap[ds] ? dayMap[ds].pnl : 0), 0);
+      const weekNum   = Math.floor(i / 7) + 1;
+      // Only count real (non-ghost) dates for the week total
+      const weekDates = cells.slice(i - 6, i + 1).filter(c => !c.ghost).map(c => c.dateStr);
+      const weekPnl   = weekDates.reduce((s, ds) => s + (dayMap[ds] ? dayMap[ds].pnl : 0), 0);
       const weekTradeDays = weekDates.filter(ds => dayMap[ds]).length;
       const hasTrades = weekDates.some(ds => dayMap[ds]);
-      const pnlColor = weekPnl >= 0 ? 'var(--green)' : 'var(--red)';
-      const bgColor  = weekPnl >= 0 ? 'rgba(0,255,187,0.06)' : 'rgba(255,59,92,0.06)';
-      const borderColor = weekPnl >= 0 ? 'rgba(0,255,187,0.2)' : 'rgba(255,59,92,0.2)';
+      const pnlColor  = weekPnl >= 0 ? 'var(--green)' : 'var(--red)';
+      const bgColor   = weekPnl >= 0 ? 'rgba(0,255,187,0.06)' : 'rgba(255,59,92,0.06)';
+      const bdrColor  = weekPnl >= 0 ? 'rgba(0,255,187,0.2)'  : 'rgba(255,59,92,0.2)';
       if (hasTrades) {
-        html += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;margin:2px 0 2px 4px;border-radius:10px;background:' + bgColor + ';border:1px solid ' + borderColor + ';padding:10px 6px;">';
-        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Week ' + weekNum + '</div>';
+        html += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;margin:2px 0 2px 4px;border-radius:10px;background:' + bgColor + ';border:1px solid ' + bdrColor + ';padding:10px 6px;">';
+        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Wk ' + weekNum + '</div>';
         html += '<div style="font-size:13px;font-weight:900;color:' + pnlColor + ';text-align:center;letter-spacing:-0.5px;">' + fmt(weekPnl) + '</div>';
-        html += '<div style="font-size:9px;color:var(--muted);font-weight:600;">' + weekTradeDays + ' day' + (weekTradeDays !== 1 ? 's' : '') + '</div>';
+        html += '<div style="font-size:9px;color:var(--muted);font-weight:600;">' + weekTradeDays + 'd</div>';
         html += '</div>';
       } else {
-        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;">';
-        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Week ' + weekNum + '</div>';
+        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;opacity:0.4;">';
+        html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Wk ' + weekNum + '</div>';
         html += '<div style="font-size:11px;font-weight:700;color:var(--border2);">—</div>';
         html += '</div>';
       }
