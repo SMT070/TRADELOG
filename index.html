@@ -1354,9 +1354,6 @@
       padding: 10px 14px 10px !important;
       gap: 8px !important;
     }
-    #page-mindset > div:first-child > div > div:first-child {
-      font-size: 17px !important;
-    }
     /* Scroll body fills remaining space */
     #mindset-scroll-body {
       padding: 10px 10px 40px !important;
@@ -1376,7 +1373,7 @@
       grid-template-columns: repeat(5, 1fr) !important;
       gap: 5px !important;
     }
-    /* Past entries: no fixed max-height since column now scrolls */
+    /* Past entries on mobile - no max height restriction */
     #mindset-past-entries {
       max-height: none !important;
     }
@@ -1709,7 +1706,6 @@
       <span class="sidebar-label">Mindset</span>
     </button>
 
-    <div class="sidebar-divider"></div>
     <button class="sidebar-item" data-label="Notebooks" onclick="switchPage('notebooks')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="12" y1="7" x2="16" y2="7"/><line x1="12" y1="11" x2="16" y2="11"/></svg>
       <span class="sidebar-label">Notebooks</span>
@@ -2136,7 +2132,7 @@
             <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:20px;font-weight:600;border:1px solid var(--border);">TradingView</span>
           </div>
         </div>
-        <div style="height:550px;overflow:hidden;">
+        <div id="dash-market-news-body" style="height:550px;overflow:hidden;transition:height .35s cubic-bezier(.4,0,.2,1);">
           <div id="dash-news-timeline-wrap" style="height:550px;position:relative;"></div>
         </div>
       </div>
@@ -2346,11 +2342,11 @@
       </div>
 
       <div class="panel" id="trade-detail-panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;">
-        <div class="panel-header">
-          <div class="panel-header-left">
-            <div class="panel-title">Trade Detail</div>
+        <div class="panel-header" style="align-items:center;">
+          <div class="panel-header-left" style="flex:1;min-width:0;">
+            <div class="panel-title" style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text);text-transform:uppercase;">Trade Detail</div>
           </div>
-          <div style="display:flex;gap:6px;">
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
             <button id="detail-expand-btn" onclick="openDetailOverlay()" title="Expand" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
             </button>
@@ -3217,13 +3213,12 @@ Examples of accepted formats:
 <div class="page" id="page-mindset" style="display:flex;flex-direction:column;height:100vh;overflow:hidden;box-sizing:border-box;">
 
   <!-- ── STICKY HEADER ── -->
-  <div style="flex-shrink:0;padding:var(--page-py) var(--page-px) 14px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:relative;z-index:10;">
+  <div style="flex-shrink:0;padding:20px 32px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
     <div>
-      <div style="font-size:22px;font-weight:900;letter-spacing:-0.6px;color:var(--text);">Mindset &amp; Psychology</div>
+      <div style="font-size:20px;font-weight:900;letter-spacing:-0.5px;color:var(--text);">Mindset &amp; Psychology</div>
       <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="mindset-date-label"></div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <!-- Date navigator for previous days -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <button onclick="mindsetNavDay(-1)" title="Previous day"
         style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;"
         onmouseenter="this.style.borderColor='var(--border2)'" onmouseleave="this.style.borderColor='var(--border)'">
@@ -3239,112 +3234,114 @@ Examples of accepted formats:
         style="display:flex;align-items:center;gap:7px;padding:9px 20px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity .15s;"
         onmouseenter="this.style.opacity='.88'" onmouseleave="this.style.opacity='1'">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Save
+        Save Day
       </button>
     </div>
   </div>
 
   <!-- ── SCROLLABLE BODY ── -->
-  <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding:16px var(--page-px) var(--page-py);" id="mindset-scroll-body">
-    <div style="display:grid;grid-template-columns:1fr 300px 1fr;gap:14px;min-height:100%;" id="mindset-main-grid">
+  <div style="flex:1;overflow-y:auto;overflow-x:hidden;padding:20px 32px 40px;" id="mindset-scroll-body">
 
-      <!-- ════ LEFT COL: Journal + Rules ════ -->
-      <div style="display:flex;flex-direction:column;gap:14px;">
+    <!-- 3-column grid -->
+    <div style="display:grid;grid-template-columns:1fr 280px 1fr;gap:16px;align-items:start;" id="mindset-main-grid">
+
+      <!-- ════ LEFT COL ════ -->
+      <div style="display:flex;flex-direction:column;gap:14px;min-width:0;">
 
         <!-- Pre-Market Plan -->
-        <div class="panel">
-          <div class="panel-header">
+        <div class="panel" style="overflow:hidden;">
+          <div class="panel-header" style="padding:12px 16px;">
             <div class="panel-header-left">
-              <div style="width:3px;height:16px;border-radius:2px;background:var(--accent);margin-right:10px;"></div>
+              <div style="width:3px;height:16px;border-radius:2px;background:var(--accent);margin-right:10px;flex-shrink:0;"></div>
               <div class="panel-title">Pre-Market Plan</div>
             </div>
-            <span style="font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);background:rgba(99,102,241,.1);padding:3px 8px;border-radius:20px;">Morning</span>
+            <span style="font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--accent);background:rgba(99,102,241,.1);padding:3px 10px;border-radius:20px;white-space:nowrap;">Morning</span>
           </div>
-          <div style="padding:14px 16px 16px;">
+          <div style="padding:12px 16px 16px;">
             <textarea id="mindset-plan" placeholder="Key levels, news events, setups to watch, max loss limit, what to avoid…"
-              style="width:100%;min-height:110px;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;line-height:1.75;font-family:var(--sans);resize:vertical;box-sizing:border-box;outline:none;transition:border-color .15s;"
+              style="width:100%;min-height:100px;max-height:300px;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;line-height:1.7;font-family:var(--sans);resize:vertical;box-sizing:border-box;outline:none;transition:border-color .15s;display:block;"
               onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
           </div>
         </div>
 
         <!-- End of Day Review -->
-        <div class="panel">
-          <div class="panel-header">
+        <div class="panel" style="overflow:hidden;">
+          <div class="panel-header" style="padding:12px 16px;">
             <div class="panel-header-left">
-              <div style="width:3px;height:16px;border-radius:2px;background:var(--green);margin-right:10px;"></div>
+              <div style="width:3px;height:16px;border-radius:2px;background:var(--green);margin-right:10px;flex-shrink:0;"></div>
               <div class="panel-title">End of Day Review</div>
             </div>
-            <span style="font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--green);background:var(--green-bg);padding:3px 8px;border-radius:20px;">Evening</span>
+            <span style="font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--green);background:var(--green-bg);padding:3px 10px;border-radius:20px;white-space:nowrap;">Evening</span>
           </div>
-          <div style="padding:14px 16px 16px;">
+          <div style="padding:12px 16px 16px;">
             <textarea id="mindset-review" placeholder="What worked? What didn't? What would you do differently? Key lessons learned…"
-              style="width:100%;min-height:110px;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;line-height:1.75;font-family:var(--sans);resize:vertical;box-sizing:border-box;outline:none;transition:border-color .15s;"
+              style="width:100%;min-height:100px;max-height:300px;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;line-height:1.7;font-family:var(--sans);resize:vertical;box-sizing:border-box;outline:none;transition:border-color .15s;display:block;"
               onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'"></textarea>
           </div>
         </div>
 
         <!-- Trading Rules -->
-        <div class="panel">
-          <div class="panel-header">
+        <div class="panel" style="overflow:hidden;">
+          <div class="panel-header" style="padding:12px 16px;">
             <div class="panel-header-left">
-              <div style="width:3px;height:16px;border-radius:2px;background:var(--yellow);margin-right:10px;"></div>
+              <div style="width:3px;height:16px;border-radius:2px;background:var(--yellow);margin-right:10px;flex-shrink:0;"></div>
               <div class="panel-title">Trading Rules</div>
             </div>
             <button onclick="addMindsetRule()"
-              style="display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;"
+              style="display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap;"
               onmouseenter="this.style.borderColor='var(--yellow)';this.style.color='var(--yellow)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add Rule
             </button>
           </div>
-          <div id="mindset-rules-list" style="padding:6px 16px 16px;"></div>
+          <div id="mindset-rules-list" style="padding:4px 16px 16px;"></div>
         </div>
 
       </div>
 
       <!-- ════ CENTER COL ════ -->
-      <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;flex-direction:column;gap:14px;min-width:0;">
 
         <!-- Mood -->
-        <div class="panel">
-          <div class="panel-header">
+        <div class="panel" style="overflow:hidden;">
+          <div class="panel-header" style="padding:12px 14px;">
             <div class="panel-header-left">
-              <div style="width:3px;height:16px;border-radius:2px;background:var(--accent);margin-right:10px;"></div>
+              <div style="width:3px;height:16px;border-radius:2px;background:var(--accent);margin-right:10px;flex-shrink:0;"></div>
               <div class="panel-title">Today's Mood</div>
             </div>
           </div>
-          <div style="padding:12px 14px 14px;">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;" id="mindset-emotions"></div>
+          <div style="padding:10px 14px 14px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;" id="mindset-emotions"></div>
           </div>
         </div>
 
         <!-- Confidence -->
-        <div class="panel">
-          <div class="panel-header">
+        <div class="panel" style="overflow:hidden;">
+          <div class="panel-header" style="padding:12px 14px;">
             <div class="panel-header-left">
-              <div style="width:3px;height:16px;border-radius:2px;background:var(--accent);margin-right:10px;"></div>
+              <div style="width:3px;height:16px;border-radius:2px;background:var(--accent);margin-right:10px;flex-shrink:0;"></div>
               <div class="panel-title">Confidence</div>
             </div>
           </div>
-          <div style="padding:12px 14px 14px;">
+          <div style="padding:10px 14px 16px;">
             <div style="display:flex;align-items:baseline;justify-content:center;gap:4px;margin-bottom:4px;">
-              <div id="mindset-conf-val" style="font-size:56px;font-weight:900;color:var(--accent);line-height:1;letter-spacing:-3px;transition:color .2s;">5</div>
-              <div style="font-size:18px;font-weight:700;color:var(--muted);padding-bottom:6px;">/10</div>
+              <div id="mindset-conf-val" style="font-size:52px;font-weight:900;color:var(--accent);line-height:1;letter-spacing:-3px;transition:color .2s;">5</div>
+              <div style="font-size:16px;font-weight:700;color:var(--muted);padding-bottom:4px;">/10</div>
             </div>
-            <div id="mindset-conf-label" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:center;margin-bottom:14px;transition:color .2s;">Moderate</div>
-            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;" id="mindset-conf-pills"></div>
+            <div id="mindset-conf-label" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);text-align:center;margin-bottom:12px;transition:color .2s;">Moderate</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;" id="mindset-conf-pills"></div>
           </div>
         </div>
 
         <!-- This Week -->
-        <div class="panel">
-          <div class="panel-header">
+        <div class="panel" style="overflow:hidden;">
+          <div class="panel-header" style="padding:12px 14px;">
             <div class="panel-header-left">
-              <div style="width:3px;height:16px;border-radius:2px;background:var(--yellow);margin-right:10px;"></div>
+              <div style="width:3px;height:16px;border-radius:2px;background:var(--yellow);margin-right:10px;flex-shrink:0;"></div>
               <div class="panel-title">This Week</div>
             </div>
           </div>
-          <div id="mindset-week-stats" style="padding:14px 14px 16px;">
+          <div id="mindset-week-stats" style="padding:12px 14px 16px;">
             <div style="text-align:center;color:var(--muted);font-size:12px;">Loading…</div>
           </div>
         </div>
@@ -3352,17 +3349,17 @@ Examples of accepted formats:
       </div>
 
       <!-- ════ RIGHT COL: Past Entries ════ -->
-      <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;flex-direction:column;gap:14px;min-width:0;">
 
-        <div class="panel" style="flex:1;display:flex;flex-direction:column;">
-          <div class="panel-header" style="flex-shrink:0;">
+        <div class="panel" style="overflow:hidden;">
+          <div class="panel-header" style="padding:12px 16px;">
             <div class="panel-header-left">
-              <div style="width:3px;height:16px;border-radius:2px;background:var(--text2);margin-right:10px;"></div>
+              <div style="width:3px;height:16px;border-radius:2px;background:var(--text2);margin-right:10px;flex-shrink:0;"></div>
               <div class="panel-title">Past Entries</div>
             </div>
-            <span id="mindset-entries-count" style="font-size:11px;color:var(--muted);"></span>
+            <span id="mindset-entries-count" style="font-size:11px;color:var(--muted);font-weight:600;"></span>
           </div>
-          <div id="mindset-past-entries" style="padding:10px 14px 14px;overflow-y:auto;max-height:600px;">
+          <div id="mindset-past-entries" style="padding:8px 14px 14px;">
             <div style="text-align:center;color:var(--muted);font-size:13px;padding:30px 0;">No entries yet.<br><span style="font-size:11px;">Save today to get started.</span></div>
           </div>
         </div>
@@ -8152,20 +8149,20 @@ let _dashTvLoaded = false;
 
 function toggleDashNews() {
   _dashNewsOpen = !_dashNewsOpen;
-  const body    = document.getElementById('dash-news-body');
-  const chevron = document.getElementById('dash-news-chevron');
-  const label   = document.getElementById('dash-news-toggle-label');
-  const grid    = document.getElementById('dash-news-grid');
+  const body       = document.getElementById('dash-news-body');
+  const marketBody = document.getElementById('dash-market-news-body');
+  const chevron    = document.getElementById('dash-news-chevron');
+  const label      = document.getElementById('dash-news-toggle-label');
   if (!body) return;
   if (_dashNewsOpen) {
     body.style.height = '550px';
-    if (grid) grid.style.display = 'grid';
+    if (marketBody) marketBody.style.height = '550px';
     chevron.style.transform = 'rotate(180deg)';
     if (label) label.textContent = 'Collapse';
     if (!_dashTvLoaded) loadDashTvWidget();
   } else {
     body.style.height = '0';
-    if (grid) grid.style.display = 'none';
+    if (marketBody) marketBody.style.height = '0';
     chevron.style.transform = 'rotate(0deg)';
     if (label) label.textContent = 'Expand';
   }
@@ -8977,11 +8974,13 @@ function saveMindsetData(data) {
 }
 
 function initMindsetPage() {
-  if (window._mindsetViewDate === undefined) window._mindsetViewDate = getTodayKey();
+  // Always start on current _mindsetViewDate (or today if first visit)
+  if (!window._mindsetViewDate) window._mindsetViewDate = getTodayKey();
+  const data = getMindsetData();
   loadMindsetDay(window._mindsetViewDate);
-  renderMindsetRules((getMindsetData().rules || []));
-  renderMindsetPastEntries(getMindsetData().entries || {});
-  renderMindsetWeekStats(getMindsetData().entries || {});
+  renderMindsetRules(data.rules || []);
+  renderMindsetPastEntries(data.entries || {});
+  renderMindsetWeekStats(data.entries || {});
 }
 
 function mindsetNavDay(dir) {
@@ -9155,29 +9154,30 @@ function renderMindsetRules(rules) {
   const el = document.getElementById('mindset-rules-list');
   if (!el) return;
   if (!rules.length) {
-    el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:20px 0 8px;">No rules yet — click Add Rule above.</div>`;
+    el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:16px 0 8px;">No rules yet — click <strong style="color:var(--text2);">Add Rule</strong> above.</div>`;
     return;
   }
   const done = rules.filter(r => r.checked).length;
+  const pct = rules.length ? Math.round(done / rules.length * 100) : 0;
   el.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-top:2px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-top:4px;">
       <div style="flex:1;height:4px;border-radius:4px;background:var(--border2);overflow:hidden;">
-        <div style="height:100%;width:${rules.length?Math.round(done/rules.length*100):0}%;background:var(--green);border-radius:4px;transition:width .4s;"></div>
+        <div style="height:100%;width:${pct}%;background:var(--green);border-radius:4px;transition:width .4s;"></div>
       </div>
-      <span style="font-size:11px;font-weight:700;color:var(--muted);min-width:32px;text-align:right;">${done}/${rules.length}</span>
+      <span style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;">${done}/${rules.length}</span>
     </div>
     ${rules.map((r, i) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
-      <div onclick="toggleMindsetRule(${i})" style="width:18px;height:18px;min-width:18px;border-radius:5px;border:2px solid ${r.checked?'var(--accent)':'var(--border2)'};background:${r.checked?'var(--accent)':'transparent'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;">
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);min-width:0;">
+      <div onclick="toggleMindsetRule(${i})" style="width:18px;height:18px;min-width:18px;border-radius:5px;border:2px solid ${r.checked?'var(--accent)':'var(--border2)'};background:${r.checked?'var(--accent)':'transparent'};cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:1px;">
         ${r.checked?'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>':''}
       </div>
-      <span style="flex:1;font-size:13px;color:${r.checked?'var(--muted)':'var(--text)'};text-decoration:${r.checked?'line-through':'none'};line-height:1.45;word-break:break-word;min-width:0;">${r.text.replace(/</g,'&lt;')}</span>
-      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-        <button onclick="openEditRuleModal(${i})" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:none;border:1px solid transparent;border-radius:6px;color:var(--muted);cursor:pointer;transition:all .15s;"
+      <span style="flex:1;font-size:12px;color:${r.checked?'var(--muted)':'var(--text)'};text-decoration:${r.checked?'line-through':'none'};line-height:1.5;word-wrap:break-word;overflow-wrap:break-word;min-width:0;">${r.text.replace(/</g,'&lt;')}</span>
+      <div style="display:flex;align-items:center;gap:2px;flex-shrink:0;margin-top:1px;">
+        <button onclick="openEditRuleModal(${i})" title="Edit" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:none;border:1px solid transparent;border-radius:6px;color:var(--muted);cursor:pointer;transition:all .15s;"
           onmouseenter="this.style.borderColor='var(--border2)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
-        <button onclick="deleteMindsetRule(${i})" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:none;border:1px solid transparent;border-radius:6px;color:var(--muted);cursor:pointer;transition:all .15s;"
+        <button onclick="deleteMindsetRule(${i})" title="Delete" style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:none;border:1px solid transparent;border-radius:6px;color:var(--muted);cursor:pointer;transition:all .15s;"
           onmouseenter="this.style.borderColor='var(--red-glow)';this.style.color='var(--red)'" onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         </button>
@@ -9256,48 +9256,60 @@ function renderMindsetPastEntries(entries) {
   const countEl = document.getElementById('mindset-entries-count');
   if (!el) return;
   const keys = Object.keys(entries).sort().reverse();
-  if (countEl) countEl.textContent = keys.length ? keys.length + ' total' : '';
+  if (countEl) countEl.textContent = keys.length ? keys.length + ' entries' : '';
   if (!keys.length) {
     el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:13px;padding:30px 0;">No entries yet.<br><span style="font-size:11px;">Save today to get started.</span></div>`;
     return;
   }
   const todayKey = getTodayKey();
+  const viewKey  = window._mindsetViewDate || todayKey;
   const confColors = ['','var(--red)','var(--red)','var(--red)','var(--yellow)','var(--yellow)','var(--yellow)','var(--green)','var(--green)','var(--green)','var(--green)'];
   el.innerHTML = keys.map(k => {
     const e = entries[k];
     const d = new Date(k + 'T12:00:00');
-    const dayStr = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
-    const yearStr = d.getFullYear();
-    const conf = e.confidence || 0;
-    const isToday = k === todayKey;
-    const isCurrent = k === (window._mindsetViewDate || todayKey);
+    const dayStr   = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
+    const yearStr  = d.getFullYear();
+    const conf     = e.confidence || 0;
+    const isToday  = k === todayKey;
+    const isCurrent= k === viewKey;
     const confColor = confColors[conf] || 'var(--muted)';
-    return `<div style="margin-bottom:8px;padding:11px 12px;border-radius:10px;
+    return `<div style="margin-bottom:7px;padding:10px 11px;border-radius:10px;
       background:${isCurrent?'rgba(99,102,241,.08)':'var(--surface2)'};
       border:1px solid ${isCurrent?'var(--accent)':'var(--border)'};
-      transition:all .15s;cursor:pointer;"
+      transition:border-color .15s;cursor:pointer;"
       onclick="jumpToMindsetEntry('${k}')"
-      onmouseenter="if('${k}'!=='${(typeof window !== 'undefined' && window._mindsetViewDate)||todayKey}'){this.style.borderColor='var(--border2)'}" onmouseleave="this.style.borderColor='${isCurrent?'var(--accent)':'var(--border)'}'"
+      onmouseenter="if(!${isCurrent}){this.style.borderColor='var(--border2)';}" onmouseleave="this.style.borderColor='${isCurrent?'var(--accent)':'var(--border)'}'"
     >
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${conf||e.plan||e.review?'7':'0'}px;gap:6px;">
-        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+      <!-- Top row: date + controls -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:${conf||e.plan||e.review?'6':'0'}px;">
+        <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0;overflow:hidden;">
           ${isToday?`<span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--accent);background:rgba(99,102,241,.15);padding:2px 6px;border-radius:10px;flex-shrink:0;">Today</span>`:''}
-          <span style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;">${dayStr}</span>
-          <span style="font-size:11px;color:var(--muted);">${yearStr}</span>
+          <span style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dayStr}</span>
+          <span style="font-size:10px;color:var(--muted);flex-shrink:0;">${yearStr}</span>
         </div>
-        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-          ${e.emotion?`<span style="font-size:16px;line-height:1;">${e.emotion.split(' ')[0]}</span>`:''}
-          ${conf?`<span style="font-size:11px;font-weight:800;color:${confColor};background:rgba(0,0,0,.12);padding:2px 7px;border-radius:8px;">${conf}/10</span>`:''}
-          <button onclick="event.stopPropagation();deleteMindsetEntry('${k}')"
-            style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;"
-            onmouseenter="this.style.borderColor='var(--red-glow)';this.style.color='var(--red)'" onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'" title="Delete entry">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;">
+          ${e.emotion?`<span style="font-size:15px;line-height:1;">${e.emotion.split(' ')[0]}</span>`:''}
+          ${conf?`<span style="font-size:10px;font-weight:800;color:${confColor};padding:1px 6px;border-radius:6px;background:${confColor}18;">${conf}/10</span>`:''}
+          <!-- Edit btn -->
+          <button onclick="event.stopPropagation();jumpToMindsetEntry('${k}')" title="Edit this entry"
+            style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;"
+            onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'" >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <!-- Delete btn -->
+          <button onclick="event.stopPropagation();deleteMindsetEntry('${k}')" title="Delete this entry"
+            style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;"
+            onmouseenter="this.style.borderColor='var(--red-glow)';this.style.color='var(--red)'" onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
           </button>
         </div>
       </div>
-      ${conf?`<div style="height:3px;border-radius:2px;background:var(--border2);margin-bottom:7px;overflow:hidden;"><div style="height:100%;width:${conf*10}%;background:${confColor};border-radius:2px;"></div></div>`:''}
-      ${e.plan?`<div style="font-size:11px;color:var(--text2);line-height:1.55;margin-bottom:${e.review?'4':'0'}px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"><span style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-right:4px;">Plan</span>${e.plan.replace(/</g,'&lt;')}</div>`:''}
-      ${e.review?`<div style="font-size:11px;color:var(--text2);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"><span style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--green);margin-right:4px;">Review</span>${e.review.replace(/</g,'&lt;')}</div>`:''}
+      <!-- Confidence bar -->
+      ${conf?`<div style="height:3px;border-radius:2px;background:var(--border2);margin-bottom:6px;overflow:hidden;"><div style="height:100%;width:${conf*10}%;background:${confColor};border-radius:2px;transition:width .4s;"></div></div>`:''}
+      <!-- Plan snippet -->
+      ${e.plan?`<div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:${e.review?'3':'0'}px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-right:3px;">Plan</span>${e.plan.replace(/</g,'&lt;').replace(/\n/g,' ')}</div>`:''}
+      <!-- Review snippet -->
+      ${e.review?`<div style="font-size:11px;color:var(--text2);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--green);margin-right:3px;">Review</span>${e.review.replace(/</g,'&lt;').replace(/\n/g,' ')}</div>`:''}
     </div>`;
   }).join('');
 }
