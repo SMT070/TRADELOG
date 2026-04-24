@@ -10554,18 +10554,32 @@ function selectNotebook(id) {
 }
 
 function addNotebook() {
+  const modal = document.getElementById('new-notebook-modal');
+  const input = document.getElementById('new-notebook-name');
+  input.value = '';
+  modal.style.display = 'flex';
+  setTimeout(() => input.focus(), 80);
+}
+
+function confirmAddNotebook() {
+  const input = document.getElementById('new-notebook-name');
+  const name = input.value.trim();
+  if (!name) { input.focus(); return; }
   const emojis = ['📓','📒','📔','📕','📗','📘','📙','🗒️','💡','🔬','📊'];
   const emoji = emojis[Math.floor(Math.random()*emojis.length)];
   const color = NB_COLORS[loadData(NOTEBOOKS_KEY,[]).length % NB_COLORS.length];
-  const name  = prompt('Notebook name:', 'My Notebook');
-  if (!name) return;
   const notebooks = loadData(NOTEBOOKS_KEY, []);
-  const nb = { id: uid(), name: name.trim(), emoji, color, description: '', entries: [] };
+  const nb = { id: uid(), name, emoji, color, description: '', entries: [] };
   notebooks.push(nb);
   saveData(NOTEBOOKS_KEY, notebooks);
   activeNotebookId = nb.id;
+  closeNewNotebookModal();
   renderNotebooks();
   toast('Notebook created!','success');
+}
+
+function closeNewNotebookModal() {
+  document.getElementById('new-notebook-modal').style.display = 'none';
 }
 
 function addNoteEntry() { openNoteEntryModal(activeNotebookId, null); }
@@ -10701,6 +10715,25 @@ handleNotebooksMobile();
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Notebook Modal -->
+<div id="new-notebook-modal" onclick="if(event.target===this)closeNewNotebookModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:28px;width:420px;max-width:92vw;box-shadow:0 24px 60px rgba(0,0,0,.5);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="font-size:17px;font-weight:800;color:var(--text);">New Notebook</div>
+      <button onclick="closeNewNotebookModal()" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">&times;</button>
+    </div>
+    <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Notebook Name</label>
+    <input id="new-notebook-name" type="text" placeholder="e.g. Trade Journal, Strategy Notes…"
+      style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+      onkeydown="if(event.key==='Enter')confirmAddNotebook()">
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+      <button onclick="closeNewNotebookModal()" class="btn btn-ghost" style="padding:10px 20px;font-size:13px;">Cancel</button>
+      <button onclick="confirmAddNotebook()" class="btn btn-primary" style="padding:10px 24px;font-size:13px;">Create</button>
     </div>
   </div>
 </div>
