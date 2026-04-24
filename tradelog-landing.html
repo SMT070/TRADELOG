@@ -4,1011 +4,483 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TradeLog — Built by a Trader, For Traders</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #030508;
-  --surface: #080c14;
-  --border: #111c2e;
-  --accent: #6366f1;
-  --accent2: #818cf8;
-  --green: #00ffbb;
-  --red: #ff3b5c;
-  --text: #f0f4ff;
-  --muted: #4a5568;
-  --muted2: #94a3b8;
+  --bg:#020407;--surface:#07090f;--surface2:#0b0f1a;
+  --border:#111825;--border2:#18253a;
+  --accent:#5b5ff0;--accent2:#7c80f5;
+  --green:#00e8a8;--red:#ff3c5e;--amber:#f0a500;
+  --text:#eef2ff;--muted:#3a4760;--muted2:#7a8ea8;--muted3:#adbdd4;
 }
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");opacity:0.02;pointer-events:none;z-index:9999}
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;padding:20px 48px;display:flex;align-items:center;justify-content:space-between;transition:all .4s ease}
+nav.scrolled{background:rgba(2,4,7,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:13px 48px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),#7c3aed);border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(91,95,240,.4)}
+.logo-text{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;letter-spacing:-.3px;color:var(--text)}
+.logo-text span{color:var(--accent2)}
+.nav-links{display:flex;align-items:center;gap:36px;list-style:none}
+.nav-links a{color:var(--muted2);text-decoration:none;font-size:13.5px;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-btns{display:flex;gap:10px;align-items:center}
+.btn-ghost{padding:9px 20px;border:1px solid var(--border2);border-radius:9px;background:transparent;color:var(--muted2);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.btn-ghost:hover{border-color:rgba(255,255,255,.15);color:var(--text)}
+.btn-primary{padding:9px 22px;border:none;border-radius:9px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .25s;box-shadow:0 0 24px rgba(91,95,240,.35)}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 0 36px rgba(91,95,240,.5)}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;background:none;border:none}
+.hamburger span{display:block;width:22px;height:2px;background:var(--muted2);border-radius:2px;transition:all .3s}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.mobile-menu{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(2,4,7,.97);z-index:150;flex-direction:column;align-items:center;justify-content:center;gap:32px}
+.mobile-menu.open{display:flex}
+.mobile-menu a{color:var(--text);text-decoration:none;font-family:'Syne',sans-serif;font-size:28px;font-weight:700;transition:color .2s}
+.mobile-menu a:hover{color:var(--accent2)}
+.mob-btns{display:flex;flex-direction:column;gap:12px;width:240px;margin-top:8px}
+.mob-btns .btn-ghost,.mob-btns .btn-primary{width:100%;text-align:center;padding:14px;font-size:15px}
 
-html { scroll-behavior: smooth; }
+/* HERO */
+.hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:130px 20px 80px;position:relative;overflow:hidden}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse 80% 70% at 50% 40%,black 20%,transparent 100%)}
+.orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(80px)}
+.orb-1{width:700px;height:500px;top:-220px;left:50%;transform:translateX(-50%);background:radial-gradient(ellipse,rgba(91,95,240,.14),transparent 70%)}
+.orb-2{width:380px;height:380px;bottom:0;left:5%;background:radial-gradient(ellipse,rgba(0,232,168,.07),transparent 70%)}
+.orb-3{width:280px;height:280px;top:25%;right:3%;background:radial-gradient(ellipse,rgba(124,58,237,.09),transparent 70%)}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border:1px solid rgba(91,95,240,.3);border-radius:100px;background:rgba(91,95,240,.07);font-size:11.5px;font-weight:600;color:#a5a8ff;margin-bottom:32px;opacity:0;animation:up .7s cubic-bezier(.16,1,.3,1) .1s forwards}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:blink 2.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+h1.hh{font-family:'Syne',sans-serif;font-size:clamp(42px,7vw,88px);font-weight:800;letter-spacing:-3px;line-height:.93;max-width:880px;margin-bottom:26px;opacity:0;animation:up .7s cubic-bezier(.16,1,.3,1) .18s forwards}
+.h1s{color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.18)}
+.h1g{background:linear-gradient(120deg,var(--accent2) 0%,var(--green) 65%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:17px;color:var(--muted2);max-width:460px;line-height:1.75;margin-bottom:44px;opacity:0;animation:up .7s cubic-bezier(.16,1,.3,1) .26s forwards}
+.hero-acts{display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:72px;opacity:0;animation:up .7s cubic-bezier(.16,1,.3,1) .34s forwards;flex-wrap:wrap}
+.btn-hero{padding:15px 36px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .25s;box-shadow:0 0 44px rgba(91,95,240,.4);display:flex;align-items:center;gap:8px}
+.btn-hero:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 6px 56px rgba(91,95,240,.55)}
+.btn-hero-g{padding:15px 28px;background:transparent;color:var(--muted2);border:1px solid var(--border2);border-radius:12px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:6px}
+.btn-hero-g:hover{border-color:rgba(255,255,255,.18);color:var(--text);transform:translateY(-1px)}
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-}
+/* Hero preview */
+.hprev{width:100%;max-width:1000px;opacity:0;animation:up .9s cubic-bezier(.16,1,.3,1) .44s forwards;position:relative}
+.hprev::after{content:'';position:absolute;bottom:-60px;left:50%;transform:translateX(-50%);width:70%;height:80px;background:radial-gradient(ellipse,rgba(91,95,240,.2),transparent 70%);filter:blur(20px);pointer-events:none}
+.pf{border:1px solid rgba(91,95,240,.2);border-radius:18px;overflow:hidden;background:var(--surface);box-shadow:0 0 0 1px rgba(255,255,255,.03),0 50px 130px rgba(0,0,0,.9),0 0 80px rgba(91,95,240,.07);position:relative}
+.pf::before{content:'';position:absolute;top:0;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,var(--accent),var(--green),transparent);opacity:.6}
+.ptb{background:#060810;padding:12px 18px;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--border)}
+.ptb-lbl{flex:1;text-align:center;font-size:10.5px;color:rgba(255,255,255,.1)}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.r{background:#ff5f57}.dot.y{background:#ffbd2e}.dot.g{background:#28c840}
+.pc{padding:18px}
+.ps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.pcard{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:13px 14px;position:relative;overflow:hidden}
+.pcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:10px 10px 0 0}
+.pcard.cg::before{background:var(--green)}.pcard.cb::before{background:var(--accent)}.pcard.ca::before{background:var(--amber)}.pcard.cp::before{background:#a78bfa}
+.pl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:var(--muted2);margin-bottom:6px}
+.pv{font-size:20px;font-weight:800;letter-spacing:-.6px;font-family:'Syne',sans-serif}
+.pv.g{color:var(--green)}.pv.b{color:var(--accent2)}.pv.a{color:var(--amber)}.pv.p{color:#c4b5fd}
+.psub{font-size:9px;color:var(--muted);margin-top:2px}
+.pr{display:grid;grid-template-columns:1fr 210px;gap:8px}
+.pch,.psd{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.pbt{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px}
+.eql{stroke-dasharray:680;stroke-dashoffset:680;animation:draw 2.6s cubic-bezier(.33,1,.68,1) 1.4s forwards}
+.eqf{opacity:0;animation:fi .8s ease 4s forwards}
+.eqd{opacity:0}
+.eqd1{animation:fi .3s ease 2.2s forwards}.eqd2{animation:fi .3s ease 2.9s forwards}
+.eqd3{animation:fi .3s ease 3.6s forwards}.eqd4{animation:fi .3s ease 4.1s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fi{to{opacity:1}}
+.sdr{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted2);padding:5px 0;border-bottom:1px solid var(--border)}
+.sdr:last-child{border:none}
+.sbr{margin-bottom:9px}
+.sbl{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted2);margin-bottom:4px}
+.sbb{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.sbbf{height:100%;border-radius:2px;transform:scaleX(0);transform-origin:left;animation:grow 1s cubic-bezier(.16,1,.3,1) 2s forwards}
+@keyframes grow{to{transform:scaleX(1)}}
 
-/* ── NOISE TEXTURE OVERLAY ── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  opacity: 0.025;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 9999;
-}
+/* TICKER */
+.ticker{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:rgba(5,8,14,.7);padding:14px 0;overflow:hidden;position:relative}
+.ticker::before,.ticker::after{content:'';position:absolute;top:0;bottom:0;width:100px;z-index:2}
+.ticker::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.ticker::after{right:0;background:linear-gradient(-90deg,var(--bg),transparent)}
+.tt{display:flex;animation:tick 30s linear infinite;width:max-content}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{display:flex;align-items:center;gap:7px;padding:0 32px;border-right:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--muted2);white-space:nowrap}
+.tv{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text)}
+.tv.g{color:var(--green)}.tv.r{color:var(--red)}
 
-/* ── NAV ── */
-nav {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 100;
-  padding: 20px 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid transparent;
-  transition: all 0.4s;
-}
-nav.scrolled {
-  background: rgba(3,5,8,0.88);
-  backdrop-filter: blur(20px);
-  border-bottom-color: var(--border);
-  padding: 14px 48px;
-}
-.nav-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  text-decoration: none;
-}
-.nav-logo-mark {
-  width: 34px; height: 34px;
-  background: linear-gradient(135deg, var(--accent), #8b5cf6);
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 24px rgba(99,102,241,0.4);
-}
-.nav-logo-text {
-  font-family: 'Syne', sans-serif;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  color: var(--text);
-}
-.nav-logo-text span { color: var(--accent); }
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 36px;
-  list-style: none;
-}
-.nav-links a {
-  color: var(--muted2);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-  transition: color 0.2s;
-}
-.nav-links a:hover { color: var(--text); }
-.nav-cta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.btn-ghost-nav {
-  padding: 9px 20px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: transparent;
-  color: var(--muted2);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  transition: all 0.2s;
-}
-.btn-ghost-nav:hover { border-color: var(--accent); color: var(--accent); }
-.btn-primary-nav {
-  padding: 9px 22px;
-  border: none;
-  border-radius: 9px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  transition: all 0.2s;
-  box-shadow: 0 0 24px rgba(99,102,241,0.3);
-}
-.btn-primary-nav:hover {
-  background: var(--accent2);
-  transform: translateY(-1px);
-  box-shadow: 0 0 36px rgba(99,102,241,0.4);
-}
+/* FEATURES */
+.features{padding:120px 48px;max-width:1200px;margin:0 auto}
+.eye{display:flex;align-items:center;gap:10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:3.5px;color:var(--accent2);margin-bottom:16px}
+.eye::before{content:'';width:22px;height:1px;background:var(--accent2)}
+.stitle{font-family:'Syne',sans-serif;font-size:clamp(32px,4vw,52px);font-weight:800;letter-spacing:-2px;line-height:1.05;margin-bottom:56px}
+.stitle .ghost{color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.2)}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5px;background:var(--border);border-radius:20px;overflow:hidden;border:1.5px solid var(--border)}
+.fc{background:var(--surface);padding:36px;position:relative;overflow:hidden;transition:background .3s;cursor:default}
+.fc:hover{background:var(--surface2)}
+.fc::before{content:'';position:absolute;inset:0;background:radial-gradient(circle 180px at var(--mx,50%) var(--my,50%),rgba(91,95,240,.06),transparent);opacity:0;transition:opacity .35s;pointer-events:none}
+.fc:hover::before{opacity:1}
+.ficon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:20px;border:1px solid}
+.fi-p{background:rgba(91,95,240,.1);border-color:rgba(91,95,240,.25)}
+.fi-g{background:rgba(0,232,168,.07);border-color:rgba(0,232,168,.2)}
+.fi-a{background:rgba(240,165,0,.08);border-color:rgba(240,165,0,.2)}
+.fi-c{background:rgba(6,182,212,.07);border-color:rgba(6,182,212,.2)}
+.fi-r{background:rgba(251,113,133,.07);border-color:rgba(251,113,133,.2)}
+.fi-v{background:rgba(167,139,250,.07);border-color:rgba(167,139,250,.2)}
+.fn{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:9px;color:var(--text)}
+.fd{font-size:13px;color:var(--muted2);line-height:1.75}
 
-/* ── HERO ── */
-.hero {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 120px 24px 80px;
-  position: relative;
-  overflow: hidden;
-}
+/* HOW IT WORKS */
+.how{padding:120px 48px;border-top:1px solid var(--border);position:relative;overflow:hidden}
+.how-in{max-width:1160px;margin:0 auto}
+.how-hd{text-align:center;margin-bottom:72px}
+.how-hd .eye{justify-content:center}
+.how-hd .stitle{margin-bottom:0}
+.how-lay{display:grid;grid-template-columns:300px 1fr;gap:36px;align-items:start}
 
-/* Radial glow orbs */
-.hero::before {
-  content: '';
-  position: absolute;
-  top: -200px; left: 50%;
-  transform: translateX(-50%);
-  width: 900px; height: 600px;
-  background: radial-gradient(ellipse, rgba(99,102,241,0.12) 0%, transparent 65%);
-  pointer-events: none;
-}
-.hero::after {
-  content: '';
-  position: absolute;
-  bottom: -100px; left: 20%;
-  width: 400px; height: 400px;
-  background: radial-gradient(ellipse, rgba(0,255,187,0.06) 0%, transparent 70%);
-  pointer-events: none;
-}
+/* step tabs */
+.snav{display:flex;flex-direction:column;gap:4px}
+.stab{padding:20px 22px;border-radius:14px;border:1px solid transparent;cursor:pointer;transition:all .35s cubic-bezier(.16,1,.3,1);text-align:left;background:transparent;font-family:'DM Sans',sans-serif;color:var(--muted2);position:relative}
+.stab::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%) scaleY(0);width:2.5px;height:60%;background:var(--accent);border-radius:2px;transition:transform .35s cubic-bezier(.16,1,.3,1)}
+.stab.active{background:var(--surface2);border-color:var(--border2);color:var(--text)}
+.stab.active::before{transform:translateY(-50%) scaleY(1)}
+.sbadge{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:var(--border2);font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:var(--muted2);margin-bottom:8px;transition:all .3s}
+.stab.active .sbadge{background:var(--accent);color:#fff;box-shadow:0 0 14px rgba(91,95,240,.4)}
+.st{font-size:14.5px;font-weight:700;font-family:'Syne',sans-serif;display:block;margin-bottom:4px}
+.sd{font-size:12px;line-height:1.6;color:var(--muted2)}
+.stab.active .sd{color:var(--muted3)}
+.sprog{height:2px;background:var(--border);border-radius:2px;margin-top:16px;overflow:hidden}
+.sprog-f{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:2px;width:0}
 
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 16px;
-  border: 1px solid rgba(99,102,241,0.3);
-  border-radius: 100px;
-  background: rgba(99,102,241,0.08);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent2);
-  margin-bottom: 32px;
-  animation: fadeInUp 0.6s ease forwards;
-  opacity: 0;
-}
-.hero-badge::before {
-  content: '';
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
+/* panels */
+.spnls{min-height:460px}
+.spnl{display:none;animation:pin .45s cubic-bezier(.16,1,.3,1)}
+.spnl.active{display:block}
+@keyframes pin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.pcrd{background:var(--surface);border:1px solid var(--border2);border-radius:18px;overflow:hidden;box-shadow:0 20px 80px rgba(0,0,0,.55),0 0 50px rgba(91,95,240,.05)}
+.ptop{background:#060810;padding:11px 16px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border)}
+.ptop-lbl{flex:1;text-align:center;font-size:10px;color:rgba(255,255,255,.1)}
+.pbody{padding:20px}
 
-.hero h1 {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(44px, 7vw, 88px);
-  font-weight: 800;
-  letter-spacing: -3px;
-  line-height: 0.95;
-  max-width: 900px;
-  margin-bottom: 28px;
-  animation: fadeInUp 0.6s ease 0.1s forwards;
-  opacity: 0;
-}
-.hero h1 .line2 { color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.2); }
-.hero h1 em {
-  font-style: normal;
-  background: linear-gradient(135deg, var(--accent), var(--green) 60%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+/* Panel 0: Import */
+.dz{border:2px dashed var(--border2);border-radius:12px;padding:28px 20px;text-align:center;margin-bottom:14px}
+.dz-icon{font-size:28px;margin-bottom:9px}
+.dz-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:5px}
+.dz-sub{font-size:11.5px;color:var(--muted2)}
+.det{background:rgba(0,232,168,.07);border:1px solid rgba(0,232,168,.22);border-radius:10px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.det-l{display:flex;align-items:center;gap:9px;font-size:12px}
+.det-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 2s infinite}
+.det-tag{background:rgba(0,232,168,.12);color:var(--green);font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px}
+.ifile{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;margin-bottom:6px}
+.if-n{font-size:11.5px;color:var(--muted2)}
+.if-ok{font-size:10.5px;color:var(--green);font-weight:700}
 
-.hero-sub {
-  font-size: 18px;
-  color: var(--muted2);
-  max-width: 520px;
-  line-height: 1.7;
-  margin-bottom: 44px;
-  font-weight: 400;
-  animation: fadeInUp 0.6s ease 0.2s forwards;
-  opacity: 0;
-}
+/* Panel 1: Calendar */
+.calw{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px}
+.calh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.calm{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+.calt{font-size:11px;color:var(--green);font-weight:700;background:rgba(0,232,168,.1);padding:3px 10px;border-radius:6px}
+.cdh{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px}
+.cdn{text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);padding:2px 0}
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cc{aspect-ratio:1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;font-weight:600;padding:2px;cursor:default;transition:transform .15s;border:1px solid transparent;position:relative}
+.cc:hover{transform:scale(1.08)}
+.cc.empty{background:transparent;border-color:transparent}
+.cc.win{background:rgba(0,232,168,.13);border-color:rgba(0,232,168,.2);color:var(--green)}
+.cc.loss{background:rgba(255,60,94,.09);border-color:rgba(255,60,94,.18);color:var(--red)}
+.cc.flat{background:rgba(255,255,255,.03);border-color:var(--border);color:var(--muted2)}
+.cc.today{box-shadow:0 0 0 1.5px var(--accent)}
+.cc-n{font-size:8px;opacity:.55;margin-bottom:1px}
+.cc-p{font-size:8.5px;font-weight:800;letter-spacing:-.3px}
+.cstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.cstat{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px 12px;text-align:center}
+.csl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:4px}
+.csv{font-family:'Syne',sans-serif;font-size:16px;font-weight:800}
+.csv.g{color:var(--green)}.csv.r{color:var(--red)}.csv.b{color:var(--accent2)}
 
-.hero-actions {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 72px;
-  animation: fadeInUp 0.6s ease 0.3s forwards;
-  opacity: 0;
-}
-.btn-hero-primary {
-  padding: 16px 36px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 0 40px rgba(99,102,241,0.35);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.btn-hero-primary:hover {
-  background: var(--accent2);
-  transform: translateY(-2px);
-  box-shadow: 0 0 60px rgba(99,102,241,0.5);
-}
-.btn-hero-ghost {
-  padding: 16px 32px;
-  background: transparent;
-  color: var(--muted2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.btn-hero-ghost:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+/* Panel 2: AI */
+.ail{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.air{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;gap:11px;align-items:flex-start}
+.aiico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.aiico.w{background:rgba(240,165,0,.1);border:1px solid rgba(240,165,0,.25)}
+.aiico.ok{background:rgba(0,232,168,.07);border:1px solid rgba(0,232,168,.2)}
+.aiico.i{background:rgba(91,95,240,.1);border:1px solid rgba(91,95,240,.25)}
+.aitxt{font-size:12px;color:var(--muted2);line-height:1.65}
+.aitxt strong{color:var(--text);font-weight:600}
+.mr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mc{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.ml{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted2);margin-bottom:10px}
+.cbig{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--accent2);margin-bottom:8px}
+.ctr{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.ctrf{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:3px;width:82%;transform:scaleX(0);transform-origin:left;animation:grow 1s cubic-bezier(.16,1,.3,1) .3s forwards}
+.moodrow{display:flex;gap:5px}
+.mood{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px}
+.mood.on{border-color:var(--accent);background:rgba(91,95,240,.14)}
 
-/* ── MOCK DASHBOARD PREVIEW ── */
-.hero-preview {
-  width: 100%;
-  max-width: 1000px;
-  animation: fadeInUp 0.8s ease 0.4s forwards;
-  opacity: 0;
-  position: relative;
-}
-.preview-frame {
-  border: 1px solid rgba(99,102,241,0.2);
-  border-radius: 20px;
-  overflow: hidden;
-  background: var(--surface);
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.04),
-    0 40px 120px rgba(0,0,0,0.8),
-    0 0 80px rgba(99,102,241,0.08);
-  position: relative;
-}
-.preview-frame::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), var(--green), transparent);
-  opacity: 0.7;
-}
-.preview-topbar {
-  background: #0a0e18;
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid var(--border);
-}
-.dot { width: 10px; height: 10px; border-radius: 50%; }
-.dot.r { background: #ff5f57; }
-.dot.y { background: #ffbd2e; }
-.dot.g { background: #28c840; }
-.preview-content { padding: 24px; }
-.mock-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 18px;
-}
-.mock-card {
-  background: #0d1220;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 16px;
-  position: relative;
-  overflow: hidden;
-}
-.mock-card::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  border-radius: 10px 10px 0 0;
-}
-.mock-card.green::after { background: var(--green); }
-.mock-card.blue::after  { background: var(--accent); }
-.mock-card.yellow::after { background: #f59e0b; }
-.mock-card.red::after   { background: var(--red); }
-.mock-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted2); margin-bottom: 6px; }
-.mock-val { font-size: 22px; font-weight: 800; letter-spacing: -0.8px; }
-.mock-val.green { color: var(--green); }
-.mock-val.blue  { color: var(--accent2); }
-.mock-val.yellow { color: #f59e0b; }
-.mock-val.red   { color: var(--red); }
-.mock-sub { font-size: 10px; color: var(--muted); margin-top: 3px; }
-.mock-row {
-  display: grid;
-  grid-template-columns: 1fr 240px;
-  gap: 10px;
-}
-.mock-chart-box {
-  background: #0d1220;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-}
-.mock-chart-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted2); margin-bottom: 12px; }
-.chart-svg { width: 100%; height: 100px; }
-.mock-sidebar-box {
-  background: #0d1220;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-}
+/* BROKERS */
+.brokers{padding:72px 48px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);text-align:center}
+.bsub{font-size:12px;color:var(--muted);margin-bottom:24px;font-weight:500;text-transform:uppercase;letter-spacing:1.5px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:740px;margin:0 auto}
+.chip{padding:7px 16px;background:var(--surface);border:1px solid var(--border2);border-radius:100px;font-size:12.5px;font-weight:600;color:var(--muted2);transition:all .2s;cursor:default}
+.chip:hover{border-color:var(--accent);color:var(--accent2);background:rgba(91,95,240,.06);transform:translateY(-1px)}
 
-/* Animated equity line */
-.eq-line {
-  stroke-dasharray: 600;
-  stroke-dashoffset: 600;
-  animation: drawLine 2.5s ease 1.5s forwards;
-}
-@keyframes drawLine {
-  to { stroke-dashoffset: 0; }
-}
-.eq-fill {
-  opacity: 0;
-  animation: fadeIn 0.5s ease 4s forwards;
-}
-@keyframes fadeIn {
-  to { opacity: 1; }
-}
+/* CTA */
+.cta{padding:130px 48px;text-align:center;position:relative;overflow:hidden}
+.cta-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:800px;height:500px;background:radial-gradient(ellipse,rgba(91,95,240,.1),transparent 65%);pointer-events:none}
+.cta h2{font-family:'Syne',sans-serif;font-size:clamp(36px,5.5vw,68px);font-weight:800;letter-spacing:-2.5px;margin-bottom:18px;line-height:1}
+.ctag{background:linear-gradient(120deg,var(--accent2),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.cta p{font-size:16px;color:var(--muted2);margin-bottom:44px;max-width:420px;margin-left:auto;margin-right:auto}
+.btn-cta{display:inline-flex;align-items:center;gap:9px;padding:18px 52px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .25s;box-shadow:0 0 64px rgba(91,95,240,.4)}
+.btn-cta:hover{transform:translateY(-3px);box-shadow:0 10px 80px rgba(91,95,240,.55);background:var(--accent2)}
+.cta-fine{margin-top:16px;font-size:11.5px;color:var(--muted)}
+.cta-fine span{color:var(--muted2)}
 
-/* ── FADE IN UP ── */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:32px 48px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
+.flogo{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text)}
+.flogo span{color:var(--accent2)}
 
-/* ── STATS TICKER ── */
-.stats-ticker {
-  background: rgba(8,12,20,0.6);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  padding: 18px 0;
-  overflow: hidden;
-  position: relative;
-}
-.stats-ticker::before,
-.stats-ticker::after {
-  content: '';
-  position: absolute;
-  top: 0; bottom: 0;
-  width: 120px;
-  z-index: 2;
-}
-.stats-ticker::before { left: 0; background: linear-gradient(90deg, var(--bg), transparent); }
-.stats-ticker::after  { right: 0; background: linear-gradient(-90deg, var(--bg), transparent); }
-.ticker-track {
-  display: flex;
-  gap: 0;
-  animation: ticker 30s linear infinite;
-  width: max-content;
-}
-@keyframes ticker {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-.ticker-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 40px;
-  white-space: nowrap;
-  border-right: 1px solid var(--border);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted2);
-}
-.ticker-val { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--text); font-size: 15px; }
-.ticker-val.g { color: var(--green); }
-.ticker-val.r { color: var(--red); }
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(32px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:none}
+.rd1{transition-delay:.09s}.rd2{transition-delay:.18s}.rd3{transition-delay:.27s}
+@keyframes up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
 
-/* ── FEATURES ── */
-.features {
-  padding: 120px 48px;
-  max-width: 1200px;
-  margin: 0 auto;
+/* MOBILE */
+@media(max-width:900px){
+  nav{padding:16px 20px}
+  nav.scrolled{padding:12px 20px}
+  .nav-links,.nav-btns{display:none}
+  .hamburger{display:flex}
+  .hero{padding:110px 18px 56px}
+  h1.hh{letter-spacing:-1.5px}
+  .hero-acts{flex-direction:column;width:100%}
+  .btn-hero,.btn-hero-g{width:100%;justify-content:center}
+  .ps{grid-template-columns:1fr 1fr}
+  .pr{grid-template-columns:1fr}
+  .psd{display:none}
+  .features{padding:80px 20px}
+  .fgrid{grid-template-columns:1fr}
+  .how{padding:80px 20px}
+  .how-lay{grid-template-columns:1fr;gap:20px}
+  .spnls{min-height:auto}
+  .mr{grid-template-columns:1fr}
+  .brokers{padding:56px 20px}
+  .cta{padding:90px 20px}
+  footer{padding:24px 20px;flex-direction:column;gap:10px;text-align:center}
 }
-.section-eyebrow {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  color: var(--accent);
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+@media(max-width:480px){
+  .ps{grid-template-columns:1fr 1fr}
+  .btn-cta{padding:16px 28px;font-size:15px;width:100%;justify-content:center}
+  .cstats{grid-template-columns:1fr 1fr 1fr}
+  .cc-p{font-size:7.5px}
 }
-.section-eyebrow::before {
-  content: '';
-  width: 28px; height: 1px;
-  background: var(--accent);
-}
-.section-title {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(32px, 4vw, 52px);
-  font-weight: 800;
-  letter-spacing: -2px;
-  line-height: 1.05;
-  margin-bottom: 60px;
-  max-width: 600px;
-}
-.section-title em { font-style: normal; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.25); }
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  background: var(--border);
-  border-radius: 20px;
-  overflow: hidden;
-}
-.feature-card {
-  background: var(--surface);
-  padding: 36px;
-  transition: background 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-.feature-card:hover { background: #0c1320; }
-.feature-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(99,102,241,0.05), transparent 60%);
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-}
-.feature-card:hover::after { opacity: 1; }
-.feature-icon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 20px;
-  font-size: 20px;
-}
-.feature-icon.purple { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); }
-.feature-icon.green  { background: rgba(0,255,187,0.08);  border: 1px solid rgba(0,255,187,0.2); }
-.feature-icon.yellow { background: rgba(245,158,11,0.1);  border: 1px solid rgba(245,158,11,0.2); }
-.feature-icon.red    { background: rgba(255,59,92,0.08);  border: 1px solid rgba(255,59,92,0.2); }
-.feature-icon.blue   { background: rgba(6,182,212,0.08);  border: 1px solid rgba(6,182,212,0.2); }
-.feature-icon.pink   { background: rgba(236,72,153,0.08); border: 1px solid rgba(236,72,153,0.2); }
-.feature-name {
-  font-family: 'Syne', sans-serif;
-  font-size: 17px;
-  font-weight: 700;
-  margin-bottom: 10px;
-  color: var(--text);
-}
-.feature-desc {
-  font-size: 13px;
-  color: var(--muted2);
-  line-height: 1.7;
-}
-
-/* ── BROKERS ── */
-.brokers {
-  padding: 80px 48px;
-  text-align: center;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.brokers-sub { font-size: 13px; color: var(--muted); margin-bottom: 32px; font-weight: 500; }
-.broker-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  max-width: 800px;
-  margin: 0 auto;
-}
-.broker-chip {
-  padding: 8px 18px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted2);
-  transition: all 0.2s;
-}
-.broker-chip:hover { border-color: var(--accent); color: var(--accent); }
-
-/* ── HOW IT WORKS ── */
-.how {
-  padding: 120px 48px;
-  max-width: 1000px;
-  margin: 0 auto;
-  text-align: center;
-}
-.steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 48px;
-  margin-top: 60px;
-  position: relative;
-}
-.steps::before {
-  content: '';
-  position: absolute;
-  top: 28px; left: 16%; right: 16%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0.3;
-}
-.step { position: relative; }
-.step-num {
-  width: 56px; height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, var(--accent), #8b5cf6);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Syne', sans-serif;
-  font-size: 20px;
-  font-weight: 800;
-  color: #fff;
-  margin: 0 auto 20px;
-  box-shadow: 0 0 32px rgba(99,102,241,0.3);
-}
-.step-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
-.step-desc { font-size: 13px; color: var(--muted2); line-height: 1.7; }
-
-/* ── SOCIAL PROOF ── */
-.social {
-  padding: 80px 48px;
-  background: linear-gradient(180deg, transparent, rgba(99,102,241,0.03), transparent);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.testimonials {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  max-width: 1100px;
-  margin: 40px auto 0;
-}
-.testimonial {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 28px;
-  transition: all 0.2s;
-}
-.testimonial:hover { border-color: rgba(99,102,241,0.3); transform: translateY(-3px); }
-.testi-text { font-size: 14px; color: var(--muted2); line-height: 1.7; margin-bottom: 20px; font-style: italic; }
-.testi-text::before { content: '"'; color: var(--accent); font-size: 20px; font-style: normal; line-height: 0; vertical-align: -4px; margin-right: 3px; }
-.testi-author { display: flex; align-items: center; gap: 10px; }
-.testi-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 13px; color: #fff;
-}
-.testi-name { font-size: 13px; font-weight: 700; color: var(--text); }
-.testi-role { font-size: 11px; color: var(--muted); }
-.stars { color: #f59e0b; font-size: 11px; letter-spacing: 1px; margin-top: 2px; }
-
-/* ── CTA ── */
-.cta-section {
-  padding: 120px 48px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-.cta-section::before {
-  content: '';
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 800px; height: 500px;
-  background: radial-gradient(ellipse, rgba(99,102,241,0.1), transparent 65%);
-  pointer-events: none;
-}
-.cta-section h2 {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(36px, 5vw, 64px);
-  font-weight: 800;
-  letter-spacing: -2px;
-  margin-bottom: 20px;
-}
-.cta-section p {
-  font-size: 16px;
-  color: var(--muted2);
-  margin-bottom: 44px;
-}
-.btn-cta-big {
-  padding: 18px 52px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 14px;
-  font-size: 16px;
-  font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 0 60px rgba(99,102,241,0.4);
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-.btn-cta-big:hover { transform: translateY(-3px); box-shadow: 0 0 80px rgba(99,102,241,0.55); background: var(--accent2); }
-.cta-sub { margin-top: 16px; font-size: 12px; color: var(--muted); }
-
-/* ── FOOTER ── */
-footer {
-  border-top: 1px solid var(--border);
-  padding: 40px 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--muted);
-}
-footer .footer-logo { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; color: var(--text); }
-footer .footer-logo span { color: var(--accent); }
-
-/* ── SCROLL REVEAL ── */
-.reveal {
-  opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-.reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-.reveal-delay-1 { transition-delay: 0.1s; }
-.reveal-delay-2 { transition-delay: 0.2s; }
-.reveal-delay-3 { transition-delay: 0.3s; }
-
-/* ── MOBILE ── */
-@media (max-width: 768px) {
-  nav { padding: 16px 20px; }
-  nav.scrolled { padding: 12px 20px; }
-  .nav-links { display: none; }
-  .hero { padding: 100px 20px 60px; }
-  .hero h1 { letter-spacing: -1.5px; }
-  .hero-actions { flex-direction: column; width: 100%; }
-  .btn-hero-primary, .btn-hero-ghost { width: 100%; justify-content: center; }
-  .mock-stats { grid-template-columns: 1fr 1fr; }
-  .mock-row { grid-template-columns: 1fr; }
-  .mock-sidebar-box { display: none; }
-  .features { padding: 80px 20px; }
-  .features-grid { grid-template-columns: 1fr; }
-  .brokers { padding: 60px 20px; }
-  .how { padding: 80px 20px; }
-  .steps { grid-template-columns: 1fr; gap: 32px; }
-  .steps::before { display: none; }
-  .social { padding: 60px 20px; }
-  .testimonials { grid-template-columns: 1fr; }
-  .cta-section { padding: 80px 20px; }
-  footer { padding: 24px 20px; flex-direction: column; gap: 12px; text-align: center; }
-}
-
-/* ── SLIDE-IN PANEL FOR LOGIN ── */
-#login-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0);
-  backdrop-filter: blur(0px);
-  pointer-events: none;
-  transition: background 0.4s, backdrop-filter 0.4s;
-}
-#login-overlay.open {
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(12px);
-  pointer-events: all;
-}
-#login-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 22px;
-  padding: 44px 40px;
-  width: 420px;
-  max-width: 95vw;
-  box-shadow: 0 40px 100px rgba(0,0,0,0.6);
-  transform: scale(0.9) translateY(30px);
-  opacity: 0;
-  transition: transform 0.4s cubic-bezier(0.34,1.36,0.64,1), opacity 0.3s;
-  position: relative;
-}
-#login-overlay.open #login-card {
-  transform: scale(1) translateY(0);
-  opacity: 1;
-}
-#login-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--green));
-  border-radius: 22px 22px 0 0;
-}
-.login-logo {
-  text-align: center;
-  margin-bottom: 32px;
-}
-.login-logo-mark {
-  width: 48px; height: 48px;
-  background: linear-gradient(135deg, var(--accent), #8b5cf6);
-  border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 12px;
-  box-shadow: 0 0 32px rgba(99,102,241,0.4);
-}
-.login-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  margin-bottom: 4px;
-}
-.login-sub { font-size: 13px; color: var(--muted2); }
-.login-tabs {
-  display: flex;
-  background: rgba(255,255,255,0.04);
-  border-radius: 10px;
-  padding: 3px;
-  gap: 3px;
-  margin-bottom: 28px;
-}
-.login-tab {
-  flex: 1;
-  padding: 9px;
-  border-radius: 8px;
-  border: none;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  transition: all 0.2s;
-  background: transparent;
-  color: var(--muted2);
-}
-.login-tab.active { background: var(--accent); color: #fff; }
-.login-field { margin-bottom: 16px; }
-.login-field label {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--muted2);
-  margin-bottom: 7px;
-}
-.login-field input {
-  width: 100%;
-  padding: 12px 16px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
-  font-size: 14px;
-  font-family: 'DM Sans', sans-serif;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  box-sizing: border-box;
-}
-.login-field input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
-}
-#login-error {
-  display: none;
-  padding: 10px 14px;
-  background: rgba(255,59,92,0.1);
-  border: 1px solid rgba(255,59,92,0.3);
-  border-radius: 8px;
-  font-size: 12px;
-  color: var(--red);
-  margin-bottom: 16px;
-}
-.btn-login {
-  width: 100%;
-  padding: 14px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 0 30px rgba(99,102,241,0.3);
-  margin-top: 4px;
-}
-.btn-login:hover { background: var(--accent2); box-shadow: 0 0 50px rgba(99,102,241,0.4); }
-.login-close {
-  position: absolute;
-  top: 16px; right: 16px;
-  width: 32px; height: 32px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--muted2);
-  font-size: 18px;
-  cursor: pointer;
-  transition: all 0.15s;
-  line-height: 1;
-}
-.login-close:hover { color: var(--text); border-color: var(--border); background: rgba(255,255,255,0.1); }
-#name-field { display: none; }
 </style>
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script>
-// ── AUTO-REDIRECT LOGGED-IN USERS TO THE APP ──────────────────────────
-// Runs before anything renders. If a valid session exists, skip the
-// landing page entirely and send the user straight into the app.
-(function() {
-  const SUPABASE_URL = 'https://yuqfoasfefldenkvwyrm.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cWZvYXNmZWZsZGVua3Z3eXJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTI1MDEsImV4cCI6MjA4ODk4ODUwMX0.lTbdFJ6DPDfSQLNXiQbAH2lxo9mzi9DUyjz9IpHoNNE';
-  try {
-    const _supa = window.supabase || window.Supabase;
-    if (!_supa) return;
-    const sb = _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, storageKey: 'tradelog_sb_session' }
-    });
-    sb.auth.getSession().then(function(res) {
-      if (res && res.data && res.data.session && res.data.session.user) {
-        // Valid session — go straight to the app
-        window.location.replace('https://smt070.github.io/TRADELOG/');
-      }
-    }).catch(function() { /* no session, stay on landing page */ });
-  } catch(e) { /* fail silently, stay on landing page */ }
-})();
-</script>
+</head>
+<body>
 
-
-<!-- ═══════════════════════════════ NAV ═══════════════════════════════ -->
-<nav id="navbar">
-  <a class="nav-logo" href="#">
-    <div class="nav-logo-mark">
-      <svg width="18" height="18" viewBox="0 0 28 28">
-        <polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/>
-        <polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/>
-        <polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/>
-        <rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/>
-      </svg>
+<!-- NAV -->
+<nav id="nav">
+  <a class="logo" href="#">
+    <div class="logo-mark">
+      <svg width="17" height="17" viewBox="0 0 28 28"><polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.12)"/><polygon points="5,14 2,4 10,12" fill="white" opacity=".95"/><polygon points="23,14 26,4 18,12" fill="white" opacity=".95"/><rect x="9" y="19" width="10" height="4" rx="2" fill="white"/></svg>
     </div>
-    <div class="nav-logo-text">TRADE<span>LOG</span></div>
+    <div class="logo-text">TRADE<span>LOG</span></div>
   </a>
   <ul class="nav-links">
     <li><a href="#features">Features</a></li>
     <li><a href="#how">How it works</a></li>
-    <li><a href="#testimonials">Reviews</a></li>
+    <li><a href="#brokers">Integrations</a></li>
   </ul>
-  <div class="nav-cta">
-    <button class="btn-ghost-nav" onclick="openLogin('login')">Log In</button>
-    <button class="btn-primary-nav" onclick="openLogin('signup')">Start Free →</button>
+  <div class="nav-btns">
+    <button class="btn-ghost" onclick="go()">Log In</button>
+    <button class="btn-primary" onclick="go()">Start Free →</button>
   </div>
+  <button class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
 
-<!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
-<section class="hero">
-  <div class="hero-badge">Made by a trader, for serious traders</div>
-  <h1>
-    Stop guessing.<br>
-    <span class="line2">Start</span> <em>understanding</em><br>
-    your edge.
-  </h1>
-  <p class="hero-sub">TradeLog is the professional trading journal that reveals patterns, tracks psychology, and shows you exactly where your edge is — and where it isn't.</p>
-  <div class="hero-actions">
-    <button class="btn-hero-primary" onclick="openLogin('signup')">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Get Started Free
-    </button>
-    <button class="btn-hero-ghost" onclick="openLogin('login')">Already have an account →</button>
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mob-menu">
+  <a href="#features" onclick="toggleMenu()">Features</a>
+  <a href="#how" onclick="toggleMenu()">How it works</a>
+  <a href="#brokers" onclick="toggleMenu()">Integrations</a>
+  <div class="mob-btns">
+    <button class="btn-ghost" onclick="go()">Log In</button>
+    <button class="btn-primary" onclick="go()">Start Free →</button>
   </div>
+</div>
 
-  <!-- Mock Dashboard -->
-  <div class="hero-preview">
-    <div class="preview-frame">
-      <div class="preview-topbar">
-        <div class="dot r"></div>
-        <div class="dot y"></div>
-        <div class="dot g"></div>
-        <div style="flex:1; text-align:center; font-size:11px; color: rgba(255,255,255,0.15); font-family: 'DM Sans', sans-serif;">tradelog — Dashboard</div>
-      </div>
-      <div class="preview-content">
-        <div class="mock-stats">
-          <div class="mock-card green">
-            <div class="mock-label">Net P&L</div>
-            <div class="mock-val green">+$4,821</div>
-            <div class="mock-sub">+12.4% return</div>
-          </div>
-          <div class="mock-card blue">
-            <div class="mock-label">Win Rate</div>
-            <div class="mock-val blue">67.3%</div>
-            <div class="mock-sub">62W / 30L</div>
-          </div>
-          <div class="mock-card yellow">
-            <div class="mock-label">Profit Factor</div>
-            <div class="mock-val yellow">2.18</div>
-            <div class="mock-sub">gross win ÷ loss</div>
-          </div>
-          <div class="mock-card blue">
-            <div class="mock-label">Expectancy</div>
-            <div class="mock-val" style="color:#818cf8;">+$52.4</div>
-            <div class="mock-sub">per trade</div>
-          </div>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="hero-badge"><span class="badge-dot"></span>Built by a trader, for serious traders</div>
+  <h1 class="hh">Stop guessing.<br><span class="h1s">Start</span> <span class="h1g">understanding</span><br>your edge.</h1>
+  <p class="hero-sub">TradeLog is the professional trading journal that reveals patterns, tracks psychology, and shows you exactly where your edge is — and where it isn't.</p>
+  <div class="hero-acts">
+    <button class="btn-hero" onclick="go()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Get Started Free</button>
+    <button class="btn-hero-g" onclick="go()">Already have an account <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+  </div>
+  <div class="hprev">
+    <div class="pf">
+      <div class="ptb"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><div class="ptb-lbl">tradelog — Dashboard</div></div>
+      <div class="pc">
+        <div class="ps">
+          <div class="pcard cg"><div class="pl">Net P&amp;L</div><div class="pv g">+$4,821</div><div class="psub">+12.4% return</div></div>
+          <div class="pcard cb"><div class="pl">Win Rate</div><div class="pv b">67.3%</div><div class="psub">62W / 30L</div></div>
+          <div class="pcard ca"><div class="pl">Profit Factor</div><div class="pv a">2.18</div><div class="psub">gross win ÷ loss</div></div>
+          <div class="pcard cp"><div class="pl">Expectancy</div><div class="pv p">+$52.4</div><div class="psub">per trade</div></div>
         </div>
-        <div class="mock-row">
-          <div class="mock-chart-box">
-            <div class="mock-chart-title">Equity Curve — All Time</div>
-            <svg class="chart-svg" viewBox="0 0 500 100" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#00ffbb" stop-opacity="0.25"/>
-                  <stop offset="100%" stop-color="#00ffbb" stop-opacity="0"/>
-                </linearGradient>
-              </defs>
-              <path class="eq-fill" d="M0,90 C40,80 80,70 120,55 C160,40 190,60 230,42 C270,24 310,35 360,18 C400,8 450,12 500,5 L500,100 L0,100 Z" fill="url(#equityGrad)"/>
-              <path class="eq-line" d="M0,90 C40,80 80,70 120,55 C160,40 190,60 230,42 C270,24 310,35 360,18 C400,8 450,12 500,5" fill="none" stroke="#00ffbb" stroke-width="2" stroke-linecap="round"/>
-              <!-- Data points -->
-              <circle cx="0" cy="90" r="3" fill="#00ffbb" opacity="0"/>
-              <circle cx="120" cy="55" r="3" fill="#00ffbb" opacity="0" style="animation: fadeIn 0.3s ease 3s forwards"/>
-              <circle cx="230" cy="42" r="3" fill="#00ffbb" opacity="0" style="animation: fadeIn 0.3s ease 3.5s forwards"/>
-              <circle cx="360" cy="18" r="3" fill="#00ffbb" opacity="0" style="animation: fadeIn 0.3s ease 4s forwards"/>
-              <circle cx="500" cy="5" r="4" fill="#00ffbb" opacity="0" style="animation: fadeIn 0.3s ease 4.5s forwards"/>
-              <!-- Horizontal zero line -->
-              <line x1="0" y1="95" x2="500" y2="95" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        <div class="pr">
+          <div class="pch">
+            <div class="pbt">Equity Curve — All Time</div>
+            <svg width="100%" height="100" viewBox="0 0 500 100" preserveAspectRatio="none">
+              <defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e8a8" stop-opacity=".2"/><stop offset="100%" stop-color="#00e8a8" stop-opacity="0"/></linearGradient></defs>
+              <line x1="0" y1="98" x2="500" y2="98" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+              <path class="eqf" d="M0,95 C50,85 90,72 130,57 C170,42 200,62 240,44 C280,26 320,37 365,18 C400,7 455,12 500,5 L500,100 L0,100Z" fill="url(#eg)"/>
+              <path class="eql" d="M0,95 C50,85 90,72 130,57 C170,42 200,62 240,44 C280,26 320,37 365,18 C400,7 455,12 500,5" fill="none" stroke="#00e8a8" stroke-width="2" stroke-linecap="round"/>
+              <circle class="eqd eqd1" cx="130" cy="57" r="3" fill="#00e8a8"/>
+              <circle class="eqd eqd2" cx="240" cy="44" r="3" fill="#00e8a8"/>
+              <circle class="eqd eqd3" cx="365" cy="18" r="3" fill="#00e8a8"/>
+              <circle class="eqd eqd4" cx="500" cy="5" r="4.5" fill="#00e8a8" filter="drop-shadow(0 0 5px #00e8a8)"/>
             </svg>
           </div>
-          <div class="mock-sidebar-box">
-            <div class="mock-chart-title">Performance</div>
-            <!-- Mini win/loss bars -->
-            <div style="display:flex;flex-direction:column;gap:8px; margin-top:4px;">
-              <div>
-                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);margin-bottom:4px;"><span>Avg Win</span><span style="color:#00ffbb;">+$124</span></div>
-                <div style="height:4px;background:#0d1220;border-radius:2px;"><div style="width:75%;height:100%;background:#00ffbb;border-radius:2px;"></div></div>
+          <div class="psd">
+            <div class="pbt">Performance</div>
+            <div class="sbr"><div class="sbl"><span>Avg Win</span><span style="color:var(--green)">+$124</span></div><div class="sbb"><div class="sbbf" style="width:75%;background:var(--green);animation-delay:2.1s"></div></div></div>
+            <div class="sbr"><div class="sbl"><span>Avg Loss</span><span style="color:var(--red)">−$57</span></div><div class="sbb"><div class="sbbf" style="width:35%;background:var(--red);animation-delay:2.2s"></div></div></div>
+            <div style="height:1px;background:var(--border);margin:8px 0"></div>
+            <div class="sdr"><span>Best Trade</span><span style="color:var(--green);font-weight:700">+$892</span></div>
+            <div class="sdr"><span>Worst Trade</span><span style="color:var(--red);font-weight:700">−$231</span></div>
+            <div class="sdr"><span>Win Streak</span><span style="color:var(--green);font-weight:700">7 🔥</span></div>
+            <div class="sdr"><span>Avg Hold</span><span style="color:var(--muted3);font-weight:700">2h 14m</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="tt">
+    <div class="ti">📊 Total P&amp;L <span class="tv g">+$4,821.50</span></div>
+    <div class="ti">🎯 Win Rate <span class="tv">67.3%</span></div>
+    <div class="ti">📈 Profit Factor <span class="tv">2.18</span></div>
+    <div class="ti">⚡ Best Day <span class="tv g">+$1,240</span></div>
+    <div class="ti">🧠 Avg Confidence <span class="tv">7.4/10</span></div>
+    <div class="ti">💹 XAUUSD <span class="tv g">+$892</span></div>
+    <div class="ti">📉 Worst Day <span class="tv r">−$231</span></div>
+    <div class="ti">🔥 Win Streak <span class="tv">7 trades</span></div>
+    <div class="ti">⏱ Avg Hold <span class="tv">2h 14m</span></div>
+    <div class="ti">🎲 Expectancy <span class="tv g">+$52.4</span></div>
+    <div class="ti">📊 Total P&amp;L <span class="tv g">+$4,821.50</span></div>
+    <div class="ti">🎯 Win Rate <span class="tv">67.3%</span></div>
+    <div class="ti">📈 Profit Factor <span class="tv">2.18</span></div>
+    <div class="ti">⚡ Best Day <span class="tv g">+$1,240</span></div>
+    <div class="ti">🧠 Avg Confidence <span class="tv">7.4/10</span></div>
+    <div class="ti">💹 XAUUSD <span class="tv g">+$892</span></div>
+    <div class="ti">📉 Worst Day <span class="tv r">−$231</span></div>
+    <div class="ti">🔥 Win Streak <span class="tv">7 trades</span></div>
+    <div class="ti">⏱ Avg Hold <span class="tv">2h 14m</span></div>
+    <div class="ti">🎲 Expectancy <span class="tv g">+$52.4</span></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="eye reveal">Everything you need</div>
+  <h2 class="stitle reveal rd1">Your complete trading <span class="ghost">command center</span></h2>
+  <div class="fgrid reveal rd2">
+    <div class="fc"><div class="ficon fi-p">📊</div><div class="fn">Live Dashboard</div><div class="fd">Real-time P&L, win rate, profit factor and equity curve. See everything that matters at a single glance.</div></div>
+    <div class="fc"><div class="ficon fi-g">🔬</div><div class="fn">Deep Analytics</div><div class="fd">P&L by symbol, day of week, hour of day, monthly charts and heatmap. Find where your real edge lives.</div></div>
+    <div class="fc"><div class="ficon fi-a">📅</div><div class="fn">Trading Calendar</div><div class="fd">Visual monthly P&L calendar. See every winning and losing day at a glance — patterns jump out instantly.</div></div>
+    <div class="fc"><div class="ficon fi-c">🧠</div><div class="fn">AI Forecast</div><div class="fd">Detects overtrading, tilt, revenge trading, luck vs skill, kill trades and streak patterns in your history.</div></div>
+    <div class="fc"><div class="ficon fi-r">💭</div><div class="fn">Mindset Tracker</div><div class="fd">Log your pre-market plan, confidence score and emotion each day. Build the discipline of a professional.</div></div>
+    <div class="fc"><div class="ficon fi-v">📂</div><div class="fn">Smart Import</div><div class="fd">MT5, MT4, cTrader, TradingView, DXTrade, FundedNext and more. Auto-detects your broker's format.</div></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="how-in">
+    <div class="how-hd reveal">
+      <div class="eye">See it in action</div>
+      <h2 class="stitle rd1">From import to <span class="ghost">real insight</span><br>in minutes</h2>
+    </div>
+    <div class="how-lay reveal rd2">
+      <div>
+        <div class="snav">
+          <button class="stab active" onclick="setStep(0,true)">
+            <div class="sbadge">01</div>
+            <span class="st">Import or Log</span>
+            <span class="sd">Upload your broker CSV or log trades manually. Any platform, any format — auto-detected.</span>
+          </button>
+          <button class="stab" onclick="setStep(1,true)">
+            <div class="sbadge">02</div>
+            <span class="st">Calendar P&amp;L View</span>
+            <span class="sd">Every day's P&L on a visual calendar. Patterns you'd never see in a spreadsheet jump out instantly.</span>
+          </button>
+          <button class="stab" onclick="setStep(2,true)">
+            <div class="sbadge">03</div>
+            <span class="st">AI + Mindset</span>
+            <span class="sd">AI finds your blind spots. Log your mindset daily to connect psychology to performance.</span>
+          </button>
+        </div>
+        <div class="sprog"><div class="sprog-f" id="pfill"></div></div>
+      </div>
+      <div class="spnls">
+        <!-- Panel 0 -->
+        <div class="spnl active" id="p0">
+          <div class="pcrd">
+            <div class="ptop"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><div class="ptop-lbl">tradelog — Import Trades</div></div>
+            <div class="pbody">
+              <div class="dz"><div class="dz-icon">📁</div><div class="dz-title">Drop your broker export here</div><div class="dz-sub">CSV · XLSX · JSON · Any broker · Any format</div></div>
+              <div class="det"><div class="det-l"><div class="det-dot"></div><span style="color:var(--muted3)">Format detected:</span><span style="color:var(--text);font-weight:700">MetaTrader 5</span></div><div class="det-tag">✓ Auto-matched</div></div>
+              <div class="ifile"><span class="if-n">📄 MT5_History_April2026.csv</span><span class="if-ok">92 trades ✓</span></div>
+              <div class="ifile"><span class="if-n">📄 MT5_History_March2026.csv</span><span class="if-ok">78 trades ✓</span></div>
+              <div class="ifile"><span class="if-n">📄 MT5_History_Feb2026.csv</span><span class="if-ok">64 trades ✓</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- Panel 1: Calendar -->
+        <div class="spnl" id="p1">
+          <div class="pcrd">
+            <div class="ptop"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><div class="ptop-lbl">tradelog — Trading Calendar</div></div>
+            <div class="pbody">
+              <div class="calw">
+                <div class="calh"><div class="calm">April 2026</div><div class="calt">+$4,821 MTD</div></div>
+                <div class="cdh"><div class="cdn">Mon</div><div class="cdn">Tue</div><div class="cdn">Wed</div><div class="cdn">Thu</div><div class="cdn">Fri</div><div class="cdn">Sat</div><div class="cdn">Sun</div></div>
+                <div class="cgrid" id="cal"></div>
+                <div class="cstats">
+                  <div class="cstat"><div class="csl">Win Days</div><div class="csv g">14</div></div>
+                  <div class="cstat"><div class="csl">Loss Days</div><div class="csv r">5</div></div>
+                  <div class="cstat"><div class="csl">Best Day</div><div class="csv b">+$840</div></div>
+                </div>
               </div>
-              <div>
-                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);margin-bottom:4px;"><span>Avg Loss</span><span style="color:#ff3b5c;">-$57</span></div>
-                <div style="height:4px;background:#0d1220;border-radius:2px;"><div style="width:35%;height:100%;background:#ff3b5c;border-radius:2px;"></div></div>
+            </div>
+          </div>
+        </div>
+        <!-- Panel 2: AI -->
+        <div class="spnl" id="p2">
+          <div class="pcrd">
+            <div class="ptop"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><div class="ptop-lbl">tradelog — AI Insights &amp; Mindset</div></div>
+            <div class="pbody">
+              <div class="ail">
+                <div class="air"><div class="aiico w">⚠️</div><div class="aitxt"><strong>Overtrading after losses detected.</strong> You place the next trade within 4 min of a loss and lose 72% of those. Enforce a cool-down period.</div></div>
+                <div class="air"><div class="aiico ok">✅</div><div class="aitxt"><strong>Thursday is your strongest session.</strong> 81% win rate, profit factor 3.4. Statistically significant — prioritise Thursdays.</div></div>
+                <div class="air"><div class="aiico i">📉</div><div class="aitxt"><strong>Monday P&L is dragging your returns.</strong> −$340 avg on Mondays vs +$812 on other days. Consider sitting out Monday opens.</div></div>
               </div>
-              <div>
-                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);margin-bottom:4px;"><span>Best Trade</span><span style="color:#00ffbb;">+$892</span></div>
-              </div>
-              <div>
-                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);margin-bottom:4px;"><span>Worst Trade</span><span style="color:#ff3b5c;">-$231</span></div>
-              </div>
-              <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
-              <div>
-                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);"><span>Win Streak</span><span style="color:#00ffbb;font-weight:700;">7</span></div>
-              </div>
-              <div>
-                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);"><span>Loss Streak</span><span style="color:#ff3b5c;font-weight:700;">3</span></div>
+              <div class="mr">
+                <div class="mc"><div class="ml">Today's Confidence</div><div class="cbig">8.2<span style="font-size:13px;color:var(--muted2);font-weight:400">/10</span></div><div class="ctr"><div class="ctrf"></div></div></div>
+                <div class="mc"><div class="ml">Pre-Session Mood</div><div class="moodrow"><div class="mood">😤</div><div class="mood">😐</div><div class="mood on">🙂</div><div class="mood">😄</div><div class="mood">🔥</div></div></div>
               </div>
             </div>
           </div>
@@ -1018,300 +490,121 @@ footer .footer-logo span { color: var(--accent); }
   </div>
 </section>
 
-<!-- ═══════════════════════════════ TICKER ═══════════════════════════════ -->
-<div class="stats-ticker">
-  <div class="ticker-track">
-    <!-- First set -->
-    <div class="ticker-item">📊 Total P&L <span class="ticker-val g">+$4,821.50</span></div>
-    <div class="ticker-item">🎯 Win Rate <span class="ticker-val">67.3%</span></div>
-    <div class="ticker-item">📈 Profit Factor <span class="ticker-val">2.18</span></div>
-    <div class="ticker-item">⚡ Best Day <span class="ticker-val g">+$1,240</span></div>
-    <div class="ticker-item">🧠 Avg Confidence <span class="ticker-val">7.4/10</span></div>
-    <div class="ticker-item">💹 XAUUSD <span class="ticker-val g">+$892</span></div>
-    <div class="ticker-item">📉 Worst Day <span class="ticker-val r">-$231</span></div>
-    <div class="ticker-item">🔥 Win Streak <span class="ticker-val">7 trades</span></div>
-    <div class="ticker-item">⏱ Avg Hold <span class="ticker-val">2h 14m</span></div>
-    <div class="ticker-item">🎲 Expectancy <span class="ticker-val g">+$52.4</span></div>
-    <!-- Duplicate for seamless loop -->
-    <div class="ticker-item">📊 Total P&L <span class="ticker-val g">+$4,821.50</span></div>
-    <div class="ticker-item">🎯 Win Rate <span class="ticker-val">67.3%</span></div>
-    <div class="ticker-item">📈 Profit Factor <span class="ticker-val">2.18</span></div>
-    <div class="ticker-item">⚡ Best Day <span class="ticker-val g">+$1,240</span></div>
-    <div class="ticker-item">🧠 Avg Confidence <span class="ticker-val">7.4/10</span></div>
-    <div class="ticker-item">💹 XAUUSD <span class="ticker-val g">+$892</span></div>
-    <div class="ticker-item">📉 Worst Day <span class="ticker-val r">-$231</span></div>
-    <div class="ticker-item">🔥 Win Streak <span class="ticker-val">7 trades</span></div>
-    <div class="ticker-item">⏱ Avg Hold <span class="ticker-val">2h 14m</span></div>
-    <div class="ticker-item">🎲 Expectancy <span class="ticker-val g">+$52.4</span></div>
+<!-- BROKERS -->
+<div class="brokers reveal" id="brokers">
+  <div class="bsub">Works with every major broker &amp; platform</div>
+  <div class="chips">
+    <div class="chip">MetaTrader 5</div><div class="chip">MetaTrader 4</div><div class="chip">cTrader</div>
+    <div class="chip">TradingView</div><div class="chip">DXTrade</div><div class="chip">FundedNext</div>
+    <div class="chip">FTMO</div><div class="chip">Replay Trading</div><div class="chip">MyFXBook</div>
+    <div class="chip">Any CSV</div><div class="chip">Excel / XLSX</div><div class="chip">JSON</div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════ FEATURES ═══════════════════════════════ -->
-<section class="features" id="features">
-  <div class="section-eyebrow reveal">Everything you need</div>
-  <h2 class="section-title reveal reveal-delay-1">Your complete trading <em>command center</em></h2>
-  <div class="features-grid reveal reveal-delay-2">
-    <div class="feature-card">
-      <div class="feature-icon purple">📊</div>
-      <div class="feature-name">Live Dashboard</div>
-      <div class="feature-desc">Real-time P&L, win rate, profit factor and equity curve. See your trading performance at a glance with beautiful, actionable stats.</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon green">🔬</div>
-      <div class="feature-name">Deep Analytics</div>
-      <div class="feature-desc">P&L by symbol, day of week, hour of day, monthly charts, consistency heatmap and trade distribution. Find your real edge.</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon yellow">📅</div>
-      <div class="feature-name">Trading Calendar</div>
-      <div class="feature-desc">Visual monthly calendar showing your daily P&L at a glance. Identify your best and worst sessions instantly.</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon blue">🧠</div>
-      <div class="feature-name">AI Forecast</div>
-      <div class="feature-desc">Pattern recognition that detects overtrading, tilt, luck vs skill, kill trades, and streak patterns in your actual history.</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon red">💭</div>
-      <div class="feature-name">Mindset Tracker</div>
-      <div class="feature-desc">Log your pre-market plan, end-of-day review, confidence score, and emotion. Track your psychological edge over time.</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon pink">📂</div>
-      <div class="feature-name">Smart Import</div>
-      <div class="feature-desc">Import from MT5, MT4, cTrader, TradingView, DXTrade, FundedNext, Replay Trading and more. Auto-detects your broker's format.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ BROKERS ═══════════════════════════════ -->
-<div class="brokers reveal">
-  <div class="brokers-sub">Works with every major broker and platform</div>
-  <div class="broker-chips">
-    <div class="broker-chip">MetaTrader 5</div>
-    <div class="broker-chip">MetaTrader 4</div>
-    <div class="broker-chip">cTrader</div>
-    <div class="broker-chip">TradingView</div>
-    <div class="broker-chip">DXTrade</div>
-    <div class="broker-chip">FundedNext</div>
-    <div class="broker-chip">FTMO</div>
-    <div class="broker-chip">Replay Trading</div>
-    <div class="broker-chip">MyFXBook</div>
-    <div class="broker-chip">Any CSV</div>
-    <div class="broker-chip">Excel / XLSX</div>
-    <div class="broker-chip">JSON</div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════ HOW IT WORKS ═══════════════════════════════ -->
-<section class="how" id="how">
-  <div class="section-eyebrow reveal" style="justify-content:center;">Simple process</div>
-  <h2 class="section-title reveal reveal-delay-1" style="margin:0 auto 0;text-align:center;max-width:500px;">From broker export to <em>real insights</em> in minutes</h2>
-  <div class="steps reveal reveal-delay-2">
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-title">Import or Log</div>
-      <div class="step-desc">Upload your broker's CSV export or log trades manually. TradeLog auto-detects your platform's format.</div>
-    </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-title">Analyse</div>
-      <div class="step-desc">Instantly see your win rate, profit factor, equity curve, best symbols, worst hours, and psychological patterns.</div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-title">Improve</div>
-      <div class="step-desc">Use the AI Forecast to eliminate weaknesses. Log your mindset daily to build the discipline of a professional.</div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ SOCIAL PROOF ═══════════════════════════════ -->
-<section class="social" id="testimonials">
-  <div style="text-align:center;" class="reveal">
-    <div class="section-eyebrow" style="justify-content:center;">Trusted by traders worldwide</div>
-    <h2 class="section-title" style="margin:0 auto;text-align:center;max-width:500px;font-size:clamp(28px,3.5vw,44px);">What traders <em>say</em></h2>
-  </div>
-  <div class="testimonials reveal reveal-delay-1">
-    <div class="testimonial">
-      <div class="testi-text">Finally a journal that doesn't make me feel like I'm doing admin work. The AI forecast told me I was overtrading after losses — I cut my losers immediately and my PF went from 1.1 to 1.9 in a month.</div>
-      <div class="testi-author">
-        <div class="testi-avatar" style="background: linear-gradient(135deg,#6366f1,#8b5cf6);">AK</div>
-        <div>
-          <div class="testi-name">Alex K.</div>
-          <div class="testi-role">Forex trader · 3 years</div>
-          <div class="stars">★★★★★</div>
-        </div>
-      </div>
-    </div>
-    <div class="testimonial">
-      <div class="testi-text">The calendar view alone was worth it. I could literally see I was losing every Monday. Stopped trading Mondays, my weekly P&L immediately improved. Insane how obvious it was once I could see it.</div>
-      <div class="testi-author">
-        <div class="testi-avatar" style="background: linear-gradient(135deg,#059669,#00ffbb);">SR</div>
-        <div>
-          <div class="testi-name">Sam R.</div>
-          <div class="testi-role">Indices trader · Prop firm</div>
-          <div class="stars">★★★★★</div>
-        </div>
-      </div>
-    </div>
-    <div class="testimonial">
-      <div class="testi-text">I imported 6 months of MT5 history in about 10 seconds. The broker format auto-detected perfectly. Now I actually review my trades properly — the mindset section keeps me honest about my emotional state.</div>
-      <div class="testi-author">
-        <div class="testi-avatar" style="background: linear-gradient(135deg,#f59e0b,#ef4444);">MJ</div>
-        <div>
-          <div class="testi-name">Maria J.</div>
-          <div class="testi-role">Gold & Oil trader</div>
-          <div class="stars">★★★★★</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════ CTA ═══════════════════════════════ -->
-<section class="cta-section">
+<!-- CTA -->
+<section class="cta">
+  <div class="cta-glow"></div>
   <div class="reveal">
-    <h2>Ready to find<br><em style="background:linear-gradient(135deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-style:normal;">your edge?</em></h2>
+    <h2>Ready to find<br><span class="ctag">your edge?</span></h2>
     <p>Join thousands of traders who use TradeLog to trade smarter, not just harder.</p>
-    <button class="btn-cta-big" onclick="openLogin('signup')">
-      Start Free Today
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
-    <div class="cta-sub">Free forever · No credit card · Syncs across devices</div>
+    <button class="btn-cta" onclick="go()">Start Free Today <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+    <div class="cta-fine"><span>Free forever</span> · <span>No credit card</span> · <span>Syncs across devices</span></div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
+<!-- FOOTER -->
 <footer>
-  <div class="footer-logo">TRADE<span>LOG</span></div>
+  <div class="flogo">TRADE<span>LOG</span></div>
   <div>© 2026 TradeLog · Built by a trader, for traders</div>
   <div>Your data stays yours. Always.</div>
 </footer>
 
-<!-- ═══════════════════════════════ LOGIN OVERLAY ═══════════════════════════════ -->
-<div id="login-overlay" onclick="if(event.target===this)closeLogin()">
-  <div id="login-card">
-    <button class="login-close" onclick="closeLogin()">×</button>
-    <div class="login-logo">
-      <div class="login-logo-mark">
-        <svg width="22" height="22" viewBox="0 0 28 28">
-          <polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/>
-          <polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/>
-          <polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/>
-          <rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/>
-        </svg>
-      </div>
-      <div class="login-title">Welcome to TradeLog</div>
-      <div class="login-sub">Your professional trading journal</div>
-    </div>
-    <div class="login-tabs">
-      <button id="tab-login" class="login-tab active" onclick="switchTab('login')">Log In</button>
-      <button id="tab-signup" class="login-tab" onclick="switchTab('signup')">Sign Up</button>
-    </div>
-    <div id="name-field" class="login-field">
-      <label>Your Name</label>
-      <input type="text" id="auth-name" placeholder="e.g. Alex K.">
-    </div>
-    <div class="login-field">
-      <label>Email</label>
-      <input type="email" id="auth-email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')handleLoginSubmit()">
-    </div>
-    <div class="login-field">
-      <label>Password</label>
-      <input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleLoginSubmit()">
-    </div>
-    <div id="login-error"></div>
-    <button class="btn-login" id="login-btn" onclick="handleLoginSubmit()">Log In</button>
-  </div>
-</div>
-
 <script>
-// ── NAV SCROLL ─────────────────────────────────────────────────────────
-window.addEventListener('scroll', () => {
-  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
-});
+function go(){ window.location.href='https://smt070.github.io/TRADELOG/'; }
 
-// ── SCROLL REVEAL ──────────────────────────────────────────────────────
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.12 });
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+/* Nav */
+window.addEventListener('scroll',()=>{ document.getElementById('nav').classList.toggle('scrolled',window.scrollY>40); });
 
-// ── MOUSE GLOW ON FEATURE CARDS ───────────────────────────────────────
-document.querySelectorAll('.feature-card').forEach(card => {
-  card.addEventListener('mousemove', e => {
-    const r = card.getBoundingClientRect();
-    card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
-    card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+/* Mobile menu */
+function toggleMenu(){
+  document.getElementById('hamburger').classList.toggle('open');
+  document.getElementById('mob-menu').classList.toggle('open');
+}
+
+/* Scroll reveal */
+const obs = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); }),{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+/* Feature hover glow */
+document.querySelectorAll('.fc').forEach(c=>{
+  c.addEventListener('mousemove',e=>{
+    const r=c.getBoundingClientRect();
+    c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
+    c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');
   });
 });
 
-// ── LOGIN MODAL ────────────────────────────────────────────────────────
-let currentTab = 'login';
-
-function openLogin(tab = 'login') {
-  // Redirect straight to the app — auth is handled there
-  window.location.href = 'https://smt070.github.io/TRADELOG/';
+/* Calendar build */
+function buildCal(){
+  const g=document.getElementById('cal');
+  if(g.children.length) return;
+  // April 2026 starts on Wednesday → offset 2 (Mon=0)
+  const offset=2, total=30;
+  const data={
+    3:{v:312,w:1},4:{v:198,w:1},5:{v:-87,w:0},
+    6:{v:445,w:1},7:{v:210,w:1},
+    10:{v:-132,w:0},11:{v:567,w:1},12:{v:321,w:1},13:{v:840,w:1},14:{v:-45,w:0},
+    17:{v:190,w:1},18:{v:-203,w:0},19:{v:412,w:1},20:{v:278,w:1},21:{v:156,w:1},
+    24:{v:390,w:1}
+  };
+  const today=24;
+  for(let i=0;i<offset;i++){ const e=document.createElement('div'); e.className='cc empty'; g.appendChild(e); }
+  for(let d=1;d<=total;d++){
+    const dow=(offset+d-1)%7; // 0=Mon … 5=Sat 6=Sun
+    const wknd=dow===5||dow===6;
+    const el=document.createElement('div');
+    if(wknd||!data[d]){
+      el.className='cc flat';
+      el.innerHTML=`<span class="cc-n">${d}</span>`;
+    } else {
+      const {v,w}=data[d];
+      el.className=`cc ${w?'win':'loss'}${d===today?' today':''}`;
+      const disp=Math.abs(v)>=1000?'$'+(Math.abs(v)/1000).toFixed(1)+'k':'$'+Math.abs(v);
+      el.innerHTML=`<span class="cc-n">${d}</span><span class="cc-p">${v>0?'+':'−'}${disp}</span>`;
+    }
+    g.appendChild(el);
+  }
 }
 
-function closeLogin() {
-  document.getElementById('login-overlay').classList.remove('open');
-  document.getElementById('login-error').style.display = 'none';
+/* Steps auto-advance with progress bar */
+let cur=0, raf=null, start=null;
+const DUR=6000;
+
+function setStep(idx, manual=false){
+  if(manual){ cancelAnimationFrame(raf); raf=null; }
+  document.querySelectorAll('.stab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.querySelectorAll('.spnl').forEach((p,i)=>p.classList.toggle('active',i===idx));
+  cur=idx;
+  if(idx===1) buildCal();
+  runProgress();
 }
 
-function switchTab(tab) {
-  currentTab = tab;
-  updateTab();
-  document.getElementById('login-error').style.display = 'none';
+function runProgress(){
+  cancelAnimationFrame(raf);
+  const fill=document.getElementById('pfill');
+  fill.style.transition='none';
+  fill.style.width='0%';
+  start=performance.now();
+  function frame(now){
+    const pct=Math.min((now-start)/DUR*100,100);
+    fill.style.width=pct+'%';
+    if(pct<100){ raf=requestAnimationFrame(frame); }
+    else{ setStep((cur+1)%3,false); }
+  }
+  raf=requestAnimationFrame(frame);
 }
 
-function updateTab() {
-  const isLogin = currentTab === 'login';
-  document.getElementById('tab-login').classList.toggle('active', isLogin);
-  document.getElementById('tab-signup').classList.toggle('active', !isLogin);
-  document.getElementById('name-field').style.display = isLogin ? 'none' : 'block';
-  document.getElementById('login-btn').textContent = isLogin ? 'Log In' : 'Create Account';
-}
-
-function showLoginError(msg) {
-  const el = document.getElementById('login-error');
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-
-async function handleLoginSubmit() {
-  const email = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  const btn = document.getElementById('login-btn');
-  document.getElementById('login-error').style.display = 'none';
-
-  if (!email || !password) { showLoginError('Please enter your email and password.'); return; }
-
-  btn.textContent = '...'; btn.disabled = true;
-
-  // ── Point to your actual app ──────────────────────────────────────────
-  // Option A: Open the app in same tab (pass credentials via sessionStorage
-  //           if your app reads them on load, or just redirect to app URL)
-  // Option B: Open app in new tab
-  // For demo, we simulate a short delay then redirect to the app HTML file.
-  // Replace 'index__1_.html' with your actual hosted app URL.
-
-  await new Promise(r => setTimeout(r, 900));
-
-  // Store tab mode for the app auth screen to auto-fill
-  sessionStorage.setItem('tl_auth_mode', currentTab);
-  sessionStorage.setItem('tl_auth_email', email);
-
-  // Redirect to the app
-  window.location.href = 'index.html';
-}
-
-// Escape to close
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeLogin();
-});
+window.addEventListener('load',()=>{ setStep(0,false); });
 </script>
-
 </body>
 </html>
