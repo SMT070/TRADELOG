@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeLog — Built by a Trader, For Traders</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #030508;
+  --surface: #080c14;
+  --border: #111c2e;
+  --accent: #6366f1;
+  --accent2: #818cf8;
+  --green: #00ffbb;
+  --red: #ff3b5c;
+  --text: #f0f4ff;
+  --muted: #4a5568;
+  --muted2: #94a3b8;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NOISE TEXTURE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 20px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid transparent;
+  transition: all 0.4s;
+}
+nav.scrolled {
+  background: rgba(3,5,8,0.88);
+  backdrop-filter: blur(20px);
+  border-bottom-color: var(--border);
+  padding: 14px 48px;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.nav-logo-mark {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 24px rgba(99,102,241,0.4);
+}
+.nav-logo-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+.nav-logo-text span { color: var(--accent); }
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  list-style: none;
+}
+.nav-links a {
+  color: var(--muted2);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.btn-ghost-nav {
+  padding: 9px 20px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+}
+.btn-ghost-nav:hover { border-color: var(--accent); color: var(--accent); }
+.btn-primary-nav {
+  padding: 9px 22px;
+  border: none;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+  box-shadow: 0 0 24px rgba(99,102,241,0.3);
+}
+.btn-primary-nav:hover {
+  background: var(--accent2);
+  transform: translateY(-1px);
+  box-shadow: 0 0 36px rgba(99,102,241,0.4);
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Radial glow orbs */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -200px; left: 50%;
+  transform: translateX(-50%);
+  width: 900px; height: 600px;
+  background: radial-gradient(ellipse, rgba(99,102,241,0.12) 0%, transparent 65%);
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -100px; left: 20%;
+  width: 400px; height: 400px;
+  background: radial-gradient(ellipse, rgba(0,255,187,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 16px;
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 100px;
+  background: rgba(99,102,241,0.08);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent2);
+  margin-bottom: 32px;
+  animation: fadeInUp 0.6s ease forwards;
+  opacity: 0;
+}
+.hero-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.hero h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(44px, 7vw, 88px);
+  font-weight: 800;
+  letter-spacing: -3px;
+  line-height: 0.95;
+  max-width: 900px;
+  margin-bottom: 28px;
+  animation: fadeInUp 0.6s ease 0.1s forwards;
+  opacity: 0;
+}
+.hero h1 .line2 { color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.2); }
+.hero h1 em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--accent), var(--green) 60%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 18px;
+  color: var(--muted2);
+  max-width: 520px;
+  line-height: 1.7;
+  margin-bottom: 44px;
+  font-weight: 400;
+  animation: fadeInUp 0.6s ease 0.2s forwards;
+  opacity: 0;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 72px;
+  animation: fadeInUp 0.6s ease 0.3s forwards;
+  opacity: 0;
+}
+.btn-hero-primary {
+  padding: 16px 36px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0 40px rgba(99,102,241,0.35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-hero-primary:hover {
+  background: var(--accent2);
+  transform: translateY(-2px);
+  box-shadow: 0 0 60px rgba(99,102,241,0.5);
+}
+.btn-hero-ghost {
+  padding: 16px 32px;
+  background: transparent;
+  color: var(--muted2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-hero-ghost:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+/* ── MOCK DASHBOARD PREVIEW ── */
+.hero-preview {
+  width: 100%;
+  max-width: 1000px;
+  animation: fadeInUp 0.8s ease 0.4s forwards;
+  opacity: 0;
+  position: relative;
+}
+.preview-frame {
+  border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 40px 120px rgba(0,0,0,0.8),
+    0 0 80px rgba(99,102,241,0.08);
+  position: relative;
+}
+.preview-frame::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--green), transparent);
+  opacity: 0.7;
+}
+.preview-topbar {
+  background: #0a0e18;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot.r { background: #ff5f57; }
+.dot.y { background: #ffbd2e; }
+.dot.g { background: #28c840; }
+.preview-content { padding: 24px; }
+.mock-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.mock-card {
+  background: #0d1220;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.mock-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 10px 10px 0 0;
+}
+.mock-card.green::after { background: var(--green); }
+.mock-card.blue::after  { background: var(--accent); }
+.mock-card.yellow::after { background: #f59e0b; }
+.mock-card.red::after   { background: var(--red); }
+.mock-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted2); margin-bottom: 6px; }
+.mock-val { font-size: 22px; font-weight: 800; letter-spacing: -0.8px; }
+.mock-val.green { color: var(--green); }
+.mock-val.blue  { color: var(--accent2); }
+.mock-val.yellow { color: #f59e0b; }
+.mock-val.red   { color: var(--red); }
+.mock-sub { font-size: 10px; color: var(--muted); margin-top: 3px; }
+.mock-row {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 10px;
+}
+.mock-chart-box {
+  background: #0d1220;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.mock-chart-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted2); margin-bottom: 12px; }
+.chart-svg { width: 100%; height: 100px; }
+.mock-sidebar-box {
+  background: #0d1220;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+/* Animated equity line */
+.eq-line {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: drawLine 2.5s ease 1.5s forwards;
+}
+@keyframes drawLine {
+  to { stroke-dashoffset: 0; }
+}
+.eq-fill {
+  opacity: 0;
+  animation: fadeIn 0.5s ease 4s forwards;
+}
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+/* ── FADE IN UP ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── STATS TICKER ── */
+.stats-ticker {
+  background: rgba(8,12,20,0.6);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0;
+  overflow: hidden;
+  position: relative;
+}
+.stats-ticker::before,
+.stats-ticker::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 120px;
+  z-index: 2;
+}
+.stats-ticker::before { left: 0; background: linear-gradient(90deg, var(--bg), transparent); }
+.stats-ticker::after  { right: 0; background: linear-gradient(-90deg, var(--bg), transparent); }
+.ticker-track {
+  display: flex;
+  gap: 0;
+  animation: ticker 30s linear infinite;
+  width: max-content;
+}
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 40px;
+  white-space: nowrap;
+  border-right: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted2);
+}
+.ticker-val { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--text); font-size: 15px; }
+.ticker-val.g { color: var(--green); }
+.ticker-val.r { color: var(--red); }
+
+/* ── FEATURES ── */
+.features {
+  padding: 120px 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.section-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-eyebrow::before {
+  content: '';
+  width: 28px; height: 1px;
+  background: var(--accent);
+}
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 800;
+  letter-spacing: -2px;
+  line-height: 1.05;
+  margin-bottom: 60px;
+  max-width: 600px;
+}
+.section-title em { font-style: normal; color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.25); }
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.feature-card {
+  background: var(--surface);
+  padding: 36px;
+  transition: background 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.feature-card:hover { background: #0c1320; }
+.feature-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(99,102,241,0.05), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.feature-card:hover::after { opacity: 1; }
+.feature-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+.feature-icon.purple { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); }
+.feature-icon.green  { background: rgba(0,255,187,0.08);  border: 1px solid rgba(0,255,187,0.2); }
+.feature-icon.yellow { background: rgba(245,158,11,0.1);  border: 1px solid rgba(245,158,11,0.2); }
+.feature-icon.red    { background: rgba(255,59,92,0.08);  border: 1px solid rgba(255,59,92,0.2); }
+.feature-icon.blue   { background: rgba(6,182,212,0.08);  border: 1px solid rgba(6,182,212,0.2); }
+.feature-icon.pink   { background: rgba(236,72,153,0.08); border: 1px solid rgba(236,72,153,0.2); }
+.feature-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+.feature-desc {
+  font-size: 13px;
+  color: var(--muted2);
+  line-height: 1.7;
+}
+
+/* ── BROKERS ── */
+.brokers {
+  padding: 80px 48px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.brokers-sub { font-size: 13px; color: var(--muted); margin-bottom: 32px; font-weight: 500; }
+.broker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.broker-chip {
+  padding: 8px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted2);
+  transition: all 0.2s;
+}
+.broker-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── HOW IT WORKS ── */
+.how {
+  padding: 120px 48px;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
+  margin-top: 60px;
+  position: relative;
+}
+.steps::before {
+  content: '';
+  position: absolute;
+  top: 28px; left: 16%; right: 16%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
+}
+.step { position: relative; }
+.step-num {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 auto 20px;
+  box-shadow: 0 0 32px rgba(99,102,241,0.3);
+}
+.step-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+.step-desc { font-size: 13px; color: var(--muted2); line-height: 1.7; }
+
+/* ── SOCIAL PROOF ── */
+.social {
+  padding: 80px 48px;
+  background: linear-gradient(180deg, transparent, rgba(99,102,241,0.03), transparent);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.testimonials {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 1100px;
+  margin: 40px auto 0;
+}
+.testimonial {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  transition: all 0.2s;
+}
+.testimonial:hover { border-color: rgba(99,102,241,0.3); transform: translateY(-3px); }
+.testi-text { font-size: 14px; color: var(--muted2); line-height: 1.7; margin-bottom: 20px; font-style: italic; }
+.testi-text::before { content: '"'; color: var(--accent); font-size: 20px; font-style: normal; line-height: 0; vertical-align: -4px; margin-right: 3px; }
+.testi-author { display: flex; align-items: center; gap: 10px; }
+.testi-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px; color: #fff;
+}
+.testi-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.testi-role { font-size: 11px; color: var(--muted); }
+.stars { color: #f59e0b; font-size: 11px; letter-spacing: 1px; margin-top: 2px; }
+
+/* ── CTA ── */
+.cta-section {
+  padding: 120px 48px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.cta-section::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px; height: 500px;
+  background: radial-gradient(ellipse, rgba(99,102,241,0.1), transparent 65%);
+  pointer-events: none;
+}
+.cta-section h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 800;
+  letter-spacing: -2px;
+  margin-bottom: 20px;
+}
+.cta-section p {
+  font-size: 16px;
+  color: var(--muted2);
+  margin-bottom: 44px;
+}
+.btn-cta-big {
+  padding: 18px 52px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0 60px rgba(99,102,241,0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.btn-cta-big:hover { transform: translateY(-3px); box-shadow: 0 0 80px rgba(99,102,241,0.55); background: var(--accent2); }
+.cta-sub { margin-top: 16px; font-size: 12px; color: var(--muted); }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 40px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+}
+footer .footer-logo { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; color: var(--text); }
+footer .footer-logo span { color: var(--accent); }
+
+/* ── SCROLL REVEAL ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  nav { padding: 16px 20px; }
+  nav.scrolled { padding: 12px 20px; }
+  .nav-links { display: none; }
+  .hero { padding: 100px 20px 60px; }
+  .hero h1 { letter-spacing: -1.5px; }
+  .hero-actions { flex-direction: column; width: 100%; }
+  .btn-hero-primary, .btn-hero-ghost { width: 100%; justify-content: center; }
+  .mock-stats { grid-template-columns: 1fr 1fr; }
+  .mock-row { grid-template-columns: 1fr; }
+  .mock-sidebar-box { display: none; }
+  .features { padding: 80px 20px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .brokers { padding: 60px 20px; }
+  .how { padding: 80px 20px; }
+  .steps { grid-template-columns: 1fr; gap: 32px; }
+  .steps::before { display: none; }
+  .social { padding: 60px 20px; }
+  .testimonials { grid-template-columns: 1fr; }
+  .cta-section { padding: 80px 20px; }
+  footer { padding: 24px 20px; flex-direction: column; gap: 12px; text-align: center; }
+}
+
+/* ── SLIDE-IN PANEL FOR LOGIN ── */
+#login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0);
+  backdrop-filter: blur(0px);
+  pointer-events: none;
+  transition: background 0.4s, backdrop-filter 0.4s;
+}
+#login-overlay.open {
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(12px);
+  pointer-events: all;
+}
+#login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 44px 40px;
+  width: 420px;
+  max-width: 95vw;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+  transform: scale(0.9) translateY(30px);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.34,1.36,0.64,1), opacity 0.3s;
+  position: relative;
+}
+#login-overlay.open #login-card {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+#login-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--green));
+  border-radius: 22px 22px 0 0;
+}
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.login-logo-mark {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+  box-shadow: 0 0 32px rgba(99,102,241,0.4);
+}
+.login-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+.login-sub { font-size: 13px; color: var(--muted2); }
+.login-tabs {
+  display: flex;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 3px;
+  margin-bottom: 28px;
+}
+.login-tab {
+  flex: 1;
+  padding: 9px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+  background: transparent;
+  color: var(--muted2);
+}
+.login-tab.active { background: var(--accent); color: #fff; }
+.login-field { margin-bottom: 16px; }
+.login-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted2);
+  margin-bottom: 7px;
+}
+.login-field input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+.login-field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+}
+#login-error {
+  display: none;
+  padding: 10px 14px;
+  background: rgba(255,59,92,0.1);
+  border: 1px solid rgba(255,59,92,0.3);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--red);
+  margin-bottom: 16px;
+}
+.btn-login {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0 30px rgba(99,102,241,0.3);
+  margin-top: 4px;
+}
+.btn-login:hover { background: var(--accent2); box-shadow: 0 0 50px rgba(99,102,241,0.4); }
+.login-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted2);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.login-close:hover { color: var(--text); border-color: var(--border); background: rgba(255,255,255,0.1); }
+#name-field { display: none; }
+</style>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+// ── AUTO-REDIRECT LOGGED-IN USERS TO THE APP ──────────────────────────
+// Runs before anything renders. If a valid session exists, skip the
+// landing page entirely and send the user straight into the app.
+(function() {
+  const SUPABASE_URL = 'https://yuqfoasfefldenkvwyrm.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cWZvYXNmZWZsZGVua3Z3eXJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTI1MDEsImV4cCI6MjA4ODk4ODUwMX0.lTbdFJ6DPDfSQLNXiQbAH2lxo9mzi9DUyjz9IpHoNNE';
+  try {
+    const _supa = window.supabase || window.Supabase;
+    if (!_supa) return;
+    const sb = _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, storageKey: 'tradelog_sb_session' }
+    });
+    sb.auth.getSession().then(function(res) {
+      if (res && res.data && res.data.session && res.data.session.user) {
+        // Valid session — go straight to the app
+        window.location.replace('index.html');
+      }
+    }).catch(function() { /* no session, stay on landing page */ });
+  } catch(e) { /* fail silently, stay on landing page */ }
+})();
+</script>
+
+
+<!-- ═══════════════════════════════ NAV ═══════════════════════════════ -->
+<nav id="navbar">
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-mark">
+      <svg width="18" height="18" viewBox="0 0 28 28">
+        <polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/>
+        <polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/>
+        <polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/>
+        <rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/>
+      </svg>
+    </div>
+    <div class="nav-logo-text">TRADE<span>LOG</span></div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#testimonials">Reviews</a></li>
+  </ul>
+  <div class="nav-cta">
+    <button class="btn-ghost-nav" onclick="openLogin('login')">Log In</button>
+    <button class="btn-primary-nav" onclick="openLogin('signup')">Start Free →</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
+<section class="hero">
+  <div class="hero-badge">Made by a trader, for serious traders</div>
+  <h1>
+    Stop guessing.<br>
+    <span class="line2">Start</span> <em>understanding</em><br>
+    your edge.
+  </h1>
+  <p class="hero-sub">TradeLog is the professional trading journal that reveals patterns, tracks psychology, and shows you exactly where your edge is — and where it isn't.</p>
+  <div class="hero-actions">
+    <button class="btn-hero-primary" onclick="openLogin('signup')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Get Started Free
+    </button>
+    <button class="btn-hero-ghost" onclick="openLogin('login')">Already have an account →</button>
+  </div>
+
+  <!-- Mock Dashboard -->
+  <div class="hero-preview">
+    <div class="preview-frame">
+      <div class="preview-topbar">
+        <div class="dot r"></div>
+        <div class="dot y"></div>
+        <div class="dot g"></div>
+        <div style="flex:1; text-align:center; font-size:11px; color: rgba(255,255,255,0.15); font-family: 'DM Sans', sans-serif;">tradelog — Dashboard</div>
+      </div>
+      <div class="preview-content">
+        <div class="mock-stats">
+          <div class="mock-card green">
+            <div class="mock-label">Net P&L</div>
+            <div class="mock-val green">+$4,821</div>
+            <div class="mock-sub">+12.4% return</div>
+          </div>
+          <div class="mock-card blue">
+            <div class="mock-label">Win Rate</div>
+            <div class="mock-val blue">67.3%</div>
+            <div class="mock-sub">62W / 30L</div>
+          </div>
+          <div class="mock-card yellow">
+            <div class="mock-label">Profit Factor</div>
+            <div class="mock-val yellow">2.18</div>
+            <div class="mock-sub">gross win ÷ loss</div>
+          </div>
+          <div class="mock-card blue">
+            <div class="mock-label">Expectancy</div>
+            <div class="mock-val" style="color:#818cf8;">+$52.4</div>
+            <div class="mock-sub">per trade</div>
+          </div>
+        </div>
+        <div class="mock-row">
+          <div class="mock-chart-box">
+            <div class="mock-chart-title">Equity Curve — All Time</div>
+            <svg class="chart-svg" viewBox="0 0 500 100" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#00ffbb" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#00ffbb" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path class="eq-fill" d="M0,90 C40,80 80,70 120,55 C160,40 190,60 230,42 C270,24 310,35 360,18 C400,8 450,12 500,5 L500,100 L0,100 Z" fill="url(#equityGrad)"/>
+              <path class="eq-line" d="M0,90 C40,80 80,70 120,55 C160,40 190,60 230,42 C270,24 310,35 360,18 C400,8 450,12 500,5" fill="none" stroke="#00ffbb" stroke-width="2" stroke-linecap="round"/>
+              <!-- Data points -->
+              <circle cx="0" cy="90" r="3" fill="#00ffbb" opacity="0"/>
+              <circle cx="120" cy="55" r="3" fill="#00ffbb" opacity="0" style="animation: fadeIn 0.3s ease 3s forwards"/>
+              <circle cx="230" cy="42" r="3" fill="#00ffbb" opacity="0" style="animation: fadeIn 0.3s ease 3.5s forwards"/>
+              <circle cx="360" cy="18" r="3" fill="#00ffbb" opacity="0" style="animation: fadeIn 0.3s ease 4s forwards"/>
+              <circle cx="500" cy="5" r="4" fill="#00ffbb" opacity="0" style="animation: fadeIn 0.3s ease 4.5s forwards"/>
+              <!-- Horizontal zero line -->
+              <line x1="0" y1="95" x2="500" y2="95" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            </svg>
+          </div>
+          <div class="mock-sidebar-box">
+            <div class="mock-chart-title">Performance</div>
+            <!-- Mini win/loss bars -->
+            <div style="display:flex;flex-direction:column;gap:8px; margin-top:4px;">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);margin-bottom:4px;"><span>Avg Win</span><span style="color:#00ffbb;">+$124</span></div>
+                <div style="height:4px;background:#0d1220;border-radius:2px;"><div style="width:75%;height:100%;background:#00ffbb;border-radius:2px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);margin-bottom:4px;"><span>Avg Loss</span><span style="color:#ff3b5c;">-$57</span></div>
+                <div style="height:4px;background:#0d1220;border-radius:2px;"><div style="width:35%;height:100%;background:#ff3b5c;border-radius:2px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);margin-bottom:4px;"><span>Best Trade</span><span style="color:#00ffbb;">+$892</span></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);margin-bottom:4px;"><span>Worst Trade</span><span style="color:#ff3b5c;">-$231</span></div>
+              </div>
+              <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);"><span>Win Streak</span><span style="color:#00ffbb;font-weight:700;">7</span></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(148,163,184,0.7);"><span>Loss Streak</span><span style="color:#ff3b5c;font-weight:700;">3</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ TICKER ═══════════════════════════════ -->
+<div class="stats-ticker">
+  <div class="ticker-track">
+    <!-- First set -->
+    <div class="ticker-item">📊 Total P&L <span class="ticker-val g">+$4,821.50</span></div>
+    <div class="ticker-item">🎯 Win Rate <span class="ticker-val">67.3%</span></div>
+    <div class="ticker-item">📈 Profit Factor <span class="ticker-val">2.18</span></div>
+    <div class="ticker-item">⚡ Best Day <span class="ticker-val g">+$1,240</span></div>
+    <div class="ticker-item">🧠 Avg Confidence <span class="ticker-val">7.4/10</span></div>
+    <div class="ticker-item">💹 XAUUSD <span class="ticker-val g">+$892</span></div>
+    <div class="ticker-item">📉 Worst Day <span class="ticker-val r">-$231</span></div>
+    <div class="ticker-item">🔥 Win Streak <span class="ticker-val">7 trades</span></div>
+    <div class="ticker-item">⏱ Avg Hold <span class="ticker-val">2h 14m</span></div>
+    <div class="ticker-item">🎲 Expectancy <span class="ticker-val g">+$52.4</span></div>
+    <!-- Duplicate for seamless loop -->
+    <div class="ticker-item">📊 Total P&L <span class="ticker-val g">+$4,821.50</span></div>
+    <div class="ticker-item">🎯 Win Rate <span class="ticker-val">67.3%</span></div>
+    <div class="ticker-item">📈 Profit Factor <span class="ticker-val">2.18</span></div>
+    <div class="ticker-item">⚡ Best Day <span class="ticker-val g">+$1,240</span></div>
+    <div class="ticker-item">🧠 Avg Confidence <span class="ticker-val">7.4/10</span></div>
+    <div class="ticker-item">💹 XAUUSD <span class="ticker-val g">+$892</span></div>
+    <div class="ticker-item">📉 Worst Day <span class="ticker-val r">-$231</span></div>
+    <div class="ticker-item">🔥 Win Streak <span class="ticker-val">7 trades</span></div>
+    <div class="ticker-item">⏱ Avg Hold <span class="ticker-val">2h 14m</span></div>
+    <div class="ticker-item">🎲 Expectancy <span class="ticker-val g">+$52.4</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ FEATURES ═══════════════════════════════ -->
+<section class="features" id="features">
+  <div class="section-eyebrow reveal">Everything you need</div>
+  <h2 class="section-title reveal reveal-delay-1">Your complete trading <em>command center</em></h2>
+  <div class="features-grid reveal reveal-delay-2">
+    <div class="feature-card">
+      <div class="feature-icon purple">📊</div>
+      <div class="feature-name">Live Dashboard</div>
+      <div class="feature-desc">Real-time P&L, win rate, profit factor and equity curve. See your trading performance at a glance with beautiful, actionable stats.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon green">🔬</div>
+      <div class="feature-name">Deep Analytics</div>
+      <div class="feature-desc">P&L by symbol, day of week, hour of day, monthly charts, consistency heatmap and trade distribution. Find your real edge.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon yellow">📅</div>
+      <div class="feature-name">Trading Calendar</div>
+      <div class="feature-desc">Visual monthly calendar showing your daily P&L at a glance. Identify your best and worst sessions instantly.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon blue">🧠</div>
+      <div class="feature-name">AI Forecast</div>
+      <div class="feature-desc">Pattern recognition that detects overtrading, tilt, luck vs skill, kill trades, and streak patterns in your actual history.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon red">💭</div>
+      <div class="feature-name">Mindset Tracker</div>
+      <div class="feature-desc">Log your pre-market plan, end-of-day review, confidence score, and emotion. Track your psychological edge over time.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon pink">📂</div>
+      <div class="feature-name">Smart Import</div>
+      <div class="feature-desc">Import from MT5, MT4, cTrader, TradingView, DXTrade, FundedNext, Replay Trading and more. Auto-detects your broker's format.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ BROKERS ═══════════════════════════════ -->
+<div class="brokers reveal">
+  <div class="brokers-sub">Works with every major broker and platform</div>
+  <div class="broker-chips">
+    <div class="broker-chip">MetaTrader 5</div>
+    <div class="broker-chip">MetaTrader 4</div>
+    <div class="broker-chip">cTrader</div>
+    <div class="broker-chip">TradingView</div>
+    <div class="broker-chip">DXTrade</div>
+    <div class="broker-chip">FundedNext</div>
+    <div class="broker-chip">FTMO</div>
+    <div class="broker-chip">Replay Trading</div>
+    <div class="broker-chip">MyFXBook</div>
+    <div class="broker-chip">Any CSV</div>
+    <div class="broker-chip">Excel / XLSX</div>
+    <div class="broker-chip">JSON</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ HOW IT WORKS ═══════════════════════════════ -->
+<section class="how" id="how">
+  <div class="section-eyebrow reveal" style="justify-content:center;">Simple process</div>
+  <h2 class="section-title reveal reveal-delay-1" style="margin:0 auto 0;text-align:center;max-width:500px;">From broker export to <em>real insights</em> in minutes</h2>
+  <div class="steps reveal reveal-delay-2">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-title">Import or Log</div>
+      <div class="step-desc">Upload your broker's CSV export or log trades manually. TradeLog auto-detects your platform's format.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-title">Analyse</div>
+      <div class="step-desc">Instantly see your win rate, profit factor, equity curve, best symbols, worst hours, and psychological patterns.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-title">Improve</div>
+      <div class="step-desc">Use the AI Forecast to eliminate weaknesses. Log your mindset daily to build the discipline of a professional.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ SOCIAL PROOF ═══════════════════════════════ -->
+<section class="social" id="testimonials">
+  <div style="text-align:center;" class="reveal">
+    <div class="section-eyebrow" style="justify-content:center;">Trusted by traders worldwide</div>
+    <h2 class="section-title" style="margin:0 auto;text-align:center;max-width:500px;font-size:clamp(28px,3.5vw,44px);">What traders <em>say</em></h2>
+  </div>
+  <div class="testimonials reveal reveal-delay-1">
+    <div class="testimonial">
+      <div class="testi-text">Finally a journal that doesn't make me feel like I'm doing admin work. The AI forecast told me I was overtrading after losses — I cut my losers immediately and my PF went from 1.1 to 1.9 in a month.</div>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background: linear-gradient(135deg,#6366f1,#8b5cf6);">AK</div>
+        <div>
+          <div class="testi-name">Alex K.</div>
+          <div class="testi-role">Forex trader · 3 years</div>
+          <div class="stars">★★★★★</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <div class="testi-text">The calendar view alone was worth it. I could literally see I was losing every Monday. Stopped trading Mondays, my weekly P&L immediately improved. Insane how obvious it was once I could see it.</div>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background: linear-gradient(135deg,#059669,#00ffbb);">SR</div>
+        <div>
+          <div class="testi-name">Sam R.</div>
+          <div class="testi-role">Indices trader · Prop firm</div>
+          <div class="stars">★★★★★</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <div class="testi-text">I imported 6 months of MT5 history in about 10 seconds. The broker format auto-detected perfectly. Now I actually review my trades properly — the mindset section keeps me honest about my emotional state.</div>
+      <div class="testi-author">
+        <div class="testi-avatar" style="background: linear-gradient(135deg,#f59e0b,#ef4444);">MJ</div>
+        <div>
+          <div class="testi-name">Maria J.</div>
+          <div class="testi-role">Gold & Oil trader</div>
+          <div class="stars">★★★★★</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ CTA ═══════════════════════════════ -->
+<section class="cta-section">
+  <div class="reveal">
+    <h2>Ready to find<br><em style="background:linear-gradient(135deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-style:normal;">your edge?</em></h2>
+    <p>Join thousands of traders who use TradeLog to trade smarter, not just harder.</p>
+    <button class="btn-cta-big" onclick="openLogin('signup')">
+      Start Free Today
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="cta-sub">Free forever · No credit card · Syncs across devices</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
+<footer>
+  <div class="footer-logo">TRADE<span>LOG</span></div>
+  <div>© 2026 TradeLog · Built by a trader, for traders</div>
+  <div>Your data stays yours. Always.</div>
+</footer>
+
+<!-- ═══════════════════════════════ LOGIN OVERLAY ═══════════════════════════════ -->
+<div id="login-overlay" onclick="if(event.target===this)closeLogin()">
+  <div id="login-card">
+    <button class="login-close" onclick="closeLogin()">×</button>
+    <div class="login-logo">
+      <div class="login-logo-mark">
+        <svg width="22" height="22" viewBox="0 0 28 28">
+          <polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/>
+          <polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/>
+          <polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/>
+          <rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/>
+        </svg>
+      </div>
+      <div class="login-title">Welcome to TradeLog</div>
+      <div class="login-sub">Your professional trading journal</div>
+    </div>
+    <div class="login-tabs">
+      <button id="tab-login" class="login-tab active" onclick="switchTab('login')">Log In</button>
+      <button id="tab-signup" class="login-tab" onclick="switchTab('signup')">Sign Up</button>
+    </div>
+    <div id="name-field" class="login-field">
+      <label>Your Name</label>
+      <input type="text" id="auth-name" placeholder="e.g. Alex K.">
+    </div>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')handleLoginSubmit()">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="auth-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleLoginSubmit()">
+    </div>
+    <div id="login-error"></div>
+    <button class="btn-login" id="login-btn" onclick="handleLoginSubmit()">Log In</button>
+  </div>
+</div>
+
+<script>
+// ── NAV SCROLL ─────────────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
+});
+
+// ── SCROLL REVEAL ──────────────────────────────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ── MOUSE GLOW ON FEATURE CARDS ───────────────────────────────────────
+document.querySelectorAll('.feature-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+    card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+  });
+});
+
+// ── LOGIN MODAL ────────────────────────────────────────────────────────
+let currentTab = 'login';
+
+function openLogin(tab = 'login') {
+  currentTab = tab;
+  document.getElementById('login-overlay').classList.add('open');
+  updateTab();
+  setTimeout(() => document.getElementById('auth-email').focus(), 400);
+}
+
+function closeLogin() {
+  document.getElementById('login-overlay').classList.remove('open');
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  updateTab();
+  document.getElementById('login-error').style.display = 'none';
+}
+
+function updateTab() {
+  const isLogin = currentTab === 'login';
+  document.getElementById('tab-login').classList.toggle('active', isLogin);
+  document.getElementById('tab-signup').classList.toggle('active', !isLogin);
+  document.getElementById('name-field').style.display = isLogin ? 'none' : 'block';
+  document.getElementById('login-btn').textContent = isLogin ? 'Log In' : 'Create Account';
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function handleLoginSubmit() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const btn = document.getElementById('login-btn');
+  document.getElementById('login-error').style.display = 'none';
+
+  if (!email || !password) { showLoginError('Please enter your email and password.'); return; }
+
+  btn.textContent = '...'; btn.disabled = true;
+
+  // ── Point to your actual app ──────────────────────────────────────────
+  // Option A: Open the app in same tab (pass credentials via sessionStorage
+  //           if your app reads them on load, or just redirect to app URL)
+  // Option B: Open app in new tab
+  // For demo, we simulate a short delay then redirect to the app HTML file.
+  // Replace 'index__1_.html' with your actual hosted app URL.
+
+  await new Promise(r => setTimeout(r, 900));
+
+  // Store tab mode for the app auth screen to auto-fill
+  sessionStorage.setItem('tl_auth_mode', currentTab);
+  sessionStorage.setItem('tl_auth_email', email);
+
+  // Redirect to the app
+  window.location.href = 'index.html';
+}
+
+// Escape to close
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLogin();
+});
+</script>
+
+</body>
+</html>
