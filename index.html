@@ -2354,8 +2354,8 @@
 
       <div class="panel" id="trade-detail-panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;">
         <div class="panel-header" style="align-items:center;">
-          <div class="panel-header-left" style="flex:1;min-width:0;">
-            <div class="panel-title" style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text);text-transform:uppercase;">Trade Detail</div>
+          <div class="panel-header-left" style="flex:1;min-width:0;overflow:hidden;">
+            <div class="panel-title" style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Trade Detail</div>
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
             <button id="detail-expand-btn" onclick="openDetailOverlay()" title="Expand" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
@@ -3254,7 +3254,7 @@ Examples of accepted formats:
   <div style="flex:1;overflow:hidden;padding:20px 32px 16px;display:flex;flex-direction:column;min-height:0;" id="mindset-scroll-body">
 
     <!-- 3-column grid — fills all remaining height, columns equal -->
-    <div style="display:grid;grid-template-columns:1fr 280px 1fr;gap:16px;flex:1;min-height:0;overflow:hidden;" id="mindset-main-grid">
+    <div style="display:grid;grid-template-columns:1fr 280px 1fr;gap:16px;flex:1;min-height:0;overflow:hidden;align-items:stretch;" id="mindset-main-grid">
 
       <!-- ════ LEFT COL ════ -->
       <div style="display:flex;flex-direction:column;gap:14px;min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden;padding-right:2px;padding-bottom:4px;">
