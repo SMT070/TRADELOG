@@ -2870,83 +2870,478 @@
 </div>
 
 <div class="page" id="page-import">
-  <div class="container" style="max-width:700px;margin:0 auto;">
-    <div class="panel mb-12">
-      <div class="panel-header">
-        <div class="panel-header-left"><div class="panel-title">Import Trades</div></div>
-        <button onclick="switchPage('dashboard')" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;padding:6px 10px;transition:all .15s;" title="Close" onmouseenter="this.style.color='var(--text)';this.style.borderColor='var(--border2)'" onmouseleave="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">&#x2715;</button>
-      </div>
-      <div class="import-zone" id="import-zone" onclick="document.getElementById('csv-file').click()"
-           ondragover="event.preventDefault();this.classList.add('dragover')"
-           ondragleave="this.classList.remove('dragover')"
-           ondrop="handleDrop(event)">
-        <div class="import-icon">📂</div>
-        <div class="import-title">Drop your trade file here</div>
-        <div class="import-sub">or click to browse — auto-detects broker format</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;">
-          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT5 CSV</span>
-          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT5 HTML</span>
-          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT4 HTML</span>
-          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">FundedNext HTML</span>
-          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">Replay Trading CSV/XLSX</span>
-          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">cTrader CSV</span>
-          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">TradingView CSV</span>
-          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">DXTrade</span>
-          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">Any CSV with headers</span>
-          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">Excel</span>
-          <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">JSON</span>
-        </div>
-      </div>
-      <input type="file" id="csv-file" accept=".csv,.txt,.html,.htm,.xlsx,.xls,.json" style="display:none;" onchange="handleCSVFile(event)">
+  <div class="container" style="max-width:760px;margin:0 auto;">
 
-      <div style="padding:0 20px 20px;">
-        <div class="import-sub" style="margin-bottom:12px;font-size:11px;color:var(--muted);">
-          <strong style="color:var(--text);">MT5 / MT4 CSV:</strong> Terminal → Account History → right-click → Save as Report (CSV)<br>
-          <strong style="color:var(--text);">MT5 / MT4 / FundedNext HTML:</strong> Terminal → Account History → right-click → Save as Report (HTML)<br>
-          <strong style="color:var(--text);">Replay Trading / TradingSimulator:</strong> Export CSV or XLSX — auto-detected<br>
-          <strong style="color:var(--text);">cTrader:</strong> History → Export → CSV<br>
-          <strong style="color:var(--text);">TradingView:</strong> Strategy Tester → List of Trades → Export<br>
-          <strong style="color:var(--text);">Any broker CSV:</strong> Any file with a header row containing Symbol, Type, Profit columns<br>
-          <strong style="color:var(--text);">Excel / JSON:</strong> Any spreadsheet or JSON export with trade columns
-        </div>
-        <div id="import-preview" style="display:none;">
-          <div class="panel-header" style="margin:0 -0px;border-radius:8px 8px 0 0;">
-            <div class="panel-header-left"><div class="panel-title">Preview</div></div>
-            <span id="import-count" style="color:var(--accent);font-size:12px;"></span>
-          </div>
-          <div class="table-wrap" style="max-height:280px;border:1px solid var(--border);border-radius:0 0 8px 8px;">
-            <table class="trades-table"><thead><tr id="import-thead-row"></tr></thead><tbody id="import-tbody"></tbody></table>
-          </div>
-          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
-            <button class="btn btn-ghost" onclick="cancelImport()">Cancel</button>
-            <button class="btn btn-primary" onclick="confirmImport()">Import All Trades</button>
-          </div>
-        </div>
+    <!-- Page Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:4px;">Data</div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-0.6px;color:var(--text);">Import <span style="color:var(--accent);">Trades</span></div>
       </div>
+      <button onclick="switchPage('dashboard')" style="background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;padding:6px 10px;transition:all .15s;" title="Close" onmouseenter="this.style.color='var(--text)';this.style.borderColor='var(--border2)'" onmouseleave="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">&#x2715;</button>
     </div>
 
-    <div class="panel">
-      <div class="panel-header"><div class="panel-header-left"><div class="panel-title">Paste CSV Data</div></div></div>
-      <div style="padding:20px;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">
-          Paste trade data from <strong style="color:var(--text2);">any broker or platform</strong> — tab, comma, or semicolon separated. Auto-detects format.<br>
-          <span style="color:var(--muted);">Works with: MT5, MT4, FundedNext, FTMO, cTrader, TradingView, MyFXBook, DXTrade, or any CSV with a header row.</span>
+    <!-- ── TAB SWITCHER ── -->
+    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:4px;margin-bottom:20px;border:1px solid var(--border);">
+      <button id="import-tab-btn-file" onclick="switchImportTab('file')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;">
+        📂 File Import
+      </button>
+      <button id="import-tab-btn-live" onclick="switchImportTab('live')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;">
+        ⚡ MT5 Live Sync
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════ -->
+    <!-- TAB: FILE IMPORT                   -->
+    <!-- ══════════════════════════════════ -->
+    <div id="import-tab-file">
+
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header">
+          <div class="panel-header-left"><div class="panel-title">Upload File</div></div>
         </div>
-        <textarea id="paste-csv" rows="8" placeholder="Paste CSV or tab-separated data here...
+        <div class="import-zone" id="import-zone" onclick="document.getElementById('csv-file').click()"
+             ondragover="event.preventDefault();this.classList.add('dragover')"
+             ondragleave="this.classList.remove('dragover')"
+             ondrop="handleDrop(event)">
+          <div class="import-icon">📂</div>
+          <div class="import-title">Drop your trade file here</div>
+          <div class="import-sub">or click to browse — auto-detects broker format</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;">
+            <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT5 CSV</span>
+            <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT5 HTML</span>
+            <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">MT4 HTML</span>
+            <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">FundedNext HTML</span>
+            <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">Replay Trading CSV/XLSX</span>
+            <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">cTrader CSV</span>
+            <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">TradingView CSV</span>
+            <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">DXTrade</span>
+            <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">Any CSV with headers</span>
+            <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">Excel</span>
+            <span style="padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">JSON</span>
+          </div>
+        </div>
+        <input type="file" id="csv-file" accept=".csv,.txt,.html,.htm,.xlsx,.xls,.json" style="display:none;" onchange="handleCSVFile(event)">
+
+        <div style="padding:0 20px 20px;">
+          <div class="import-sub" style="margin-bottom:12px;font-size:11px;color:var(--muted);">
+            <strong style="color:var(--text);">MT5 / MT4 CSV:</strong> Terminal → Account History → right-click → Save as Report (CSV)<br>
+            <strong style="color:var(--text);">MT5 / MT4 / FundedNext HTML:</strong> Terminal → Account History → right-click → Save as Report (HTML)<br>
+            <strong style="color:var(--text);">Replay Trading / TradingSimulator:</strong> Export CSV or XLSX — auto-detected<br>
+            <strong style="color:var(--text);">cTrader:</strong> History → Export → CSV<br>
+            <strong style="color:var(--text);">TradingView:</strong> Strategy Tester → List of Trades → Export<br>
+            <strong style="color:var(--text);">Any broker CSV:</strong> Any file with a header row containing Symbol, Type, Profit columns<br>
+            <strong style="color:var(--text);">Excel / JSON:</strong> Any spreadsheet or JSON export with trade columns
+          </div>
+          <div id="import-preview" style="display:none;">
+            <div class="panel-header" style="margin:0 -0px;border-radius:8px 8px 0 0;">
+              <div class="panel-header-left"><div class="panel-title">Preview</div></div>
+              <span id="import-count" style="color:var(--accent);font-size:12px;"></span>
+            </div>
+            <div class="table-wrap" style="max-height:280px;border:1px solid var(--border);border-radius:0 0 8px 8px;">
+              <table class="trades-table"><thead><tr id="import-thead-row"></tr></thead><tbody id="import-tbody"></tbody></table>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+              <button class="btn btn-ghost" onclick="cancelImport()">Cancel</button>
+              <button class="btn btn-primary" onclick="confirmImport()">Import All Trades</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><div class="panel-header-left"><div class="panel-title">Paste CSV Data</div></div></div>
+        <div style="padding:20px;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">
+            Paste trade data from <strong style="color:var(--text2);">any broker or platform</strong> — tab, comma, or semicolon separated. Auto-detects format.<br>
+            <span style="color:var(--muted);">Works with: MT5, MT4, FundedNext, FTMO, cTrader, TradingView, MyFXBook, DXTrade, or any CSV with a header row.</span>
+          </div>
+          <textarea id="paste-csv" rows="8" placeholder="Paste CSV or tab-separated data here...
 
 Examples of accepted formats:
 • MT5 tab export:  2026.04.10 16:42  212053993  NDX100  buy  0.2  24190.41  ...  -110.50
 • Any CSV with headers:  Symbol, Type, Volume, Open Price, Close Price, Profit, Open Time
 • Replay Trading:  Trade #, Type, Date and time, Price USD, Size (qty), Net P&L USD
 • cTrader, TradingView, DXTrade — paste directly, format auto-detected"></textarea>
-        <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end;">
-          <button class="btn btn-ghost" onclick="document.getElementById('paste-csv').value=''">Clear</button>
-          <button class="btn btn-primary" onclick="parsePastedCSV()">Parse & Preview</button>
+          <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end;">
+            <button class="btn btn-ghost" onclick="document.getElementById('paste-csv').value=''">Clear</button>
+            <button class="btn btn-primary" onclick="parsePastedCSV()">Parse & Preview</button>
+          </div>
         </div>
       </div>
-    </div>
+
+    </div><!-- /import-tab-file -->
+
+    <!-- ══════════════════════════════════ -->
+    <!-- TAB: MT5 LIVE SYNC                 -->
+    <!-- ══════════════════════════════════ -->
+    <div id="import-tab-live" style="display:none;">
+
+      <!-- Hero banner -->
+      <div style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(99,102,241,0.05));border:1px solid rgba(99,102,241,0.3);border-radius:var(--r-lg);padding:24px 28px;margin-bottom:16px;display:flex;align-items:center;gap:20px;">
+        <div style="font-size:44px;flex-shrink:0;">⚡</div>
+        <div>
+          <div style="font-size:17px;font-weight:900;color:var(--text);letter-spacing:-0.4px;margin-bottom:5px;">MT5 Live Auto-Sync</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6;">Install our free Expert Advisor on your MT5 terminal and every closed trade syncs to TradeLog automatically — no manual exports, no copy-paste. Just trade.</div>
+        </div>
+      </div>
+
+      <!-- Your API Key -->
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <div class="panel-title">Your API Key</div>
+            <button class="info-btn" onmouseenter="showInfo(this,'API Key','This is your unique key. Paste it into the EA input field in MT5. Keep it private.')" onmouseleave="hideInfo()">i</button>
+          </div>
+          <button onclick="copyApiKey()" id="copy-api-btn" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy Key
+          </button>
+        </div>
+        <div style="padding:18px 20px;">
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <code id="api-key-display" style="font-family:var(--mono);font-size:12px;color:var(--text);flex:1;letter-spacing:0.5px;word-break:break-all;">Loading...</code>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px;">🔒 Keep this key private. Anyone with it can sync trades to your account.</div>
+        </div>
+      </div>
+
+      <!-- Step by step instructions -->
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header">
+          <div class="panel-header-left"><div class="panel-title">Setup Instructions</div></div>
+          <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 10px;border-radius:20px;font-weight:700;border:1px solid var(--border);">5 minutes</span>
+        </div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:0;">
+
+          <!-- Step 1 -->
+          <div style="display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Download the EA file</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px;">Download <strong style="color:var(--accent);">TradeLog_Sync.mq5</strong> — this is the Expert Advisor that connects MT5 to your journal.</div>
+              <a href="#" onclick="downloadEA();return false;" style="display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;text-decoration:none;transition:opacity .15s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download TradeLog_Sync.mq5
+              </a>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div style="display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--surface3);border:2px solid var(--border2);color:var(--text2);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Install the EA in MT5</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7;">
+                In MetaTrader 5, go to <strong style="color:var(--text);">File → Open Data Folder</strong>, then open the <code style="background:var(--surface3);padding:1px 6px;border-radius:4px;font-size:11px;">MQL5 → Experts</code> folder and paste the <strong style="color:var(--accent);">TradeLog_Sync.mq5</strong> file inside.<br><br>
+                Then in MT5 press <strong style="color:var(--text);">F5</strong> (or right-click in Navigator → Refresh) to make the EA appear.
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div style="display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--surface3);border:2px solid var(--border2);color:var(--text2);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Allow WebRequests in MT5</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7;">
+                Go to <strong style="color:var(--text);">Tools → Options → Expert Advisors</strong>.<br>
+                Check <strong style="color:var(--text);">✓ Allow WebRequests for listed URLs</strong> and add this URL:
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;">
+                <code style="font-family:var(--mono);font-size:11px;color:var(--accent);flex:1;word-break:break-all;">https://yuqfoasfefldenkvwyrm.supabase.co</code>
+                <button onclick="navigator.clipboard.writeText('https://yuqfoasfefldenkvwyrm.supabase.co').then(()=>toast('URL copied!','success'))" style="flex-shrink:0;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div style="display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--surface3);border:2px solid var(--border2);color:var(--text2);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">4</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Attach the EA to any chart</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7;">
+                In MT5 Navigator panel, find <strong style="color:var(--text);">Expert Advisors → TradeLog_Sync</strong> and drag it onto any open chart (e.g. EURUSD M1).<br><br>
+                In the EA settings dialog that appears, paste your <strong style="color:var(--accent);">API Key</strong> from above into the <strong style="color:var(--text);">ApiKey</strong> field. Set sync interval if desired (default: every 5 minutes).
+              </div>
+              <!-- Mini key display for easy copy -->
+              <div style="display:flex;align-items:center;gap:8px;margin-top:10px;background:var(--surface2);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:10px 14px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <code id="api-key-display-2" style="font-family:var(--mono);font-size:11px;color:var(--text);flex:1;word-break:break-all;letter-spacing:0.3px;">Loading...</code>
+                <button onclick="copyApiKey()" style="flex-shrink:0;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div style="display:flex;gap:16px;padding:16px 0;">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--green-bg);border:2px solid var(--green);color:var(--green);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">✓</div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">You're live! 🎉</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.7;">
+                Make sure <strong style="color:var(--text);">Auto Trading is enabled</strong> in MT5 (the button at the top toolbar). The EA will sync every 5 minutes automatically.<br><br>
+                Close a trade in MT5 and within 5 minutes it will appear in your TradeLog journal. You can check the MT5 <strong style="color:var(--text);">Experts tab</strong> (bottom panel) to see sync logs.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FAQ / Troubleshooting -->
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header">
+          <div class="panel-header-left"><div class="panel-title">Troubleshooting</div></div>
+        </div>
+        <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+
+          <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;border:1px solid var(--border);">
+            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ EA says "WebRequest blocked"</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;">Go to <strong style="color:var(--text);">Tools → Options → Expert Advisors</strong> and make sure the URL is added exactly as shown in Step 3. Then restart MT5.</div>
+          </div>
+
+          <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;border:1px solid var(--border);">
+            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ Trades not appearing in TradeLog</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;">Check the MT5 <strong style="color:var(--text);">Experts tab</strong> at the bottom — it shows sync logs. Make sure Auto Trading is ON and the chart the EA is attached to is open.</div>
+          </div>
+
+          <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;border:1px solid var(--border);">
+            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ EA disappears when I close MT5</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;">Save the chart as a profile or template in MT5 so the EA reattaches automatically when you reopen the terminal.</div>
+          </div>
+
+          <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;border:1px solid var(--border);">
+            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ I want to sync history, not just new trades</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;">On first run the EA automatically syncs your full history. If you need to re-sync, remove the EA from the chart and re-attach it — it will do a full history sync again.</div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /import-tab-live -->
+
   </div>
 </div>
+
+<script>
+// ── IMPORT PAGE TAB SWITCHER ──────────────────────────────────────────────────
+function switchImportTab(tab) {
+  const fileTab = document.getElementById('import-tab-file');
+  const liveTab = document.getElementById('import-tab-live');
+  const fileBtn = document.getElementById('import-tab-btn-file');
+  const liveBtn = document.getElementById('import-tab-btn-live');
+  if (tab === 'file') {
+    fileTab.style.display = 'block';
+    liveTab.style.display = 'none';
+    fileBtn.style.background = 'var(--accent)';
+    fileBtn.style.color = '#fff';
+    liveBtn.style.background = 'transparent';
+    liveBtn.style.color = 'var(--muted)';
+  } else {
+    fileTab.style.display = 'none';
+    liveTab.style.display = 'block';
+    liveBtn.style.background = 'var(--accent)';
+    liveBtn.style.color = '#fff';
+    fileBtn.style.background = 'transparent';
+    fileBtn.style.color = 'var(--muted)';
+    loadApiKeyDisplay();
+  }
+}
+
+// ── LOAD & DISPLAY API KEY (= user's Supabase UID) ────────────────────────────
+async function loadApiKeyDisplay() {
+  const uid = await getValidUid();
+  const key = uid || 'Log in to see your API key';
+  const el1 = document.getElementById('api-key-display');
+  const el2 = document.getElementById('api-key-display-2');
+  if (el1) el1.textContent = key;
+  if (el2) el2.textContent = key;
+}
+
+// ── COPY API KEY ──────────────────────────────────────────────────────────────
+async function copyApiKey() {
+  const uid = await getValidUid();
+  if (!uid) { toast('Not logged in', 'error'); return; }
+  navigator.clipboard.writeText(uid).then(() => {
+    toast('API Key copied!', 'success');
+    const btn = document.getElementById('copy-api-btn');
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✓ Copied!';
+      btn.style.color = 'var(--green)';
+      btn.style.borderColor = 'var(--green)';
+      setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+    }
+  });
+}
+
+// ── DOWNLOAD EA FILE ──────────────────────────────────────────────────────────
+function downloadEA() {
+  const eaCode = `//+------------------------------------------------------------------+
+//| TradeLog Auto-Sync EA v1.2                                       |
+//| Fixes v1.2: seconds in timestamps, deal ticket as unique ID      |
+//+------------------------------------------------------------------+
+#property copyright "TradeLog"
+#property version   "1.20"
+#property strict
+
+input string ApiKey              = "";   // Your TradeLog API key
+input string EndpointUrl         = "https://yuqfoasfefldenkvwyrm.supabase.co/functions/v1/smart-worker";
+input int    SyncIntervalMinutes = 5;    // Sync frequency (minutes)
+
+datetime g_lastSyncTime = 0;
+bool     g_firstRun     = true;
+
+int OnInit()
+{
+   if(ApiKey == "")
+   {
+      Alert("TradeLog: Please paste your API key into the EA inputs.");
+      return INIT_FAILED;
+   }
+   Print("TradeLog Sync v1.2 started — interval: ", SyncIntervalMinutes, " min");
+   EventSetTimer(SyncIntervalMinutes * 60);
+   DoSync();
+   return INIT_SUCCEEDED;
+}
+
+void OnDeinit(const int reason) { EventKillTimer(); }
+void OnTimer()                  { DoSync(); }
+
+string JsonEscape(string s)
+{
+   StringReplace(s, "\\\\", "\\\\\\\\");
+   StringReplace(s, "\\"", "\\\\\\"");
+   StringReplace(s, "\\n", "\\\\n");
+   StringReplace(s, "\\r", "\\\\r");
+   StringReplace(s, "\\t", "\\\\t");
+   return s;
+}
+
+string ToISO(datetime t)
+{
+   if(t <= 0) return "";
+   string s = TimeToString(t, TIME_DATE | TIME_MINUTES | TIME_SECONDS);
+   StringReplace(s, ".", "-");
+   StringReplace(s, " ", "T");
+   return s;
+}
+
+void DoSync()
+{
+   Print("TradeLog: Sync started.");
+   datetime fromTime = g_firstRun ? 0 : g_lastSyncTime;
+   HistorySelect(fromTime, TimeCurrent());
+   int totalDeals = HistoryDealsTotal();
+   if(totalDeals == 0) { SendHeartbeat(); return; }
+
+   int entryCount = 0;
+   ulong entryPos[]; double entryPrice[]; datetime entryTime[];
+   string entryComment[]; double entrySL[]; double entryTP[];
+   ArrayResize(entryPos,totalDeals); ArrayResize(entryPrice,totalDeals);
+   ArrayResize(entryTime,totalDeals); ArrayResize(entryComment,totalDeals);
+   ArrayResize(entrySL,totalDeals); ArrayResize(entryTP,totalDeals);
+
+   for(int i=0;i<totalDeals;i++)
+   {
+      ulong tk=HistoryDealGetTicket(i); if(tk<=0) continue;
+      if(HistoryDealGetInteger(tk,DEAL_ENTRY)!=DEAL_ENTRY_IN) continue;
+      ulong posId=(ulong)HistoryDealGetInteger(tk,DEAL_POSITION_ID);
+      entryPos[entryCount]=posId; entryPrice[entryCount]=HistoryDealGetDouble(tk,DEAL_PRICE);
+      entryTime[entryCount]=(datetime)HistoryDealGetInteger(tk,DEAL_TIME);
+      entryComment[entryCount]=HistoryDealGetString(tk,DEAL_COMMENT);
+      ulong orderId=(ulong)HistoryDealGetInteger(tk,DEAL_ORDER);
+      if(HistoryOrderSelect(orderId)) { entrySL[entryCount]=HistoryOrderGetDouble(orderId,ORDER_SL); entryTP[entryCount]=HistoryOrderGetDouble(orderId,ORDER_TP); }
+      else { entrySL[entryCount]=0.0; entryTP[entryCount]=0.0; }
+      entryCount++;
+   }
+
+   string tradesJson="["; bool firstTrade=true; int tradesSent=0; datetime newestClose=g_lastSyncTime;
+   for(int i=0;i<totalDeals;i++)
+   {
+      ulong tk=HistoryDealGetTicket(i); if(tk<=0) continue;
+      if(HistoryDealGetInteger(tk,DEAL_ENTRY)!=DEAL_ENTRY_OUT) continue;
+      datetime closeTime=(datetime)HistoryDealGetInteger(tk,DEAL_TIME);
+      if(!g_firstRun && closeTime<=g_lastSyncTime) continue;
+      ulong dealTicket=tk; ulong posId=(ulong)HistoryDealGetInteger(tk,DEAL_POSITION_ID);
+      string symbol=HistoryDealGetString(tk,DEAL_SYMBOL); double closePrice=HistoryDealGetDouble(tk,DEAL_PRICE);
+      double volume=HistoryDealGetDouble(tk,DEAL_VOLUME); double profit=HistoryDealGetDouble(tk,DEAL_PROFIT);
+      double commission=HistoryDealGetDouble(tk,DEAL_COMMISSION); double swap=HistoryDealGetDouble(tk,DEAL_SWAP);
+      long dealType=HistoryDealGetInteger(tk,DEAL_TYPE);
+      string tradeDir=(dealType==DEAL_TYPE_SELL)?"BUY":"SELL";
+      double openPrice=0.0; datetime openTime=0; string comment=""; double sl=0.0; double tp=0.0;
+      for(int k=0;k<entryCount;k++) { if(entryPos[k]==posId) { openPrice=entryPrice[k]; openTime=entryTime[k]; comment=entryComment[k]; sl=entrySL[k]; tp=entryTP[k]; break; } }
+      if(closeTime>newestClose) newestClose=closeTime;
+      if(!firstTrade) tradesJson+=",";
+      tradesJson+="{";
+      tradesJson+="\\\"ticket\\\":"+IntegerToString((long)dealTicket)+",";
+      tradesJson+="\\\"position_id\\\":"+IntegerToString((long)posId)+",";
+      tradesJson+="\\\"symbol\\\":\\""+JsonEscape(symbol)+"\\",";
+      tradesJson+="\\\"type\\\":\\""+tradeDir+"\\",";
+      tradesJson+="\\\"volume\\\":"+DoubleToString(volume,2)+",";
+      tradesJson+="\\\"open_price\\\":"+DoubleToString(openPrice,5)+",";
+      tradesJson+="\\\"close_price\\\":"+DoubleToString(closePrice,5)+",";
+      tradesJson+="\\\"open_time\\\":\\""+ToISO(openTime)+"\\",";
+      tradesJson+="\\\"close_time\\\":\\""+ToISO(closeTime)+"\\",";
+      tradesJson+="\\\"profit\\\":"+DoubleToString(profit,2)+",";
+      tradesJson+="\\\"commission\\\":"+DoubleToString(commission,2)+",";
+      tradesJson+="\\\"swap\\\":"+DoubleToString(swap,2)+",";
+      tradesJson+="\\\"sl\\\":"+DoubleToString(sl,5)+",";
+      tradesJson+="\\\"tp\\\":"+DoubleToString(tp,5)+",";
+      tradesJson+="\\\"comment\\\":\\""+JsonEscape(comment)+"\\"";
+      tradesJson+="}";
+      firstTrade=false; tradesSent++;
+   }
+   tradesJson+="]";
+   if(tradesSent==0) { SendHeartbeat(); return; }
+
+   string broker=AccountInfoString(ACCOUNT_COMPANY); string account=IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN));
+   string body="{";
+   body+="\\\"api_key\\\":\\""+JsonEscape(ApiKey)+"\\",";
+   body+="\\\"broker\\\":\\""+JsonEscape(broker)+"\\",";
+   body+="\\\"account\\\":\\""+account+"\\",";
+   body+="\\\"sync_time\\\":\\""+ToISO(TimeCurrent())+"\\",";
+   body+="\\\"trades\\\":"+tradesJson;
+   body+="}";
+
+   char postData[]; int bodyLen=StringLen(body); ArrayResize(postData,bodyLen);
+   StringToCharArray(body,postData,0,bodyLen);
+   char resultData[]; string resultHeaders; string reqHeaders="Content-Type: application/json\\r\\n";
+   int httpCode=WebRequest("POST",EndpointUrl,reqHeaders,10000,postData,resultData,resultHeaders);
+   if(httpCode==200) { Print("TradeLog: Sync OK — ",tradesSent," trade(s) sent."); g_lastSyncTime=newestClose; g_firstRun=false; }
+   else if(httpCode==-1) Print("TradeLog: WebRequest blocked. Add URL in Tools > Options > Expert Advisors: ",EndpointUrl);
+   else Print("TradeLog: Sync failed. HTTP ",httpCode);
+}
+
+void SendHeartbeat()
+{
+   string body="{\\\"api_key\\\":\\""+ApiKey+"\\",\\\"trades\\\":[]}";
+   char postData[]; int bodyLen=StringLen(body); ArrayResize(postData,bodyLen);
+   StringToCharArray(body,postData,0,bodyLen);
+   char resultData[]; string resultHeaders;
+   WebRequest("POST",EndpointUrl,"Content-Type: application/json\\r\\n",5000,postData,resultData,resultHeaders);
+}`;
+
+  // Use the actual uploaded MQ5 file content via blob
+  const blob = new Blob([eaCode], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'TradeLog_Sync.mq5';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('EA file downloaded!', 'success');
+}
+
+// Load API key when import page opens
+const _origSwitchPageImport = window.switchPage;
+window.switchPage = function(name) {
+  _origSwitchPageImport(name);
+  if (name === 'import') {
+    setTimeout(loadApiKeyDisplay, 200);
+  }
+};
+</script>
 
 <!-- FORECAST PAGE -->
 <div class="page" id="page-forecast" style="padding:var(--page-py) var(--page-px) 40px;box-sizing:border-box;overflow-y:auto;">
