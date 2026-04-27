@@ -10170,78 +10170,109 @@ function buildShareText() {
   return `📊 Today's Trading Summary\n\nP&L: ${pnlStr}\nWin Rate: ${wr}% (${wins}W / ${losses}L)\nTrades: ${todayTrades.length}\n\nTracked with TradeLog 📈`;
 }
 
-function shareToX() {
-  const text = encodeURIComponent(buildShareText());
-  window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+// ── CAPTURE SHARE CARD AS PNG ─────────────────────────────────────────────────
+function captureShareCard() {
+  return new Promise((resolve, reject) => {
+    if (typeof html2canvas === 'undefined') { reject(new Error('html2canvas not loaded')); return; }
+    const card = document.getElementById('share-card');
+    const theme = localStorage.getItem('tradelog_theme') || 'dark';
+    const bg = theme === 'light' ? '#ffffff' : '#0b0f1a';
+    html2canvas(card, { backgroundColor: bg, scale: 2, useCORS: true, logging: false })
+      .then(canvas => {
+        canvas.toBlob(blob => {
+          if (blob) resolve({ blob, canvas });
+          else reject(new Error('blob failed'));
+        }, 'image/png');
+      }).catch(reject);
+  });
 }
 
-function shareToWhatsApp() {
-  const text = encodeURIComponent(buildShareText());
-  window.open(`https://wa.me/?text=${text}`, '_blank');
-}
-
-function shareToFacebook() {
-  // Facebook sharing requires a URL; share text via dialog
-  const text = encodeURIComponent(buildShareText());
-  window.open(`https://www.facebook.com/sharer/sharer.php?quote=${text}&u=https://tradelog.app`, '_blank');
-}
-
+// ── DOWNLOAD ──────────────────────────────────────────────────────────────────
 function downloadShareCard() {
-  const card = document.getElementById('share-card');
-  // Use html2canvas if available, otherwise copy text to clipboard
-  if (typeof html2canvas !== 'undefined') {
-    html2canvas(card, { backgroundColor: null, scale: 2 }).then(canvas => {
-      const a = document.createElement('a');
-      a.download = `tradelog-${new Date().toISOString().slice(0,10)}.png`;
-      a.href = canvas.toDataURL('image/png');
-      a.click();
-    });
-  } else {
-    // Fallback: copy text summary
-    navigator.clipboard.writeText(buildShareText()).then(() => {
-      toast('Summary copied to clipboard!', 'success');
-    });
-  }
+  const btn = document.querySelector('[onclick="downloadShareCard()"]');
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '⏳ Saving…';
+  captureShareCard().then(({ canvas }) => {
+    const a = document.createElement('a');
+    a.download = 'tradelog-' + new Date().toISOString().slice(0,10) + '.png';
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    if (btn) { btn.innerHTML = '✓ Saved!'; setTimeout(() => btn.innerHTML = orig, 2000); }
+    toast('Image saved!', 'success');
+  }).catch(() => {
+    if (btn) btn.innerHTML = orig;
+    toast('Save failed', 'error');
+  });
 }
 
+// ── COPY TO CLIPBOARD ─────────────────────────────────────────────────────────
 function copyShareCard() {
-  const card = document.getElementById('share-card');
-  const btn  = document.getElementById('copy-img-btn');
-  function setBtnCopied() {
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Image Copied!';
-    btn.style.background = 'rgba(0,255,187,0.12)';
-    btn.style.color = 'var(--green)';
-    btn.style.borderColor = 'rgba(0,255,187,0.3)';
-    setTimeout(() => {
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image';
-      btn.style.background = 'rgba(99,102,241,0.1)';
-      btn.style.color = '#6366f1';
-      btn.style.borderColor = '#2d3f55';
-    }, 2500);
-  }
-  if (typeof html2canvas !== 'undefined') {
-    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg> Copying…';
-    html2canvas(card, { backgroundColor: null, scale: 2 }).then(canvas => {
-      canvas.toBlob(blob => {
-        try {
-          navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(() => {
-            setBtnCopied();
-          }).catch(() => {
-            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image';
-            toast('Copy failed — try Save as Image instead', 'error');
-          });
-        } catch {
-          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image';
-          toast('Copy not supported in this browser', 'error');
+  const btn = document.getElementById('copy-img-btn');
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '⏳ Copying…';
+  captureShareCard().then(({ blob }) => {
+    navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+      .then(() => {
+        if (btn) {
+          btn.innerHTML = '✓ Copied!';
+          btn.style.cssText += ';color:#00FFBB;border-color:rgba(0,255,187,0.4);background:rgba(0,255,187,0.1)';
+          setTimeout(() => {
+            btn.innerHTML = orig;
+            btn.style.color = '#6366f1';
+            btn.style.borderColor = '#2d3f55';
+            btn.style.background = 'rgba(99,102,241,0.1)';
+          }, 2500);
         }
-      }, 'image/png');
-    });
-  } else {
-    navigator.clipboard.writeText(buildShareText()).then(() => {
-      setBtnCopied();
-    });
-  }
+        toast('Image copied!', 'success');
+      })
+      .catch(() => {
+        if (btn) btn.innerHTML = orig;
+        downloadShareCard();
+        toast('Clipboard blocked — downloading instead', '');
+      });
+  }).catch(() => {
+    if (btn) btn.innerHTML = orig;
+    toast('Could not capture card', 'error');
+  });
 }
+
+// ── SOCIAL SHARE — capture image, use Web Share API on mobile, download+open on desktop ──
+async function _socialShare(platform) {
+  const btn = document.querySelector('[onclick="shareTo' + platform + '()"]');
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '⏳ …';
+  try {
+    const { blob, canvas } = await captureShareCard();
+    const filename = 'tradelog-' + new Date().toISOString().slice(0,10) + '.png';
+    const file = new File([blob], filename, { type: 'image/png' });
+    // Mobile: Web Share API with image file (actually attaches image to the app)
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file] });
+      if (btn) btn.innerHTML = orig;
+      return;
+    }
+    // Desktop: download image first, then open the platform
+    const a = document.createElement('a');
+    a.download = filename;
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => {
+      if (platform === 'X')           window.open('https://twitter.com/compose/tweet', '_blank');
+      else if (platform === 'WhatsApp') window.open('https://web.whatsapp.com/', '_blank');
+      else if (platform === 'Facebook') window.open('https://www.facebook.com/', '_blank');
+      toast('Image downloaded — attach it in the app!', 'success');
+    }, 700);
+  } catch(e) {
+    if (platform === 'X')           window.open('https://twitter.com/compose/tweet', '_blank');
+    else if (platform === 'WhatsApp') window.open('https://web.whatsapp.com/', '_blank');
+    else if (platform === 'Facebook') window.open('https://www.facebook.com/', '_blank');
+  }
+  if (btn) btn.innerHTML = orig;
+}
+
+function shareToX()        { _socialShare('X'); }
+function shareToWhatsApp() { _socialShare('WhatsApp'); }
+function shareToFacebook() { _socialShare('Facebook'); }
 document.getElementById('share-modal').addEventListener('click', function(e) {
   if (e.target === this) closeShareModal();
 });
