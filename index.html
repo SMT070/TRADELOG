@@ -3150,20 +3150,71 @@ function switchImportTab(tab) {
 }
 
 // ── LOAD & DISPLAY API KEY (= user's Supabase UID) ────────────────────────────
+// ── GENERATE A SECURE HEX API KEY ────────────────────────────────────────────
+async function generateApiKey() {
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── LOAD API KEY FROM mt5_connections TABLE ───────────────────────────────────
+// Fetches the user's real API key (hex) from mt5_connections.
+// If none exists yet, generates one and inserts it.
+let _cachedApiKey = null;
 async function loadApiKeyDisplay() {
   const uid = await getValidUid();
-  const key = uid || 'Log in to see your API key';
+  if (!uid) {
+    const el1 = document.getElementById('api-key-display');
+    const el2 = document.getElementById('api-key-display-2');
+    if (el1) el1.textContent = 'Log in to see your API key';
+    if (el2) el2.textContent = 'Log in to see your API key';
+    return;
+  }
+
+  // Try to fetch existing key from mt5_connections
+  try {
+    const { data, error } = await sb
+      .from('mt5_connections')
+      .select('api_key')
+      .eq('user_id', uid)
+      .eq('is_active', true)
+      .single();
+
+    if (!error && data && data.api_key) {
+      _cachedApiKey = data.api_key;
+    } else {
+      // No key exists yet — generate one and insert it
+      const newKey = await generateApiKey();
+      const { error: insertErr } = await sb
+        .from('mt5_connections')
+        .upsert({
+          user_id: uid,
+          api_key: newKey,
+          is_active: true,
+          last_sync: null,
+          broker: null,
+          account_id: null,
+        }, { onConflict: 'user_id' });
+      if (!insertErr) _cachedApiKey = newKey;
+      else { console.warn('TradeLog: could not create mt5_connection', insertErr); _cachedApiKey = null; }
+    }
+  } catch(e) {
+    console.warn('TradeLog: loadApiKeyDisplay error', e);
+    _cachedApiKey = null;
+  }
+
+  const display = _cachedApiKey || 'Error loading key — try refreshing';
   const el1 = document.getElementById('api-key-display');
   const el2 = document.getElementById('api-key-display-2');
-  if (el1) el1.textContent = key;
-  if (el2) el2.textContent = key;
+  if (el1) el1.textContent = display;
+  if (el2) el2.textContent = display;
 }
 
 // ── COPY API KEY ──────────────────────────────────────────────────────────────
 async function copyApiKey() {
-  const uid = await getValidUid();
-  if (!uid) { toast('Not logged in', 'error'); return; }
-  navigator.clipboard.writeText(uid).then(() => {
+  if (!_cachedApiKey) await loadApiKeyDisplay();
+  if (!_cachedApiKey) { toast('Could not load API key', 'error'); return; }
+  navigator.clipboard.writeText(_cachedApiKey).then(() => {
     toast('API Key copied!', 'success');
     const btn = document.getElementById('copy-api-btn');
     if (btn) {
