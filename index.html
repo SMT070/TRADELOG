@@ -5212,7 +5212,10 @@ function openPhotoLightbox(id) {
 async function saveTrade() {
   const sym = document.getElementById('f-symbol').value.trim().toUpperCase();
   if (!sym) { toast('Symbol is required','error'); return; }
-  const pnl = parseFloat(document.getElementById('f-pnl').value) || 0;
+  let pnl = parseFloat(document.getElementById('f-pnl').value) || 0;
+  // Auto-sign: if user selected LOSS force negative, if WIN force positive, BE unchanged
+  if (selectedResult === 'loss' && pnl > 0) pnl = -pnl;
+  if (selectedResult === 'win'  && pnl < 0) pnl = Math.abs(pnl);
   const entry = parseFloat(document.getElementById('f-entry').value) || 0;
   const exit = parseFloat(document.getElementById('f-exit').value) || 0;
   const sl = parseFloat(document.getElementById('f-sl').value) || 0;
