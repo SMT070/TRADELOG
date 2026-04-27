@@ -4359,7 +4359,20 @@ showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the c
     trades = [];
     _appInitialized = false;
     currentUser = null;
-    localStorage.clear();
+    // CRITICAL: Wipe ALL user-specific data from localStorage on logout.
+    // This ensures the next person who logs in on this device NEVER sees
+    // data from the previous session.
+    const themeToKeep = localStorage.getItem(THEME_KEY);
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(MINDSET_KEY);
+    localStorage.removeItem(JOURNAL_KEY);
+    localStorage.removeItem(TAGS_KEY);
+    localStorage.removeItem(GOALS_KEY);
+    localStorage.removeItem(PROFILE_KEY);
+    localStorage.removeItem(BAL_KEY);
+    localStorage.removeItem(CUR_KEY);
+    localStorage.removeItem('tradelog_sb_session');
+    if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
     showAuthScreen();
   }});
 }
@@ -4544,6 +4557,20 @@ async function loadAllFromSupabase() {
   const uid = await getValidUid();
   if (!uid) return false;
 
+  // ── CRITICAL: Clear ALL local caches before loading from server.
+  // This guarantees that if a different user logs in on this device,
+  // they NEVER see stale data left behind by the previous session.
+  const themeToKeep = localStorage.getItem(THEME_KEY); // keep theme preference only
+  localStorage.removeItem(KEY);
+  localStorage.removeItem(MINDSET_KEY);
+  localStorage.removeItem(JOURNAL_KEY);
+  localStorage.removeItem(TAGS_KEY);
+  localStorage.removeItem(GOALS_KEY);
+  localStorage.removeItem(PROFILE_KEY);
+  localStorage.removeItem(BAL_KEY);
+  localStorage.removeItem(CUR_KEY);
+  if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
+
   // 1. Profile (name, avatar, currency, balance, theme, goals)
   try {
     const { data, error } = await sb.from('profiles').select('*').eq('id', uid).single();
@@ -4722,6 +4749,17 @@ window.addEventListener('load', () => {
       _appInitialized = false;
       currentUser = null;
       trades = [];
+      // Wipe all user-specific localStorage so next user starts clean
+      const _t = localStorage.getItem(THEME_KEY);
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(MINDSET_KEY);
+      localStorage.removeItem(JOURNAL_KEY);
+      localStorage.removeItem(TAGS_KEY);
+      localStorage.removeItem(GOALS_KEY);
+      localStorage.removeItem(PROFILE_KEY);
+      localStorage.removeItem(BAL_KEY);
+      localStorage.removeItem(CUR_KEY);
+      if (_t) localStorage.setItem(THEME_KEY, _t);
       showAuthScreen();
     }
   });
