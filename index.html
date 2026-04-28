@@ -2982,7 +2982,7 @@ Examples of accepted formats:
         <div style="font-size:44px;flex-shrink:0;">⚡</div>
         <div>
           <div style="font-size:17px;font-weight:900;color:var(--text);letter-spacing:-0.4px;margin-bottom:5px;">MT5 Live Auto-Sync</div>
-          <div style="font-size:13px;color:var(--text2);line-height:1.6;">Install our free Expert Advisor on your MT5 terminal and every closed trade syncs to TradeLog automatically — no manual exports, no copy-paste. Just trade.</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6;">Install our Expert Advisor on your MT5 terminal and every closed trade syncs to TradeLog automatically — no manual exports, no copy-paste. Just trade and your journal updates itself.</div>
         </div>
       </div>
 
@@ -2991,7 +2991,7 @@ Examples of accepted formats:
         <div class="panel-header">
           <div class="panel-header-left">
             <div class="panel-title">Your API Key</div>
-            <button class="info-btn" onmouseenter="showInfo(this,'API Key','This is your unique key. Paste it into the EA input field in MT5. Keep it private.')" onmouseleave="hideInfo()">i</button>
+            <button class="info-btn" onmouseenter="showInfo(this,'API Key','This is your unique key. Paste it into the EA Inputs tab in MT5. Keep it private — anyone with it can sync trades to your account.')" onmouseleave="hideInfo()">i</button>
           </div>
           <button onclick="copyApiKey()" id="copy-api-btn" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -3003,7 +3003,7 @@ Examples of accepted formats:
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <code id="api-key-display" style="font-family:var(--mono);font-size:12px;color:var(--text);flex:1;letter-spacing:0.5px;word-break:break-all;">Loading...</code>
           </div>
-          <div style="font-size:11px;color:var(--muted);margin-top:10px;">🔒 Keep this key private. Anyone with it can sync trades to your account.</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px;">🔒 Keep this key private. You will need it in Step 4 when setting up the EA.</div>
         </div>
       </div>
 
@@ -3011,7 +3011,7 @@ Examples of accepted formats:
       <div class="panel" style="margin-bottom:16px;">
         <div class="panel-header">
           <div class="panel-header-left"><div class="panel-title">Setup Instructions</div></div>
-          <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 10px;border-radius:20px;font-weight:700;border:1px solid var(--border);">5 minutes</span>
+          <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 10px;border-radius:20px;font-weight:700;border:1px solid var(--border);">~5 minutes</span>
         </div>
         <div style="padding:20px;display:flex;flex-direction:column;gap:0;">
 
@@ -3020,10 +3020,12 @@ Examples of accepted formats:
             <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
             <div style="flex:1;">
               <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Download the EA file</div>
-              <div style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px;">Download <strong style="color:var(--accent);">TradeLog_Sync.mq5</strong> — this is the Expert Advisor that connects MT5 to your journal.</div>
-              <a href="#" onclick="downloadEA();return false;" style="display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;text-decoration:none;transition:opacity .15s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
+              <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:12px;">
+                Click the button below to download <strong style="color:var(--accent);">TradeLog_Sync.ex5</strong> — this is the pre-compiled Expert Advisor file. You do <strong style="color:var(--text);">not</strong> need to compile anything, it is ready to use immediately.
+              </div>
+              <a href="#" onclick="downloadEA();return false;" style="display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:8px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;text-decoration:none;transition:opacity .15s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Download TradeLog_Sync.mq5
+                Download TradeLog_Sync.ex5
               </a>
             </div>
           </div>
@@ -3032,10 +3034,12 @@ Examples of accepted formats:
           <div style="display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);">
             <div style="width:32px;height:32px;border-radius:50%;background:var(--surface3);border:2px solid var(--border2);color:var(--text2);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
             <div style="flex:1;">
-              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Install the EA in MT5</div>
-              <div style="font-size:12px;color:var(--text2);line-height:1.7;">
-                In MetaTrader 5, go to <strong style="color:var(--text);">File → Open Data Folder</strong>, then open the <code style="background:var(--surface3);padding:1px 6px;border-radius:4px;font-size:11px;">MQL5 → Experts</code> folder and paste the <strong style="color:var(--accent);">TradeLog_Sync.mq5</strong> file inside.<br><br>
-                Then in MT5 press <strong style="color:var(--text);">F5</strong> (or right-click in Navigator → Refresh) to make the EA appear.
+              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Place the file in MT5</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.8;">
+                In MetaTrader 5, click <strong style="color:var(--text);">File → Open Data Folder</strong> from the top menu bar.<br>
+                A folder window will open. Navigate into <code style="background:var(--surface3);padding:2px 7px;border-radius:4px;font-size:11px;color:var(--accent);">MQL5 → Experts</code><br>
+                Copy and paste the downloaded <strong style="color:var(--accent);">TradeLog_Sync.ex5</strong> file into that folder.<br><br>
+                Back in MT5, in the <strong style="color:var(--text);">Navigator panel</strong> on the left, right-click on <strong style="color:var(--text);">Expert Advisors</strong> and click <strong style="color:var(--text);">Refresh</strong>. You should see <strong style="color:var(--accent);">TradeLog_Sync</strong> appear in the list.
               </div>
             </div>
           </div>
@@ -3044,15 +3048,39 @@ Examples of accepted formats:
           <div style="display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);">
             <div style="width:32px;height:32px;border-radius:50%;background:var(--surface3);border:2px solid var(--border2);color:var(--text2);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
             <div style="flex:1;">
-              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Allow WebRequests in MT5</div>
-              <div style="font-size:12px;color:var(--text2);line-height:1.7;">
-                Go to <strong style="color:var(--text);">Tools → Options → Expert Advisors</strong>.<br>
-                Check <strong style="color:var(--text);">✓ Allow WebRequests for listed URLs</strong> and add this URL:
+              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Configure WebRequest permission in MT5</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.8;">
+                Go to <strong style="color:var(--text);">Tools → Options</strong> from the MT5 top menu, then click the <strong style="color:var(--text);">Expert Advisors</strong> tab.<br><br>
+
+                In that tab, make sure the settings are as follows:<br>
               </div>
-              <div style="display:flex;align-items:center;gap:8px;margin-top:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;">
-                <code style="font-family:var(--mono);font-size:11px;color:var(--accent);flex:1;word-break:break-all;">https://yuqfoasfefldenkvwyrm.supabase.co</code>
-                <button onclick="navigator.clipboard.writeText('https://yuqfoasfefldenkvwyrm.supabase.co').then(()=>toast('URL copied!','success'))" style="flex-shrink:0;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">Copy</button>
+
+              <!-- Settings checklist -->
+              <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);">
+                  <div style="width:18px;height:18px;border-radius:5px;background:var(--green-bg);border:1.5px solid var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                  <div style="font-size:12px;color:var(--text2);line-height:1.6;"><strong style="color:var(--text);">Allow WebRequests for listed URLs</strong> — must be <strong style="color:var(--green);">checked / enabled</strong></div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);">
+                  <div style="width:18px;height:18px;border-radius:5px;background:var(--red-bg);border:1.5px solid var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </div>
+                  <div style="font-size:12px;color:var(--text2);line-height:1.6;"><strong style="color:var(--text);">Allow automated trading</strong> — must be <strong style="color:var(--red);">unchecked / disabled</strong> in Options (the EA only sends data, it does not trade)</div>
+                </div>
               </div>
+
+              <!-- URL to add -->
+              <div style="margin-top:12px;font-size:12px;color:var(--text2);line-height:1.8;">
+                In the URL list field below that checkbox, add this exact URL:
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:8px;background:var(--surface2);border:1px solid rgba(99,102,241,0.4);border-radius:8px;padding:12px 14px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <code style="font-family:var(--mono);font-size:11px;color:var(--accent);flex:1;word-break:break-all;">https://yuqfoasfefldenkvwyrm.supabase.co/functions/v1/smart-worker</code>
+                <button onclick="navigator.clipboard.writeText('https://yuqfoasfefldenkvwyrm.supabase.co/functions/v1/smart-worker').then(()=>toast('URL copied!','success'))" style="flex-shrink:0;padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">Copy URL</button>
+              </div>
+              <div style="margin-top:8px;font-size:11px;color:var(--muted);">⚠️ The URL must be added exactly as shown above. Then click <strong style="color:var(--text2);">OK</strong> to save and close Options.</div>
             </div>
           </div>
 
@@ -3060,16 +3088,33 @@ Examples of accepted formats:
           <div style="display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);">
             <div style="width:32px;height:32px;border-radius:50%;background:var(--surface3);border:2px solid var(--border2);color:var(--text2);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">4</div>
             <div style="flex:1;">
-              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Attach the EA to any chart</div>
-              <div style="font-size:12px;color:var(--text2);line-height:1.7;">
-                In MT5 Navigator panel, find <strong style="color:var(--text);">Expert Advisors → TradeLog_Sync</strong> and drag it onto any open chart (e.g. EURUSD M1).<br><br>
-                In the EA settings dialog that appears, paste your <strong style="color:var(--accent);">API Key</strong> from above into the <strong style="color:var(--text);">ApiKey</strong> field. Set sync interval if desired (default: every 5 minutes).
+              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Attach the EA to a chart and enter your API Key</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.8;">
+                Open any chart in MT5 (e.g. EURUSD H1 — the symbol does not matter).<br>
+                In the <strong style="color:var(--text);">Navigator panel</strong>, find <strong style="color:var(--accent);">Expert Advisors → TradeLog_Sync</strong> and double-click it (or drag it onto the chart).<br><br>
+                A settings dialog will open. Click the <strong style="color:var(--text);">Inputs</strong> tab and fill in:<br>
               </div>
-              <!-- Mini key display for easy copy -->
-              <div style="display:flex;align-items:center;gap:8px;margin-top:10px;background:var(--surface2);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:10px 14px;">
+
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);">
+                  <span style="font-size:11px;font-weight:800;color:var(--accent);background:rgba(99,102,241,0.12);padding:2px 8px;border-radius:5px;white-space:nowrap;margin-top:1px;">ApiKey</span>
+                  <div style="font-size:12px;color:var(--text2);line-height:1.6;">Paste your API key from the top of this page</div>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);">
+                  <span style="font-size:11px;font-weight:800;color:var(--muted);background:var(--surface3);padding:2px 8px;border-radius:5px;white-space:nowrap;margin-top:1px;">SyncIntervalMinutes</span>
+                  <div style="font-size:12px;color:var(--text2);line-height:1.6;">Leave as <strong style="color:var(--text);">5</strong> (syncs every 5 minutes)</div>
+                </div>
+              </div>
+
+              <!-- API key copy box -->
+              <div style="display:flex;align-items:center;gap:8px;margin-top:12px;background:var(--surface2);border:1px solid rgba(99,102,241,0.3);border-radius:8px;padding:10px 14px;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 <code id="api-key-display-2" style="font-family:var(--mono);font-size:11px;color:var(--text);flex:1;word-break:break-all;letter-spacing:0.3px;">Loading...</code>
-                <button onclick="copyApiKey()" style="flex-shrink:0;padding:4px 10px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">Copy</button>
+                <button onclick="copyApiKey()" style="flex-shrink:0;padding:4px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">Copy Key</button>
+              </div>
+
+              <div style="margin-top:10px;font-size:12px;color:var(--text2);line-height:1.8;">
+                Click <strong style="color:var(--text);">OK</strong> to attach the EA. You will see a small smiley face icon 🙂 appear in the top-right corner of the chart — this means the EA is running successfully.
               </div>
             </div>
           </div>
@@ -3079,9 +3124,15 @@ Examples of accepted formats:
             <div style="width:32px;height:32px;border-radius:50%;background:var(--green-bg);border:2px solid var(--green);color:var(--green);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">✓</div>
             <div style="flex:1;">
               <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">You're live! 🎉</div>
-              <div style="font-size:12px;color:var(--text2);line-height:1.7;">
-                Make sure <strong style="color:var(--text);">Auto Trading is enabled</strong> in MT5 (the button at the top toolbar). The EA will sync every 5 minutes automatically.<br><br>
-                Close a trade in MT5 and within 5 minutes it will appear in your TradeLog journal. You can check the MT5 <strong style="color:var(--text);">Experts tab</strong> (bottom panel) to see sync logs.
+              <div style="font-size:12px;color:var(--text2);line-height:1.8;">
+                The EA will immediately sync your full trade history on first run, then continue syncing every 5 minutes automatically.<br><br>
+                To confirm everything is working, look at the <strong style="color:var(--text);">Experts tab</strong> at the bottom of MT5. You should see a message like:<br>
+              </div>
+              <div style="margin-top:10px;padding:10px 16px;background:var(--surface2);border-radius:8px;border-left:3px solid var(--green);border:1px solid var(--border);">
+                <code style="font-size:11px;color:var(--green);font-family:var(--mono);">TradeLog: Sync OK — 12 trade(s) sent.</code>
+              </div>
+              <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.8;">
+                💡 Keep MT5 open with the chart running for continuous syncing. The EA only runs while MT5 is open.
               </div>
             </div>
           </div>
@@ -3094,26 +3145,31 @@ Examples of accepted formats:
         <div class="panel-header">
           <div class="panel-header-left"><div class="panel-title">Troubleshooting</div></div>
         </div>
-        <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+        <div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;">
 
           <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;border:1px solid var(--border);">
-            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ EA says "WebRequest blocked"</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.6;">Go to <strong style="color:var(--text);">Tools → Options → Expert Advisors</strong> and make sure the URL is added exactly as shown in Step 3. Then restart MT5.</div>
+            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ EA says "WebRequest blocked" in Experts tab</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;">Go to <strong style="color:var(--text);">Tools → Options → Expert Advisors</strong>, make sure <strong style="color:var(--text);">Allow WebRequests for listed URLs</strong> is checked, and the exact URL <code style="background:var(--surface3);padding:1px 5px;border-radius:4px;font-size:10px;color:var(--accent);">https://yuqfoasfefldenkvwyrm.supabase.co/functions/v1/smart-worker</code> is in the list. Click OK and try again.</div>
           </div>
 
           <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;border:1px solid var(--border);">
-            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ Trades not appearing in TradeLog</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.6;">Check the MT5 <strong style="color:var(--text);">Experts tab</strong> at the bottom — it shows sync logs. Make sure Auto Trading is ON and the chart the EA is attached to is open.</div>
+            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ Trades are not appearing in TradeLog</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;">Check the <strong style="color:var(--text);">Experts tab</strong> in MT5 for any error messages. Make sure the chart the EA is attached to is still open. Also confirm your API key was pasted correctly in the EA Inputs — it must match exactly what is shown above.</div>
           </div>
 
           <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;border:1px solid var(--border);">
-            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ EA disappears when I close MT5</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.6;">Save the chart as a profile or template in MT5 so the EA reattaches automatically when you reopen the terminal.</div>
+            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ I see a sad face ☹️ instead of smiley on the chart</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;">This means the EA is attached but has an error. Check the <strong style="color:var(--text);">Experts tab</strong> at the bottom of MT5 to see the exact error. Usually it is a wrong API key or WebRequest not allowed.</div>
           </div>
 
           <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;border:1px solid var(--border);">
-            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ I want to sync history, not just new trades</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.6;">On first run the EA automatically syncs your full history. If you need to re-sync, remove the EA from the chart and re-attach it — it will do a full history sync again.</div>
+            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ EA disappears when I restart MT5</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;">Right-click the chart and click <strong style="color:var(--text);">Save as Template</strong>. Next time MT5 opens, apply the template to the chart and the EA will be back with all your settings.</div>
+          </div>
+
+          <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;border:1px solid var(--border);">
+            <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:5px;">❓ I want to re-sync my full trade history</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;">Remove the EA from the chart (right-click → Remove Expert Advisor), then drag it back on and attach it again. It will do a full history sync on first run automatically.</div>
           </div>
 
         </div>
@@ -3378,7 +3434,7 @@ void SendHeartbeat()
   const blob = new Blob([eaCode], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'TradeLog_Sync.mq5';
+  a.download = 'TradeLog_Sync.ex5';
   a.click();
   URL.revokeObjectURL(a.href);
   toast('EA file downloaded!', 'success');
