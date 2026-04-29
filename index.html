@@ -3920,16 +3920,16 @@ window.switchPage = function(name) {
       </div>
 
       <!-- Big P&L -->
-      <div style="margin-bottom:28px;position:relative;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.45;margin-bottom:10px;" id="share-pnl-label">Today's P&L</div>
-        <div id="share-pnl" style="font-size:58px;font-weight:800;letter-spacing:-2.5px;line-height:1;">+$0.00</div>
-        <div id="share-pnl-sub" style="font-size:13px;opacity:0.5;margin-top:8px;font-weight:600;"></div>
+      <div style="margin-bottom:24px;position:relative;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:0.4;margin-bottom:10px;" id="share-pnl-label">Today's P&L</div>
+        <div id="share-pnl" style="font-size:62px;font-weight:900;letter-spacing:-3px;line-height:1;">+$0.00</div>
+        <div id="share-pnl-sub" style="display:none;"></div>
       </div>
 
-      <!-- Stats strip -->
+      <!-- Stats strip: Trades · Best Trade · Symbols (no win rate) -->
       <div id="share-stats-strip" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;border-radius:14px;overflow:hidden;margin-bottom:20px;">
         <div id="share-stat-1" style="padding:14px 16px;">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.4;margin-bottom:5px;">Win Rate</div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.4;margin-bottom:5px;">Trades</div>
           <div id="share-wr" style="font-size:21px;font-weight:800;">—</div>
         </div>
         <div id="share-stat-2" style="padding:14px 16px;">
@@ -4067,18 +4067,34 @@ window.switchPage = function(name) {
           <span style="font-size:13px;font-weight:700;color:var(--text);">Pages Overview</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:7px;">
-          ${[
-            ['Dashboard','Your live overview — P&L, equity curve, goals and journal.'],
-            ['Trades','Full trade log with filters, sorting, and inline editing.'],
-            ['Analytics','Deep performance metrics, charts and heatmap.'],
-            ['Calendar','Day-by-day P&L view. Spot your best and worst sessions.'],
-            ['Mindset','Daily trading plan, end-of-day review, and trading rules.'],
-            ['Forecast','AI-powered analysis of patterns and risk in your trading.'],
-          ].map(([page, desc]) => `
-            <div style="display:flex;gap:10px;align-items:flex-start;">
-              <span style="font-size:10px;font-weight:800;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 8px;border-radius:6px;white-space:nowrap;margin-top:1px;">${page}</span>
-              <span style="font-size:12px;color:var(--muted);line-height:1.5;">${desc}</span>
-            </div>`).join('')}
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-size:10px;font-weight:800;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 8px;border-radius:6px;white-space:nowrap;margin-top:1px;">Dashboard</span>
+            <span style="font-size:12px;color:var(--muted);line-height:1.5;">Your live overview — P&amp;L, equity curve, goals and journal.</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-size:10px;font-weight:800;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 8px;border-radius:6px;white-space:nowrap;margin-top:1px;">Trades</span>
+            <span style="font-size:12px;color:var(--muted);line-height:1.5;">Full trade log with filters, sorting, and inline editing.</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-size:10px;font-weight:800;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 8px;border-radius:6px;white-space:nowrap;margin-top:1px;">Analytics</span>
+            <span style="font-size:12px;color:var(--muted);line-height:1.5;">Deep performance metrics, charts and heatmap.</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-size:10px;font-weight:800;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 8px;border-radius:6px;white-space:nowrap;margin-top:1px;">Calendar</span>
+            <span style="font-size:12px;color:var(--muted);line-height:1.5;">Day-by-day P&amp;L view. Spot your best and worst sessions.</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-size:10px;font-weight:800;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 8px;border-radius:6px;white-space:nowrap;margin-top:1px;">Mindset</span>
+            <span style="font-size:12px;color:var(--muted);line-height:1.5;">Daily trading plan, end-of-day review, and trading rules.</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-size:10px;font-weight:800;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 8px;border-radius:6px;white-space:nowrap;margin-top:1px;">Forecast</span>
+            <span style="font-size:12px;color:var(--muted);line-height:1.5;">AI-powered analysis of patterns and risk in your trading.</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-size:10px;font-weight:800;color:var(--accent);background:rgba(99,102,241,.12);padding:2px 8px;border-radius:6px;white-space:nowrap;margin-top:1px;">Notebooks</span>
+            <span style="font-size:12px;color:var(--muted);line-height:1.5;">Write notes, research and insights organized by notebook.</span>
+          </div>
         </div>
       </div>
 
@@ -4089,14 +4105,38 @@ window.switchPage = function(name) {
           <span style="font-size:13px;font-weight:700;color:var(--text);">Keyboard Shortcuts</span>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-          ${[
-            ['D','Dashboard'],['T','Trades'],['A','Analytics'],['C','Calendar'],
-            ['M','Mindset'],['N','New Trade'],['Esc','Close panels'],['?','This help'],
-          ].map(([key, label]) => `
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-family:var(--mono);background:var(--surface3);border:1px solid var(--border2);padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;color:var(--text);min-width:28px;text-align:center;">${key}</span>
-              <span style="font-size:12px;color:var(--muted);">${label}</span>
-            </div>`).join('')}
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:var(--surface3);border:1px solid var(--border2);padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;color:var(--text);min-width:28px;text-align:center;">D</span>
+            <span style="font-size:12px;color:var(--muted);">Dashboard</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:var(--surface3);border:1px solid var(--border2);padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;color:var(--text);min-width:28px;text-align:center;">T</span>
+            <span style="font-size:12px;color:var(--muted);">Trades</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:var(--surface3);border:1px solid var(--border2);padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;color:var(--text);min-width:28px;text-align:center;">A</span>
+            <span style="font-size:12px;color:var(--muted);">Analytics</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:var(--surface3);border:1px solid var(--border2);padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;color:var(--text);min-width:28px;text-align:center;">C</span>
+            <span style="font-size:12px;color:var(--muted);">Calendar</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:var(--surface3);border:1px solid var(--border2);padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;color:var(--text);min-width:28px;text-align:center;">M</span>
+            <span style="font-size:12px;color:var(--muted);">Mindset</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:var(--surface3);border:1px solid var(--border2);padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;color:var(--text);min-width:28px;text-align:center;">N</span>
+            <span style="font-size:12px;color:var(--muted);">New Trade</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:var(--surface3);border:1px solid var(--border2);padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;color:var(--text);min-width:28px;text-align:center;">Esc</span>
+            <span style="font-size:12px;color:var(--muted);">Close panels</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:var(--surface3);border:1px solid var(--border2);padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;color:var(--text);min-width:28px;text-align:center;">?</span>
+            <span style="font-size:12px;color:var(--muted);">This help</span>
+          </div>
         </div>
       </div>
 
@@ -10174,10 +10214,10 @@ function openShareModal() {
   pnlEl.style.color = posCol;
 
   const pnlSub = document.getElementById('share-pnl-sub');
-  pnlSub.textContent = todayTrades.length === 0 ? 'No trades logged today' : isPos ? 'Profitable day ↑' : 'Tough day — back tomorrow ↑';
+  if (pnlSub) pnlSub.style.display = 'none';
 
-  document.getElementById('share-wr').textContent = todayTrades.length ? `${wr}%` : '—';
-  document.getElementById('share-wr').style.color = wr >= 50 ? p.pos : p.neg;
+  document.getElementById('share-wr').textContent = todayTrades.length ? `${todayTrades.length}` : '0';
+  document.getElementById('share-wr').style.color = '';
 
   const bestEl = document.getElementById('share-best');
   bestEl.textContent = todayTrades.length ? (best >= 0 ? '+' : '-') + sym + Math.abs(best).toFixed(2) : '—';
