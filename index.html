@@ -1144,10 +1144,7 @@
     #page-add .container { padding: 10px !important; }
     #page-import .container { padding: 10px !important; }
 
-    /* ── DASHBOARD NEWS GRID ── */
-    #dash-news-grid {
-      grid-template-columns: 1fr !important;
-    }
+    /* ── DASHBOARD NEWS GRID removed - now on Fundamentals page ── */
 
     /* ── DASHBOARD HEADER ── */
     .dash-header { margin-bottom: 12px !important; flex-wrap: wrap; gap: 8px; }
@@ -1631,6 +1628,11 @@
 
     /* New pages mobile */
     #page-notebooks { padding: 14px !important; }
+    /* Fundamentals mobile */
+    #page-fundamentals > div:first-child { padding: 10px 14px !important; flex-wrap: wrap; gap: 8px; }
+    #fund-tab-all { grid-template-columns: 1fr !important; }
+    #fund-tab-all > div:first-child { border-right: none !important; border-bottom: 1px solid var(--border) !important; height: 50vh; }
+    #fund-tab-all > div:last-child { height: 50vh; }
 
     .new-page-header { flex-wrap:wrap; gap:8px; margin-bottom:14px !important; }
     .new-page-title { font-size:18px !important; }
@@ -1720,6 +1722,10 @@
     <button class="sidebar-item" data-label="Notebooks" onclick="switchPage('notebooks')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="12" y1="7" x2="16" y2="7"/><line x1="12" y1="11" x2="16" y2="11"/></svg>
       <span class="sidebar-label">Notebooks</span>
+    </button>
+    <button class="sidebar-item" data-label="Fundamentals" onclick="switchPage('fundamentals')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <span class="sidebar-label">Fundamentals</span>
     </button>
 
     <div class="sidebar-divider"></div>
@@ -2113,41 +2119,6 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- ── ECONOMIC CALENDAR + NEWS ── -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;" id="dash-news-grid">
-
-      <!-- Economic Calendar -->
-      <div class="panel" style="overflow:hidden;">
-        <div class="panel-header" style="cursor:pointer;user-select:none;" onclick="toggleDashNews()">
-          <div class="panel-header-left">
-            <div class="panel-title">Economic Calendar</div>
-            <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:20px;font-weight:600;border:1px solid var(--border);">TradingView</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span id="dash-news-toggle-label" style="font-size:10px;color:var(--muted);font-weight:600;">Collapse</span>
-            <svg id="dash-news-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--muted);transition:transform .3s;flex-shrink:0;transform:rotate(180deg);"><polyline points="6 9 12 15 18 9"/></svg>
-          </div>
-        </div>
-        <div id="dash-news-body" style="height:550px;overflow:hidden;transition:height .35s cubic-bezier(.4,0,.2,1);">
-          <div id="dash-tv-widget-wrap" style="height:550px;position:relative;"></div>
-        </div>
-      </div>
-
-      <!-- Market News Timeline -->
-      <div class="panel" style="overflow:hidden;">
-        <div class="panel-header">
-          <div class="panel-header-left">
-            <div class="panel-title">Market News</div>
-            <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:20px;font-weight:600;border:1px solid var(--border);">TradingView</span>
-          </div>
-        </div>
-        <div id="dash-market-news-body" style="height:550px;overflow:hidden;transition:height .35s cubic-bezier(.4,0,.2,1);">
-          <div id="dash-news-timeline-wrap" style="height:550px;position:relative;"></div>
-        </div>
-      </div>
-
     </div>
 
     <!-- ── RECENT TRADES ── -->
@@ -2626,11 +2597,6 @@
       </button>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <!-- Events toggle button -->
-      <button id="cal-events-toggle" onclick="toggleCalEventsPanel()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="if(!this.classList.contains('cal-events-active')){this.style.borderColor='var(--border2)';this.style.color='var(--text2)';}" onmouseleave="if(!this.classList.contains('cal-events-active')){this.style.borderColor='var(--border)';this.style.color='var(--muted)';}">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="16" r="1" fill="currentColor"/></svg>
-        News & Events
-      </button>
       <div style="display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;border:1px solid var(--border);">
         <button id="cal-view-month"   onclick="setCalView('month')"   style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;">Month</button>
         <button id="cal-view-year"    onclick="setCalView('year')"    style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Year</button>
@@ -2705,17 +2671,6 @@
 
   </div>
 
-  <!-- Economic News overlay panel (slides in from right over full height) -->
-  <div id="cal-news-overlay" style="display:none;position:absolute;top:0;right:0;bottom:0;width:820px;max-width:90%;z-index:50;background:var(--surface);border-left:1px solid var(--border);border-radius:0 0 0 0;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.25);transition:transform .3s cubic-bezier(.4,0,.2,1);transform:translateX(100%);overflow:hidden;">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;">
-      <div>
-        <div style="font-size:14px;font-weight:800;color:var(--text);">Economic Calendar & Market News</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;">Powered by TradingView</div>
-      </div>
-      <button onclick="toggleCalEventsPanel()" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;">×</button>
-    </div>
-    <div id="cal-tv-widget-wrap" style="flex:1;overflow:hidden;position:relative;min-height:0;"></div>
-  </div>
 
 </div>
 
@@ -4868,7 +4823,7 @@ function switchPage(name) {
   const nextPage = document.getElementById('page-' + name);
   if (!nextPage) { console.warn('switchPage: no page found for', name); return; }
   nextPage.classList.add('active');
-  const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import Trades', mindset:'Mindset', forecast:'Forecast', events:'Events', playbook:'Playbook', checklist:'Checklist', rules:'Rules', notebooks:'Notebooks' };
+  const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import Trades', mindset:'Mindset', forecast:'Forecast', events:'Events', playbook:'Playbook', checklist:'Checklist', rules:'Rules', notebooks:'Notebooks', fundamentals:'Fundamentals' };
   const activeLabel = map[name] || '';
   document.querySelectorAll('.sidebar-item[data-label]').forEach(btn => {
     if (btn.id === 'settings-sidebar-btn') return;
@@ -9313,6 +9268,7 @@ document.addEventListener('keydown', e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
 
   switch (e.key.toLowerCase()) {
+    case 'f': switchPage('fundamentals'); break;
     case 'd': switchPage('dashboard'); break;
     case 't': switchPage('trades'); break;
     case 'a': switchPage('analytics'); break;
@@ -11070,6 +11026,7 @@ const _origSwitchPage = switchPage;
 window.switchPage = function(name) {
   _origSwitchPage(name);
   if (name === 'notebooks') renderNotebooks();
+  if (name === 'fundamentals') renderFundamentals();
 };
 
 // ══════════════════════════════════════════════════════════════════
@@ -11381,6 +11338,264 @@ handleNotebooksMobile();
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  FUNDAMENTALS PAGE                        -->
+<!-- ══════════════════════════════════════════ -->
+<div class="page" id="page-fundamentals" style="display:flex;flex-direction:column;height:100vh;overflow:hidden;box-sizing:border-box;">
+
+  <!-- ── TOP HEADER ── -->
+  <div style="flex-shrink:0;padding:18px 32px 14px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+    <div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:3px;">Market Intelligence</div>
+      <div style="font-size:22px;font-weight:900;letter-spacing:-0.6px;color:var(--text);">Fundamentals <span style="color:var(--accent);">& News</span></div>
+    </div>
+    <!-- Tab switcher -->
+    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:3px;border:1px solid var(--border);">
+      <button id="fund-tab-btn-all" onclick="setFundTab('all')" style="padding:7px 16px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;">All</button>
+      <button id="fund-tab-btn-calendar" onclick="setFundTab('calendar')" style="padding:7px 16px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;">📅 Calendar</button>
+      <button id="fund-tab-btn-news" onclick="setFundTab('news')" style="padding:7px 16px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;">📰 News</button>
+      <button id="fund-tab-btn-screener" onclick="setFundTab('screener')" style="padding:7px 16px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;">📊 Screener</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:10px;color:var(--muted);background:var(--surface2);padding:3px 10px;border-radius:20px;font-weight:600;border:1px solid var(--border);">Powered by TradingView</span>
+    </div>
+  </div>
+
+  <!-- ── TICKER TAPE ── -->
+  <div id="fund-ticker-wrap" style="flex-shrink:0;height:46px;background:var(--surface);border-bottom:1px solid var(--border);overflow:hidden;position:relative;"></div>
+
+  <!-- ── MAIN BODY ── -->
+  <div style="flex:1;min-height:0;overflow:hidden;position:relative;">
+
+    <!-- ALL TAB: 2-col grid -->
+    <div id="fund-tab-all" style="display:grid;grid-template-columns:1fr 1fr;height:100%;gap:0;">
+      <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0;">
+        <div style="padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:8px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></div>
+          <span style="font-size:11px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:1px;">Economic Calendar</span>
+          <span style="font-size:10px;color:var(--muted);">High-impact events</span>
+        </div>
+        <div id="fund-cal-wrap-all" style="flex:1;min-height:0;position:relative;"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;min-height:0;">
+        <div style="padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:8px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--green);"></div>
+          <span style="font-size:11px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:1px;">Market News</span>
+          <span style="font-size:10px;color:var(--muted);">Live feed</span>
+        </div>
+        <div id="fund-news-wrap-all" style="flex:1;min-height:0;position:relative;"></div>
+      </div>
+    </div>
+
+    <!-- CALENDAR TAB: full width -->
+    <div id="fund-tab-calendar" style="display:none;height:100%;flex-direction:column;">
+      <div id="fund-cal-wrap-solo" style="flex:1;height:100%;position:relative;"></div>
+    </div>
+
+    <!-- NEWS TAB: full width -->
+    <div id="fund-tab-news" style="display:none;height:100%;flex-direction:column;">
+      <div id="fund-news-wrap-solo" style="flex:1;height:100%;position:relative;"></div>
+    </div>
+
+    <!-- SCREENER TAB: full width market overview -->
+    <div id="fund-tab-screener" style="display:none;height:100%;flex-direction:column;">
+      <div id="fund-screener-wrap" style="flex:1;height:100%;position:relative;"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── FUNDAMENTALS PAGE ──────────────────────────────────────────────────────
+let _fundLoaded = { ticker: false, all: false, calendar: false, news: false, screener: false };
+let _fundTab = 'all';
+
+function setFundTab(tab) {
+  _fundTab = tab;
+  // Update tab buttons
+  ['all','calendar','news','screener'].forEach(t => {
+    const btn = document.getElementById('fund-tab-btn-' + t);
+    if (!btn) return;
+    btn.style.background = t === tab ? 'var(--accent)' : 'transparent';
+    btn.style.color      = t === tab ? '#fff' : 'var(--muted)';
+  });
+  // Show/hide panels
+  const allPanel      = document.getElementById('fund-tab-all');
+  const calPanel      = document.getElementById('fund-tab-calendar');
+  const newsPanel     = document.getElementById('fund-tab-news');
+  const screenerPanel = document.getElementById('fund-tab-screener');
+  if (allPanel)      allPanel.style.display      = tab === 'all'       ? 'grid'  : 'none';
+  if (calPanel)      calPanel.style.display       = tab === 'calendar'  ? 'flex'  : 'none';
+  if (newsPanel)     newsPanel.style.display      = tab === 'news'      ? 'flex'  : 'none';
+  if (screenerPanel) screenerPanel.style.display  = tab === 'screener'  ? 'flex'  : 'none';
+  // Load widgets lazily
+  if (tab === 'all'      && !_fundLoaded.all)       loadFundAllWidgets();
+  if (tab === 'calendar' && !_fundLoaded.calendar)  loadFundCalendarSolo();
+  if (tab === 'news'     && !_fundLoaded.news)       loadFundNewsSolo();
+  if (tab === 'screener' && !_fundLoaded.screener)   loadFundScreener();
+}
+
+function renderFundamentals() {
+  const theme = localStorage.getItem('tradelog_theme') || 'dark';
+  window._fundColorTheme = theme === 'light' ? 'light' : 'dark';
+  // Load ticker tape once
+  if (!_fundLoaded.ticker) {
+    _fundLoaded.ticker = true;
+    loadFundTicker();
+  }
+  // Default tab
+  setFundTab(_fundTab || 'all');
+}
+
+function loadFundTicker() {
+  const wrap = document.getElementById('fund-ticker-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = `<div class="tradingview-widget-container" style="width:100%;height:46px;">
+    <div class="tradingview-widget-container__widget"></div>
+  </div>`;
+  const s = document.createElement('script');
+  s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js';
+  s.async = true;
+  s.innerHTML = JSON.stringify({
+    symbols: [
+      { proName: "FOREXCOM:SPXUSD", title: "S&P 500" },
+      { proName: "FOREXCOM:NSXUSD", title: "Nasdaq 100" },
+      { proName: "FX_IDC:EURUSD",   title: "EUR/USD" },
+      { proName: "FX_IDC:GBPUSD",   title: "GBP/USD" },
+      { proName: "FX_IDC:XAUUSD",   title: "Gold" },
+      { proName: "FX_IDC:USDJPY",   title: "USD/JPY" },
+      { proName: "CRYPTOCAP:BTC",    title: "Bitcoin" },
+      { proName: "NASDAQ:AAPL",      title: "Apple" },
+      { proName: "NASDAQ:TSLA",      title: "Tesla" },
+      { proName: "BITSTAMP:ETHUSD",  title: "Ethereum" }
+    ],
+    showSymbolLogo: true,
+    isTransparent: true,
+    displayMode: "adaptive",
+    colorTheme: window._fundColorTheme || 'dark',
+    locale: "en",
+    width: "100%",
+    height: "46"
+  });
+  wrap.querySelector('.tradingview-widget-container').appendChild(s);
+}
+
+function loadFundAllWidgets() {
+  _fundLoaded.all = true;
+  const theme = window._fundColorTheme || 'dark';
+  // Economic Calendar
+  const calWrap = document.getElementById('fund-cal-wrap-all');
+  if (calWrap && !calWrap._loaded) {
+    calWrap._loaded = true;
+    calWrap.innerHTML = `<div class="tradingview-widget-container" style="width:100%;height:100%;">
+      <div class="tradingview-widget-container__widget" style="height:100%;"></div>
+    </div>`;
+    const s1 = document.createElement('script');
+    s1.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+    s1.async = true;
+    s1.innerHTML = JSON.stringify({
+      colorTheme: theme, isTransparent: true, locale: 'en',
+      countryFilter: 'us,eu,gb,jp,cn,nz,au,ca', importanceFilter: '0,1',
+      width: '100%', height: '100%'
+    });
+    calWrap.querySelector('.tradingview-widget-container').appendChild(s1);
+  }
+  // News Timeline
+  const newsWrap = document.getElementById('fund-news-wrap-all');
+  if (newsWrap && !newsWrap._loaded) {
+    newsWrap._loaded = true;
+    newsWrap.innerHTML = `<div class="tradingview-widget-container" style="width:100%;height:100%;">
+      <div class="tradingview-widget-container__widget" style="height:100%;"></div>
+    </div>`;
+    const s2 = document.createElement('script');
+    s2.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js';
+    s2.async = true;
+    s2.innerHTML = JSON.stringify({
+      displayMode: 'regular', feedMode: 'all_symbols',
+      colorTheme: theme, isTransparent: true, locale: 'en',
+      width: '100%', height: '100%'
+    });
+    newsWrap.querySelector('.tradingview-widget-container').appendChild(s2);
+  }
+}
+
+function loadFundCalendarSolo() {
+  _fundLoaded.calendar = true;
+  const theme = window._fundColorTheme || 'dark';
+  const wrap = document.getElementById('fund-cal-wrap-solo');
+  if (!wrap || wrap._loaded) return;
+  wrap._loaded = true;
+  wrap.innerHTML = `<div class="tradingview-widget-container" style="width:100%;height:100%;">
+    <div class="tradingview-widget-container__widget" style="height:100%;"></div>
+  </div>`;
+  const s = document.createElement('script');
+  s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
+  s.async = true;
+  s.innerHTML = JSON.stringify({
+    colorTheme: theme, isTransparent: true, locale: 'en',
+    countryFilter: 'us,eu,gb,jp,cn,nz,au,ca', importanceFilter: '0,1',
+    width: '100%', height: '100%'
+  });
+  wrap.querySelector('.tradingview-widget-container').appendChild(s);
+}
+
+function loadFundNewsSolo() {
+  _fundLoaded.news = true;
+  const theme = window._fundColorTheme || 'dark';
+  const wrap = document.getElementById('fund-news-wrap-solo');
+  if (!wrap || wrap._loaded) return;
+  wrap._loaded = true;
+  wrap.innerHTML = `<div class="tradingview-widget-container" style="width:100%;height:100%;">
+    <div class="tradingview-widget-container__widget" style="height:100%;"></div>
+  </div>`;
+  const s = document.createElement('script');
+  s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js';
+  s.async = true;
+  s.innerHTML = JSON.stringify({
+    displayMode: 'regular', feedMode: 'all_symbols',
+    colorTheme: theme, isTransparent: true, locale: 'en',
+    width: '100%', height: '100%'
+  });
+  wrap.querySelector('.tradingview-widget-container').appendChild(s);
+}
+
+function loadFundScreener() {
+  _fundLoaded.screener = true;
+  const theme = window._fundColorTheme || 'dark';
+  const wrap = document.getElementById('fund-screener-wrap');
+  if (!wrap || wrap._loaded) return;
+  wrap._loaded = true;
+  wrap.innerHTML = `<div class="tradingview-widget-container" style="width:100%;height:100%;">
+    <div class="tradingview-widget-container__widget" style="height:100%;"></div>
+  </div>`;
+  const s = document.createElement('script');
+  s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-forex-cross-rates.js';
+  s.async = true;
+  s.innerHTML = JSON.stringify({
+    width: '100%', height: '100%',
+    currencies: ['EUR','USD','JPY','GBP','CHF','AUD','CAD','NZD'],
+    isTransparent: true, colorTheme: theme, locale: 'en'
+  });
+  wrap.querySelector('.tradingview-widget-container').appendChild(s);
+}
+
+// Re-init widgets when theme changes so colors stay in sync
+(function() {
+  const _origSetTheme = window.setTheme;
+  window.setTheme = function(t) {
+    _origSetTheme(t);
+    // Reset fundamentals loaded state so widgets reload with new theme on next visit
+    _fundLoaded = { ticker: false, all: false, calendar: false, news: false, screener: false };
+    const ids = ['fund-ticker-wrap','fund-cal-wrap-all','fund-news-wrap-all','fund-cal-wrap-solo','fund-news-wrap-solo','fund-screener-wrap'];
+    ids.forEach(id => { const el = document.getElementById(id); if (el) { el.innerHTML = ''; el._loaded = false; } });
+    // If fundamentals page is currently active, re-render
+    if (document.getElementById('page-fundamentals')?.classList.contains('active')) {
+      renderFundamentals();
+    }
+  };
+})();
+</script>
 
 </div><!-- /main-content -->
 </div><!-- /app-shell -->
