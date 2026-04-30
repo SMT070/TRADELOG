@@ -5283,7 +5283,8 @@ async function saveTrade() {
     r = riskPts ? +( rewardPts / riskPts ).toFixed(2) : 0;
   }
   const commission = parseFloat(document.getElementById('f-commission').value) || 0;
-  const netPnl = pnl - commission;
+  const swap = parseFloat((document.getElementById('f-swap') || {}).value) || 0;
+  const netPnl = pnl - commission + swap;
   const editId = document.getElementById('edit-id').value;
   const trade = {
     id: editId || uid(),
@@ -5296,6 +5297,7 @@ async function saveTrade() {
     tp: parseFloat(document.getElementById('f-tp').value) || 0,
     pnl,
     commission,
+    swap,
     netPnl,
     r,
     strategies: [...strategyTags],
@@ -7447,7 +7449,8 @@ async function saveInlineEdit(id) {
   t.tp         = parseFloat(document.getElementById('ie-tp').value) || 0;
   t.pnl        = parseFloat(document.getElementById('ie-pnl').value) || 0;
   t.commission = parseFloat(document.getElementById('ie-commission').value) || 0;
-  t.netPnl     = t.pnl - t.commission;
+  t.swap       = t.swap || 0;  // preserve swap from MT5, not editable in UI
+  t.netPnl     = t.pnl - t.commission + t.swap;
   t.notes      = document.getElementById('ie-notes').value;
   t.result     = window._ieResult || (t.netPnl === 0 ? 'be' : (t.netPnl > 0 ? 'win' : 'loss'));
   t.emotion    = window._ieEmotion || '';
