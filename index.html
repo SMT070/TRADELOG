@@ -4180,13 +4180,22 @@ async function backgroundSync() {
       const newIds = data.map(r => r.id).join(',');
       const oldIds = trades.map(r => r.id).join(',');
       const dataChanged = newIds !== oldIds || data.length !== trades.length;
-      trades = data.map(r => ({
-        id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
-        dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
-        pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
-        result: r.result, emotion: r.emotion, confidence: r.confidence,
-        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
-      }));
+      trades = data.map(r => {
+        const pnl  = parseFloat(r.pnl)        || 0;
+        const comm = Math.abs(parseFloat(r.commission) || 0);
+        const swap = parseFloat(r.swap)        || 0;
+        // Always recompute netPnl from raw values so commission+swap are never lost
+        const netPnl = (r.net_pnl != null && r.net_pnl !== r.pnl)
+          ? parseFloat(r.net_pnl)
+          : pnl - comm + swap;
+        return {
+          id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
+          dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
+          pnl, commission: comm, swap, netPnl, r: r.r,
+          result: r.result, emotion: r.emotion, confidence: r.confidence,
+          notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+        };
+      });
       localStorage.setItem(KEY, JSON.stringify(trades));
       if (dataChanged) {
         refreshDashboard();
@@ -4645,13 +4654,22 @@ async function loadAllFromSupabase() {
   try {
     const { data, error } = await sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false });
     if (!error) {
-      trades = (data || []).map(r => ({
-        id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
-        dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
-        pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
-        result: r.result, emotion: r.emotion, confidence: r.confidence,
-        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
-      }));
+      trades = (data || []).map(r => {
+        const pnl  = parseFloat(r.pnl)  || 0;
+        const comm = Math.abs(parseFloat(r.commission) || 0);
+        const swap = parseFloat(r.swap) || 0;
+        const netPnl = (r.net_pnl != null && r.net_pnl !== r.pnl)
+          ? parseFloat(r.net_pnl)
+          : pnl - comm + swap;
+        return {
+          id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
+          dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
+          pnl, commission: comm, swap, netPnl, r: r.r,
+          result: r.result || (netPnl === 0 ? 'be' : netPnl > 0 ? 'win' : 'loss'),
+          emotion: r.emotion, confidence: r.confidence,
+          notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+        };
+      });
       localStorage.setItem(KEY, JSON.stringify(trades));
     }
   } catch(e) { console.error('TradeLog: loadTrades failed', e); }
@@ -4735,7 +4753,9 @@ async function saveTradeToSupabase(t) {
     id: t.id, user_id: uid, symbol: t.symbol, date: t.date,
     close_date: t.closeDate, dir: t.dir, lots: t.lots, entry: t.entry,
     exit: t.exit, sl: t.sl, tp: t.tp, pnl: t.pnl, commission: t.commission,
-    net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
+    swap: t.swap || 0,
+    net_pnl: t.netPnl != null ? t.netPnl : (t.pnl || 0) - Math.abs(t.commission || 0) + (t.swap || 0),
+    r: t.r, result: t.result, emotion: t.emotion,
     confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
     strategies: t.strategies || []
   };
