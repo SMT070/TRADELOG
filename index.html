@@ -3339,6 +3339,8 @@ void DoSync()
       for(int k=0;k<entryCount;k++) { if(entryPos[k]==posId) { openPrice=entryPrice[k]; openTime=entryTime[k]; comment=entryComment[k]; sl=entrySL[k]; tp=entryTP[k]; entryComm=entryCommission[k]; break; } }
       // Total commission = exit deal commission + entry deal commission (both are negative in MT5)
       double totalCommission=commission+entryComm;
+      // Net P&L = profit + commission (negative) + swap — this is what MT5 History shows as "profit"
+      double netPnl=profit+totalCommission+swap;
       if(closeTime>newestClose) newestClose=closeTime;
       if(!firstTrade) tradesJson+=",";
       tradesJson+="{";
@@ -3354,6 +3356,7 @@ void DoSync()
       tradesJson+="\\\"profit\\\":"+DoubleToString(profit,2)+",";
       tradesJson+="\\\"commission\\\":"+DoubleToString(totalCommission,2)+",";
       tradesJson+="\\\"swap\\\":"+DoubleToString(swap,2)+",";
+      tradesJson+="\\\"net_pnl\\\":"+DoubleToString(netPnl,2)+",";
       tradesJson+="\\\"sl\\\":"+DoubleToString(sl,5)+",";
       tradesJson+="\\\"tp\\\":"+DoubleToString(tp,5)+",";
       tradesJson+="\\\"comment\\\":\\""+JsonEscape(comment)+"\\"";
@@ -4185,13 +4188,23 @@ async function backgroundSync() {
       const newIds = data.map(r => r.id).join(',');
       const oldIds = trades.map(r => r.id).join(',');
       const dataChanged = newIds !== oldIds || data.length !== trades.length;
-      trades = data.map(r => ({
-        id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
-        dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
-        pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
-        result: r.result, emotion: r.emotion, confidence: r.confidence,
-        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
-      }));
+      trades = data.map(r => {
+        const pnl        = r.pnl        || 0;
+        const commission = r.commission || 0;
+        const swap       = r.swap       || 0;
+        // Always recompute net_pnl: profit + commission (negative) + swap
+        // If backend already stored correct net_pnl use it, otherwise derive it
+        const netPnl = (r.net_pnl !== null && r.net_pnl !== undefined)
+          ? r.net_pnl
+          : pnl + commission + swap;
+        return {
+          id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
+          dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
+          pnl, commission, swap, netPnl, r: r.r,
+          result: r.result, emotion: r.emotion, confidence: r.confidence,
+          notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+        };
+      });
       localStorage.setItem(KEY, JSON.stringify(trades));
       if (dataChanged) {
         refreshDashboard();
@@ -4650,13 +4663,21 @@ async function loadAllFromSupabase() {
   try {
     const { data, error } = await sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false });
     if (!error) {
-      trades = (data || []).map(r => ({
-        id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
-        dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
-        pnl: r.pnl, commission: r.commission, netPnl: r.net_pnl, r: r.r,
-        result: r.result, emotion: r.emotion, confidence: r.confidence,
-        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
-      }));
+      trades = (data || []).map(r => {
+        const pnl        = r.pnl        || 0;
+        const commission = r.commission || 0;
+        const swap       = r.swap       || 0;
+        const netPnl = (r.net_pnl !== null && r.net_pnl !== undefined)
+          ? r.net_pnl
+          : pnl + commission + swap;
+        return {
+          id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
+          dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
+          pnl, commission, swap, netPnl, r: r.r,
+          result: r.result, emotion: r.emotion, confidence: r.confidence,
+          notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+        };
+      });
       localStorage.setItem(KEY, JSON.stringify(trades));
     }
   } catch(e) { console.error('TradeLog: loadTrades failed', e); }
