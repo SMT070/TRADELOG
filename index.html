@@ -2976,11 +2976,11 @@ Examples of accepted formats:
             <div style="flex:1;">
               <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Download the EA file</div>
               <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:12px;">
-                Click the button below to download <strong style="color:var(--accent);">TradeLog_Sync.ex5</strong> — this is the pre-compiled Expert Advisor file. You do <strong style="color:var(--text);">not</strong> need to compile anything, it is ready to use immediately.
+                Click the button below to download <strong style="color:var(--accent);">TradeLog_Sync.mq5</strong> — this is the source file. Open it in <strong style="color:var(--text);">MetaEditor</strong> and press <strong style="color:var(--text);">F7</strong> to compile (takes 2 seconds, produces 0 errors).
               </div>
               <a href="#" onclick="downloadEA();return false;" style="display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:8px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;text-decoration:none;transition:opacity .15s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Download TradeLog_Sync.ex5
+                Download TradeLog_Sync.mq5
               </a>
             </div>
           </div>
@@ -2989,12 +2989,12 @@ Examples of accepted formats:
           <div style="display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);">
             <div style="width:32px;height:32px;border-radius:50%;background:var(--surface3);border:2px solid var(--border2);color:var(--text2);font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
             <div style="flex:1;">
-              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Place the file in MT5</div>
+              <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Place the file in MT5 and compile</div>
               <div style="font-size:12px;color:var(--text2);line-height:1.8;">
                 In MetaTrader 5, click <strong style="color:var(--text);">File → Open Data Folder</strong> from the top menu bar.<br>
                 A folder window will open. Navigate into <code style="background:var(--surface3);padding:2px 7px;border-radius:4px;font-size:11px;color:var(--accent);">MQL5 → Experts</code><br>
-                Copy and paste the downloaded <strong style="color:var(--accent);">TradeLog_Sync.ex5</strong> file into that folder.<br><br>
-                Back in MT5, in the <strong style="color:var(--text);">Navigator panel</strong> on the left, right-click on <strong style="color:var(--text);">Expert Advisors</strong> and click <strong style="color:var(--text);">Refresh</strong>. You should see <strong style="color:var(--accent);">TradeLog_Sync</strong> appear in the list.
+                Copy and paste the downloaded <strong style="color:var(--accent);">TradeLog_Sync.mq5</strong> file into that folder.<br><br>
+                Back in MT5, open <strong style="color:var(--text);">MetaEditor</strong> (press F4), open the file, then press <strong style="color:var(--text);">F7</strong> to compile — you should see <strong style="color:var(--green);">0 errors</strong>. Then in the Navigator panel, right-click <strong style="color:var(--text);">Expert Advisors</strong> → <strong style="color:var(--text);">Refresh</strong> and <strong style="color:var(--accent);">TradeLog_Sync</strong> will appear.
               </div>
             </div>
           </div>
@@ -3241,11 +3241,11 @@ async function copyApiKey() {
 // ── DOWNLOAD EA FILE ──────────────────────────────────────────────────────────
 function downloadEA() {
   const eaCode = `//+------------------------------------------------------------------+
-//| TradeLog Auto-Sync EA v1.2                                       |
-//| Fixes v1.2: seconds in timestamps, deal ticket as unique ID      |
+//| TradeLog Auto-Sync EA v1.3                                       |
+//| Fix v1.3: commission now sums entry+exit deals (was always 0)   |
 //+------------------------------------------------------------------+
 #property copyright "TradeLog"
-#property version   "1.20"
+#property version   "1.30"
 #property strict
 
 input string ApiKey              = "";   // Your TradeLog API key
@@ -3262,7 +3262,7 @@ int OnInit()
       Alert("TradeLog: Please paste your API key into the EA inputs.");
       return INIT_FAILED;
    }
-   Print("TradeLog Sync v1.2 started — interval: ", SyncIntervalMinutes, " min");
+   Print("TradeLog Sync v1.3 started — interval: ", SyncIntervalMinutes, " min");
    EventSetTimer(SyncIntervalMinutes * 60);
    DoSync();
    return INIT_SUCCEEDED;
@@ -3394,7 +3394,7 @@ void SendHeartbeat()
   const blob = new Blob([eaCode], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'TradeLog_Sync.ex5';
+  a.download = 'TradeLog_Sync.mq5';
   a.click();
   URL.revokeObjectURL(a.href);
   toast('EA file downloaded!', 'success');
