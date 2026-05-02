@@ -2976,7 +2976,7 @@ Examples of accepted formats:
             <div style="flex:1;">
               <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px;">Download the EA file</div>
               <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:12px;">
-                Click the button below to download <strong style="color:var(--accent);">TradeLog_Sync.mq5</strong> — this is the source file. Open it in <strong style="color:var(--text);">MetaEditor</strong> and press <strong style="color:var(--text);">F7</strong> to compile (takes 2 seconds, produces 0 errors).
+                Click the button below to download <strong style="color:var(--accent);">TradeLog_Sync.mq5</strong> (v1.4) — this is the source file. <span style="color:var(--green);font-weight:700;">New in v1.4:</span> Deposits &amp; withdrawals are automatically detected and shown as Account Events — they appear in your trade history but are excluded from all statistics. Open it in <strong style="color:var(--text);">MetaEditor</strong> and press <strong style="color:var(--text);">F7</strong> to compile (takes 2 seconds, produces 0 errors).
               </div>
               <a href="#" onclick="downloadEA();return false;" style="display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:8px;background:var(--accent);color:#fff;font-size:12px;font-weight:700;text-decoration:none;transition:opacity .15s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -3084,7 +3084,7 @@ Examples of accepted formats:
                 To confirm everything is working, look at the <strong style="color:var(--text);">Experts tab</strong> at the bottom of MT5. You should see a message like:<br>
               </div>
               <div style="margin-top:10px;padding:10px 16px;background:var(--surface2);border-radius:8px;border-left:3px solid var(--green);border:1px solid var(--border);">
-                <code style="font-size:11px;color:var(--green);font-family:var(--mono);">TradeLog: Sync OK — 12 trade(s) sent.</code>
+                <code style="font-size:11px;color:var(--green);font-family:var(--mono);">TradeLog: Sync OK — 12 trade(s), 2 balance event(s) sent.</code>
               </div>
               <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.8;">
                 💡 Keep MT5 open with the chart running for continuous syncing. The EA only runs while MT5 is open.
@@ -3241,11 +3241,12 @@ async function copyApiKey() {
 // ── DOWNLOAD EA FILE ──────────────────────────────────────────────────────────
 function downloadEA() {
   const eaCode = `//+------------------------------------------------------------------+
-//| TradeLog Auto-Sync EA v1.3                                       |
-//| Fix v1.3: commission now sums entry+exit deals (was always 0)   |
+//| TradeLog Auto-Sync EA v1.4                                       |
+//| v1.4: Deposit/Withdrawal events sent as balance_events[]         |
+//|        They are excluded from all trading stats in the app.      |
 //+------------------------------------------------------------------+
 #property copyright "TradeLog"
-#property version   "1.30"
+#property version   "1.40"
 #property strict
 
 input string ApiKey              = "";   // Your TradeLog API key
@@ -3262,7 +3263,7 @@ int OnInit()
       Alert("TradeLog: Please paste your API key into the EA inputs.");
       return INIT_FAILED;
    }
-   Print("TradeLog Sync v1.3 started — interval: ", SyncIntervalMinutes, " min");
+   Print("TradeLog Sync v1.4 started — interval: ", SyncIntervalMinutes, " min");
    EventSetTimer(SyncIntervalMinutes * 60);
    DoSync();
    return INIT_SUCCEEDED;
@@ -3290,6 +3291,28 @@ string ToISO(datetime t)
    return s;
 }
 
+// Returns true if this deal is a deposit or withdrawal (not a trade)
+bool IsBalanceEvent(ulong ticket)
+{
+   // Balance events: DEAL_TYPE_BALANCE (6) or no symbol + comment contains Deposit/Withdrawal/Topup
+   long dealType = HistoryDealGetInteger(ticket, DEAL_TYPE);
+   if(dealType == DEAL_TYPE_BALANCE) return true;
+
+   string sym     = HistoryDealGetString(ticket, DEAL_SYMBOL);
+   string comment = HistoryDealGetString(ticket, DEAL_COMMENT);
+   if(sym != "") return false;  // has a symbol — it's a real trade deal
+
+   // Blank symbol + comment keywords
+   string commentLower = comment;
+   StringToLower(commentLower);
+   if(StringFind(commentLower, "deposit")    >= 0) return true;
+   if(StringFind(commentLower, "topup")      >= 0) return true;
+   if(StringFind(commentLower, "top up")     >= 0) return true;
+   if(StringFind(commentLower, "withdrawal") >= 0) return true;
+   if(StringFind(commentLower, "withdraw")   >= 0) return true;
+   return false;
+}
+
 void DoSync()
 {
    Print("TradeLog: Sync started.");
@@ -3298,6 +3321,7 @@ void DoSync()
    int totalDeals = HistoryDealsTotal();
    if(totalDeals == 0) { SendHeartbeat(); return; }
 
+   // ── PASS 1: collect entry deal data ───────────────────────────────────────
    int entryCount = 0;
    ulong entryPos[]; double entryPrice[]; datetime entryTime[];
    string entryComment[]; double entrySL[]; double entryTP[];
@@ -3310,6 +3334,7 @@ void DoSync()
    for(int i=0;i<totalDeals;i++)
    {
       ulong tk=HistoryDealGetTicket(i); if(tk<=0) continue;
+      if(IsBalanceEvent(tk)) continue;                                    // skip balance events
       if(HistoryDealGetInteger(tk,DEAL_ENTRY)!=DEAL_ENTRY_IN) continue;
       ulong posId=(ulong)HistoryDealGetInteger(tk,DEAL_POSITION_ID);
       entryPos[entryCount]=posId; entryPrice[entryCount]=HistoryDealGetDouble(tk,DEAL_PRICE);
@@ -3322,10 +3347,12 @@ void DoSync()
       entryCount++;
    }
 
+   // ── PASS 2: collect exit deals (trades) ───────────────────────────────────
    string tradesJson="["; bool firstTrade=true; int tradesSent=0; datetime newestClose=g_lastSyncTime;
    for(int i=0;i<totalDeals;i++)
    {
       ulong tk=HistoryDealGetTicket(i); if(tk<=0) continue;
+      if(IsBalanceEvent(tk)) continue;                                    // skip balance events
       if(HistoryDealGetInteger(tk,DEAL_ENTRY)!=DEAL_ENTRY_OUT) continue;
       datetime closeTime=(datetime)HistoryDealGetInteger(tk,DEAL_TIME);
       if(!g_firstRun && closeTime<=g_lastSyncTime) continue;
@@ -3337,58 +3364,92 @@ void DoSync()
       string tradeDir=(dealType==DEAL_TYPE_SELL)?"BUY":"SELL";
       double openPrice=0.0; datetime openTime=0; string comment=""; double sl=0.0; double tp=0.0; double entryComm=0.0;
       for(int k=0;k<entryCount;k++) { if(entryPos[k]==posId) { openPrice=entryPrice[k]; openTime=entryTime[k]; comment=entryComment[k]; sl=entrySL[k]; tp=entryTP[k]; entryComm=entryCommission[k]; break; } }
-      // Total commission = exit deal commission + entry deal commission (both are negative in MT5)
       double totalCommission=commission+entryComm;
       if(closeTime>newestClose) newestClose=closeTime;
       if(!firstTrade) tradesJson+=",";
       tradesJson+="{";
-      tradesJson+="\\\"ticket\\\":"+IntegerToString((long)dealTicket)+",";
-      tradesJson+="\\\"position_id\\\":"+IntegerToString((long)posId)+",";
-      tradesJson+="\\\"symbol\\\":\\""+JsonEscape(symbol)+"\\",";
-      tradesJson+="\\\"type\\\":\\""+tradeDir+"\\",";
-      tradesJson+="\\\"volume\\\":"+DoubleToString(volume,2)+",";
-      tradesJson+="\\\"open_price\\\":"+DoubleToString(openPrice,5)+",";
-      tradesJson+="\\\"close_price\\\":"+DoubleToString(closePrice,5)+",";
-      tradesJson+="\\\"open_time\\\":\\""+ToISO(openTime)+"\\",";
-      tradesJson+="\\\"close_time\\\":\\""+ToISO(closeTime)+"\\",";
-      tradesJson+="\\\"profit\\\":"+DoubleToString(profit,2)+",";
-      tradesJson+="\\\"commission\\\":"+DoubleToString(totalCommission,2)+",";
-      tradesJson+="\\\"swap\\\":"+DoubleToString(swap,2)+",";
-      tradesJson+="\\\"sl\\\":"+DoubleToString(sl,5)+",";
-      tradesJson+="\\\"tp\\\":"+DoubleToString(tp,5)+",";
-      tradesJson+="\\\"comment\\\":\\""+JsonEscape(comment)+"\\"";
+      tradesJson+="\\"ticket\\":"+IntegerToString((long)dealTicket)+",";
+      tradesJson+="\\"position_id\\":"+IntegerToString((long)posId)+",";
+      tradesJson+="\\"symbol\\":\\""+JsonEscape(symbol)+"\\",";
+      tradesJson+="\\"type\\":\\""+tradeDir+"\\",";
+      tradesJson+="\\"volume\\":"+DoubleToString(volume,2)+",";
+      tradesJson+="\\"open_price\\":"+DoubleToString(openPrice,5)+",";
+      tradesJson+="\\"close_price\\":"+DoubleToString(closePrice,5)+",";
+      tradesJson+="\\"open_time\\":\\""+ToISO(openTime)+"\\",";
+      tradesJson+="\\"close_time\\":\\""+ToISO(closeTime)+"\\",";
+      tradesJson+="\\"profit\\":"+DoubleToString(profit,2)+",";
+      tradesJson+="\\"commission\\":"+DoubleToString(totalCommission,2)+",";
+      tradesJson+="\\"swap\\":"+DoubleToString(swap,2)+",";
+      tradesJson+="\\"sl\\":"+DoubleToString(sl,5)+",";
+      tradesJson+="\\"tp\\":"+DoubleToString(tp,5)+",";
+      tradesJson+="\\"comment\\":\\""+JsonEscape(comment)+"\\"";
       tradesJson+="}";
       firstTrade=false; tradesSent++;
    }
    tradesJson+="]";
-   if(tradesSent==0) { SendHeartbeat(); return; }
+
+   // ── PASS 3: collect balance events (deposits / withdrawals) ────────────────
+   string balanceJson="["; bool firstBal=true; int balSent=0;
+   for(int i=0;i<totalDeals;i++)
+   {
+      ulong tk=HistoryDealGetTicket(i); if(tk<=0) continue;
+      if(!IsBalanceEvent(tk)) continue;                                   // only balance events
+      datetime evTime=(datetime)HistoryDealGetInteger(tk,DEAL_TIME);
+      if(!g_firstRun && evTime<=g_lastSyncTime) continue;
+      double amount=HistoryDealGetDouble(tk,DEAL_PROFIT);
+      string comment=HistoryDealGetString(tk,DEAL_COMMENT);
+      // Determine deposit vs withdrawal
+      string evType="deposit";
+      string commentLower=comment; StringToLower(commentLower);
+      if(StringFind(commentLower,"withdrawal")>=0 || StringFind(commentLower,"withdraw")>=0 || amount<0)
+         evType="withdrawal";
+      if(!firstBal) balanceJson+=",";
+      balanceJson+="{";
+      balanceJson+="\\"ticket\\":"+IntegerToString((long)tk)+",";
+      balanceJson+="\\"type\\":\\""+evType+"\\",";
+      balanceJson+="\\"amount\\":"+DoubleToString(amount,2)+",";
+      balanceJson+="\\"time\\":\\""+ToISO(evTime)+"\\",";
+      balanceJson+="\\"comment\\":\\""+JsonEscape(comment)+"\\"";
+      balanceJson+="}";
+      firstBal=false; balSent++;
+   }
+   balanceJson+="]";
+
+   if(tradesSent==0 && balSent==0) { SendHeartbeat(); return; }
 
    string broker=AccountInfoString(ACCOUNT_COMPANY); string account=IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN));
    string body="{";
-   body+="\\\"api_key\\\":\\""+JsonEscape(ApiKey)+"\\",";
-   body+="\\\"broker\\\":\\""+JsonEscape(broker)+"\\",";
-   body+="\\\"account\\\":\\""+account+"\\",";
-   body+="\\\"sync_time\\\":\\""+ToISO(TimeCurrent())+"\\",";
-   body+="\\\"trades\\\":"+tradesJson;
+   body+="\\"api_key\\":\\""+JsonEscape(ApiKey)+"\\",";
+   body+="\\"broker\\":\\""+JsonEscape(broker)+"\\",";
+   body+="\\"account\\":\\""+account+"\\",";
+   body+="\\"sync_time\\":\\""+ToISO(TimeCurrent())+"\\",";
+   body+="\\"trades\\":"+tradesJson+",";
+   body+="\\"balance_events\\":"+balanceJson;
    body+="}";
 
    char postData[]; int bodyLen=StringLen(body); ArrayResize(postData,bodyLen);
    StringToCharArray(body,postData,0,bodyLen);
    char resultData[]; string resultHeaders; string reqHeaders="Content-Type: application/json\\r\\n";
    int httpCode=WebRequest("POST",EndpointUrl,reqHeaders,10000,postData,resultData,resultHeaders);
-   if(httpCode==200) { Print("TradeLog: Sync OK — ",tradesSent," trade(s) sent."); g_lastSyncTime=newestClose; g_firstRun=false; }
+   if(httpCode==200)
+   {
+      Print("TradeLog: Sync OK — ",tradesSent," trade(s), ",balSent," balance event(s) sent.");
+      g_lastSyncTime=newestClose;
+      g_firstRun=false;
+   }
    else if(httpCode==-1) Print("TradeLog: WebRequest blocked. Add URL in Tools > Options > Expert Advisors: ",EndpointUrl);
    else Print("TradeLog: Sync failed. HTTP ",httpCode);
 }
 
 void SendHeartbeat()
 {
-   string body="{\\\"api_key\\\":\\""+ApiKey+"\\",\\\"trades\\\":[]}";
+   string body="{\\"api_key\\":\\""+ApiKey+"\\",\\"trades\\":[],\\"balance_events\\":[]}";
    char postData[]; int bodyLen=StringLen(body); ArrayResize(postData,bodyLen);
    StringToCharArray(body,postData,0,bodyLen);
    char resultData[]; string resultHeaders;
    WebRequest("POST",EndpointUrl,"Content-Type: application/json\\r\\n",5000,postData,resultData,resultHeaders);
-}`;
+}
+`;
 
   // Use the actual uploaded MQ5 file content via blob
   const blob = new Blob([eaCode], { type: 'text/plain' });
@@ -4166,6 +4227,7 @@ function rc() { return cssVar('--red'); }    // red color
 function getPnlColor(v) { return v >= 0 ? gc() : rc(); }
 
 const KEY = 'tradelog_v1';
+let balanceEvents = []; // deposits & withdrawals — never counted in stats
 
 // ── BACKGROUND SYNC ──────────────────────────────────────────────────────────
 // Pulls fresh data from Supabase so PC sees phone's trades and vice versa.
@@ -4193,6 +4255,11 @@ async function backgroundSync() {
         notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
+      // Refresh balance events alongside trades
+      try {
+        const { data: beSync } = await sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false });
+        if (beSync) balanceEvents = beSync.map(r => ({ ticket: r.ticket, type: r.type, amount: r.amount, time: r.time, comment: r.comment || '' }));
+      } catch(e) {}
       if (dataChanged) {
         refreshDashboard();
         if (document.getElementById('page-trades').classList.contains('active')) renderTrades();
@@ -4413,6 +4480,7 @@ function handleLogout() {
 showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the cloud. You can log back in anytime.', okText:'Log Out', okColor:'var(--accent)', onOk: async () => {
     await sb.auth.signOut();
     trades = [];
+    balanceEvents = [];
     _appInitialized = false;
     currentUser = null;
     // CRITICAL: Wipe ALL user-specific data from localStorage on logout.
@@ -4661,6 +4729,12 @@ async function loadAllFromSupabase() {
     }
   } catch(e) { console.error('TradeLog: loadTrades failed', e); }
 
+  // 3b. Balance events (deposits & withdrawals — excluded from all trading stats)
+  try {
+    const { data: beData } = await sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false });
+    if (beData) balanceEvents = beData.map(r => ({ ticket: r.ticket, type: r.type, amount: r.amount, time: r.time, comment: r.comment || '' }));
+  } catch(e) { console.warn('TradeLog: loadBalanceEvents failed', e); }
+
   // 3. User data (journal, mindset, tags)
   try {
     const { data, error } = await sb.from('user_data').select('*').eq('user_id', uid).single();
@@ -4805,6 +4879,7 @@ window.addEventListener('load', () => {
       _appInitialized = false;
       currentUser = null;
       trades = [];
+      balanceEvents = [];
       // Wipe all user-specific localStorage so next user starts clean
       const _t = localStorage.getItem(THEME_KEY);
       localStorage.removeItem(KEY);
@@ -6296,7 +6371,7 @@ function renderTrades(skipTagRebuild) {
   const tbody = document.getElementById('all-tbody');
   if (!list.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><h3>No trades found</h3></div></td></tr>'; return; }
   const sym = getCurrencySymbol();
-  tbody.innerHTML = list.map(t => {
+  let rowsHtml = list.map(t => {
     const pnl = getPnl(t);
     const result = getResult(t);
     const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
@@ -6320,6 +6395,42 @@ function renderTrades(skipTagRebuild) {
       <td data-col="tags" style="max-width:110px;overflow:hidden;">${renderRowTagsHTML(t.strategies)}</td>
     </tr>`;
   }).join('');
+
+  // ── BALANCE EVENTS (deposits / withdrawals) — shown at bottom, excluded from all stats ──
+  if (balanceEvents && balanceEvents.length) {
+    let beFiltered = balanceEvents;
+    if (fromStr || toStr) {
+      beFiltered = balanceEvents.filter(e => {
+        const d = (e.time || '').slice(0,10);
+        if (fromStr && d < fromStr) return false;
+        if (toStr   && d > toStr)   return false;
+        return true;
+      });
+    }
+    if (beFiltered.length) {
+      rowsHtml += `<tr style="pointer-events:none;"><td colspan="10" style="padding:6px 18px 4px;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);">⬇ Account Events — excluded from all statistics</span></td></tr>`;
+      rowsHtml += beFiltered.map(e => {
+        const isDeposit = e.type === 'deposit';
+        const amt = parseFloat(e.amount) || 0;
+        const amtColor = isDeposit ? 'var(--green)' : 'var(--red)';
+        const amtStr = (isDeposit ? '+' : '') + sym + Math.abs(amt).toFixed(2);
+        const typeLabel = isDeposit ? 'DEPOSIT' : 'WITHDRAWAL';
+        const typeBg    = isDeposit ? 'var(--green-bg)' : 'var(--red-bg)';
+        const timeStr = e.time ? e.time.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+e.time.slice(11,19)+'</span>' : '—';
+        return `<tr style="opacity:0.8;cursor:default;">
+          <td style="color:var(--muted);font-size:12px;white-space:nowrap;font-weight:600;">${timeStr}</td>
+          <td style="color:var(--muted);font-weight:600;">—</td>
+          <td><span style="display:inline-block;padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800;letter-spacing:.5px;background:${typeBg};color:${amtColor};">${typeLabel}</span></td>
+          <td style="color:var(--muted);">—</td><td style="color:var(--muted);">—</td><td style="color:var(--muted);">—</td>
+          <td style="color:${amtColor};font-weight:800;font-family:var(--mono);">${amtStr}</td>
+          <td style="color:var(--muted);">—</td>
+          <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(99,102,241,0.1);color:var(--accent);">EVENT</span></td>
+          <td style="color:var(--muted);font-size:11px;">${e.comment || ''}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+  tbody.innerHTML = rowsHtml;
 }
 
 function renderTradeDetail(t) { showTradeDetail(t.id); }
