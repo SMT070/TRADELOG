@@ -5777,13 +5777,12 @@ function refreshDashboard() {
 
   const eqSnap = eq.slice();
 
-  // Cache colors once — avoids getComputedStyle on every frame
+  // Cache all CSS color lookups once — never call gc()/rc()/cssVar() inside the draw loop
   const _gcColor   = gc();
   const _rcColor   = rc();
   const _greenGlow = cssVar('--green-glow');
   const _redGlow   = cssVar('--red-glow');
-  const _greenBg   = cssVar('--green-bg');   // used as gradient start for profit fill
-  const _redBg     = cssVar('--red-bg');     // used as gradient start for loss fill
+  const _redBg     = cssVar('--red-bg');
 
   const segmentPlugin = {
     id: 'segmentColor',
@@ -5887,6 +5886,22 @@ function refreshDashboard() {
   };
 
   if (equityChartInst) equityChartInst.destroy();
+  // Patch addEventListener on this canvas BEFORE Chart.js adds its listeners,
+  // so mousemove/wheel/touchmove are registered as passive — this is what causes
+  // the scroll to be janky after hovering over the chart.
+  (function() {
+    var _canvas = document.getElementById('equity-chart');
+    if (!_canvas) return;
+    var _origAdd = _canvas.addEventListener.bind(_canvas);
+    _canvas.addEventListener = function(type, fn, opts) {
+      if (type === 'mousemove' || type === 'wheel' || type === 'touchmove' || type === 'touchstart') {
+        var o = (typeof opts === 'object') ? Object.assign({}, opts) : {};
+        o.passive = true;
+        return _origAdd(type, fn, o);
+      }
+      return _origAdd(type, fn, opts);
+    };
+  })();
   equityChartInst = new Chart(ctx, {
     type: 'line',
     data: {
@@ -5988,8 +6003,8 @@ function refreshDashboard() {
             font: { size: 11, family: "'Plus Jakarta Sans', sans-serif", weight: '600' },
             color: ctx => {
               const v = ctx.tick.value;
-              if (v > 0) return gc();
-              if (v < 0) return rc();
+              if (v > 0) return _gcColor;
+              if (v < 0) return _rcColor;
               return '#4A4F5C';
             },
             stepSize: stepSize,
@@ -6005,6 +6020,20 @@ function refreshDashboard() {
     },
     plugins: [segmentPlugin]
   });
+  // Fix scroll lag: Chart.js non-passive mousemove blocks scrolling after hovering.
+  // touch-action:pan-y lets the browser scroll without waiting for JS handlers.
+  // mouseleave clears stuck tooltip/active state so hover-then-scroll is clean.
+  (function() {
+    var _eqCanvas = document.getElementById('equity-chart');
+    if (!_eqCanvas) return;
+    _eqCanvas.style.touchAction = 'pan-y';
+    _eqCanvas.addEventListener('mouseleave', function() {
+      if (equityChartInst) {
+        equityChartInst.tooltip.setActiveElements([], {});
+        equityChartInst.update('none');
+      }
+    }, { passive: true });
+  })();
   renderRecentTable();
   // New dashboard features
   try { updateEmptyState(); } catch(e) {}
