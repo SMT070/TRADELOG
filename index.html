@@ -2446,34 +2446,6 @@
 
     </div>
 
-    <!-- ── CONSISTENCY HEATMAP ── -->
-    <div class="panel" style="margin-bottom:16px;">
-      <div class="panel-header">
-        <div class="panel-header-left"><div class="panel-title">Yearly Consistency</div></div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button onclick="heatmapYear--; renderHeatmap()" class="cal-nav-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
-          <span id="heatmap-year-label" style="font-size:13px;font-weight:700;color:var(--text);min-width:40px;text-align:center;"></span>
-          <button onclick="heatmapYear++; renderHeatmap()" class="cal-nav-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
-        </div>
-      </div>
-      <div style="padding:16px var(--page-px) 20px;overflow-x:auto;">
-        <div id="heatmap-grid" style="display:flex;gap:3px;min-width:700px;"></div>
-        <div style="display:flex;align-items:center;gap:6px;margin-top:14px;font-size:10px;color:var(--muted);">
-          <span>Less</span>
-          <div style="width:11px;height:11px;border-radius:2px;background:var(--surface3);border:1px solid var(--border);"></div>
-          <div style="width:11px;height:11px;border-radius:2px;background:rgba(0,255,187,0.2);"></div>
-          <div style="width:11px;height:11px;border-radius:2px;background:rgba(0,255,187,0.5);"></div>
-          <div style="width:11px;height:11px;border-radius:2px;background:var(--green);"></div>
-          <span style="margin-right:16px;">Wins</span>
-          <span>Less</span>
-          <div style="width:11px;height:11px;border-radius:2px;background:rgba(255,59,92,0.2);"></div>
-          <div style="width:11px;height:11px;border-radius:2px;background:rgba(255,59,92,0.5);"></div>
-          <div style="width:11px;height:11px;border-radius:2px;background:var(--red);"></div>
-          <span>Losses</span>
-        </div>
-      </div>
-    </div>
-
     <!-- ── TRADING HEALTH & INDICATORS ── -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
 
@@ -2583,6 +2555,34 @@
         <div id="an-health-tip" style="font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:10px;">Add at least 10 trades to unlock your health score.</div>
       </div>
 
+    </div>
+
+    <!-- ── CONSISTENCY HEATMAP ── -->
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-header">
+        <div class="panel-header-left"><div class="panel-title">Yearly Consistency</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button onclick="heatmapYear--; renderHeatmap()" class="cal-nav-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span id="heatmap-year-label" style="font-size:13px;font-weight:700;color:var(--text);min-width:40px;text-align:center;"></span>
+          <button onclick="heatmapYear++; renderHeatmap()" class="cal-nav-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+      <div style="padding:16px var(--page-px) 20px;overflow-x:auto;">
+        <div id="heatmap-grid" style="display:flex;gap:3px;min-width:700px;"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:14px;font-size:10px;color:var(--muted);">
+          <span>Less</span>
+          <div style="width:11px;height:11px;border-radius:2px;background:var(--surface3);border:1px solid var(--border);"></div>
+          <div style="width:11px;height:11px;border-radius:2px;background:rgba(0,255,187,0.2);"></div>
+          <div style="width:11px;height:11px;border-radius:2px;background:rgba(0,255,187,0.5);"></div>
+          <div style="width:11px;height:11px;border-radius:2px;background:var(--green);"></div>
+          <span style="margin-right:16px;">Wins</span>
+          <span>Less</span>
+          <div style="width:11px;height:11px;border-radius:2px;background:rgba(255,59,92,0.2);"></div>
+          <div style="width:11px;height:11px;border-radius:2px;background:rgba(255,59,92,0.5);"></div>
+          <div style="width:11px;height:11px;border-radius:2px;background:var(--red);"></div>
+          <span>Losses</span>
+        </div>
+      </div>
     </div>
 
   </div>
