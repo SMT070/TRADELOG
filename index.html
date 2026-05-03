@@ -4201,14 +4201,14 @@ window.switchPage = function(name) {
 </div>
 
 <!-- Custom Confirm Modal -->
-<div id="confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:2000;align-items:center;justify-content:center;">
+<div id="confirm-modal" onclick="if(event.target===this)closeConfirmModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;">
   <div style="background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:32px;width:360px;max-width:92vw;box-shadow:0 24px 60px rgba(0,0,0,.4);">
     <div style="font-size:28px;margin-bottom:14px;" id="confirm-icon">⚠️</div>
     <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:10px;letter-spacing:-0.3px;" id="confirm-title">Are you sure?</div>
     <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:28px;" id="confirm-message"></div>
     <div style="display:flex;gap:10px;">
-      <button id="confirm-cancel-btn" onclick="closeConfirmModal()" class="btn" style="flex:1;padding:11px;font-size:13px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);">Cancel</button>
-      <button id="confirm-ok-btn" onclick="_confirmCallback&&_confirmCallback()" class="btn" style="flex:1;padding:11px;font-size:13px;"></button>
+      <button id="confirm-cancel-btn" onclick="closeConfirmModal()" class="btn" style="flex:1;padding:15px;font-size:15px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);-webkit-tap-highlight-color:transparent;touch-action:manipulation;">Cancel</button>
+      <button id="confirm-ok-btn" onclick="_confirmCallback&&_confirmCallback()" class="btn" style="flex:1;padding:15px;font-size:15px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;"></button>
     </div>
   </div>
 </div>
@@ -4237,6 +4237,8 @@ let _syncDebounceTimer = null;
 
 async function backgroundSync() {
   if (_syncInProgress) return;
+  // Don't sync if no user — avoids hammering Supabase when logged out
+  if (!currentUser) { return; }
   _syncInProgress = true;
   try {
     const uid = await getValidUid();
@@ -4614,25 +4616,22 @@ let currentUser = null;
 // Returns uid string or null. Always re-reads from storage (mobile-safe).
 async function getValidUid() {
   try {
+    // Use in-memory currentUser first — always valid within a session.
+    // Avoids getSession() round-trip which can fail on mobile after page resume.
+    if (currentUser && currentUser.id) return currentUser.id;
+    // Not in memory — ask Supabase (first load, page refresh, etc.)
     const { data: { session } } = await sb.auth.getSession();
-    if (!session || !session.user) {
-      // No session in memory — try refresh (recovers token on mobile resume)
-      const { data: refreshed } = await sb.auth.refreshSession();
-      if (!refreshed || !refreshed.session || !refreshed.session.user) return null;
+    if (session && session.user) {
+      currentUser = session.user;
+      return currentUser.id;
+    }
+    // Last resort: try a token refresh (recovers expired sessions on mobile)
+    const { data: refreshed } = await sb.auth.refreshSession();
+    if (refreshed && refreshed.session && refreshed.session.user) {
       currentUser = refreshed.session.user;
       return currentUser.id;
     }
-    // Proactively refresh if token expires within 5 minutes
-    const exp = session.expires_at;
-    if (exp && (exp - Math.floor(Date.now() / 1000)) < 300) {
-      const { data: refreshed } = await sb.auth.refreshSession();
-      if (refreshed && refreshed.session && refreshed.session.user) {
-        currentUser = refreshed.session.user;
-        return currentUser.id;
-      }
-    }
-    currentUser = session.user;
-    return session.user.id;
+    return null;
   } catch(e) {
     console.warn('TradeLog: getValidUid failed', e);
     return null;
