@@ -5777,6 +5777,14 @@ function refreshDashboard() {
 
   const eqSnap = eq.slice();
 
+  // Cache colors once — avoids getComputedStyle on every frame
+  const _gcColor   = gc();
+  const _rcColor   = rc();
+  const _greenGlow = cssVar('--green-glow');
+  const _redGlow   = cssVar('--red-glow');
+  const _greenBg   = cssVar('--green-bg');   // used as gradient start for profit fill
+  const _redBg     = cssVar('--red-bg');     // used as gradient start for loss fill
+
   const segmentPlugin = {
     id: 'segmentColor',
     afterDatasetsDraw(chart) {
@@ -5814,12 +5822,12 @@ function refreshDashboard() {
         }
 
         const segments = crossX !== null
-          ? [{ x0, y0, x1: crossX, yc: baseline, color: v0 >= 0 ? gc() : rc() },
-             { x0: crossX, y0: baseline, x1, yc: y1, color: v1 >= 0 ? gc() : rc() }]
-          : [{ x0, y0, x1, yc: y1, color: v1 >= 0 ? gc() : rc() }];
+          ? [{ x0, y0, x1: crossX, yc: baseline, color: v0 >= 0 ? _gcColor : _rcColor },
+             { x0: crossX, y0: baseline, x1, yc: y1, color: v1 >= 0 ? _gcColor : _rcColor }]
+          : [{ x0, y0, x1, yc: y1, color: v1 >= 0 ? _gcColor : _rcColor }];
 
         for (const seg of segments) {
-          const inLoss = seg.color === rc();
+          const inLoss = seg.color === _rcColor;
 
           // Fill
           c.beginPath();
@@ -5829,7 +5837,7 @@ function refreshDashboard() {
           c.lineTo(seg.x0, baseline);
           c.closePath();
           const grad = c.createLinearGradient(0, inLoss ? baseline : chartArea.top, 0, inLoss ? chartArea.bottom : baseline);
-          grad.addColorStop(0, inLoss ? cssVar('--red-bg') : cssVar('--green-glow'));
+          grad.addColorStop(0, inLoss ? _redBg : _greenGlow);
           grad.addColorStop(1, 'rgba(0,0,0,0)');
           c.fillStyle = grad;
           c.fill();
@@ -5838,7 +5846,7 @@ function refreshDashboard() {
           c.beginPath();
           c.strokeStyle = seg.color;
           c.lineWidth = 2.5;
-          c.shadowColor = inLoss ? cssVar('--red-glow') : cssVar('--green-glow');
+          c.shadowColor = inLoss ? _redGlow : _greenGlow;
           c.shadowBlur = 6;
           c.moveTo(seg.x0, seg.y0);
           c.lineTo(seg.x1, seg.yc);
@@ -5852,8 +5860,8 @@ function refreshDashboard() {
         const r = (i === 0 || i === points.length - 1) ? 3 : 1.5;
         c.beginPath();
         c.arc(points[i].x, points[i].y, r, 0, Math.PI * 2);
-        c.fillStyle = inLoss ? rc() : gc();
-        c.shadowColor = inLoss ? cssVar('--red-glow') : cssVar('--green-glow');
+        c.fillStyle = inLoss ? _rcColor : _gcColor;
+        c.shadowColor = inLoss ? _redGlow : _greenGlow;
         c.shadowBlur = 4;
         c.fill();
       }
@@ -5920,8 +5928,8 @@ function refreshDashboard() {
               .reduce((sum, x) => sum + getPnl(x), 0);
             const isLoss = dayPnl < 0;
             return isLoss
-              ? rc() + 'b3'
-              : (light ? 'rgba(5,150,105,0.7)' : cssVar('--green-glow'));
+              ? _rcColor + 'b3'
+              : (light ? 'rgba(5,150,105,0.7)' : _greenGlow);
           },
           borderWidth: 1,
           titleColor: () => document.documentElement.getAttribute('data-theme') === 'light' ? '#475569' : '#64748b',
