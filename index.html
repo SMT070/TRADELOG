@@ -5868,15 +5868,31 @@ function refreshDashboard() {
         }
       }
 
-      // Redraw points on top
+      // Redraw points on top — small uniform dots, slightly larger at first/last
+      c.shadowBlur = 0; // reset shadow before dots so no blur cost per point
       for (let i = 0; i < points.length; i++) {
         const inLoss = eqSnap[i] < 0;
-        const r = (i === 0 || i === points.length - 1) ? 3 : 1.5;
+        const isEdge = (i === 0 || i === points.length - 1);
+        const r = isEdge ? 3.5 : 2.5;
+        const color = inLoss ? _rcColor : _gcColor;
+        const px = points[i].x, py = points[i].y;
+
+        // Outer filled dot
         c.beginPath();
-        c.arc(points[i].x, points[i].y, r, 0, Math.PI * 2);
-        c.fillStyle = inLoss ? _rcColor : _gcColor;
-        c.shadowColor = inLoss ? _redGlow : _greenGlow;
-        c.shadowBlur = 4;
+        c.arc(px, py, r, 0, Math.PI * 2);
+        c.fillStyle = color;
+        c.fill();
+
+        // Inner white/dark ring for crispness
+        c.beginPath();
+        c.arc(px, py, r - 1.2, 0, Math.PI * 2);
+        c.fillStyle = _isLight ? 'rgba(255,255,255,0.75)' : 'rgba(11,15,26,0.7)';
+        c.fill();
+
+        // Tiny center dot in theme color
+        c.beginPath();
+        c.arc(px, py, r - 2.2 > 0.5 ? r - 2.2 : 0.5, 0, Math.PI * 2);
+        c.fillStyle = color;
         c.fill();
       }
 
@@ -6020,21 +6036,49 @@ function refreshDashboard() {
         }
       }
     },
-    plugins: [segmentPlugin]
+    plugins: [segmentPlugin, {
+      id: 'tooltipGate',
+      beforeTooltipDraw(chart) {
+        // Suppress tooltip until hover-delay has elapsed
+        var canvas = document.getElementById('equity-chart');
+        if (canvas && canvas._tooltipArmed && !canvas._tooltipArmed()) {
+          return false; // returning false cancels the tooltip draw
+        }
+      }
+    }]
   });
-  // Fix scroll lag: Chart.js non-passive mousemove blocks scrolling after hovering.
-  // touch-action:pan-y lets the browser scroll without waiting for JS handlers.
-  // mouseleave clears stuck tooltip/active state so hover-then-scroll is clean.
+  // Hover-delay tooltip + scroll fix
   (function() {
     var _eqCanvas = document.getElementById('equity-chart');
     if (!_eqCanvas) return;
     _eqCanvas.style.touchAction = 'pan-y';
+
+    var _tooltipArmed = false;  // true = tooltip allowed to show
+    var _armTimer = null;
+
+    // On enter: start 1s timer. Once fired, arm tooltip and force a chart update
+    // so it picks up the current mouse position.
+    _eqCanvas.addEventListener('mouseenter', function() {
+      if (_tooltipArmed) return; // already visible — stay instant
+      _armTimer = setTimeout(function() {
+        _tooltipArmed = true;
+        if (equityChartInst) equityChartInst.update('none');
+      }, 900);
+    }, { passive: true });
+
+    // On leave: hide tooltip, reset armed state and timer
     _eqCanvas.addEventListener('mouseleave', function() {
+      clearTimeout(_armTimer);
+      _armTimer = null;
+      _tooltipArmed = false;
       if (equityChartInst) {
         equityChartInst.tooltip.setActiveElements([], {});
         equityChartInst.update('none');
       }
     }, { passive: true });
+
+    // Expose so the tooltip filter plugin can read it
+    _eqCanvas._tooltipArmed = function() { return _tooltipArmed; };
   })();
   renderRecentTable();
   // New dashboard features
