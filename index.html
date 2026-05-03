@@ -10,11 +10,7 @@
     <link rel="apple-touch-icon" href="logo.png?v=1">
     <meta name="theme-color" content="#0b0f1a">
     <link rel="icon" type="image/png" href="logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://cdnjs.cloudflare.com">
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
   // Apply theme instantly before any rendering to prevent flash
   (function() {
@@ -1564,18 +1560,7 @@
     #sidebar .account-card { justify-content: center; padding: 10px 0; }
   }
 </style>
-  <script>
-  // Lazy-load html2canvas only when screenshot is actually requested
-  window._loadHtml2Canvas = function() {
-    return new Promise((resolve, reject) => {
-      if (window.html2canvas) { resolve(); return; }
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-      s.onload = resolve; s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  };
-  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <div id="info-tooltip"></div>
@@ -2209,8 +2194,8 @@
 
 
     <!-- Table + Detail: fills all remaining height -->
-    <div id="trades-grid" style="display:grid;grid-template-columns:1fr 300px;gap:16px;flex:1;min-height:0;overflow:hidden;transition:grid-template-columns .3s cubic-bezier(.4,0,.2,1);">
-      <div class="panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;">
+    <div id="trades-grid" style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden;">
+      <div class="panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;flex:1;min-width:0;">
         <div style="flex:1;overflow-y:auto;overflow-x:auto;border-radius:var(--r);">
           <table class="trades-table" style="width:100%;border-collapse:collapse;">
             <thead>
@@ -2232,7 +2217,7 @@
         </div>
       </div>
 
-      <div class="panel" id="trade-detail-panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;">
+      <div class="panel" id="trade-detail-panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;width:300px;min-width:300px;transition:width .2s ease,min-width .2s ease;will-change:width;">
         <div class="panel-header" style="align-items:center;padding:12px 14px;">
           <div class="panel-header-left" style="flex:0 0 auto;">
             <div class="panel-title" style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text);text-transform:uppercase;white-space:nowrap;">Trade Detail</div>
@@ -4454,8 +4439,10 @@ async function loadAllFromSupabase() {
   const uid = await getValidUid();
   if (!uid) return false;
 
-  // Clear local caches before loading from server
-  const themeToKeep = localStorage.getItem(THEME_KEY);
+  // ── CRITICAL: Clear ALL local caches before loading from server.
+  // This guarantees that if a different user logs in on this device,
+  // they NEVER see stale data left behind by the previous session.
+  const themeToKeep = localStorage.getItem(THEME_KEY); // keep theme preference only
   localStorage.removeItem(KEY);
   localStorage.removeItem(MINDSET_KEY);
   localStorage.removeItem(JOURNAL_KEY);
@@ -4466,17 +4453,9 @@ async function loadAllFromSupabase() {
   localStorage.removeItem(CUR_KEY);
   if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
 
-  // Run all queries in parallel instead of sequentially
-  const [profileRes, tradesRes, balanceRes, userDataRes] = await Promise.allSettled([
-    sb.from('profiles').select('*').eq('id', uid).single(),
-    sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false }),
-    sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false }),
-    sb.from('user_data').select('*').eq('user_id', uid).single()
-  ]);
-
-  // 1. Profile
+  // 1. Profile (name, avatar, currency, balance, theme, goals)
   try {
-    const { data, error } = profileRes.value || {};
+    const { data, error } = await sb.from('profiles').select('*').eq('id', uid).single();
     if (!error && data) {
       if (data.name)     localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: data.name, avatar: data.avatar || null }));
       if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
@@ -4495,7 +4474,7 @@ async function loadAllFromSupabase() {
 
   // 2. Trades
   try {
-    const { data, error } = tradesRes.value || {};
+    const { data, error } = await sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false });
     if (!error) {
       trades = (data || []).map(r => ({
         id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
@@ -4508,15 +4487,15 @@ async function loadAllFromSupabase() {
     }
   } catch(e) { console.error('TradeLog: loadTrades failed', e); }
 
-  // 3. Balance events
+  // 3b. Balance events
   try {
-    const { data: beData } = balanceRes.value || {};
+    const { data: beData } = await sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false });
     if (beData) balanceEvents = beData.map(r => ({ ticket: r.ticket, type: r.type, amount: r.amount, time: r.time, comment: r.comment || '' }));
   } catch(e) { console.warn('TradeLog: loadBalanceEvents failed', e); }
 
-  // 4. User data (journal, mindset, tags)
+  // 3. User data (journal, mindset, tags)
   try {
-    const { data, error } = userDataRes.value || {};
+    const { data, error } = await sb.from('user_data').select('*').eq('user_id', uid).single();
     if (!error && data) {
       if (data.mindset) {
         const m = typeof data.mindset === 'string' ? JSON.parse(data.mindset) : data.mindset;
@@ -4629,6 +4608,7 @@ async function initApp(user) {
   try { await loadAllFromSupabase(); } catch(e) { console.warn('TradeLog: loadAllFromSupabase failed, showing app anyway', e); }
 
   try { refreshDashboard(); } catch(e) {}
+  try { renderTrades(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
 }
 
@@ -5204,11 +5184,8 @@ async function deleteSelected() {
 function openEditSelected() {
   const t = trades.find(x => x.id === selectedId);
   if (!t) return;
-  // Expand panel with smooth transition
-  const grid = document.getElementById('trades-grid');
-  if (grid) grid.style.gridTemplateColumns = '1fr 460px';
   const panel = document.getElementById('trade-detail-panel');
-  if (panel) panel.style.transition = 'box-shadow .3s';
+  if (panel) { panel.style.width = '460px'; panel.style.minWidth = '460px'; }
   // Swap header to edit mode
   const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
   if (headerBtns) headerBtns.innerHTML = `
@@ -7430,10 +7407,8 @@ function cancelInlineEdit() {
 }
 
 function collapseDetailPanel() {
-  const grid = document.getElementById('trades-grid');
-  if (grid) grid.style.gridTemplateColumns = '1fr 300px';
   const panel = document.getElementById('trade-detail-panel');
-  if (panel) panel.style.boxShadow = '';
+  if (panel) { panel.style.width = '300px'; panel.style.minWidth = '300px'; panel.style.boxShadow = ''; }
   document.querySelector('#trade-detail-panel .panel-title').textContent = 'Trade Detail';
   // Restore original header buttons
   const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
@@ -10409,7 +10384,8 @@ function buildShareText() {
 
 // ── CAPTURE SHARE CARD AS PNG ─────────────────────────────────────────────────
 function captureShareCard() {
-  return window._loadHtml2Canvas().then(() => new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
+    if (typeof html2canvas === 'undefined') { reject(new Error('html2canvas not loaded')); return; }
     const card = document.getElementById('share-card');
     const theme = localStorage.getItem('tradelog_theme') || 'dark';
     const bg = theme === 'light' ? '#ffffff' : '#0b0f1a';
@@ -10420,7 +10396,7 @@ function captureShareCard() {
           else reject(new Error('blob failed'));
         }, 'image/png');
       }).catch(reject);
-  }));
+  });
 }
 
 // ── DOWNLOAD ──────────────────────────────────────────────────────────────────
