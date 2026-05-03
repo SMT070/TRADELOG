@@ -4676,16 +4676,25 @@ async function getValidUid() {
 let authMode = 'login';
 function switchAuthTab(mode) {
   authMode = mode;
-  document.getElementById('auth-tab-login').style.background  = mode==='login'  ? 'var(--accent)' : 'transparent';
-  document.getElementById('auth-tab-login').style.color       = mode==='login'  ? '#fff' : 'var(--muted)';
-  document.getElementById('auth-tab-signup').style.background = mode==='signup' ? 'var(--accent)' : 'transparent';
-  document.getElementById('auth-tab-signup').style.color      = mode==='signup' ? '#fff' : 'var(--muted)';
-  document.getElementById('auth-name-field').style.display    = mode==='signup' ? 'block' : 'none';
-  document.getElementById('auth-btn').textContent             = mode==='login'  ? 'Log In' : 'Create Account';
+  const isLogin  = mode === 'login';
+  const isSignup = mode === 'signup';
+  const isMagic  = mode === 'magic';
+  document.getElementById('auth-tab-login').style.background  = isLogin  ? 'var(--accent)' : 'transparent';
+  document.getElementById('auth-tab-login').style.color       = isLogin  ? '#fff' : 'var(--muted)';
+  document.getElementById('auth-tab-signup').style.background = isSignup ? 'var(--accent)' : 'transparent';
+  document.getElementById('auth-tab-signup').style.color      = isSignup ? '#fff' : 'var(--muted)';
+  document.getElementById('auth-tab-magic').style.background  = isMagic  ? 'var(--accent)' : 'transparent';
+  document.getElementById('auth-tab-magic').style.color       = isMagic  ? '#fff' : 'var(--muted)';
+  document.getElementById('auth-name-field').style.display    = isSignup ? 'block' : 'none';
+  document.getElementById('auth-password-field').style.display = isMagic ? 'none'  : 'block';
+  document.getElementById('auth-btn').textContent             = isLogin  ? 'Log In' : isSignup ? 'Create Account' : 'Send Magic Link';
   document.getElementById('auth-error').style.display = 'none';
-  // Update autocomplete so password managers offer the right action
+  document.getElementById('auth-error').style.background = 'var(--red-bg)';
+  document.getElementById('auth-error').style.borderColor = 'var(--red)';
+  document.getElementById('auth-error').style.color = 'var(--red)';
+  document.getElementById('auth-magic-hint').style.display = isMagic ? 'block' : 'none';
   const pwField = document.getElementById('auth-password');
-  if (pwField) pwField.setAttribute('autocomplete', mode==='login' ? 'current-password' : 'new-password');
+  if (pwField) pwField.setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
 }
 function showAuthError(msg) {
   const el = document.getElementById('auth-error');
@@ -4697,21 +4706,26 @@ async function handleAuth() {
   const password = document.getElementById('auth-password').value;
   const btn = document.getElementById('auth-btn');
   document.getElementById('auth-error').style.display = 'none';
-  if (!email || !password) { showAuthError('Please enter email and password.'); return; }
+  if (!email) { showAuthError('Please enter your email.'); return; }
+  if (!password && authMode !== 'magic') { showAuthError('Please enter your password.'); return; }
   btn.textContent = '...'; btn.disabled = true;
   try {
-    if (authMode === 'login') {
+    if (authMode === 'magic') {
+      const cleanEmail = email.toLowerCase().trim();
+      const redirectTo = window.location.href.split('?')[0].split('#')[0];
+      const { error } = await sb.auth.signInWithOtp({ email: cleanEmail, options: { emailRedirectTo: redirectTo } });
+      if (error) { showAuthError(error.message || 'Could not send magic link.'); btn.textContent = 'Send Magic Link'; btn.disabled = false; return; }
+      document.getElementById('auth-error').style.background = 'var(--green-bg)';
+      document.getElementById('auth-error').style.borderColor = 'var(--green)';
+      document.getElementById('auth-error').style.color = 'var(--green)';
+      showAuthError('✓ Magic link sent! Check your email and tap the link to log in.');
+      btn.textContent = 'Send Magic Link'; btn.disabled = false;
+    } else if (authMode === 'login') {
       // Trim both fields — Safari can inject trailing spaces
       const cleanEmail = email.toLowerCase().trim();
-      const cleanPassword = password; // do NOT trim password — spaces may be intentional
+      const cleanPassword = password;
       const { data, error } = await sb.auth.signInWithPassword({ email: cleanEmail, password: cleanPassword });
-      if (error) {
-        const errDetail = 'Status: ' + (error.status||'?') + ' | Code: ' + (error.code||'?') + ' | ' + (error.message||'no message');
-        showAuthError(errDetail);
-        btn.textContent = 'Log In'; btn.disabled = false; return;
-      }
-      // initApp via onAuthStateChange SIGNED_IN — but call directly too as fallback
-      // (some mobile browsers fire onAuthStateChange late)
+      if (error) { showAuthError(error.message || 'Invalid credentials.'); btn.textContent = 'Log In'; btn.disabled = false; return; }
       if (data && data.user && !_appInitialized) await initApp(data.user);
     } else {
       const name = document.getElementById('auth-name').value.trim();
@@ -11749,9 +11763,10 @@ window.addEventListener('resize', () => {
     </div>
 
     <!-- Tabs -->
-    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:4px;margin-bottom:24px;">
-      <button id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:12px 10px;border-radius:9px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;-webkit-tap-highlight-color:transparent;">Log In</button>
-      <button id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;padding:12px 10px;border-radius:9px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;-webkit-tap-highlight-color:transparent;">Sign Up</button>
+    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:3px;margin-bottom:24px;">
+      <button id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:11px 6px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;-webkit-tap-highlight-color:transparent;">Log In</button>
+      <button id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;padding:11px 6px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;-webkit-tap-highlight-color:transparent;">Sign Up</button>
+      <button id="auth-tab-magic" onclick="switchAuthTab('magic')" style="flex:1;padding:11px 6px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;-webkit-tap-highlight-color:transparent;">✉ Link</button>
     </div>
 
     <!-- Form -->
@@ -11762,14 +11777,17 @@ window.addEventListener('resize', () => {
       </div>
       <div>
         <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Email</label>
-        <input id="auth-email" type="text" inputmode="email" placeholder="you@example.com" autocomplete="email" autocorrect="off" autocapitalize="none" autocomplete="email" spellcheck="false" style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;font-family:var(--sans);box-sizing:border-box;outline:none;-webkit-appearance:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+        <input id="auth-email" type="text" inputmode="email" placeholder="you@example.com" autocomplete="email" autocorrect="off" autocapitalize="none" spellcheck="false" style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;font-family:var(--sans);box-sizing:border-box;outline:none;-webkit-appearance:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
       </div>
-      <div>
+      <div id="auth-password-field">
         <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Password</label>
         <div style="position:relative;">
           <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%;padding:14px 48px 14px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;font-family:var(--sans);box-sizing:border-box;outline:none;-webkit-appearance:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
           <button type="button" onclick="const f=document.getElementById('auth-password');const b=this;if(f.type==='password'){f.type='text';b.textContent='🙈';}else{f.type='password';b.textContent='👁';}" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">👁</button>
         </div>
+      </div>
+      <div id="auth-magic-hint" style="display:none;padding:12px 14px;background:rgba(99,102,241,0.08);border:1px solid var(--accent);border-radius:8px;font-size:13px;color:var(--text2);line-height:1.6;">
+        Enter your email and tap <strong>Send Magic Link</strong>.<br>You'll get an email — tap the link in it to log in instantly. No password needed.
       </div>
       <div id="auth-error" style="display:none;padding:12px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;font-size:13px;color:var(--red);line-height:1.5;"></div>
       <button id="auth-btn" type="submit" style="width:100%;padding:16px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">Log In</button>
