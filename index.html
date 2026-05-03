@@ -10,7 +10,11 @@
     <link rel="apple-touch-icon" href="logo.png?v=1">
     <meta name="theme-color" content="#0b0f1a">
     <link rel="icon" type="image/png" href="logo.png">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script>
   // Apply theme instantly before any rendering to prevent flash
   (function() {
@@ -1560,7 +1564,18 @@
     #sidebar .account-card { justify-content: center; padding: 10px 0; }
   }
 </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+  // Lazy-load html2canvas only when screenshot is actually requested
+  window._loadHtml2Canvas = function() {
+    return new Promise((resolve, reject) => {
+      if (window.html2canvas) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  };
+  </script>
 </head>
 <body>
 <div id="info-tooltip"></div>
@@ -2446,6 +2461,34 @@
 
     </div>
 
+    <!-- ── CONSISTENCY HEATMAP ── -->
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="panel-header">
+        <div class="panel-header-left"><div class="panel-title">Yearly Consistency</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button onclick="heatmapYear--; renderHeatmap()" class="cal-nav-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span id="heatmap-year-label" style="font-size:13px;font-weight:700;color:var(--text);min-width:40px;text-align:center;"></span>
+          <button onclick="heatmapYear++; renderHeatmap()" class="cal-nav-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+      </div>
+      <div style="padding:16px var(--page-px) 20px;overflow-x:auto;">
+        <div id="heatmap-grid" style="display:flex;gap:3px;min-width:700px;"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:14px;font-size:10px;color:var(--muted);">
+          <span>Less</span>
+          <div style="width:11px;height:11px;border-radius:2px;background:var(--surface3);border:1px solid var(--border);"></div>
+          <div style="width:11px;height:11px;border-radius:2px;background:rgba(0,255,187,0.2);"></div>
+          <div style="width:11px;height:11px;border-radius:2px;background:rgba(0,255,187,0.5);"></div>
+          <div style="width:11px;height:11px;border-radius:2px;background:var(--green);"></div>
+          <span style="margin-right:16px;">Wins</span>
+          <span>Less</span>
+          <div style="width:11px;height:11px;border-radius:2px;background:rgba(255,59,92,0.2);"></div>
+          <div style="width:11px;height:11px;border-radius:2px;background:rgba(255,59,92,0.5);"></div>
+          <div style="width:11px;height:11px;border-radius:2px;background:var(--red);"></div>
+          <span>Losses</span>
+        </div>
+      </div>
+    </div>
+
     <!-- ── TRADING HEALTH & INDICATORS ── -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
 
@@ -2555,34 +2598,6 @@
         <div id="an-health-tip" style="font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:10px;">Add at least 10 trades to unlock your health score.</div>
       </div>
 
-    </div>
-
-    <!-- ── CONSISTENCY HEATMAP ── -->
-    <div class="panel" style="margin-bottom:16px;">
-      <div class="panel-header">
-        <div class="panel-header-left"><div class="panel-title">Yearly Consistency</div></div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button onclick="heatmapYear--; renderHeatmap()" class="cal-nav-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
-          <span id="heatmap-year-label" style="font-size:13px;font-weight:700;color:var(--text);min-width:40px;text-align:center;"></span>
-          <button onclick="heatmapYear++; renderHeatmap()" class="cal-nav-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
-        </div>
-      </div>
-      <div style="padding:16px var(--page-px) 20px;overflow-x:auto;">
-        <div id="heatmap-grid" style="display:flex;gap:3px;min-width:700px;"></div>
-        <div style="display:flex;align-items:center;gap:6px;margin-top:14px;font-size:10px;color:var(--muted);">
-          <span>Less</span>
-          <div style="width:11px;height:11px;border-radius:2px;background:var(--surface3);border:1px solid var(--border);"></div>
-          <div style="width:11px;height:11px;border-radius:2px;background:rgba(0,255,187,0.2);"></div>
-          <div style="width:11px;height:11px;border-radius:2px;background:rgba(0,255,187,0.5);"></div>
-          <div style="width:11px;height:11px;border-radius:2px;background:var(--green);"></div>
-          <span style="margin-right:16px;">Wins</span>
-          <span>Less</span>
-          <div style="width:11px;height:11px;border-radius:2px;background:rgba(255,59,92,0.2);"></div>
-          <div style="width:11px;height:11px;border-radius:2px;background:rgba(255,59,92,0.5);"></div>
-          <div style="width:11px;height:11px;border-radius:2px;background:var(--red);"></div>
-          <span>Losses</span>
-        </div>
-      </div>
     </div>
 
   </div>
@@ -4439,10 +4454,8 @@ async function loadAllFromSupabase() {
   const uid = await getValidUid();
   if (!uid) return false;
 
-  // ── CRITICAL: Clear ALL local caches before loading from server.
-  // This guarantees that if a different user logs in on this device,
-  // they NEVER see stale data left behind by the previous session.
-  const themeToKeep = localStorage.getItem(THEME_KEY); // keep theme preference only
+  // Clear local caches before loading from server
+  const themeToKeep = localStorage.getItem(THEME_KEY);
   localStorage.removeItem(KEY);
   localStorage.removeItem(MINDSET_KEY);
   localStorage.removeItem(JOURNAL_KEY);
@@ -4453,9 +4466,17 @@ async function loadAllFromSupabase() {
   localStorage.removeItem(CUR_KEY);
   if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
 
-  // 1. Profile (name, avatar, currency, balance, theme, goals)
+  // Run all queries in parallel instead of sequentially
+  const [profileRes, tradesRes, balanceRes, userDataRes] = await Promise.allSettled([
+    sb.from('profiles').select('*').eq('id', uid).single(),
+    sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false }),
+    sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false }),
+    sb.from('user_data').select('*').eq('user_id', uid).single()
+  ]);
+
+  // 1. Profile
   try {
-    const { data, error } = await sb.from('profiles').select('*').eq('id', uid).single();
+    const { data, error } = profileRes.value || {};
     if (!error && data) {
       if (data.name)     localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: data.name, avatar: data.avatar || null }));
       if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
@@ -4474,7 +4495,7 @@ async function loadAllFromSupabase() {
 
   // 2. Trades
   try {
-    const { data, error } = await sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false });
+    const { data, error } = tradesRes.value || {};
     if (!error) {
       trades = (data || []).map(r => ({
         id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
@@ -4487,15 +4508,15 @@ async function loadAllFromSupabase() {
     }
   } catch(e) { console.error('TradeLog: loadTrades failed', e); }
 
-  // 3b. Balance events
+  // 3. Balance events
   try {
-    const { data: beData } = await sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false });
+    const { data: beData } = balanceRes.value || {};
     if (beData) balanceEvents = beData.map(r => ({ ticket: r.ticket, type: r.type, amount: r.amount, time: r.time, comment: r.comment || '' }));
   } catch(e) { console.warn('TradeLog: loadBalanceEvents failed', e); }
 
-  // 3. User data (journal, mindset, tags)
+  // 4. User data (journal, mindset, tags)
   try {
-    const { data, error } = await sb.from('user_data').select('*').eq('user_id', uid).single();
+    const { data, error } = userDataRes.value || {};
     if (!error && data) {
       if (data.mindset) {
         const m = typeof data.mindset === 'string' ? JSON.parse(data.mindset) : data.mindset;
@@ -4608,7 +4629,6 @@ async function initApp(user) {
   try { await loadAllFromSupabase(); } catch(e) { console.warn('TradeLog: loadAllFromSupabase failed, showing app anyway', e); }
 
   try { refreshDashboard(); } catch(e) {}
-  try { renderTrades(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
 }
 
@@ -10389,8 +10409,7 @@ function buildShareText() {
 
 // ── CAPTURE SHARE CARD AS PNG ─────────────────────────────────────────────────
 function captureShareCard() {
-  return new Promise((resolve, reject) => {
-    if (typeof html2canvas === 'undefined') { reject(new Error('html2canvas not loaded')); return; }
+  return window._loadHtml2Canvas().then(() => new Promise((resolve, reject) => {
     const card = document.getElementById('share-card');
     const theme = localStorage.getItem('tradelog_theme') || 'dark';
     const bg = theme === 'light' ? '#ffffff' : '#0b0f1a';
@@ -10401,7 +10420,7 @@ function captureShareCard() {
           else reject(new Error('blob failed'));
         }, 'image/png');
       }).catch(reject);
-  });
+  }));
 }
 
 // ── DOWNLOAD ──────────────────────────────────────────────────────────────────
