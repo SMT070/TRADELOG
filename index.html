@@ -4588,12 +4588,56 @@ function setResult(r) {
 const SUPABASE_URL = 'https://yuqfoasfefldenkvwyrm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cWZvYXNmZWZsZGVua3Z3eXJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTI1MDEsImV4cCI6MjA4ODk4ODUwMX0.lTbdFJ6DPDfSQLNXiQbAH2lxo9mzi9DUyjz9IpHoNNE';
 const _supa = window.supabase || window.Supabase;
+
+// ── SAFARI-SAFE STORAGE ADAPTER ──────────────────────────────────────
+// Safari ITP can silently block localStorage (reads return null even
+// after a successful write). This adapter tries localStorage → 
+// sessionStorage → in-memory, so auth ALWAYS works regardless of
+// Safari's privacy settings or WKWebView context.
+const _safariSafeStorage = (() => {
+  const mem = new Map();
+
+  function canUseStorage(s) {
+    try {
+      const k = '__tradelog_test__';
+      s.setItem(k, '1');
+      const ok = s.getItem(k) === '1';
+      s.removeItem(k);
+      return ok;
+    } catch(e) { return false; }
+  }
+
+  const useLocal   = canUseStorage(window.localStorage);
+  const useSession = !useLocal && canUseStorage(window.sessionStorage);
+  const store      = useLocal ? window.localStorage : useSession ? window.sessionStorage : null;
+
+  return {
+    getItem(key) {
+      try {
+        if (store) {
+          const v = store.getItem(key);
+          if (v !== null) return v;
+        }
+      } catch(e) {}
+      return mem.has(key) ? mem.get(key) : null;
+    },
+    setItem(key, value) {
+      try { if (store) store.setItem(key, value); } catch(e) {}
+      mem.set(key, value);
+    },
+    removeItem(key) {
+      try { if (store) store.removeItem(key); } catch(e) {}
+      mem.delete(key);
+    }
+  };
+})();
+
 const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: window.localStorage,
+    storage: _safariSafeStorage,
   }
 }) : null;
 let currentUser = null;
