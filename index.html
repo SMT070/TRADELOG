@@ -3973,8 +3973,15 @@ window.switchPage = function(name) {
       </div>
     </div>
 
+    <!-- Period toggle -->
+    <div style="display:flex;gap:6px;justify-content:center;margin-top:14px;">
+      <button onclick="setSharePeriod('today')" id="sp-today" style="padding:6px 14px;border-radius:8px;border:1px solid #6366f1;background:rgba(99,102,241,0.2);color:#6366f1;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">Today</button>
+      <button onclick="setSharePeriod('7d')"   id="sp-7d"    style="padding:6px 14px;border-radius:8px;border:1px solid #2d3f55;background:none;color:#64748b;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">7 Days</button>
+      <button onclick="setSharePeriod('all')"  id="sp-all"   style="padding:6px 14px;border-radius:8px;border:1px solid #2d3f55;background:none;color:#64748b;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">All Time</button>
+    </div>
+
     <!-- Action buttons -->
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px;">
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
         <button onclick="shareToX()" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;border-radius:10px;border:1px solid #1e293b;background:#0a0a0a;color:#f1f5f9;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#6366f1'" onmouseleave="this.style.borderColor='#1e293b'">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
@@ -5397,6 +5404,8 @@ async function saveTrade() {
   // Optimistic update: save locally and refresh UI immediately
   save();
   clearForm();
+  // Force stat cards to update immediately
+  try { refreshDashboard(); } catch(e) {}
   switchPage(editId ? 'trades' : 'dashboard');
   toast(editId ? '✓ Trade updated' : '✓ Trade saved', 'success');
   // Async Supabase write — does not block the UI
@@ -10234,7 +10243,28 @@ function openShareModal() {
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   const sym = getCurrencySymbol();
 
-  const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
+  // Try today first; fall back to last 7 days if no trades today
+  let periodLabel = "Today's P&L";
+  let periodDateLabel = `Today · ${now.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short', year:'numeric'})}`;
+  let selectedTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
+
+  if (!selectedTrades.length && trades.length) {
+    // Fall back to last 7 days
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 7);
+    const cutoffStr = `${cutoff.getFullYear()}-${pad(cutoff.getMonth()+1)}-${pad(cutoff.getDate())}`;
+    selectedTrades = trades.filter(t => (t.date||'').slice(0,10) >= cutoffStr);
+    if (selectedTrades.length) {
+      periodLabel = "7-Day P&L";
+      periodDateLabel = `Last 7 Days · ${now.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}`;
+    } else {
+      // Fall back to all time
+      selectedTrades = [...trades];
+      periodLabel = "All-Time P&L";
+      periodDateLabel = `All Time · ${now.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}`;
+    }
+  }
+
+  const todayTrades = selectedTrades;
   const pnl = todayTrades.reduce((s,t) => s + getPnl(t), 0);
   const wins = todayTrades.filter(t => getResult(t) === 'win').length;
   const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
@@ -10284,9 +10314,11 @@ function openShareModal() {
   document.getElementById('share-footer').style.borderTop = `1px solid ${p.footerBorder}`;
 
   // Date label
-  const dateLabel = now.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short', year:'numeric'});
-  document.getElementById('share-date-label').textContent = `Today · ${dateLabel}`;
+  document.getElementById('share-date-label').textContent = periodDateLabel;
   document.getElementById('share-trades-label').textContent = `${todayTrades.length} trade${todayTrades.length !== 1 ? 's' : ''} · ${wins}W / ${losses}L`;
+
+  // P&L label
+  document.getElementById('share-pnl-label').textContent = periodLabel;
 
   // P&L
   const pnlEl = document.getElementById('share-pnl');
@@ -10325,6 +10357,17 @@ function openShareModal() {
     listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.muted};padding:4px;">+${todayTrades.length - 5} more trades</div>`;
   }
 
+  // Highlight the auto-selected period toggle
+  const autoPeriod = periodLabel === "Today's P&L" ? 'today' : periodLabel === "7-Day P&L" ? '7d' : 'all';
+  ['today','7d','all'].forEach(pp => {
+    const btn = document.getElementById('sp-' + pp);
+    if (!btn) return;
+    const isActive = pp === autoPeriod;
+    btn.style.background = isActive ? 'rgba(99,102,241,0.2)' : 'none';
+    btn.style.borderColor = isActive ? '#6366f1' : '#2d3f55';
+    btn.style.color = isActive ? '#6366f1' : '#64748b';
+  });
+
   document.getElementById('share-modal').style.display = 'flex';
 }
 
@@ -10332,18 +10375,104 @@ function closeShareModal() {
   document.getElementById('share-modal').style.display = 'none';
 }
 
+// Allow manual period switching on the share card
+function setSharePeriod(period) {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const sym = getCurrencySymbol();
+  const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  let selected, periodLabel, periodDateLabel;
+
+  if (period === 'today') {
+    selected = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
+    periodLabel = "Today's P&L";
+    periodDateLabel = `Today · ${now.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short', year:'numeric'})}`;
+  } else if (period === '7d') {
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 7);
+    const cutoffStr = `${cutoff.getFullYear()}-${pad(cutoff.getMonth()+1)}-${pad(cutoff.getDate())}`;
+    selected = trades.filter(t => (t.date||'').slice(0,10) >= cutoffStr);
+    periodLabel = "7-Day P&L";
+    periodDateLabel = `Last 7 Days · ${now.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}`;
+  } else {
+    selected = [...trades];
+    periodLabel = "All-Time P&L";
+    periodDateLabel = `All Time · ${now.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}`;
+  }
+
+  const pnl = selected.reduce((s,t) => s + getPnl(t), 0);
+  const wins = selected.filter(t => getResult(t) === 'win').length;
+  const losses = selected.filter(t => getResult(t) === 'loss').length;
+  const best = selected.length ? Math.max(...selected.map(t => getPnl(t))) : 0;
+  const symbols = [...new Set(selected.map(t => t.symbol).filter(Boolean))].slice(0,4).join(', ') || '—';
+  const isPos = pnl >= 0;
+  const theme = localStorage.getItem('tradelog_theme') || 'dark';
+  const palettes = {
+    dark:  { pos: '#00FFBB', neg: '#ff3b5c', text: '#f1f5f9', muted: '#64748b', statBorder: '#1e293b', tradeRow: 'rgba(255,255,255,0.04)' },
+    gray:  { pos: '#00FFBB', neg: '#ff3b5c', text: '#e2e8f0', muted: '#64748b', statBorder: '#252d3d', tradeRow: 'rgba(255,255,255,0.05)' },
+    black: { pos: '#00FFBB', neg: '#ff3b5c', text: '#f1f5f9', muted: '#444',    statBorder: '#111',    tradeRow: 'rgba(255,255,255,0.04)' },
+    light: { pos: '#059669', neg: '#dc2626', text: '#0f172a', muted: '#94a3b8', statBorder: '#e2e8f0', tradeRow: 'rgba(0,0,0,0.04)' },
+  };
+  const p = palettes[theme] || palettes.dark;
+  const posCol = isPos ? p.pos : p.neg;
+
+  document.getElementById('share-pnl-label').textContent = periodLabel;
+  document.getElementById('share-date-label').textContent = periodDateLabel;
+  document.getElementById('share-trades-label').textContent = `${selected.length} trade${selected.length!==1?'s':''} · ${wins}W / ${losses}L`;
+  const pnlEl = document.getElementById('share-pnl');
+  pnlEl.textContent = (isPos?'+':'-') + sym + Math.abs(pnl).toFixed(2);
+  pnlEl.style.color = posCol;
+  const bestEl = document.getElementById('share-best');
+  bestEl.textContent = selected.length ? (best>=0?'+':'-') + sym + Math.abs(best).toFixed(2) : '—';
+  bestEl.style.color = best >= 0 ? p.pos : p.neg;
+  document.getElementById('share-wr').textContent = selected.length ? `${selected.length}` : '0';
+  document.getElementById('share-symbols').textContent = symbols;
+
+  const listEl = document.getElementById('share-trade-list');
+  listEl.innerHTML = selected.slice(0,5).map(t => {
+    const tp = getPnl(t); const col = tp>=0?p.pos:p.neg;
+    const pStr=(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2);
+    const dirPos=t.dir==='BUY';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:${p.tradeRow};border-radius:8px;border:1px solid ${p.statBorder};">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:12px;font-weight:800;color:${p.text};">${t.symbol||'—'}</span>
+        <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:${dirPos?`${p.pos}18`:`${p.neg}18`};color:${dirPos?p.pos:p.neg};">${t.dir||''}</span>
+      </div>
+      <span style="font-size:13px;font-weight:800;color:${col};">${pStr}</span>
+    </div>`;
+  }).join('');
+  if (selected.length > 5) listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.muted};padding:4px;">+${selected.length-5} more trades</div>`;
+
+  // Update toggle button active state
+  ['today','7d','all'].forEach(p => {
+    const btn = document.getElementById('sp-' + p);
+    if (!btn) return;
+    const isActive = p === period;
+    btn.style.background = isActive ? 'rgba(99,102,241,0.2)' : 'none';
+    btn.style.borderColor = isActive ? '#6366f1' : '#2d3f55';
+    btn.style.color = isActive ? '#6366f1' : '#64748b';
+  });
+}
+
 function buildShareText() {
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   const sym = getCurrencySymbol();
-  const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
-  const pnl = todayTrades.reduce((s,t) => s + getPnl(t), 0);
-  const wins = todayTrades.filter(t => getResult(t) === 'win').length;
-  const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
-  const wr = todayTrades.length ? Math.round(wins / todayTrades.length * 100) : 0;
+  let label = "Today's";
+  let selected = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
+  if (!selected.length && trades.length) {
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 7);
+    const cutoffStr = `${cutoff.getFullYear()}-${pad(cutoff.getMonth()+1)}-${pad(cutoff.getDate())}`;
+    selected = trades.filter(t => (t.date||'').slice(0,10) >= cutoffStr);
+    label = selected.length ? "7-Day" : "All-Time";
+    if (!selected.length) selected = [...trades];
+  }
+  const pnl = selected.reduce((s,t) => s + getPnl(t), 0);
+  const wins = selected.filter(t => getResult(t) === 'win').length;
+  const losses = selected.filter(t => getResult(t) === 'loss').length;
+  const wr = selected.length ? Math.round(wins / selected.length * 100) : 0;
   const pnlStr = (pnl >= 0 ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
-  return `📊 Today's Trading Summary\n\nP&L: ${pnlStr}\nWin Rate: ${wr}% (${wins}W / ${losses}L)\nTrades: ${todayTrades.length}\n\nTracked with TradeLog 📈`;
+  return `📊 ${label} Trading Summary\n\nP&L: ${pnlStr}\nWin Rate: ${wr}% (${wins}W / ${losses}L)\nTrades: ${selected.length}\n\nTracked with TradeLog 📈`;
 }
 
 // ── CAPTURE SHARE CARD AS PNG ─────────────────────────────────────────────────
@@ -10353,7 +10482,19 @@ function captureShareCard() {
     const card = document.getElementById('share-card');
     const theme = localStorage.getItem('tradelog_theme') || 'dark';
     const bg = theme === 'light' ? '#ffffff' : '#0b0f1a';
-    html2canvas(card, { backgroundColor: bg, scale: 2, useCORS: true, logging: false })
+    const cardRect = card.getBoundingClientRect();
+    html2canvas(card, {
+      backgroundColor: bg,
+      scale: 3,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      imageTimeout: 0,
+      width: cardRect.width,
+      height: cardRect.height,
+      scrollX: 0,
+      scrollY: 0,
+    })
       .then(canvas => {
         canvas.toBlob(blob => {
           if (blob) resolve({ blob, canvas });
