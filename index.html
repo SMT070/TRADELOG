@@ -4214,7 +4214,13 @@ window.switchPage = function(name) {
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+  // Fallback: if jsdelivr failed (rare), load from unpkg
+  if (!window.supabase) {
+    document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>');
+  }
+</script>
 
 <script>
   Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
@@ -4652,7 +4658,7 @@ async function handleAuth() {
   try {
     if (authMode === 'login') {
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) { showAuthError(error.message); btn.textContent = 'Log In'; btn.disabled = false; return; }
+      if (error) { showAuthError(error.message || error.code || JSON.stringify(error)); btn.textContent = 'Log In'; btn.disabled = false; return; }
       // initApp via onAuthStateChange SIGNED_IN — but call directly too as fallback
       // (some mobile browsers fire onAuthStateChange late)
       if (data && data.user && !_appInitialized) await initApp(data.user);
@@ -4669,7 +4675,7 @@ async function handleAuth() {
       }
     }
   } catch(e) {
-    showAuthError('Something went wrong. Check your connection and try again.');
+    showAuthError((e && e.message) ? e.message : 'Something went wrong. Check your connection and try again.');
     btn.textContent = authMode==='login'?'Log In':'Create Account'; btn.disabled = false;
   }
 }
@@ -4854,17 +4860,22 @@ async function initApp(user) {
   const btn = document.getElementById('auth-btn');
   if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
 
-  // Show loading state immediately
+  // Show the app immediately — never block on data loading
   loadTheme();
   showApp();
   updateGreeting();
 
-  // Load EVERYTHING from Supabase before rendering
-  await loadAllFromSupabase();
+  // Load data — wrapped so a network/RLS failure never crashes initApp
+  // and leaves the user stuck on the auth screen
+  try {
+    await loadAllFromSupabase();
+  } catch(e) {
+    console.warn('TradeLog: loadAllFromSupabase failed, showing app anyway', e);
+  }
 
-  // Now render with real data
-  refreshDashboard();
-  renderTrades();
+  // Render with whatever data we have (may be empty on first load)
+  try { refreshDashboard(); } catch(e) {}
+  try { renderTrades(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
 }
 
