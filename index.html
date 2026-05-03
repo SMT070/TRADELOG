@@ -5868,7 +5868,7 @@ function refreshDashboard() {
         }
       }
 
-      // Draw dots only at first, last, and direction-change points
+      // Pinpoint dots at first, last, and peaks/valleys only
       c.shadowBlur = 0;
       for (let i = 0; i < points.length; i++) {
         const isFirst = i === 0;
@@ -5879,20 +5879,11 @@ function refreshDashboard() {
         if (!isFirst && !isLast && !isTurn) continue;
 
         const inLoss = eqSnap[i] < 0;
-        const color  = inLoss ? _rcColor : _gcColor;
         const px = points[i].x, py = points[i].y;
-        const r = 3;
 
-        // Outer dot
         c.beginPath();
-        c.arc(px, py, r, 0, Math.PI * 2);
-        c.fillStyle = color;
-        c.fill();
-
-        // Inner ring
-        c.beginPath();
-        c.arc(px, py, 1.2, 0, Math.PI * 2);
-        c.fillStyle = _isLight ? 'rgba(255,255,255,0.9)' : 'rgba(11,15,26,0.85)';
+        c.arc(px, py, 2, 0, Math.PI * 2);
+        c.fillStyle = inLoss ? _rcColor : _gcColor;
         c.fill();
       }
 
@@ -5948,7 +5939,7 @@ function refreshDashboard() {
         pointBorderColor: pointColors,
         pointBorderWidth: 2,
         fill: false,
-        tension: 0.35
+        tension: 0.5
       }]
     },
     options: {
