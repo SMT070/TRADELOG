@@ -5730,6 +5730,13 @@ function refreshDashboard() {
   const filteredSign = filteredLast >= 0 ? '+' : '';
   trendEl.innerHTML = `<span style="font-family:var(--sans);font-size:13px;font-weight:700;color:${filteredColor};">${filteredSign}$${Math.abs(filteredLast).toFixed(2)}</span> <span style="font-size:10px;color:var(--muted);">${filteredSorted.length} trades</span>`;
 
+  // Cache all CSS color lookups once — never call gc()/rc()/cssVar() inside the draw loop
+  const _gcColor   = gc();
+  const _rcColor   = rc();
+  const _greenGlow = cssVar('--green-glow');
+  const _redGlow   = cssVar('--red-glow');
+  const _redBg     = cssVar('--red-bg');
+
   // Pre-compute per-date P&L map so tooltip callbacks are O(1) not O(n)
   const _dayPnlMap = {};
   for (const x of filteredSorted) {
@@ -5788,16 +5795,9 @@ function refreshDashboard() {
   const yMax = (Math.ceil(eqMax / stepSize) + 1) * stepSize;
 
   // Per-point colors: red only if below 0
-  const pointColors = eq.map(v => v >= 0 ? gc() : rc());
+  const pointColors = eq.map(v => v >= 0 ? _gcColor : _rcColor);
 
   const eqSnap = eq.slice();
-
-  // Cache all CSS color lookups once — never call gc()/rc()/cssVar() inside the draw loop
-  const _gcColor   = gc();
-  const _rcColor   = rc();
-  const _greenGlow = cssVar('--green-glow');
-  const _redGlow   = cssVar('--red-glow');
-  const _redBg     = cssVar('--red-bg');
 
   const segmentPlugin = {
     id: 'segmentColor',
