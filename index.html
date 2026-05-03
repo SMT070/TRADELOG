@@ -2217,7 +2217,7 @@
         </div>
       </div>
 
-      <div class="panel" id="trade-detail-panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;width:460px;min-width:460px;transform:translateX(calc(100% + 16px));transition:transform .22s cubic-bezier(.4,0,.2,1);will-change:transform;">
+      <div class="panel" id="trade-detail-panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;width:300px;min-width:300px;transition:width .2s ease,min-width .2s ease;will-change:width;">
         <div class="panel-header" style="align-items:center;padding:12px 14px;">
           <div class="panel-header-left" style="flex:0 0 auto;">
             <div class="panel-title" style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text);text-transform:uppercase;white-space:nowrap;">Trade Detail</div>
@@ -5184,6 +5184,8 @@ async function deleteSelected() {
 function openEditSelected() {
   const t = trades.find(x => x.id === selectedId);
   if (!t) return;
+  const panel = document.getElementById('trade-detail-panel');
+  if (panel) { panel.style.width = '460px'; panel.style.minWidth = '460px'; }
   // Swap header to edit mode
   const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
   if (headerBtns) headerBtns.innerHTML = `
@@ -6270,8 +6272,6 @@ function selectTrade(id) {
   document.querySelectorAll('#all-tbody tr.selected').forEach(r => r.classList.remove('selected'));
   const row = document.querySelector(`#all-tbody tr[data-id="${id}"]`);
   if (row) row.classList.add('selected');
-  const panel = document.getElementById('trade-detail-panel');
-  if (panel) panel.style.transform = 'translateX(0)';
   showTradeDetail(id);
 }
 
@@ -7389,8 +7389,6 @@ async function saveInlineEdit(id) {
   collapseDetailPanel();
   renderTrades(true); // skip tag rebuild — tags just saved above
   refreshDashboard();
-  const panel = document.getElementById('trade-detail-panel');
-  if (panel) panel.style.transform = 'translateX(0)';
   showTradeDetail(id);
   const overlayNotes = document.getElementById('overlay-notes-input');
   if (overlayNotes) overlayNotes.value = t.notes || '';
@@ -7403,16 +7401,14 @@ async function saveInlineEdit(id) {
 }
 
 function cancelInlineEdit() {
-  const panel = document.getElementById('trade-detail-panel');
-  if (panel) panel.style.transform = 'translateX(0)';
   collapseDetailPanel();
-  if (selectedId) { if (panel) panel.style.transform = 'translateX(0)'; showTradeDetail(selectedId); }
+  if (selectedId) showTradeDetail(selectedId);
   else document.getElementById('trade-detail-body').innerHTML = '<div class="empty-state"><h3>Select a trade</h3><p>Click any row to see details</p></div>';
 }
 
 function collapseDetailPanel() {
   const panel = document.getElementById('trade-detail-panel');
-  if (panel) { panel.style.transform = 'translateX(calc(100% + 16px))'; panel.style.boxShadow = ''; }
+  if (panel) { panel.style.width = '300px'; panel.style.minWidth = '300px'; panel.style.boxShadow = ''; }
   document.querySelector('#trade-detail-panel .panel-title').textContent = 'Trade Detail';
   // Restore original header buttons
   const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
