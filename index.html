@@ -4586,8 +4586,8 @@ const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false,
-    storageKey: 'tradelog_sb_session'
+    detectSessionInUrl: true,
+    storage: window.localStorage,
   }
 }) : null;
 let currentUser = null;
@@ -4633,6 +4633,9 @@ function switchAuthTab(mode) {
   document.getElementById('auth-name-field').style.display    = mode==='signup' ? 'block' : 'none';
   document.getElementById('auth-btn').textContent             = mode==='login'  ? 'Log In' : 'Create Account';
   document.getElementById('auth-error').style.display = 'none';
+  // Update autocomplete so password managers offer the right action
+  const pwField = document.getElementById('auth-password');
+  if (pwField) pwField.setAttribute('autocomplete', mode==='login' ? 'current-password' : 'new-password');
 }
 function showAuthError(msg) {
   const el = document.getElementById('auth-error');
@@ -4650,16 +4653,23 @@ async function handleAuth() {
     if (authMode === 'login') {
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
       if (error) { showAuthError(error.message); btn.textContent = 'Log In'; btn.disabled = false; return; }
-      if (data && data.user) await initApp(data.user);
+      // initApp via onAuthStateChange SIGNED_IN — but call directly too as fallback
+      // (some mobile browsers fire onAuthStateChange late)
+      if (data && data.user && !_appInitialized) await initApp(data.user);
     } else {
       const name = document.getElementById('auth-name').value.trim();
-      const { error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
+      const { data: signUpData, error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
       if (error) { showAuthError(error.message); btn.textContent = 'Create Account'; btn.disabled = false; return; }
-      showAuthError('Check your email to confirm your account.');
-      btn.textContent = 'Create Account'; btn.disabled = false;
+      // If email confirmation is disabled (auto-confirm), user is logged in immediately
+      if (signUpData && signUpData.session && signUpData.user && !_appInitialized) {
+        await initApp(signUpData.user);
+      } else {
+        showAuthError('Check your email to confirm your account, then log in.');
+        btn.textContent = 'Create Account'; btn.disabled = false;
+      }
     }
   } catch(e) {
-    showAuthError('Something went wrong. Try again.');
+    showAuthError('Something went wrong. Check your connection and try again.');
     btn.textContent = authMode==='login'?'Log In':'Create Account'; btn.disabled = false;
   }
 }
@@ -4862,17 +4872,15 @@ async function initApp(user) {
 window.addEventListener('load', () => {
   if (!sb) { showAuthScreen(); return; }
 
-  sb.auth.getSession().then(async ({ data: { session } }) => {
-    if (session && session.user) {
-      await initApp(session.user);
-    } else {
-      showAuthScreen();
-    }
-  }).catch(() => showAuthScreen());
-
+  // onAuthStateChange is the primary session driver — fires reliably on all platforms.
+  // It fires INITIAL_SESSION on load (replaces the old getSession() call),
+  // then SIGNED_IN / SIGNED_OUT for user actions.
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session && session.user) {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user) {
       if (!_appInitialized) await initApp(session.user);
+    } else if (event === 'INITIAL_SESSION' && !session) {
+      // No session on load — show auth
+      if (!_appInitialized) showAuthScreen();
     } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
       currentUser = session.user;
     } else if (event === 'SIGNED_OUT') {
@@ -11670,37 +11678,37 @@ window.addEventListener('resize', () => {
   </div>
 </div>
 <!-- ── AUTH SCREEN ─────────────────────────────────────────────────────────── -->
-<div id="auth-screen" style="display:flex;position:fixed;inset:0;z-index:99998;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;">
-  <div style="width:100%;max-width:400px;padding:0 24px;">
+<div id="auth-screen" style="display:flex;position:fixed;inset:0;z-index:99998;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);overflow-y:auto;">
+  <div style="width:100%;max-width:400px;padding:24px 24px 40px;">
     <!-- Logo -->
-    <div style="text-align:center;margin-bottom:40px;">
+    <div style="text-align:center;margin-bottom:36px;">
       <div style="font-size:36px;font-weight:900;color:var(--text);letter-spacing:-2px;">Trade<span style="color:var(--accent);">Log</span></div>
       <div style="font-size:13px;color:var(--muted);margin-top:6px;">Your professional trading journal</div>
     </div>
 
     <!-- Tabs -->
-    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:4px;margin-bottom:28px;">
-      <button id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;">Log In</button>
-      <button id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;">Sign Up</button>
+    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:4px;margin-bottom:24px;">
+      <button id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:12px 10px;border-radius:9px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;-webkit-tap-highlight-color:transparent;">Log In</button>
+      <button id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;padding:12px 10px;border-radius:9px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;-webkit-tap-highlight-color:transparent;">Sign Up</button>
     </div>
 
     <!-- Form -->
-    <div style="display:flex;flex-direction:column;gap:14px;">
+    <form onsubmit="handleAuth();return false;" style="display:flex;flex-direction:column;gap:16px;">
       <div id="auth-name-field" style="display:none;">
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Name</label>
-        <input id="auth-name" type="text" placeholder="Your name" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Name</label>
+        <input id="auth-name" type="text" placeholder="Your name" autocomplete="name" style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;font-family:var(--sans);box-sizing:border-box;outline:none;-webkit-appearance:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
       </div>
       <div>
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Email</label>
-        <input id="auth-email" type="email" placeholder="you@example.com" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Email</label>
+        <input id="auth-email" type="email" placeholder="you@example.com" autocomplete="email" inputmode="email" style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;font-family:var(--sans);box-sizing:border-box;outline:none;-webkit-appearance:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
       </div>
       <div>
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Password</label>
-        <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;font-family:var(--sans);box-sizing:border-box;outline:none;-webkit-appearance:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
       </div>
-      <div id="auth-error" style="display:none;padding:10px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);"></div>
-      <button id="auth-btn" onclick="handleAuth()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;transition:opacity .2s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Log In</button>
-    </div>
+      <div id="auth-error" style="display:none;padding:12px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;font-size:13px;color:var(--red);line-height:1.5;"></div>
+      <button id="auth-btn" type="submit" style="width:100%;padding:16px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">Log In</button>
+    </form>
   </div>
 </div>
 
