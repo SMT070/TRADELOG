@@ -4215,12 +4215,7 @@ window.switchPage = function(name) {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script>
-  // Fallback: if jsdelivr failed (rare), load from unpkg
-  if (!window.supabase) {
-    document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>');
-  }
-</script>
+<script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>');}</script>
 
 <script>
   Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
@@ -4261,7 +4256,6 @@ async function backgroundSync() {
         notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
-      // Refresh balance events alongside trades
       try {
         const { data: beSync } = await sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false });
         if (beSync) balanceEvents = beSync.map(r => ({ ticket: r.ticket, type: r.type, amount: r.amount, time: r.time, comment: r.comment || '' }));
@@ -4589,46 +4583,19 @@ const SUPABASE_URL = 'https://yuqfoasfefldenkvwyrm.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1cWZvYXNmZWZsZGVua3Z3eXJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTI1MDEsImV4cCI6MjA4ODk4ODUwMX0.lTbdFJ6DPDfSQLNXiQbAH2lxo9mzi9DUyjz9IpHoNNE';
 const _supa = window.supabase || window.Supabase;
 
-// ── SAFARI-SAFE STORAGE ADAPTER ──────────────────────────────────────
-// Safari ITP can silently block localStorage (reads return null even
-// after a successful write). This adapter tries localStorage → 
-// sessionStorage → in-memory, so auth ALWAYS works regardless of
-// Safari's privacy settings or WKWebView context.
+// Safari-safe storage adapter — Safari ITP can silently block localStorage.
+// Tries localStorage → sessionStorage → in-memory Map.
 const _safariSafeStorage = (() => {
   const mem = new Map();
-
-  function canUseStorage(s) {
-    try {
-      const k = '__tradelog_test__';
-      s.setItem(k, '1');
-      const ok = s.getItem(k) === '1';
-      s.removeItem(k);
-      return ok;
-    } catch(e) { return false; }
+  function canUse(s) {
+    try { const k='__tl__'; s.setItem(k,'1'); const ok=s.getItem(k)==='1'; s.removeItem(k); return ok; } catch(e) { return false; }
   }
-
-  const useLocal   = canUseStorage(window.localStorage);
-  const useSession = !useLocal && canUseStorage(window.sessionStorage);
-  const store      = useLocal ? window.localStorage : useSession ? window.sessionStorage : null;
-
+  const useLocal = canUse(window.localStorage);
+  const store = useLocal ? window.localStorage : canUse(window.sessionStorage) ? window.sessionStorage : null;
   return {
-    getItem(key) {
-      try {
-        if (store) {
-          const v = store.getItem(key);
-          if (v !== null) return v;
-        }
-      } catch(e) {}
-      return mem.has(key) ? mem.get(key) : null;
-    },
-    setItem(key, value) {
-      try { if (store) store.setItem(key, value); } catch(e) {}
-      mem.set(key, value);
-    },
-    removeItem(key) {
-      try { if (store) store.removeItem(key); } catch(e) {}
-      mem.delete(key);
-    }
+    getItem(k)    { try { if(store){ const v=store.getItem(k); if(v!==null) return v; } } catch(e){} return mem.has(k)?mem.get(k):null; },
+    setItem(k,v)  { try { if(store) store.setItem(k,v); } catch(e){} mem.set(k,v); },
+    removeItem(k) { try { if(store) store.removeItem(k); } catch(e){} mem.delete(k); }
   };
 })();
 
@@ -4676,25 +4643,13 @@ async function getValidUid() {
 let authMode = 'login';
 function switchAuthTab(mode) {
   authMode = mode;
-  const isLogin  = mode === 'login';
-  const isSignup = mode === 'signup';
-  const isMagic  = mode === 'magic';
-  document.getElementById('auth-tab-login').style.background  = isLogin  ? 'var(--accent)' : 'transparent';
-  document.getElementById('auth-tab-login').style.color       = isLogin  ? '#fff' : 'var(--muted)';
-  document.getElementById('auth-tab-signup').style.background = isSignup ? 'var(--accent)' : 'transparent';
-  document.getElementById('auth-tab-signup').style.color      = isSignup ? '#fff' : 'var(--muted)';
-  document.getElementById('auth-tab-magic').style.background  = isMagic  ? 'var(--accent)' : 'transparent';
-  document.getElementById('auth-tab-magic').style.color       = isMagic  ? '#fff' : 'var(--muted)';
-  document.getElementById('auth-name-field').style.display    = isSignup ? 'block' : 'none';
-  document.getElementById('auth-password-field').style.display = isMagic ? 'none'  : 'block';
-  document.getElementById('auth-btn').textContent             = isLogin  ? 'Log In' : isSignup ? 'Create Account' : 'Send Magic Link';
+  document.getElementById('auth-tab-login').style.background  = mode==='login'  ? 'var(--accent)' : 'transparent';
+  document.getElementById('auth-tab-login').style.color       = mode==='login'  ? '#fff' : 'var(--muted)';
+  document.getElementById('auth-tab-signup').style.background = mode==='signup' ? 'var(--accent)' : 'transparent';
+  document.getElementById('auth-tab-signup').style.color      = mode==='signup' ? '#fff' : 'var(--muted)';
+  document.getElementById('auth-name-field').style.display    = mode==='signup' ? 'block' : 'none';
+  document.getElementById('auth-btn').textContent             = mode==='login'  ? 'Log In' : 'Create Account';
   document.getElementById('auth-error').style.display = 'none';
-  document.getElementById('auth-error').style.background = 'var(--red-bg)';
-  document.getElementById('auth-error').style.borderColor = 'var(--red)';
-  document.getElementById('auth-error').style.color = 'var(--red)';
-  document.getElementById('auth-magic-hint').style.display = isMagic ? 'block' : 'none';
-  const pwField = document.getElementById('auth-password');
-  if (pwField) pwField.setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
 }
 function showAuthError(msg) {
   const el = document.getElementById('auth-error');
@@ -4706,41 +4661,22 @@ async function handleAuth() {
   const password = document.getElementById('auth-password').value;
   const btn = document.getElementById('auth-btn');
   document.getElementById('auth-error').style.display = 'none';
-  if (!email) { showAuthError('Please enter your email.'); return; }
-  if (!password && authMode !== 'magic') { showAuthError('Please enter your password.'); return; }
+  if (!email || !password) { showAuthError('Please enter email and password.'); return; }
   btn.textContent = '...'; btn.disabled = true;
   try {
-    if (authMode === 'magic') {
-      const cleanEmail = email.toLowerCase().trim();
-      const redirectTo = window.location.href.split('?')[0].split('#')[0];
-      const { error } = await sb.auth.signInWithOtp({ email: cleanEmail, options: { emailRedirectTo: redirectTo } });
-      if (error) { showAuthError(error.message || 'Could not send magic link.'); btn.textContent = 'Send Magic Link'; btn.disabled = false; return; }
-      document.getElementById('auth-error').style.background = 'var(--green-bg)';
-      document.getElementById('auth-error').style.borderColor = 'var(--green)';
-      document.getElementById('auth-error').style.color = 'var(--green)';
-      showAuthError('✓ Magic link sent! Check your email and tap the link to log in.');
-      btn.textContent = 'Send Magic Link'; btn.disabled = false;
-    } else if (authMode === 'login') {
-      // Trim both fields — Safari can inject trailing spaces
-      const cleanEmail = email.toLowerCase().trim();
-      const cleanPassword = password;
-      const { data, error } = await sb.auth.signInWithPassword({ email: cleanEmail, password: cleanPassword });
-      if (error) { showAuthError(error.message || 'Invalid credentials.'); btn.textContent = 'Log In'; btn.disabled = false; return; }
-      if (data && data.user && !_appInitialized) await initApp(data.user);
+    if (authMode === 'login') {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) { showAuthError(error.message); btn.textContent = 'Log In'; btn.disabled = false; return; }
+      if (data && data.user) await initApp(data.user);
     } else {
       const name = document.getElementById('auth-name').value.trim();
-      const { data: signUpData, error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
+      const { error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
       if (error) { showAuthError(error.message); btn.textContent = 'Create Account'; btn.disabled = false; return; }
-      // If email confirmation is disabled (auto-confirm), user is logged in immediately
-      if (signUpData && signUpData.session && signUpData.user && !_appInitialized) {
-        await initApp(signUpData.user);
-      } else {
-        showAuthError('Check your email to confirm your account, then log in.');
-        btn.textContent = 'Create Account'; btn.disabled = false;
-      }
+      showAuthError('Check your email to confirm your account.');
+      btn.textContent = 'Create Account'; btn.disabled = false;
     }
   } catch(e) {
-    showAuthError((e && e.message) ? e.message : 'Something went wrong. Check your connection and try again.');
+    showAuthError('Something went wrong. Try again.');
     btn.textContent = authMode==='login'?'Log In':'Create Account'; btn.disabled = false;
   }
 }
@@ -4810,7 +4746,7 @@ async function loadAllFromSupabase() {
     }
   } catch(e) { console.error('TradeLog: loadTrades failed', e); }
 
-  // 3b. Balance events (deposits & withdrawals — excluded from all trading stats)
+  // 3b. Balance events
   try {
     const { data: beData } = await sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false });
     if (beData) balanceEvents = beData.map(r => ({ ticket: r.ticket, type: r.type, amount: r.amount, time: r.time, comment: r.comment || '' }));
@@ -4921,24 +4857,15 @@ async function initApp(user) {
   currentUser = user;
   _appInitialized = true;
 
-  // Reset auth button
   const btn = document.getElementById('auth-btn');
   if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
 
-  // Show the app immediately — never block on data loading
   loadTheme();
   showApp();
   updateGreeting();
 
-  // Load data — wrapped so a network/RLS failure never crashes initApp
-  // and leaves the user stuck on the auth screen
-  try {
-    await loadAllFromSupabase();
-  } catch(e) {
-    console.warn('TradeLog: loadAllFromSupabase failed, showing app anyway', e);
-  }
+  try { await loadAllFromSupabase(); } catch(e) { console.warn('TradeLog: loadAllFromSupabase failed, showing app anyway', e); }
 
-  // Render with whatever data we have (may be empty on first load)
   try { refreshDashboard(); } catch(e) {}
   try { renderTrades(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
@@ -4948,14 +4875,10 @@ async function initApp(user) {
 window.addEventListener('load', () => {
   if (!sb) { showAuthScreen(); return; }
 
-  // onAuthStateChange is the primary session driver — fires reliably on all platforms.
-  // It fires INITIAL_SESSION on load (replaces the old getSession() call),
-  // then SIGNED_IN / SIGNED_OUT for user actions.
   sb.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user) {
       if (!_appInitialized) await initApp(session.user);
     } else if (event === 'INITIAL_SESSION' && !session) {
-      // No session on load — show auth
       if (!_appInitialized) showAuthScreen();
     } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
       currentUser = session.user;
@@ -6480,7 +6403,6 @@ function renderTrades(skipTagRebuild) {
     </tr>`;
   }).join('');
 
-  // ── BALANCE EVENTS (deposits / withdrawals) — shown at bottom, excluded from all stats ──
   if (balanceEvents && balanceEvents.length) {
     let beFiltered = balanceEvents;
     if (fromStr || toStr) {
@@ -11754,44 +11676,37 @@ window.addEventListener('resize', () => {
   </div>
 </div>
 <!-- ── AUTH SCREEN ─────────────────────────────────────────────────────────── -->
-<div id="auth-screen" style="display:flex;position:fixed;inset:0;z-index:99998;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);overflow-y:auto;">
-  <div style="width:100%;max-width:400px;padding:24px 24px 40px;">
+<div id="auth-screen" style="display:flex;position:fixed;inset:0;z-index:99998;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;">
+  <div style="width:100%;max-width:400px;padding:0 24px;">
     <!-- Logo -->
-    <div style="text-align:center;margin-bottom:36px;">
+    <div style="text-align:center;margin-bottom:40px;">
       <div style="font-size:36px;font-weight:900;color:var(--text);letter-spacing:-2px;">Trade<span style="color:var(--accent);">Log</span></div>
       <div style="font-size:13px;color:var(--muted);margin-top:6px;">Your professional trading journal</div>
     </div>
 
     <!-- Tabs -->
-    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:3px;margin-bottom:24px;">
-      <button id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:11px 6px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;-webkit-tap-highlight-color:transparent;">Log In</button>
-      <button id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;padding:11px 6px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;-webkit-tap-highlight-color:transparent;">Sign Up</button>
-      <button id="auth-tab-magic" onclick="switchAuthTab('magic')" style="flex:1;padding:11px 6px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;-webkit-tap-highlight-color:transparent;">✉ Link</button>
+    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:4px;margin-bottom:28px;">
+      <button id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;">Log In</button>
+      <button id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;">Sign Up</button>
     </div>
 
     <!-- Form -->
-    <form onsubmit="handleAuth();return false;" style="display:flex;flex-direction:column;gap:16px;">
+    <div style="display:flex;flex-direction:column;gap:14px;">
       <div id="auth-name-field" style="display:none;">
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Name</label>
-        <input id="auth-name" type="text" placeholder="Your name" autocomplete="name" style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;font-family:var(--sans);box-sizing:border-box;outline:none;-webkit-appearance:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Name</label>
+        <input id="auth-name" type="text" placeholder="Your name" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
       </div>
       <div>
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Email</label>
-        <input id="auth-email" type="email" placeholder="you@example.com" autocomplete="email" autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%;padding:14px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;font-family:var(--sans);box-sizing:border-box;outline:none;-webkit-appearance:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Email</label>
+        <input id="auth-email" type="email" placeholder="you@example.com" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
       </div>
-      <div id="auth-password-field">
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Password</label>
-        <div style="position:relative;">
-          <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%;padding:14px 48px 14px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;font-family:var(--sans);box-sizing:border-box;outline:none;-webkit-appearance:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
-          <button type="button" onclick="const f=document.getElementById('auth-password');const b=this;if(f.type==='password'){f.type='text';b.textContent='🙈';}else{f.type='password';b.textContent='👁';}" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">👁</button>
-        </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
       </div>
-      <div id="auth-magic-hint" style="display:none;padding:12px 14px;background:rgba(99,102,241,0.08);border:1px solid var(--accent);border-radius:8px;font-size:13px;color:var(--text2);line-height:1.6;">
-        Enter your email and tap <strong>Send Magic Link</strong>.<br>You'll get an email — tap the link in it to log in instantly. No password needed.
-      </div>
-      <div id="auth-error" style="display:none;padding:12px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;font-size:13px;color:var(--red);line-height:1.5;"></div>
-      <button id="auth-btn" type="submit" style="width:100%;padding:16px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">Log In</button>
-    </form>
+      <div id="auth-error" style="display:none;padding:10px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);"></div>
+      <button id="auth-btn" onclick="handleAuth()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;transition:opacity .2s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Log In</button>
+    </div>
   </div>
 </div>
 
