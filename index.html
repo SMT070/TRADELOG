@@ -1118,10 +1118,12 @@
     background:var(--nb-color, var(--accent));
   }
   .notebook-entry {
-    padding:16px 20px; border-bottom:1px solid var(--border);
-    cursor:pointer; transition:background .12s;
+    padding:14px 18px; border-bottom:1px solid var(--border);
+    cursor:pointer; transition:background .12s; position:relative;
   }
   .notebook-entry:hover { background:var(--surface2); }
+  .notebook-entry.pinned { background: rgba(99,102,241,.05); }
+  .notebook-entry.pinned::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent); border-radius:3px 0 0 3px; }
   .notebook-editor {
     width:100%; min-height:240px; background:var(--surface2);
     border:1px solid var(--border); border-radius:var(--r-sm);
@@ -1130,6 +1132,52 @@
     outline:none; transition:border-color .2s;
   }
   .notebook-editor:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,.1); }
+
+  /* Rich editor toolbar */
+  .nb-toolbar { display:flex; align-items:center; gap:2px; padding:8px 10px; background:var(--surface3); border:1px solid var(--border); border-bottom:none; border-radius:var(--r-sm) var(--r-sm) 0 0; flex-wrap:wrap; }
+  .nb-toolbar button { width:28px; height:28px; display:flex; align-items:center; justify-content:center; background:none; border:1px solid transparent; border-radius:6px; color:var(--muted); cursor:pointer; font-size:12px; font-weight:700; font-family:var(--sans); transition:all .12s; }
+  .nb-toolbar button:hover { background:var(--surface2); border-color:var(--border2); color:var(--text); }
+  .nb-toolbar button.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
+  .nb-toolbar .tb-sep { width:1px; height:18px; background:var(--border2); margin:0 4px; flex-shrink:0; }
+  .nb-toolbar-attached .notebook-editor { border-radius:0 0 var(--r-sm) var(--r-sm); min-height:280px; }
+
+  /* Markdown preview */
+  .nb-preview { width:100%; min-height:240px; background:var(--surface2); border:1px solid var(--border); border-radius:0 0 var(--r-sm) var(--r-sm); color:var(--text); font-family:var(--sans); font-size:13px; line-height:1.8; padding:14px 16px; overflow-y:auto; }
+  .nb-preview h1 { font-size:18px; font-weight:800; margin-bottom:10px; color:var(--text); }
+  .nb-preview h2 { font-size:15px; font-weight:700; margin-bottom:8px; color:var(--text); }
+  .nb-preview h3 { font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text); }
+  .nb-preview p { margin-bottom:10px; color:var(--text2); }
+  .nb-preview strong { color:var(--text); font-weight:700; }
+  .nb-preview em { color:var(--text2); font-style:italic; }
+  .nb-preview ul, .nb-preview ol { padding-left:20px; margin-bottom:10px; color:var(--text2); }
+  .nb-preview li { margin-bottom:4px; }
+  .nb-preview code { background:var(--surface3); padding:2px 6px; border-radius:4px; font-size:12px; color:var(--accent); }
+  .nb-preview blockquote { border-left:3px solid var(--accent); padding-left:12px; color:var(--muted); font-style:italic; margin:10px 0; }
+  .nb-preview hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
+  .nb-preview a { color:var(--accent); text-decoration:underline; }
+
+  /* Tag chips */
+  .nb-tag-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; cursor:pointer; transition:all .12s; border:1px solid transparent; }
+  .nb-tag-chip.active { border-color:var(--accent); background:rgba(99,102,241,.12); color:var(--accent); }
+  .nb-tag-chip:not(.active) { background:var(--surface3); color:var(--muted); }
+  .nb-tag-chip:hover { border-color:var(--border2); color:var(--text); }
+
+  /* Notebook search bar */
+  .nb-search-wrap { position:relative; }
+  .nb-search-wrap input { width:100%; padding:8px 10px 8px 30px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); color:var(--text); font-size:12px; font-family:var(--sans); outline:none; transition:border-color .2s; }
+  .nb-search-wrap input:focus { border-color:var(--accent); }
+  .nb-search-wrap svg { position:absolute; left:9px; top:50%; transform:translateY(-50%); pointer-events:none; }
+
+  /* Daily recap template */
+  .recap-prompt { background:var(--surface3); border-left:3px solid var(--accent); border-radius:0 var(--r-sm) var(--r-sm) 0; padding:10px 14px; margin-bottom:10px; }
+  .recap-prompt label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--accent); display:block; margin-bottom:4px; }
+  .recap-prompt textarea { width:100%; background:transparent; border:none; color:var(--text2); font-family:var(--sans); font-size:12px; line-height:1.6; outline:none; resize:none; min-height:48px; }
+
+  /* Word count / autosave indicator */
+  .nb-meta-bar { display:flex; align-items:center; justify-content:space-between; padding:6px 14px; background:var(--surface3); border:1px solid var(--border); border-top:none; border-radius:0 0 var(--r-sm) var(--r-sm); font-size:10px; color:var(--muted); }
+  .nb-autosave { display:flex; align-items:center; gap:5px; }
+  .nb-autosave-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse-dot 2s infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
 
   /* ── MOBILE ── */
   @media (max-width: 768px) {
@@ -10691,14 +10739,75 @@ function loadData(key, def=[]) {
 function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
 
 // ══════════════════════════════════════════════════════════════════
+//  NOTEBOOKS — full-featured
 // ══════════════════════════════════════════════════════════════════
 const NB_COLORS = ['#6366f1','#00FFBB','#f59e0b','#FF3B5C','#8b5cf6','#06b6d4','#ec4899'];
 let activeNotebookId = null;
+let nbSearchQuery    = '';
+let nbActiveTagFilter= '';
+let nbEditorMode     = 'write'; // 'write' | 'preview'
+let nbAutoSaveTimer  = null;
+let nbEditorDirty    = false;
+let nbCurrentEditId  = null;
+let nbCurrentNbId    = null;
 
+// ── Simple markdown → HTML renderer ──────────────────────────────
+function renderMarkdown(md) {
+  if (!md) return '';
+  let html = md
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    // headings
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    // bold/italic
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/_(.+?)_/g,'<em>$1</em>')
+    // inline code
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    // blockquote
+    .replace(/^&gt; (.+)$/gm,'<blockquote>$1</blockquote>')
+    // hr
+    .replace(/^---$/gm,'<hr>')
+    // unordered list
+    .replace(/^\- (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    // ordered list
+    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
+    // line breaks → paragraphs
+    .split(/\n\n+/).map(p => {
+      if (/^<(h[123]|ul|ol|blockquote|hr)/.test(p.trim())) return p;
+      return `<p>${p.replace(/\n/g,'<br>')}</p>`;
+    }).join('');
+  return html;
+}
+
+// ── Word count ───────────────────────────────────────────────────
+function wordCount(str) {
+  return (str||'').trim().split(/\s+/).filter(Boolean).length;
+}
+
+// ── Collect all unique tags across a notebook ────────────────────
+function getAllTags(nb) {
+  const set = new Set();
+  (nb.entries||[]).forEach(e => (e.tags||[]).forEach(t => set.add(t)));
+  return [...set].sort();
+}
+
+// ── Collect ALL tags across ALL notebooks ────────────────────────
+function getAllTagsGlobal() {
+  const notebooks = loadData(NOTEBOOKS_KEY, []);
+  const set = new Set();
+  notebooks.forEach(nb => (nb.entries||[]).forEach(e => (e.tags||[]).forEach(t => set.add(t))));
+  return [...set].sort();
+}
+
+// ── Render the left sidebar list ─────────────────────────────────
 function renderNotebooks() {
   const notebooks = loadData(NOTEBOOKS_KEY, []);
-  const list      = document.getElementById('notebooks-list');
-  const emptyState= document.getElementById('notebooks-empty-state');
+  const list       = document.getElementById('notebooks-list');
+  const emptyState = document.getElementById('notebooks-empty-state');
   if (!list) return;
 
   if (!notebooks.length) {
@@ -10715,25 +10824,28 @@ function renderNotebooks() {
     const color   = nb.color || '#6366f1';
     const entries = nb.entries || [];
     const isActive = nb.id === activeNotebookId;
+    const pinnedCount = entries.filter(e=>e.pinned).length;
     return `<div onclick="selectNotebook('${nb.id}')" style="
-      padding:14px 16px; border-radius:12px; cursor:pointer;
+      padding:12px 14px; border-radius:12px; cursor:pointer;
       border:1px solid ${isActive?color:'var(--border)'};
       background:${isActive?`${color}12`:'var(--surface)'};
       transition:all .15s; position:relative; overflow:hidden;
-    " onmouseenter="if('${nb.id}'!=='${activeNotebookId}'){this.style.borderColor='var(--border2)'}" onmouseleave="if('${nb.id}'!=='${activeNotebookId}'){this.style.borderColor='var(--border)'}">
+    " onmouseenter="if('${nb.id}'!=='${activeNotebookId}'){this.style.borderColor='var(--border2)'}" onmouseleave="if('${nb.id}'!=='${activeNotebookId}'){this.style.borderColor='${isActive?color:'var(--border)'}'}">
       <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:${color};border-radius:3px 0 0 3px;"></div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-        <div style="width:28px;height:28px;border-radius:8px;background:${color}20;border:1px solid ${color}40;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">${nb.emoji||'📓'}</div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:3px;padding-left:6px;">
+        <div style="width:26px;height:26px;border-radius:7px;background:${color}20;border:1px solid ${color}40;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">${nb.emoji||'📓'}</div>
         <div style="font-size:13px;font-weight:800;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nb.name}</div>
         <span style="font-size:10px;font-weight:600;color:var(--muted);">${entries.length}</span>
       </div>
-      ${nb.description ? `<div style="font-size:11px;color:var(--muted);line-height:1.4;padding-left:38px;">${nb.description}</div>` : ''}
+      ${nb.description ? `<div style="font-size:11px;color:var(--muted);line-height:1.4;padding-left:42px;margin-top:2px;">${nb.description}</div>` : ''}
+      ${pinnedCount ? `<div style="padding-left:42px;margin-top:4px;font-size:10px;color:${color};font-weight:700;">📌 ${pinnedCount} pinned</div>` : ''}
     </div>`;
   }).join('');
 
   if (activeNotebookId) selectNotebook(activeNotebookId);
 }
 
+// ── Select & render a notebook's entries ─────────────────────────
 function selectNotebook(id) {
   activeNotebookId = id;
   const notebooks = loadData(NOTEBOOKS_KEY, []);
@@ -10744,50 +10856,395 @@ function selectNotebook(id) {
   document.getElementById('notebook-editor-content').style.display = 'flex';
   document.getElementById('nb-editor-title').textContent = nb.name;
 
-  const entries = (nb.entries || []).sort((a,b) => new Date(b.date)-new Date(a.date));
+  // Render tag filter bar
+  const tagsBar = document.getElementById('nb-tags-bar');
+  const allTags = getAllTags(nb);
+  if (allTags.length) {
+    tagsBar.style.display = 'flex';
+    tagsBar.innerHTML = `
+      <span class="nb-tag-chip ${!nbActiveTagFilter?'active':''}" onclick="setNbTagFilter('')">All</span>
+      ${allTags.map(t=>`<span class="nb-tag-chip ${nbActiveTagFilter===t?'active':''}" onclick="setNbTagFilter('${t}')">${t}</span>`).join('')}
+    `;
+  } else {
+    tagsBar.style.display = 'none';
+  }
+
+  // Filter + sort entries
+  let entries = (nb.entries || []).filter(e => {
+    const q = nbSearchQuery.toLowerCase();
+    const matchSearch = !q || (e.title||'').toLowerCase().includes(q) || (e.content||'').toLowerCase().includes(q) || (e.tags||[]).some(t=>t.toLowerCase().includes(q));
+    const matchTag = !nbActiveTagFilter || (e.tags||[]).includes(nbActiveTagFilter);
+    return matchSearch && matchTag;
+  });
+
+  // Pinned first, then by date
+  entries = [
+    ...entries.filter(e=>e.pinned).sort((a,b)=>new Date(b.date)-new Date(a.date)),
+    ...entries.filter(e=>!e.pinned).sort((a,b)=>new Date(b.date)-new Date(a.date))
+  ];
+
   const entriesList = document.getElementById('nb-entries-list');
 
   if (!entries.length) {
     entriesList.innerHTML = `<div style="text-align:center;padding:48px 20px;color:var(--muted);">
-      <div style="font-size:32px;margin-bottom:10px;">✍️</div>
-      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;">No entries yet</div>
-      <div style="font-size:12px;">Click "+ New Entry" to write your first note.</div>
+      <div style="font-size:32px;margin-bottom:10px;">${nbSearchQuery||nbActiveTagFilter?'🔍':'✍️'}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;">${nbSearchQuery||nbActiveTagFilter?'No matching entries':'No entries yet'}</div>
+      <div style="font-size:12px;">${nbSearchQuery||nbActiveTagFilter?'Try a different search or tag filter':'Click "+ New Entry" to write your first note.'}</div>
     </div>`;
   } else {
     entriesList.innerHTML = entries.map(e => {
-      const tags = (e.tags||[]).slice(0,3);
-      return `<div class="notebook-entry" onclick="openNoteEntryModal('${id}','${e.id}')">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px;">
-          <div style="font-size:14px;font-weight:700;color:var(--text);">${e.title||'Untitled'}</div>
-          <div style="font-size:11px;color:var(--muted);flex-shrink:0;margin-left:12px;">${e.date?new Date(e.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'—'}</div>
+      const tags = (e.tags||[]).slice(0,4);
+      const dateStr = e.date ? new Date(e.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'}) : '—';
+      const wc = wordCount(e.content);
+      const linkedTrade = e.linkedTradeId ? `<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(99,102,241,.12);color:var(--accent);font-weight:700;margin-left:4px;">🔗 Trade</span>` : '';
+      return `<div class="notebook-entry${e.pinned?' pinned':''}" onclick="openNoteEntry('${id}','${e.id}')">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+            ${e.pinned?`<span style="font-size:11px;flex-shrink:0;">📌</span>`:''}
+            <div style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title||'Untitled'}</div>
+            ${linkedTrade}
+          </div>
+          <div style="font-size:10px;color:var(--muted);flex-shrink:0;margin-left:10px;">${dateStr}</div>
         </div>
-        ${e.content ? `<div style="font-size:12px;color:var(--text2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${e.content}</div>` : ''}
-        ${tags.length ? `<div style="display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;">${tags.map(t=>`<span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;background:var(--surface3);color:var(--muted);">${t}</span>`).join('')}</div>` : ''}
+        ${e.content ? `<div style="font-size:12px;color:var(--text2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${e.content.replace(/[#*_`>]/g,'')}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;">
+          ${tags.map(t=>`<span style="padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;background:var(--surface3);color:var(--muted);">${t}</span>`).join('')}
+          ${wc ? `<span style="margin-left:auto;font-size:10px;color:var(--muted);">${wc} words</span>` : ''}
+        </div>
       </div>`;
     }).join('');
   }
 
   // Re-render list to update active state
+  const listEl = document.getElementById('notebooks-list');
+  if (listEl) {
+    // update active highlights without full re-render loop
+    listEl.querySelectorAll('[data-nb-id]').forEach(el => {
+      const isActive = el.dataset.nbId === id;
+      el.style.borderColor = isActive ? (notebooks.find(n=>n.id===id)?.color||'var(--accent)') : 'var(--border)';
+    });
+  }
   renderNotebooks();
 }
 
+function setNbTagFilter(tag) {
+  nbActiveTagFilter = tag;
+  if (activeNotebookId) selectNotebook(activeNotebookId);
+}
+
+// ── Open a single note entry in the full-page editor ─────────────
+function openNoteEntry(nbId, entryId) {
+  const notebooks = loadData(NOTEBOOKS_KEY, []);
+  const nb = notebooks.find(x => x.id === nbId);
+  const e  = entryId ? (nb?.entries||[]).find(x => x.id === entryId) : null;
+
+  nbCurrentNbId  = nbId;
+  nbCurrentEditId= entryId || null;
+  nbEditorDirty  = false;
+  nbEditorMode   = 'write';
+
+  document.getElementById('ne-title').value   = e?.title   || '';
+  document.getElementById('ne-content').value = e?.content || '';
+  document.getElementById('ne-tags-input').value = e?.tags ? e.tags.join(', ') : '';
+  document.getElementById('ne-pinned').checked    = e?.pinned || false;
+  document.getElementById('ne-linked-trade').value = e?.linkedTradeId || '';
+  document.getElementById('ne-modal-title').textContent = entryId ? 'Edit Entry' : 'New Entry';
+  document.getElementById('ne-delete-btn').style.display = entryId ? 'inline-flex' : 'none';
+  document.getElementById('ne-pin-btn').title = e?.pinned ? 'Unpin entry' : 'Pin entry';
+  document.getElementById('ne-pin-btn').style.color = e?.pinned ? 'var(--accent)' : '';
+
+  // Show the editor, hide preview
+  setNbEditorMode('write');
+  updateNbWordCount();
+  updateNbAutoSave('saved');
+
+  document.getElementById('note-entry-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('ne-title').focus(), 80);
+}
+
+function openNoteEntryModal(nbId, entryId) { openNoteEntry(nbId, entryId); }
+
+function closeNoteEntryModal() {
+  if (nbEditorDirty) {
+    autoSaveEntry(true);
+  }
+  clearTimeout(nbAutoSaveTimer);
+  document.getElementById('note-entry-modal').style.display = 'none';
+}
+
+// ── Rich editor mode toggle ───────────────────────────────────────
+function setNbEditorMode(mode) {
+  nbEditorMode = mode;
+  const ta  = document.getElementById('ne-content');
+  const pre = document.getElementById('ne-preview');
+  const wBtn = document.getElementById('nb-mode-write');
+  const pBtn = document.getElementById('nb-mode-preview');
+  if (mode === 'preview') {
+    pre.innerHTML = renderMarkdown(ta.value);
+    pre.style.display = 'block';
+    ta.style.display  = 'none';
+    if (wBtn) { wBtn.classList.remove('active'); pBtn.classList.add('active'); }
+  } else {
+    pre.style.display = 'none';
+    ta.style.display  = 'block';
+    if (wBtn) { wBtn.classList.add('active'); pBtn.classList.remove('active'); }
+    ta.focus();
+  }
+}
+
+// ── Toolbar formatting commands ───────────────────────────────────
+function nbFormat(cmd, val) {
+  const ta = document.getElementById('ne-content');
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const sel = ta.value.substring(start, end);
+  const before = ta.value.substring(0, start);
+  const after  = ta.value.substring(end);
+  let insert = '';
+  switch(cmd) {
+    case 'bold':      insert = `**${sel||'bold text'}**`; break;
+    case 'italic':    insert = `*${sel||'italic text'}*`; break;
+    case 'h1':        insert = `\n# ${sel||'Heading 1'}\n`; break;
+    case 'h2':        insert = `\n## ${sel||'Heading 2'}\n`; break;
+    case 'h3':        insert = `\n### ${sel||'Heading 3'}\n`; break;
+    case 'ul':        insert = `\n- ${sel||'List item'}\n`; break;
+    case 'ol':        insert = `\n1. ${sel||'List item'}\n`; break;
+    case 'quote':     insert = `\n> ${sel||'Quote'}\n`; break;
+    case 'code':      insert = `\`${sel||'code'}\``; break;
+    case 'hr':        insert = `\n\n---\n\n`; break;
+    default: insert = sel;
+  }
+  ta.value = before + insert + after;
+  ta.selectionStart = ta.selectionEnd = before.length + insert.length;
+  ta.focus();
+  onNbContentChange();
+}
+
+// ── Auto-save ─────────────────────────────────────────────────────
+function onNbContentChange() {
+  nbEditorDirty = true;
+  updateNbWordCount();
+  updateNbAutoSave('unsaved');
+  clearTimeout(nbAutoSaveTimer);
+  nbAutoSaveTimer = setTimeout(() => autoSaveEntry(false), 1500);
+}
+
+function autoSaveEntry(silent) {
+  const title   = document.getElementById('ne-title')?.value?.trim();
+  const content = document.getElementById('ne-content')?.value?.trim();
+  if (!title && !content) return;
+  _persistNoteEntry(silent);
+}
+
+function updateNbWordCount() {
+  const content = document.getElementById('ne-content')?.value || '';
+  const el = document.getElementById('nb-word-count');
+  if (el) el.textContent = `${wordCount(content)} words`;
+}
+
+function updateNbAutoSave(state) {
+  const dot = document.getElementById('nb-autosave-dot');
+  const lbl = document.getElementById('nb-autosave-label');
+  if (!dot || !lbl) return;
+  if (state === 'saved') {
+    dot.style.background = 'var(--green)';
+    lbl.textContent = 'Saved';
+  } else {
+    dot.style.background = 'var(--yellow)';
+    lbl.textContent = 'Unsaved…';
+  }
+}
+
+// ── Insert daily recap template ───────────────────────────────────
+function insertDailyRecap() {
+  const ta = document.getElementById('ne-content');
+  const today = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const template = `# Daily Recap — ${today}
+
+## 📈 What went well?
+
+
+## ❌ What would I do differently?
+
+
+## 💡 Lessons learned
+
+
+## 😌 Emotional state
+*(calm / anxious / confident / frustrated / disciplined)*
+
+
+## 🎯 Tomorrow's focus
+
+
+---
+`;
+  ta.value = (ta.value ? ta.value + '\n\n' : '') + template;
+  if (!document.getElementById('ne-title').value) {
+    document.getElementById('ne-title').value = `Daily Recap — ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+  }
+  setNbTagFilter('');
+  document.getElementById('ne-tags-input').value = document.getElementById('ne-tags-input').value || 'daily-recap';
+  onNbContentChange();
+  ta.focus();
+}
+
+// ── Insert weekly summary template ───────────────────────────────
+function insertWeeklySummary() {
+  const ta = document.getElementById('ne-content');
+  const today = new Date();
+  const monday = new Date(today); monday.setDate(today.getDate() - today.getDay() + 1);
+  const friday = new Date(monday); friday.setDate(monday.getDate() + 4);
+  const weekStr = `${monday.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} – ${friday.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`;
+  const template = `# Weekly Summary — ${weekStr}
+
+## 📊 Performance overview
+- **Total trades:**
+- **Win rate:**
+- **Best trade:**
+- **Worst trade:**
+- **Net P&L:**
+
+## ✅ What worked this week
+
+
+## 🔄 What needs improvement
+
+
+## 📚 Key lessons
+
+
+## 🎯 Focus for next week
+
+
+---
+`;
+  ta.value = (ta.value ? ta.value + '\n\n' : '') + template;
+  if (!document.getElementById('ne-title').value) {
+    document.getElementById('ne-title').value = `Weekly Summary — ${weekStr}`;
+  }
+  document.getElementById('ne-tags-input').value = document.getElementById('ne-tags-input').value || 'weekly-summary';
+  onNbContentChange();
+  ta.focus();
+}
+
+// ── Save entry to localStorage ────────────────────────────────────
+function _persistNoteEntry(silent) {
+  const title   = document.getElementById('ne-title').value.trim();
+  const content = document.getElementById('ne-content').value.trim();
+  if (!title && !content) return;
+  const notebooks = loadData(NOTEBOOKS_KEY, []);
+  const nb = notebooks.find(x => x.id === nbCurrentNbId);
+  if (!nb) return;
+  const tags     = document.getElementById('ne-tags-input').value.split(',').map(t=>t.trim()).filter(Boolean);
+  const pinned   = document.getElementById('ne-pinned').checked;
+  const linkedTradeId = document.getElementById('ne-linked-trade').value.trim() || null;
+  const entry = {
+    id: nbCurrentEditId || uid(),
+    title, content, tags, pinned, linkedTradeId,
+    date: new Date().toISOString()
+  };
+  if (!nb.entries) nb.entries = [];
+  if (nbCurrentEditId) {
+    const idx = nb.entries.findIndex(x => x.id === nbCurrentEditId);
+    if (idx > -1) { entry.date = nb.entries[idx].date; nb.entries[idx] = entry; }
+    else { nb.entries.unshift(entry); }
+  } else {
+    nbCurrentEditId = entry.id;
+    nb.entries.unshift(entry);
+  }
+  saveData(NOTEBOOKS_KEY, notebooks);
+  nbEditorDirty = false;
+  updateNbAutoSave('saved');
+  if (!silent) selectNotebook(nbCurrentNbId);
+}
+
+function saveNoteEntry() {
+  const title   = document.getElementById('ne-title').value.trim();
+  const content = document.getElementById('ne-content').value.trim();
+  if (!title && !content) { toast('Add a title or content','error'); return; }
+  _persistNoteEntry(false);
+  clearTimeout(nbAutoSaveTimer);
+  document.getElementById('note-entry-modal').style.display = 'none';
+  toast('Entry saved!','success');
+}
+
+function deleteNoteEntry() {
+  if (!nbCurrentEditId) return;
+  showConfirm({ icon:'🗑️', title:'Delete Entry', message:'This note entry will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: () => {
+    const notebooks = loadData(NOTEBOOKS_KEY, []);
+    const nb = notebooks.find(x => x.id === nbCurrentNbId);
+    if (nb) nb.entries = (nb.entries||[]).filter(x => x.id !== nbCurrentEditId);
+    saveData(NOTEBOOKS_KEY, notebooks);
+    clearTimeout(nbAutoSaveTimer);
+    document.getElementById('note-entry-modal').style.display = 'none';
+    selectNotebook(nbCurrentNbId);
+    toast('Entry deleted','');
+  }});
+}
+
+function toggleNbPin() {
+  const cb = document.getElementById('ne-pinned');
+  cb.checked = !cb.checked;
+  const btn = document.getElementById('ne-pin-btn');
+  btn.style.color = cb.checked ? 'var(--accent)' : '';
+  btn.title = cb.checked ? 'Unpin entry' : 'Pin entry';
+  onNbContentChange();
+}
+
+// ── Export entries as plain text / PDF stub ───────────────────────
+function exportNotebook() {
+  const notebooks = loadData(NOTEBOOKS_KEY, []);
+  const nb = notebooks.find(x => x.id === activeNotebookId);
+  if (!nb || !nb.entries?.length) { toast('No entries to export','error'); return; }
+  const lines = nb.entries.map(e => [
+    `# ${e.title||'Untitled'}`,
+    `Date: ${e.date ? new Date(e.date).toLocaleDateString() : '—'}`,
+    e.tags?.length ? `Tags: ${e.tags.join(', ')}` : '',
+    '',
+    e.content || '',
+    '\n---\n'
+  ].filter(l=>l!==undefined).join('\n'));
+  const blob = new Blob([`${nb.name}\n${'='.repeat(nb.name.length)}\n\n` + lines.join('\n')], {type:'text/plain'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `${nb.name.replace(/\s+/g,'-')}.txt`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('Exported!','success');
+}
+
+// ── Delete notebook ───────────────────────────────────────────────
+function deleteNotebook() {
+  if (!activeNotebookId) return;
+  const notebooks = loadData(NOTEBOOKS_KEY, []);
+  const nb = notebooks.find(x => x.id === activeNotebookId);
+  if (!nb) return;
+  showConfirm({ icon:'🗑️', title:'Delete Notebook', message:`Delete "${nb.name}" and all its entries? This cannot be undone.`, okText:'Delete', okColor:'var(--red)', onOk: () => {
+    const updated = notebooks.filter(x => x.id !== activeNotebookId);
+    saveData(NOTEBOOKS_KEY, updated);
+    activeNotebookId = null;
+    renderNotebooks();
+    toast('Notebook deleted','');
+  }});
+}
+
+// ── New notebook modal ────────────────────────────────────────────
 function addNotebook() {
   const modal = document.getElementById('new-notebook-modal');
-  const input = document.getElementById('new-notebook-name');
-  input.value = '';
+  document.getElementById('new-notebook-name').value = '';
+  document.getElementById('new-notebook-desc').value = '';
   modal.style.display = 'flex';
-  setTimeout(() => input.focus(), 80);
+  setTimeout(() => document.getElementById('new-notebook-name').focus(), 80);
 }
 
 function confirmAddNotebook() {
-  const input = document.getElementById('new-notebook-name');
-  const name = input.value.trim();
-  if (!name) { input.focus(); return; }
+  const name = document.getElementById('new-notebook-name').value.trim();
+  if (!name) { document.getElementById('new-notebook-name').focus(); return; }
+  const desc = document.getElementById('new-notebook-desc').value.trim();
   const emojis = ['📓','📒','📔','📕','📗','📘','📙','🗒️','💡','🔬','📊'];
-  const emoji = emojis[Math.floor(Math.random()*emojis.length)];
-  const color = NB_COLORS[loadData(NOTEBOOKS_KEY,[]).length % NB_COLORS.length];
+  const emoji  = emojis[Math.floor(Math.random()*emojis.length)];
+  const color  = NB_COLORS[loadData(NOTEBOOKS_KEY,[]).length % NB_COLORS.length];
   const notebooks = loadData(NOTEBOOKS_KEY, []);
-  const nb = { id: uid(), name, emoji, color, description: '', entries: [] };
+  const nb = { id: uid(), name, emoji, color, description: desc, entries: [] };
   notebooks.push(nb);
   saveData(NOTEBOOKS_KEY, notebooks);
   activeNotebookId = nb.id;
@@ -10800,69 +11257,20 @@ function closeNewNotebookModal() {
   document.getElementById('new-notebook-modal').style.display = 'none';
 }
 
-function addNoteEntry() { openNoteEntryModal(activeNotebookId, null); }
+function addNoteEntry() { openNoteEntry(activeNotebookId, null); }
 
-function openNoteEntryModal(nbId, entryId) {
-  const notebooks = loadData(NOTEBOOKS_KEY, []);
-  const nb = notebooks.find(x => x.id === nbId);
-  const e  = entryId ? (nb?.entries||[]).find(x => x.id === entryId) : null;
-  document.getElementById('ne-title').value         = e?.title   || '';
-  document.getElementById('ne-content').value       = e?.content || '';
-  document.getElementById('ne-tags').value          = e?.tags ? e.tags.join(', ') : '';
-  document.getElementById('ne-edit-id').value       = entryId || '';
-  document.getElementById('ne-notebook-id').value   = nbId || '';
-  document.getElementById('ne-modal-title').textContent = entryId ? 'Edit Entry' : 'New Entry';
-  document.getElementById('ne-delete-btn').style.display = entryId ? 'inline-block' : 'none';
-  document.getElementById('note-entry-modal').style.display = 'flex';
-}
-function closeNoteEntryModal() { document.getElementById('note-entry-modal').style.display = 'none'; }
-
-function saveNoteEntry() {
-  const title   = document.getElementById('ne-title').value.trim();
-  const content = document.getElementById('ne-content').value.trim();
-  if (!title && !content) { toast('Add a title or content','error'); return; }
-  const notebooks = loadData(NOTEBOOKS_KEY, []);
-  const nbId      = document.getElementById('ne-notebook-id').value;
-  const nb        = notebooks.find(x => x.id === nbId);
-  if (!nb) return;
-  const editId = document.getElementById('ne-edit-id').value;
-  const tags   = document.getElementById('ne-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
-  const entry  = { id: editId || uid(), title, content, tags, date: new Date().toISOString() };
-  if (!nb.entries) nb.entries = [];
-  if (editId) {
-    const idx = nb.entries.findIndex(x => x.id === editId);
-    if (idx > -1) nb.entries[idx] = entry;
-  } else {
-    nb.entries.unshift(entry);
-  }
-  saveData(NOTEBOOKS_KEY, notebooks);
-  closeNoteEntryModal();
-  selectNotebook(nbId);
-  toast('Entry saved!','success');
+// ── Notebook search ───────────────────────────────────────────────
+function onNbSearch(val) {
+  nbSearchQuery = val.trim();
+  if (activeNotebookId) selectNotebook(activeNotebookId);
 }
 
-function deleteNoteEntry() {
-  const nbId    = document.getElementById('ne-notebook-id').value;
-  const editId  = document.getElementById('ne-edit-id').value;
-  if (!editId) return;
-  showConfirm({ icon:'🗑️', title:'Delete Entry', message:'This note entry will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: () => {
-    const notebooks = loadData(NOTEBOOKS_KEY, []);
-    const nb = notebooks.find(x => x.id === nbId);
-    if (nb) nb.entries = (nb.entries||[]).filter(x => x.id !== editId);
-    saveData(NOTEBOOKS_KEY, notebooks);
-    closeNoteEntryModal();
-    selectNotebook(nbId);
-    toast('Entry deleted','');
-  }});
-}
-
-document.getElementById('note-entry-modal').addEventListener('click', e => { if (e.target === document.getElementById('note-entry-modal')) closeNoteEntryModal(); });
-
-// Add keyboard shortcuts for new pages
-document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
-  if (e.metaKey || e.ctrlKey || e.altKey) return;
-
+// Attach modal backdrop-click after DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('note-entry-modal');
+  if (modal) modal.addEventListener('click', e => {
+    if (e.target === modal) closeNoteEntryModal();
+  });
 });
 
 // Mobile: notebooks stacks vertically
@@ -10893,20 +11301,25 @@ handleNotebooksMobile();
         <div class="new-page-title">Trade <span style="color:var(--accent);">Notebooks</span></div>
         <div class="new-page-subtitle">Organize your thoughts, research, and trading insights</div>
       </div>
-      <button onclick="addNotebook()" class="btn btn-primary" style="display:flex;align-items:center;gap:7px;font-size:12px;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New Notebook
-      </button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="addNotebook()" class="btn btn-primary" style="display:flex;align-items:center;gap:7px;font-size:12px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Notebook
+        </button>
+      </div>
     </div>
 
     <!-- Notebooks layout: sidebar + content -->
     <div id="notebooks-main" style="display:grid;grid-template-columns:260px 1fr;gap:14px;min-height:400px;">
 
-      <!-- Notebook list -->
-      <div>
-        <div style="display:flex;flex-direction:column;gap:8px;" id="notebooks-list">
-          <!-- Populated by JS -->
+      <!-- Notebook list sidebar -->
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <!-- Global search -->
+        <div class="nb-search-wrap">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Search entries…" oninput="onNbSearch(this.value)" id="nb-global-search">
         </div>
+        <div style="display:flex;flex-direction:column;gap:6px;" id="notebooks-list"></div>
         <div id="notebooks-empty-state" style="display:none;text-align:center;padding:40px 16px;color:var(--muted);">
           <div style="font-size:32px;margin-bottom:10px;">📓</div>
           <div style="font-size:13px;font-weight:700;color:var(--text);">No notebooks</div>
@@ -10914,7 +11327,7 @@ handleNotebooksMobile();
         </div>
       </div>
 
-      <!-- Note editor -->
+      <!-- Note editor panel -->
       <div class="panel" id="notebook-editor-panel" style="display:flex;flex-direction:column;min-height:400px;">
         <div id="notebook-editor-empty" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--muted);">
           <div style="font-size:40px;">📝</div>
@@ -10926,11 +11339,26 @@ handleNotebooksMobile();
             <div class="panel-header-left">
               <div class="panel-title" id="nb-editor-title">Notebook</div>
             </div>
-            <button onclick="addNoteEntry()" class="btn btn-primary" style="font-size:11px;padding:6px 14px;">+ New Entry</button>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button onclick="exportNotebook()" class="btn btn-ghost" style="font-size:11px;padding:5px 12px;display:flex;align-items:center;gap:5px;" title="Export notebook as text file">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+              </button>
+              <button onclick="deleteNotebook()" class="btn btn-ghost" style="font-size:11px;padding:5px 12px;color:var(--red);" title="Delete notebook">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              </button>
+              <button onclick="addNoteEntry()" class="btn btn-primary" style="font-size:11px;padding:6px 14px;display:flex;align-items:center;gap:5px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Entry
+              </button>
+            </div>
           </div>
-          <div id="nb-entries-list" style="flex:1;overflow-y:auto;">
-            <!-- Populated by JS -->
-          </div>
+
+          <!-- Tag filter bar -->
+          <div id="nb-tags-bar" style="display:none;flex-wrap:wrap;gap:6px;padding:10px 20px 0;"></div>
+
+          <!-- Entries list -->
+          <div id="nb-entries-list" style="flex:1;overflow-y:auto;"></div>
         </div>
       </div>
     </div>
@@ -10939,49 +11367,157 @@ handleNotebooksMobile();
 
 <!-- New Notebook Modal -->
 <div id="new-notebook-modal" onclick="if(event.target===this)closeNewNotebookModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:28px;width:420px;max-width:92vw;box-shadow:0 24px 60px rgba(0,0,0,.5);">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:28px;width:440px;max-width:92vw;box-shadow:0 24px 60px rgba(0,0,0,.5);">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
       <div style="font-size:17px;font-weight:800;color:var(--text);">New Notebook</div>
       <button onclick="closeNewNotebookModal()" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">&times;</button>
     </div>
-    <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Notebook Name</label>
-    <input id="new-notebook-name" type="text" placeholder="e.g. Trade Journal, Strategy Notes…"
-      style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
-      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
-      onkeydown="if(event.key==='Enter')confirmAddNotebook()">
-    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Notebook Name</label>
+        <input id="new-notebook-name" type="text" placeholder="e.g. Trade Journal, Strategy Notes…"
+          style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+          onkeydown="if(event.key==='Enter')confirmAddNotebook()">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+        <input id="new-notebook-desc" type="text" placeholder="What is this notebook for?"
+          style="width:100%;padding:11px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+          onkeydown="if(event.key==='Enter')confirmAddNotebook()">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end;">
       <button onclick="closeNewNotebookModal()" class="btn btn-ghost" style="padding:10px 20px;font-size:13px;">Cancel</button>
       <button onclick="confirmAddNotebook()" class="btn btn-primary" style="padding:10px 24px;font-size:13px;">Create</button>
     </div>
   </div>
 </div>
 
-<!-- Note Entry Modal -->
-<div id="note-entry-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:28px;width:580px;max-width:95vw;max-height:90vh;overflow-y:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <div style="font-size:17px;font-weight:800;" id="ne-modal-title">New Entry</div>
-      <button onclick="closeNoteEntryModal()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;">&#x2715;</button>
+<!-- Note Entry Modal — Rich Editor -->
+<div id="note-entry-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:18px;width:700px;max-width:96vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.6);">
+
+    <!-- Modal header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px 14px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <div style="font-size:16px;font-weight:800;color:var(--text);" id="ne-modal-title">New Entry</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <!-- Templates dropdown trigger -->
+        <div style="position:relative;">
+          <button id="ne-template-btn" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block'"
+            style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:5px;">
+            📋 Templates
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="ne-template-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:6px;min-width:200px;box-shadow:0 12px 30px rgba(0,0,0,.4);z-index:10;">
+            <button onclick="insertDailyRecap();document.getElementById('ne-template-menu').style.display='none'" style="width:100%;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);text-align:left;display:flex;align-items:center;gap:8px;transition:background .12s;" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
+              📈 Daily Recap
+            </button>
+            <button onclick="insertWeeklySummary();document.getElementById('ne-template-menu').style.display='none'" style="width:100%;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);text-align:left;display:flex;align-items:center;gap:8px;transition:background .12s;" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
+              📅 Weekly Summary
+            </button>
+          </div>
+        </div>
+        <!-- Pin button -->
+        <button id="ne-pin-btn" onclick="toggleNbPin()" title="Pin entry"
+          style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:14px;cursor:pointer;transition:all .15s;"
+          onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">📌</button>
+        <input type="checkbox" id="ne-pinned" style="display:none;">
+        <button onclick="closeNoteEntryModal()" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">&times;</button>
+      </div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:14px;">
+
+    <!-- Scrollable body -->
+    <div style="flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:12px;">
+
+      <!-- Title -->
+      <input type="text" id="ne-title" placeholder="Entry title…"
+        style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:15px;font-weight:700;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
+        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+        oninput="onNbContentChange()">
+
+      <!-- Rich editor area -->
       <div>
-        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Title</label>
-        <input type="text" id="ne-title" placeholder="Entry title…">
+        <!-- Toolbar -->
+        <div class="nb-toolbar">
+          <!-- Write / Preview toggle -->
+          <button id="nb-mode-write" class="active" onclick="setNbEditorMode('write')" title="Write mode" style="font-size:10px;width:auto;padding:0 8px;gap:4px;">✏️ Write</button>
+          <button id="nb-mode-preview" onclick="setNbEditorMode('preview')" title="Preview markdown" style="font-size:10px;width:auto;padding:0 8px;gap:4px;">👁 Preview</button>
+          <div class="tb-sep"></div>
+          <!-- Headings -->
+          <button onclick="nbFormat('h1')" title="Heading 1" style="font-size:11px;font-weight:900;">H1</button>
+          <button onclick="nbFormat('h2')" title="Heading 2" style="font-size:10px;font-weight:800;">H2</button>
+          <button onclick="nbFormat('h3')" title="Heading 3" style="font-size:10px;font-weight:700;">H3</button>
+          <div class="tb-sep"></div>
+          <!-- Inline formatting -->
+          <button onclick="nbFormat('bold')" title="Bold (wrap selection)" style="font-weight:900;font-size:13px;">B</button>
+          <button onclick="nbFormat('italic')" title="Italic" style="font-style:italic;font-size:13px;">I</button>
+          <button onclick="nbFormat('code')" title="Inline code" style="font-family:monospace;font-size:12px;">`</button>
+          <div class="tb-sep"></div>
+          <!-- Lists -->
+          <button onclick="nbFormat('ul')" title="Bullet list">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg>
+          </button>
+          <button onclick="nbFormat('ol')" title="Numbered list">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4M4 10h2M4 15.5A1.5 1.5 0 015.5 14v0A1.5 1.5 0 017 15.5v.5l-3 3h3" stroke-width="1.5"/></svg>
+          </button>
+          <button onclick="nbFormat('quote')" title="Blockquote">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+          </button>
+          <button onclick="nbFormat('hr')" title="Horizontal rule" style="font-size:11px;">—</button>
+        </div>
+
+        <!-- Textarea -->
+        <div class="nb-toolbar-attached">
+          <textarea id="ne-content" class="notebook-editor" placeholder="Write your thoughts, analysis, or notes…&#10;&#10;Supports **bold**, *italic*, # headings, - lists, > quotes, \`code\`"
+            oninput="onNbContentChange()"></textarea>
+          <!-- Markdown preview (hidden by default) -->
+          <div id="ne-preview" class="nb-preview" style="display:none;"></div>
+        </div>
+
+        <!-- Meta bar: word count + autosave -->
+        <div class="nb-meta-bar">
+          <span id="nb-word-count" style="font-size:10px;color:var(--muted);">0 words</span>
+          <div class="nb-autosave">
+            <div class="nb-autosave-dot" id="nb-autosave-dot"></div>
+            <span id="nb-autosave-label">Saved</span>
+          </div>
+        </div>
       </div>
+
+      <!-- Tags -->
       <div>
-        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Content</label>
-        <textarea id="ne-content" rows="8" placeholder="Write your thoughts, analysis, or notes here…" class="notebook-editor"></textarea>
+        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;display:block;margin-bottom:6px;">Tags <span style="font-weight:400;text-transform:none;letter-spacing:0;">(comma separated)</span></label>
+        <input type="text" id="ne-tags-input" placeholder="pre-market, lesson-learned, EURUSD, breakout…"
+          style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:12px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+          oninput="onNbContentChange()">
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;" id="ne-suggested-tags">
+          <!-- Suggested existing tags rendered here by JS (optional enhancement) -->
+        </div>
       </div>
+
+      <!-- Link to trade (optional) -->
       <div>
-        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Tags</label>
-        <input type="text" id="ne-tags" placeholder="analysis, strategy, review… (comma separated)">
+        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;display:block;margin-bottom:6px;">🔗 Linked Trade ID <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+        <input type="text" id="ne-linked-trade" placeholder="Paste a trade ID to link this note to a specific trade"
+          style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:12px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+          oninput="onNbContentChange()">
       </div>
     </div>
-    <input type="hidden" id="ne-edit-id">
-    <input type="hidden" id="ne-notebook-id">
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
-      <button id="ne-delete-btn" onclick="deleteNoteEntry()" class="btn btn-danger" style="display:none;">Delete</button>
-      <button onclick="saveNoteEntry()" class="btn btn-primary" style="padding:11px 28px;font-size:13px;">Save Entry</button>
+
+    <!-- Footer actions -->
+    <div style="display:flex;gap:10px;justify-content:space-between;align-items:center;padding:14px 22px;border-top:1px solid var(--border);flex-shrink:0;">
+      <button id="ne-delete-btn" onclick="deleteNoteEntry()" class="btn btn-danger" style="display:none;align-items:center;gap:5px;font-size:12px;">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        Delete
+      </button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button onclick="closeNoteEntryModal()" class="btn btn-ghost" style="padding:10px 18px;font-size:12px;">Close</button>
+        <button onclick="saveNoteEntry()" class="btn btn-primary" style="padding:10px 24px;font-size:13px;">Save Entry</button>
+      </div>
     </div>
   </div>
 </div>
