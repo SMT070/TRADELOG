@@ -1839,157 +1839,161 @@
 <!-- ══════════════════════════════════════════ -->
 <!--  OVERVIEW PAGE                            -->
 <!-- ══════════════════════════════════════════ -->
-<div class="page" id="page-overview" style="display:flex;flex-direction:column;height:100vh;overflow:hidden;box-sizing:border-box;background:var(--bg);">
-
-  <!-- ── ROW 1: STATS BAR ── -->
-  <div id="ov-stats-bar" style="flex-shrink:0;display:flex;align-items:center;gap:0;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border);height:52px;">
-    <!-- Timeframe pills -->
-    <div style="display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;margin-right:20px;flex-shrink:0;">
-      <button onclick="ovSetRange('today')" class="ov-range-btn active" id="ovr-today" style="padding:4px 12px;border-radius:5px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--surface3);color:var(--text);transition:all .15s;">Today</button>
-      <button onclick="ovSetRange('week')"  class="ov-range-btn" id="ovr-week"  style="padding:4px 12px;border-radius:5px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:none;color:var(--muted);transition:all .15s;">Week</button>
-      <button onclick="ovSetRange('month')" class="ov-range-btn" id="ovr-month" style="padding:4px 12px;border-radius:5px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:none;color:var(--muted);transition:all .15s;">Month</button>
-      <button onclick="ovSetRange('all')"   class="ov-range-btn" id="ovr-all"   style="padding:4px 12px;border-radius:5px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:none;color:var(--muted);transition:all .15s;">All</button>
-    </div>
-    <!-- Stats inline -->
-    <div style="display:flex;align-items:center;gap:0;flex:1;overflow:hidden;">
-      <div class="ov-stat-item">
-        <span class="ov-stat-lbl">P&amp;L</span>
-        <span class="ov-stat-val" id="ov-pnl" style="color:var(--text);">—</span>
-      </div>
-      <div class="ov-stat-sep"></div>
-      <div class="ov-stat-item">
-        <span class="ov-stat-lbl">Win Rate</span>
-        <span class="ov-stat-val" id="ov-wr">—</span>
-      </div>
-      <div class="ov-stat-sep"></div>
-      <div class="ov-stat-item">
-        <span class="ov-stat-lbl">Trades</span>
-        <span class="ov-stat-val" id="ov-count" style="color:var(--text);">—</span>
-      </div>
-      <div class="ov-stat-sep"></div>
-      <div class="ov-stat-item">
-        <span class="ov-stat-lbl">Best Trade</span>
-        <span class="ov-stat-val" id="ov-best" style="color:var(--green);">—</span>
-      </div>
-      <div class="ov-stat-sep"></div>
-      <div class="ov-stat-item">
-        <span class="ov-stat-lbl">Worst Trade</span>
-        <span class="ov-stat-val" id="ov-worst" style="color:var(--red);">—</span>
-      </div>
-      <div class="ov-stat-sep"></div>
-      <div class="ov-stat-item">
-        <span class="ov-stat-lbl">Avg Win/Loss</span>
-        <span class="ov-stat-val" id="ov-rr" style="color:var(--text);">—</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── ROW 2: MAIN CONTENT (3 cols) ── -->
-  <div style="flex:1;display:grid;grid-template-columns:220px 1fr 240px;gap:0;min-height:0;overflow:hidden;border-bottom:1px solid var(--border);">
-
-    <!-- LEFT: Mini Calendar -->
-    <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 12px;min-height:0;overflow:hidden;background:var(--surface);">
-      <!-- Calendar header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0;">
-        <button onclick="ovCalNav(-1)" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--muted);cursor:pointer;font-family:var(--sans);">‹</button>
-        <span id="ov-cal-title" style="font-size:12px;font-weight:800;color:var(--text);letter-spacing:-0.2px;"></span>
-        <button onclick="ovCalNav(1)" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--muted);cursor:pointer;font-family:var(--sans);">›</button>
-      </div>
-      <!-- Day headers -->
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:3px;flex-shrink:0;">
-        <div class="ov-dow">S</div><div class="ov-dow">M</div><div class="ov-dow">T</div>
-        <div class="ov-dow">W</div><div class="ov-dow">T</div><div class="ov-dow">F</div><div class="ov-dow">S</div>
-      </div>
-      <!-- Day grid -->
-      <div id="ov-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;flex:1;align-content:start;"></div>
-    </div>
-
-    <!-- CENTER: Trades List -->
-    <div style="display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--bg);">
-      <div style="flex-shrink:0;padding:12px 16px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);">
-        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text);">Trades</span>
-        <span id="ov-trades-period" style="font-size:10px;color:var(--muted);font-weight:600;"></span>
-      </div>
-      <div id="ov-trades-list" style="flex:1;overflow-y:auto;padding:6px 0;"></div>
-    </div>
-
-    <!-- RIGHT: Mindset Snapshot -->
-    <div style="border-left:1px solid var(--border);display:flex;flex-direction:column;padding:14px 14px;gap:12px;overflow-y:auto;background:var(--surface);">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text);flex-shrink:0;">Today's Mindset</div>
-
-      <!-- Mood -->
-      <div style="flex-shrink:0;">
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Mood</div>
-        <div id="ov-mood-display" style="font-size:13px;font-weight:700;color:var(--text);">—</div>
-      </div>
-
-      <!-- Confidence -->
-      <div style="flex-shrink:0;">
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Confidence</div>
-        <div id="ov-conf-display" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
-      </div>
-
-      <!-- Plan -->
-      <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;flex-shrink:0;">Pre-Market Plan</div>
-        <textarea id="ov-plan" placeholder="Key levels, news, setups to watch…"
-          style="flex:1;min-height:60px;max-height:120px;padding:9px 10px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;line-height:1.6;font-family:var(--sans);resize:none;box-sizing:border-box;outline:none;transition:border-color .15s;"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
-      </div>
-
-      <!-- Review -->
-      <div style="flex:1;display:flex;flex-direction:column;min-height:0;">
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;flex-shrink:0;">End of Day Review</div>
-        <textarea id="ov-review" placeholder="What worked? Lessons learned…"
-          style="flex:1;min-height:60px;max-height:120px;padding:9px 10px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;line-height:1.6;font-family:var(--sans);resize:none;box-sizing:border-box;outline:none;transition:border-color .15s;"
-          onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border)'"></textarea>
-      </div>
-
-      <!-- Save -->
-      <button onclick="ovSaveMindset()" style="flex-shrink:0;width:100%;padding:9px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity .15s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">
-        Save Today
-      </button>
-    </div>
-  </div>
-
-  <!-- ── ROW 3: EQUITY CURVE STRIP ── -->
-  <div style="flex-shrink:0;height:130px;display:flex;flex-direction:column;background:var(--surface);padding:8px 20px 10px;position:relative;">
-    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;flex-shrink:0;">Equity Curve</div>
-    <div style="flex:1;position:relative;min-height:0;">
-      <canvas id="ov-equity-chart" style="width:100%!important;height:100%!important;"></canvas>
-    </div>
-  </div>
-
-</div>
-<!-- styles for overview -->
 <style>
-.ov-stat-item { display:flex;flex-direction:column;gap:1px;padding:0 16px; }
-.ov-stat-lbl { font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted); }
-.ov-stat-val { font-size:14px;font-weight:800;letter-spacing:-0.4px;font-family:var(--mono); }
-.ov-stat-sep { width:1px;height:28px;background:var(--border);flex-shrink:0; }
-.ov-dow { text-align:center;font-size:8px;font-weight:700;color:var(--muted);letter-spacing:0.3px; }
-.ov-day {
-  aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  border-radius:5px;cursor:pointer;font-size:9px;font-weight:700;color:var(--muted);
-  transition:all .15s;position:relative;min-width:0;
+/* ── Overview layout ── */
+#page-overview { display:flex;flex-direction:column;height:100vh;overflow:hidden;box-sizing:border-box; }
+
+/* Stat cards row */
+.ov-cards-row { display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:14px 20px;flex-shrink:0; }
+.ov-card {
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;display:flex;flex-direction:column;gap:6px;
+  position:relative;overflow:hidden;transition:border-color .2s, transform .2s;cursor:default;
 }
-.ov-day:hover { opacity:.8; }
-.ov-day.ov-today { outline:1.5px solid var(--accent); }
-.ov-day.ov-selected { outline:2px solid var(--text);outline-offset:1px; }
-.ov-day.ov-green { background:var(--green-bg);color:var(--green); }
-.ov-day.ov-red   { background:var(--red-bg);color:var(--red); }
-.ov-day.ov-neutral { background:var(--surface3);color:var(--text2); }
-.ov-day.ov-inrange { opacity:1; }
-.ov-day.ov-outrange { opacity:0.35; }
-.ov-day-num { font-size:9px;font-weight:800;line-height:1; }
-.ov-day-pnl { font-size:7px;font-weight:700;line-height:1;margin-top:1px;font-family:var(--mono); }
-.ov-trade-row {
-  display:flex;align-items:center;padding:7px 16px;gap:10px;border-bottom:1px solid var(--border);
-  transition:background .12s;cursor:pointer;
-}
+.ov-card::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ov-accent,var(--accent));border-radius:14px 14px 0 0;opacity:.8; }
+.ov-card:hover { border-color:var(--border2);transform:translateY(-1px); }
+.ov-card-label { font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted); }
+.ov-card-value { font-size:24px;font-weight:900;letter-spacing:-1px;line-height:1;font-family:var(--mono); }
+.ov-card-sub { font-size:10px;color:var(--muted);font-weight:500; }
+
+/* Range selector */
+.ov-range-wrap { display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px; }
+.ov-range-btn { padding:4px 14px;border-radius:5px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:none;color:var(--muted);transition:all .15s; }
+.ov-range-btn.active { background:var(--surface3);color:var(--text); }
+
+/* Main body: trades left, calendar right */
+.ov-body { flex:1;display:grid;grid-template-columns:300px 1fr;min-height:0;overflow:hidden; }
+
+/* Trades panel */
+.ov-trades-panel { display:flex;flex-direction:column;border-right:1px solid var(--border);min-height:0;background:var(--surface); }
+.ov-trades-header { display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0; }
+.ov-trades-header-title { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text); }
+.ov-trades-header-sub { font-size:10px;color:var(--muted);font-weight:600; }
+.ov-trades-scroll { flex:1;overflow-y:auto; }
+.ov-trade-row { display:flex;align-items:center;padding:9px 16px;gap:0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s; }
 .ov-trade-row:hover { background:rgba(99,102,241,.05); }
 .ov-trade-row:last-child { border-bottom:none; }
+.ov-trade-date { font-size:11px;color:var(--muted);font-weight:600;width:54px;flex-shrink:0; }
+.ov-trade-symbol { font-size:13px;font-weight:800;color:var(--text);flex:1;letter-spacing:-0.2px; }
+.ov-trade-dir { font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;margin-right:10px;flex-shrink:0; }
+.ov-trade-pnl { font-size:13px;font-weight:800;font-family:var(--mono);width:72px;text-align:right;flex-shrink:0; }
+
+/* Calendar panel */
+.ov-cal-panel { display:flex;flex-direction:column;min-height:0;overflow:hidden; }
+.ov-cal-header { display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface); }
+.ov-cal-nav-btn { width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-size:16px;font-family:var(--sans);transition:all .15s;line-height:1; }
+.ov-cal-nav-btn:hover { border-color:var(--border2);color:var(--text); }
+.ov-cal-title { font-size:14px;font-weight:800;color:var(--text);letter-spacing:-0.3px; }
+.ov-cal-body { flex:1;display:flex;flex-direction:column;padding:12px 16px;min-height:0;overflow:hidden; }
+.ov-dow-row { display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px;flex-shrink:0; }
+.ov-dow { text-align:center;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:0.5px;padding:4px 0; }
+.ov-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:5px;flex:1;align-content:start; }
+.ov-cell {
+  border-radius:8px;cursor:pointer;transition:all .15s;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:7px 8px;min-height:64px;position:relative;overflow:hidden;
+  border:1px solid transparent;
+}
+.ov-cell:hover { filter:brightness(1.1); }
+.ov-cell.ov-empty { background:none;cursor:default;border:none; }
+.ov-cell.ov-blank { background:var(--surface);border:1px solid var(--border);opacity:.35;cursor:default; }
+.ov-cell.ov-green { background:rgba(0,255,187,0.12);border-color:rgba(0,255,187,0.18); }
+.ov-cell.ov-red   { background:rgba(255,59,92,0.12);border-color:rgba(255,59,92,0.18); }
+.ov-cell.ov-neutral { background:var(--surface2);border-color:var(--border); }
+.ov-cell.ov-today { outline:2px solid var(--accent);outline-offset:1px; }
+.ov-cell.ov-selected { outline:2px solid white;outline-offset:1px; }
+.ov-cell-num { font-size:11px;font-weight:700;color:var(--muted); }
+.ov-cell.ov-green .ov-cell-num { color:rgba(0,255,187,0.7); }
+.ov-cell.ov-red   .ov-cell-num { color:rgba(255,59,92,0.6); }
+.ov-cell-pnl { font-size:14px;font-weight:900;letter-spacing:-0.5px;line-height:1;font-family:var(--mono); }
+.ov-cell.ov-green .ov-cell-pnl { color:var(--green); }
+.ov-cell.ov-red   .ov-cell-pnl { color:var(--red); }
+.ov-cell-trades { font-size:9px;font-weight:600;color:var(--muted);margin-top:2px; }
+.ov-cell.ov-green .ov-cell-trades { color:rgba(0,255,187,0.5); }
+.ov-cell.ov-red   .ov-cell-trades { color:rgba(255,59,92,0.5); }
+.ov-cell.ov-outrange { opacity:.3; }
 </style>
+
+<div class="page" id="page-overview">
+
+  <!-- ── ROW 1: HEADER + STAT CARDS ── -->
+  <div style="flex-shrink:0;padding:14px 20px 0;background:var(--surface);border-bottom:1px solid var(--border);">
+    <!-- Header row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:3px;">At a Glance</div>
+        <div style="font-size:20px;font-weight:900;letter-spacing:-0.6px;color:var(--text);">Trading <span style="color:var(--accent);">Overview</span></div>
+      </div>
+      <div class="ov-range-wrap">
+        <button onclick="ovSetRange('today')" class="ov-range-btn active" id="ovr-today">Today</button>
+        <button onclick="ovSetRange('week')"  class="ov-range-btn" id="ovr-week">Week</button>
+        <button onclick="ovSetRange('month')" class="ov-range-btn" id="ovr-month">Month</button>
+        <button onclick="ovSetRange('all')"   class="ov-range-btn" id="ovr-all">All</button>
+      </div>
+    </div>
+    <!-- Stat cards -->
+    <div class="ov-cards-row" style="padding:0 0 14px;">
+      <div class="ov-card" style="--ov-accent:var(--green);">
+        <div class="ov-card-label">Net P&amp;L</div>
+        <div class="ov-card-value" id="ov-pnl" style="color:var(--text);">—</div>
+        <div class="ov-card-sub" id="ov-pnl-sub">0 trades</div>
+      </div>
+      <div class="ov-card" style="--ov-accent:#6366f1;">
+        <div class="ov-card-label">Win Rate</div>
+        <div class="ov-card-value" id="ov-wr" style="color:var(--text);">—</div>
+        <div class="ov-card-sub" id="ov-wr-sub">0W / 0L</div>
+      </div>
+      <div class="ov-card" style="--ov-accent:var(--yellow);">
+        <div class="ov-card-label">Profit Factor</div>
+        <div class="ov-card-value" id="ov-pf" style="color:var(--text);">—</div>
+        <div class="ov-card-sub">gross win ÷ loss</div>
+      </div>
+      <div class="ov-card" style="--ov-accent:var(--green);">
+        <div class="ov-card-label">Best Trade</div>
+        <div class="ov-card-value" id="ov-best" style="color:var(--green);">—</div>
+        <div class="ov-card-sub" id="ov-best-sym">—</div>
+      </div>
+      <div class="ov-card" style="--ov-accent:var(--red);">
+        <div class="ov-card-label">Worst Trade</div>
+        <div class="ov-card-value" id="ov-worst" style="color:var(--red);">—</div>
+        <div class="ov-card-sub" id="ov-worst-sym">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ROW 2: TRADES LEFT + CALENDAR RIGHT ── -->
+  <div class="ov-body">
+
+    <!-- LEFT: Trades list -->
+    <div class="ov-trades-panel">
+      <div class="ov-trades-header">
+        <span class="ov-trades-header-title">Recent Trades</span>
+        <span class="ov-trades-header-sub" id="ov-trades-period"></span>
+      </div>
+      <div class="ov-trades-scroll" id="ov-trades-list"></div>
+    </div>
+
+    <!-- RIGHT: Calendar -->
+    <div class="ov-cal-panel">
+      <div class="ov-cal-header">
+        <button class="ov-cal-nav-btn" onclick="ovCalNav(-1)">‹</button>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="ov-cal-title" id="ov-cal-title"></span>
+          <button onclick="ovCalGoToday()" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Today</button>
+        </div>
+        <button class="ov-cal-nav-btn" onclick="ovCalNav(1)">›</button>
+      </div>
+      <div class="ov-cal-body">
+        <div class="ov-dow-row">
+          <div class="ov-dow">Sun</div><div class="ov-dow">Mon</div><div class="ov-dow">Tue</div>
+          <div class="ov-dow">Wed</div><div class="ov-dow">Thu</div><div class="ov-dow">Fri</div><div class="ov-dow">Sat</div>
+        </div>
+        <div class="ov-grid" id="ov-cal-grid"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════ -->
 <!--  DASHBOARD PAGE                           -->
@@ -11976,39 +11980,40 @@ window.addEventListener('resize', () => {
 <script>
 (function() {
 
-  // ── State ──
-  let ovRange = 'today';
+  let ovRange = 'month';
   let ovCalYear, ovCalMonth;
-  let ovSelectedDay = null; // 'YYYY-MM-DD' or null
-  let ovEquityChart = null;
+  let ovSelectedDay = null;
 
-  // ── Helpers ──
-  function ovGetTradesInRange(range, refDate) {
-    const now = refDate || new Date();
+  // ── Filter trades by range ──
+  function ovGetFiltered(range) {
+    const now = new Date();
     const today = now.toISOString().slice(0,10);
     return trades.filter(t => {
       const d = (t.closeDate || t.date || '').slice(0,10);
       if (!d) return false;
       if (range === 'today') return d === today;
       if (range === 'week') {
-        const mon = new Date(now); mon.setDate(now.getDate() - now.getDay() + (now.getDay()===0?-6:1)); mon.setHours(0,0,0,0);
+        const day = now.getDay();
+        const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1)); mon.setHours(0,0,0,0);
         const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
-        const td = new Date(d + 'T00:00:00');
+        const td = new Date(d + 'T12:00:00');
         return td >= mon && td <= sun;
       }
       if (range === 'month') return d.slice(0,7) === today.slice(0,7);
-      return true; // all
+      return true;
     });
   }
 
   function ovFmt(v) {
     const s = getCurrencySymbol();
-    return (v >= 0 ? '+' + s : '-' + s) + Math.abs(v).toFixed(2);
+    const abs = Math.abs(v);
+    return (v >= 0 ? '+' + s : '-' + s) + abs.toFixed(2);
   }
   function ovFmtShort(v) {
     const s = getCurrencySymbol();
     const abs = Math.abs(v);
-    if (abs >= 1000) return (v < 0 ? '-' + s : s) + (abs / 1000).toFixed(1) + 'k';
+    if (abs >= 10000) return (v<0?'-'+s:s)+(abs/1000).toFixed(0)+'k';
+    if (abs >= 1000)  return (v<0?'-'+s:s)+(abs/1000).toFixed(1)+'k';
     return (v >= 0 ? '+' + s : '-' + s) + abs.toFixed(0);
   }
 
@@ -12017,68 +12022,68 @@ window.addEventListener('resize', () => {
     ovRange = r;
     ovSelectedDay = null;
     document.querySelectorAll('.ov-range-btn').forEach(b => {
-      const active = b.id === 'ovr-' + r;
-      b.style.background = active ? 'var(--surface3)' : 'none';
-      b.style.color = active ? 'var(--text)' : 'var(--muted)';
+      const on = b.id === 'ovr-' + r;
+      b.classList.toggle('active', on);
     });
     renderOverview();
   };
 
-  // ── Calendar navigation ──
+  // ── Calendar nav ──
   window.ovCalNav = function(dir) {
     ovCalMonth += dir;
     if (ovCalMonth > 11) { ovCalMonth = 0; ovCalYear++; }
     if (ovCalMonth < 0)  { ovCalMonth = 11; ovCalYear--; }
     renderOvCalendar();
   };
-
-  // ── Mindset save ──
-  window.ovSaveMindset = function() {
-    const key = new Date().toISOString().slice(0,10);
-    const data = getMindsetData();
-    if (!data.entries) data.entries = {};
-    if (!data.entries[key]) data.entries[key] = {};
-    data.entries[key].plan   = document.getElementById('ov-plan').value;
-    data.entries[key].review = document.getElementById('ov-review').value;
-    localStorage.setItem(MINDSET_KEY, JSON.stringify(data));
-    if (typeof saveUserDataToSupabase === 'function') saveUserDataToSupabase();
-    toast('Mindset saved!', 'success');
+  window.ovCalGoToday = function() {
+    const now = new Date();
+    ovCalYear = now.getFullYear();
+    ovCalMonth = now.getMonth();
+    renderOvCalendar();
+  };
+  window.ovSelectDay = function(dateStr) {
+    ovSelectedDay = ovSelectedDay === dateStr ? null : dateStr;
+    renderOvCalendar();
+    renderOvTrades();
   };
 
-  // ── Stats bar render ──
+  // ── Stats cards ──
   function renderOvStats(filtered) {
     const sym = getCurrencySymbol();
     const totalPnl = filtered.reduce((s, t) => s + getPnl(t), 0);
-    const wins = filtered.filter(t => getResult(t) === 'win').length;
-    const losses = filtered.filter(t => getResult(t) === 'loss').length;
-    const wr = (wins + losses) > 0 ? Math.round(wins / (wins + losses) * 100) : null;
+    const wins   = filtered.filter(t => getResult(t) === 'win');
+    const losses = filtered.filter(t => getResult(t) === 'loss');
+    const wr = (wins.length + losses.length) > 0 ? Math.round(wins.length / (wins.length + losses.length) * 100) : null;
     const pnls = filtered.map(t => getPnl(t));
-    const best = pnls.length ? Math.max(...pnls) : null;
-    const worst = pnls.length ? Math.min(...pnls) : null;
-    const winPnls = filtered.filter(t => getResult(t)==='win').map(t => getPnl(t));
-    const lossPnls = filtered.filter(t => getResult(t)==='loss').map(t => getPnl(t));
-    const avgWin = winPnls.length ? winPnls.reduce((a,b)=>a+b,0)/winPnls.length : null;
-    const avgLoss = lossPnls.length ? Math.abs(lossPnls.reduce((a,b)=>a+b,0)/lossPnls.length) : null;
+    const bestPnl  = pnls.length ? Math.max(...pnls) : null;
+    const worstPnl = pnls.length ? Math.min(...pnls) : null;
+    const bestT  = bestPnl  !== null ? filtered.find(t => getPnl(t) === bestPnl)  : null;
+    const worstT = worstPnl !== null ? filtered.find(t => getPnl(t) === worstPnl) : null;
+    const grossWin  = wins.reduce((s,t)=>s+getPnl(t),0);
+    const grossLoss = Math.abs(losses.reduce((s,t)=>s+getPnl(t),0));
+    const pf = grossLoss > 0 ? (grossWin / grossLoss).toFixed(2) : wins.length > 0 ? '∞' : '—';
 
     const pnlEl = document.getElementById('ov-pnl');
     if (pnlEl) { pnlEl.textContent = filtered.length ? ovFmt(totalPnl) : '—'; pnlEl.style.color = totalPnl >= 0 ? 'var(--green)' : 'var(--red)'; }
+    const pnlSub = document.getElementById('ov-pnl-sub');
+    if (pnlSub) pnlSub.textContent = filtered.length + ' trade' + (filtered.length !== 1 ? 's' : '');
     const wrEl = document.getElementById('ov-wr');
     if (wrEl) { wrEl.textContent = wr !== null ? wr + '%' : '—'; wrEl.style.color = wr !== null ? (wr >= 50 ? 'var(--green)' : 'var(--red)') : 'var(--text)'; }
-    const cEl = document.getElementById('ov-count');
-    if (cEl) cEl.textContent = filtered.length;
+    const wrSub = document.getElementById('ov-wr-sub');
+    if (wrSub) wrSub.textContent = wins.length + 'W / ' + losses.length + 'L';
+    const pfEl = document.getElementById('ov-pf');
+    if (pfEl) { pfEl.textContent = pf; pfEl.style.color = typeof pf === 'string' && parseFloat(pf) >= 1.5 ? 'var(--green)' : parseFloat(pf) < 1 ? 'var(--red)' : 'var(--yellow)'; }
     const bEl = document.getElementById('ov-best');
-    if (bEl) { bEl.textContent = best !== null ? ovFmt(best) : '—'; }
+    if (bEl) { bEl.textContent = bestPnl !== null ? ovFmt(bestPnl) : '—'; }
+    const bSym = document.getElementById('ov-best-sym');
+    if (bSym) bSym.textContent = bestT ? bestT.symbol : '—';
     const wEl = document.getElementById('ov-worst');
-    if (wEl) { wEl.textContent = worst !== null ? ovFmt(worst) : '—'; }
-    const rrEl = document.getElementById('ov-rr');
-    if (rrEl) {
-      if (avgWin !== null && avgLoss !== null && avgLoss > 0) {
-        rrEl.textContent = sym + avgWin.toFixed(0) + ' / ' + sym + avgLoss.toFixed(0);
-      } else { rrEl.textContent = '—'; }
-    }
+    if (wEl) { wEl.textContent = worstPnl !== null ? ovFmt(worstPnl) : '—'; }
+    const wSym = document.getElementById('ov-worst-sym');
+    if (wSym) wSym.textContent = worstT ? worstT.symbol : '—';
   }
 
-  // ── Calendar render ──
+  // ── Calendar ──
   function renderOvCalendar() {
     const titleEl = document.getElementById('ov-cal-title');
     const gridEl  = document.getElementById('ov-cal-grid');
@@ -12087,78 +12092,73 @@ window.addEventListener('resize', () => {
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     titleEl.textContent = months[ovCalMonth] + ' ' + ovCalYear;
 
-    // Build day PnL map for this month
+    // Build daily P&L map
     const dayMap = {};
+    const dayCount = {};
     trades.forEach(t => {
       const d = (t.closeDate || t.date || '').slice(0,10);
-      if (!d || d.slice(0,7) !== ovCalYear + '-' + String(ovCalMonth+1).padStart(2,'0')) return;
-      if (!dayMap[d]) dayMap[d] = 0;
+      if (!d) return;
+      if (!dayMap[d]) { dayMap[d] = 0; dayCount[d] = 0; }
       dayMap[d] += getPnl(t);
+      dayCount[d]++;
     });
 
     const today = new Date().toISOString().slice(0,10);
-    const firstDay = new Date(ovCalYear, ovCalMonth, 1).getDay();
-    const daysInMonth = new Date(ovCalYear, ovCalMonth+1, 0).getDate();
+    const firstDow = new Date(ovCalYear, ovCalMonth, 1).getDay();
+    const daysInMonth = new Date(ovCalYear, ovCalMonth + 1, 0).getDate();
 
-    // Determine range highlight
+    // Which dates are "in range"
+    const inRange = new Set();
     const now = new Date();
-    const inRangeDays = new Set();
-    if (ovRange !== 'all') {
-      for (let d=1; d<=daysInMonth; d++) {
-        const dateStr = ovCalYear + '-' + String(ovCalMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-        const ranged = ovGetTradesInRange(ovRange);
-        // Check if this day matches the range
-        if (ovRange === 'today') {
-          if (dateStr === today) inRangeDays.add(dateStr);
-        } else if (ovRange === 'week') {
-          const mon = new Date(now); mon.setDate(now.getDate() - now.getDay() + (now.getDay()===0?-6:1)); mon.setHours(0,0,0,0);
-          const sun = new Date(mon); sun.setDate(mon.getDate()+6); sun.setHours(23,59,59,999);
-          const td = new Date(dateStr + 'T00:00:00');
-          if (td >= mon && td <= sun) inRangeDays.add(dateStr);
-        } else if (ovRange === 'month') {
-          if (dateStr.slice(0,7) === today.slice(0,7)) inRangeDays.add(dateStr);
-        }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = ovCalYear + '-' + String(ovCalMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      if (ovRange === 'all') { inRange.add(ds); continue; }
+      const tds = new Date(ds + 'T12:00:00');
+      if (ovRange === 'today') { if (ds === today) inRange.add(ds); }
+      else if (ovRange === 'week') {
+        const day = now.getDay();
+        const mon = new Date(now); mon.setDate(now.getDate() - (day===0?6:day-1)); mon.setHours(0,0,0,0);
+        const sun = new Date(mon); sun.setDate(mon.getDate()+6); sun.setHours(23,59,59,999);
+        if (tds >= mon && tds <= sun) inRange.add(ds);
+      } else if (ovRange === 'month') {
+        if (ds.slice(0,7) === today.slice(0,7)) inRange.add(ds);
       }
     }
 
     let html = '';
-    // empty cells before first day
-    for (let i = 0; i < firstDay; i++) html += '<div></div>';
+    for (let i = 0; i < firstDow; i++) html += '<div class="ov-cell ov-empty"></div>';
     for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = ovCalYear + '-' + String(ovCalMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-      const pnl = dayMap[dateStr];
+      const ds = ovCalYear + '-' + String(ovCalMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      const pnl   = dayMap[ds];
+      const count = dayCount[ds] || 0;
       const hasTrades = pnl !== undefined;
-      const isToday = dateStr === today;
-      const isSelected = dateStr === ovSelectedDay;
-      const isInRange = ovRange === 'all' || inRangeDays.has(dateStr);
-      let cls = 'ov-day';
+      const isToday    = ds === today;
+      const isSelected = ds === ovSelectedDay;
+      const isInRange  = inRange.has(ds);
+      let cls = 'ov-cell';
       if (hasTrades) {
-        if (pnl > 0) cls += ' ov-green';
+        if (pnl > 0)      cls += ' ov-green';
         else if (pnl < 0) cls += ' ov-red';
-        else cls += ' ov-neutral';
+        else              cls += ' ov-neutral';
+      } else {
+        cls += ' ov-blank';
       }
-      if (isToday) cls += ' ov-today';
+      if (isToday)    cls += ' ov-today';
       if (isSelected) cls += ' ov-selected';
-      cls += isInRange ? ' ov-inrange' : ' ov-outrange';
-      const pnlLabel = hasTrades ? '<div class="ov-day-pnl">' + ovFmtShort(pnl) + '</div>' : '';
-      html += `<div class="${cls}" onclick="ovSelectDay('${dateStr}')"><div class="ov-day-num">${d}</div>${pnlLabel}</div>`;
+      if (!isInRange) cls += ' ov-outrange';
+
+      const pnlHtml  = hasTrades ? `<div class="ov-cell-pnl">${ovFmtShort(pnl)}</div><div class="ov-cell-trades">${count} trade${count!==1?'s':''}</div>` : '';
+      html += `<div class="${cls}" onclick="ovSelectDay('${ds}')">
+        <div class="ov-cell-num">${d}</div>
+        <div>${pnlHtml}</div>
+      </div>`;
     }
     gridEl.innerHTML = html;
   }
 
-  window.ovSelectDay = function(dateStr) {
-    if (ovSelectedDay === dateStr) {
-      ovSelectedDay = null;
-    } else {
-      ovSelectedDay = dateStr;
-    }
-    renderOvCalendar();
-    renderOvTradesList();
-  };
-
-  // ── Trades list render ──
-  function renderOvTradesList() {
-    const listEl = document.getElementById('ov-trades-list');
+  // ── Trades list ──
+  function renderOvTrades() {
+    const listEl   = document.getElementById('ov-trades-list');
     const periodEl = document.getElementById('ov-trades-period');
     if (!listEl) return;
 
@@ -12167,169 +12167,42 @@ window.addEventListener('resize', () => {
       filtered = trades.filter(t => (t.closeDate || t.date || '').slice(0,10) === ovSelectedDay);
       if (periodEl) periodEl.textContent = ovSelectedDay;
     } else {
-      filtered = ovGetTradesInRange(ovRange);
-      const labels = { today:'Today', week:'This Week', month:'This Month', all:'All Time' };
-      if (periodEl) periodEl.textContent = labels[ovRange] + ' — ' + filtered.length + ' trade' + (filtered.length!==1?'s':'');
+      filtered = ovGetFiltered(ovRange);
+      const lbl = { today:'Today', week:'This Week', month:'This Month', all:'All Time' };
+      if (periodEl) periodEl.textContent = lbl[ovRange] + ' — ' + filtered.length;
     }
 
     if (!filtered.length) {
-      listEl.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--muted);font-size:12px;">No trades for this period</div>';
+      listEl.innerHTML = `<div style="padding:40px 16px;text-align:center;color:var(--muted);font-size:12px;">
+        <div style="font-size:28px;margin-bottom:8px;">📭</div>No trades for this period</div>`;
       return;
     }
 
-    const sorted = [...filtered].sort((a,b) => {
-      const da = (a.closeDate || a.date || '');
-      const db = (b.closeDate || b.date || '');
-      return db.localeCompare(da);
-    });
-
+    const sorted = [...filtered].sort((a,b) => (b.closeDate||b.date||'').localeCompare(a.closeDate||a.date||''));
     listEl.innerHTML = sorted.map(t => {
       const pnl = getPnl(t);
       const res = getResult(t);
       const pnlColor = res === 'win' ? 'var(--green)' : res === 'loss' ? 'var(--red)' : 'var(--yellow)';
+      const dirBg    = t.dir === 'BUY' ? 'var(--green-bg)' : 'var(--red-bg)';
       const dirColor = t.dir === 'BUY' ? 'var(--green)' : 'var(--red)';
-      const d = (t.closeDate || t.date || '').slice(0,10);
+      const d = (t.closeDate || t.date || '').slice(5,10); // MM-DD
       return `<div class="ov-trade-row" onclick="switchPage('trades')">
-        <div style="flex:0 0 70px;font-size:10px;color:var(--muted);font-weight:600;">${d.slice(5)}</div>
-        <div style="flex:1;font-size:13px;font-weight:800;color:var(--text);letter-spacing:-0.2px;">${t.symbol||'—'}</div>
-        <div style="flex:0 0 36px;font-size:9px;font-weight:700;color:${dirColor};text-transform:uppercase;">${t.dir||''}</div>
-        <div style="flex:0 0 80px;font-size:13px;font-weight:800;color:${pnlColor};font-family:var(--mono);text-align:right;">${ovFmt(pnl)}</div>
+        <span class="ov-trade-date">${d}</span>
+        <span class="ov-trade-symbol">${t.symbol||'—'}</span>
+        <span class="ov-trade-dir" style="background:${dirBg};color:${dirColor};">${t.dir||''}</span>
+        <span class="ov-trade-pnl" style="color:${pnlColor};">${ovFmt(pnl)}</span>
       </div>`;
     }).join('');
-  }
-
-  // ── Mindset snapshot render ──
-  function renderOvMindset() {
-    const todayKey = new Date().toISOString().slice(0,10);
-    const data = getMindsetData();
-    const entry = (data.entries || {})[todayKey] || {};
-
-    // Mood
-    const moodEl = document.getElementById('ov-mood-display');
-    if (moodEl) {
-      const emotionEmojis = { 'Calm':'😌','Focused':'🎯','Confident':'💪','Excited':'🔥','Anxious':'😰','Frustrated':'😤','FOMO':'😱','Bored':'😑','Greedy':'🤑','Patient':'🧘' };
-      moodEl.textContent = entry.emotion ? (emotionEmojis[entry.emotion] || '') + ' ' + entry.emotion : '—';
-    }
-
-    // Confidence pills
-    const confEl = document.getElementById('ov-conf-display');
-    if (confEl) {
-      const conf = entry.confidence || 0;
-      if (conf > 0) {
-        confEl.innerHTML = Array.from({length:10}, (_,i) => {
-          const filled = i < conf;
-          return `<div style="width:16px;height:16px;border-radius:4px;background:${filled?'var(--accent)':'var(--surface3)'};border:1px solid ${filled?'var(--accent)':'var(--border)'};"></div>`;
-        }).join('') + `<span style="font-size:11px;font-weight:800;color:var(--accent);margin-left:4px;">${conf}/10</span>`;
-      } else {
-        confEl.innerHTML = '<span style="font-size:12px;color:var(--muted);">—</span>';
-      }
-    }
-
-    // Plan & Review
-    const planEl = document.getElementById('ov-plan');
-    if (planEl) planEl.value = entry.plan || '';
-    const reviewEl = document.getElementById('ov-review');
-    if (reviewEl) reviewEl.value = entry.review || '';
-  }
-
-  // ── Equity chart render ──
-  function renderOvEquity(filtered) {
-    const canvas = document.getElementById('ov-equity-chart');
-    if (!canvas) return;
-    if (ovEquityChart) { ovEquityChart.destroy(); ovEquityChart = null; }
-
-    const sorted = [...filtered].sort((a,b) => {
-      const da = a.closeDate || a.date || '';
-      const db = b.closeDate || b.date || '';
-      return da.localeCompare(db);
-    });
-
-    if (!sorted.length) {
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      return;
-    }
-
-    let running = 0;
-    const labels = [];
-    const data = [];
-    sorted.forEach(t => {
-      running += getPnl(t);
-      const d = (t.closeDate || t.date || '').slice(0,10);
-      labels.push(d.slice(5));
-      data.push(+running.toFixed(2));
-    });
-
-    // Add starting point
-    labels.unshift('');
-    data.unshift(0);
-
-    const finalVal = data[data.length-1];
-    const lineColor = finalVal >= 0 ? 'var(--green)' : 'var(--red)';
-    const sym = getCurrencySymbol();
-
-    ovEquityChart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          data,
-          borderColor: finalVal >= 0 ? '#00FFBB' : '#FF3B5C',
-          borderWidth: 2,
-          pointRadius: data.length > 20 ? 0 : 2,
-          pointHoverRadius: 4,
-          fill: true,
-          tension: 0.3,
-          backgroundColor: finalVal >= 0
-            ? 'rgba(0,255,187,0.07)'
-            : 'rgba(255,59,92,0.07)'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 300 },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: v => sym + v.raw.toFixed(2)
-            }
-          }
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { color: '#475569', font: { size: 8 }, maxTicksLimit: 8 },
-            border: { display: false }
-          },
-          y: {
-            grid: { color: 'rgba(30,41,59,.35)' },
-            ticks: {
-              color: '#475569',
-              font: { size: 8 },
-              callback: v => {
-                const abs = Math.abs(v);
-                return (v < 0 ? '-' + sym : sym) + (abs >= 1000 ? (abs/1000).toFixed(1)+'k' : abs.toFixed(0));
-              }
-            },
-            border: { display: false }
-          }
-        }
-      }
-    });
   }
 
   // ── Master render ──
   function renderOverview() {
     const filtered = ovSelectedDay
       ? trades.filter(t => (t.closeDate || t.date || '').slice(0,10) === ovSelectedDay)
-      : ovGetTradesInRange(ovRange);
+      : ovGetFiltered(ovRange);
     renderOvStats(filtered);
     renderOvCalendar();
-    renderOvTradesList();
-    renderOvMindset();
-    renderOvEquity(filtered);
+    renderOvTrades();
   }
 
   // ── Init ──
@@ -12337,6 +12210,12 @@ window.addEventListener('resize', () => {
     const now = new Date();
     ovCalYear  = now.getFullYear();
     ovCalMonth = now.getMonth();
+    // Reset to month range on open
+    ovRange = 'month';
+    ovSelectedDay = null;
+    document.querySelectorAll('.ov-range-btn').forEach(b => {
+      b.classList.toggle('active', b.id === 'ovr-month');
+    });
     renderOverview();
   };
 
