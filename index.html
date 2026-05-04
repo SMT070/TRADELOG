@@ -1107,77 +1107,120 @@
   }
 
   /* ── NOTEBOOKS PAGE ── */
-  .notebook-card {
-    background:var(--surface); border:1px solid var(--border);
-    border-radius:var(--r); padding:20px; cursor:pointer;
-    transition:all .2s; position:relative; overflow:hidden;
+  /* ── NOTEBOOKS ─────────────────────────────────────────────── */
+  .nb-sidebar-item {
+    display:flex; align-items:center; gap:10px;
+    padding:12px 14px; border-radius:12px; cursor:pointer;
+    border:1px solid var(--border); background:var(--surface);
+    transition:all .18s; position:relative; overflow:hidden;
   }
-  .notebook-card:hover { border-color:var(--border2); transform:translateY(-2px); box-shadow:0 12px 32px rgba(0,0,0,.25); }
-  .notebook-card .nb-accent {
-    position:absolute; top:0; left:0; right:0; height:3px;
-    background:var(--nb-color, var(--accent));
+  .nb-sidebar-item:hover { border-color:var(--border2); background:var(--surface2); }
+  .nb-sidebar-item.active { background:var(--nb-bg,rgba(99,102,241,.08)); border-color:var(--nb-color,var(--accent)); }
+  .nb-sidebar-item .nb-left-bar {
+    position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:var(--nb-color,var(--accent)); border-radius:3px 0 0 3px; opacity:0; transition:opacity .18s;
   }
-  .notebook-entry {
-    padding:14px 18px; border-bottom:1px solid var(--border);
-    cursor:pointer; transition:background .12s; position:relative;
+  .nb-sidebar-item.active .nb-left-bar { opacity:1; }
+  .nb-sidebar-item .nb-icon {
+    width:32px; height:32px; border-radius:9px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:15px;
+    background:var(--nb-icon-bg,rgba(99,102,241,.12));
+    border:1px solid var(--nb-icon-border,rgba(99,102,241,.2));
   }
-  .notebook-entry:hover { background:var(--surface2); }
-  .notebook-entry.pinned { background: rgba(99,102,241,.05); }
-  .notebook-entry.pinned::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent); border-radius:3px 0 0 3px; }
-  .notebook-editor {
-    width:100%; min-height:240px; background:var(--surface2);
-    border:1px solid var(--border); border-radius:var(--r-sm);
-    color:var(--text); font-family:var(--sans); font-size:13px;
-    line-height:1.75; padding:14px 16px; resize:vertical;
-    outline:none; transition:border-color .2s;
-  }
-  .notebook-editor:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,.1); }
+  .nb-sidebar-item .nb-info { flex:1; min-width:0; }
+  .nb-sidebar-item .nb-name { font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nb-sidebar-item .nb-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+  .nb-sidebar-item .nb-count { font-size:11px; font-weight:700; color:var(--muted); flex-shrink:0; background:var(--surface3); padding:2px 7px; border-radius:20px; }
 
-  /* Rich editor toolbar */
-  .nb-toolbar { display:flex; align-items:center; gap:2px; padding:8px 10px; background:var(--surface3); border:1px solid var(--border); border-bottom:none; border-radius:var(--r-sm) var(--r-sm) 0 0; flex-wrap:wrap; }
-  .nb-toolbar button { width:28px; height:28px; display:flex; align-items:center; justify-content:center; background:none; border:1px solid transparent; border-radius:6px; color:var(--muted); cursor:pointer; font-size:12px; font-weight:700; font-family:var(--sans); transition:all .12s; }
-  .nb-toolbar button:hover { background:var(--surface2); border-color:var(--border2); color:var(--text); }
-  .nb-toolbar button.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
-  .nb-toolbar .tb-sep { width:1px; height:18px; background:var(--border2); margin:0 4px; flex-shrink:0; }
-  .nb-toolbar-attached .notebook-editor { border-radius:0 0 var(--r-sm) var(--r-sm); min-height:280px; }
+  /* Entry cards in the right panel */
+  .nb-entry-card {
+    padding:16px 20px; border-radius:12px; margin:0 16px 8px;
+    background:var(--surface2); border:1px solid var(--border);
+    cursor:pointer; transition:all .16s; position:relative; overflow:hidden;
+  }
+  .nb-entry-card:hover { border-color:var(--border2); background:var(--surface3); transform:translateY(-1px); box-shadow:0 4px 20px rgba(0,0,0,.2); }
+  .nb-entry-card.pinned { border-left:3px solid var(--accent); }
+  .nb-entry-card .entry-title { font-size:14px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nb-entry-card .entry-preview { font-size:12px; color:var(--text2); line-height:1.55; margin-top:5px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .nb-entry-card .entry-footer { display:flex; align-items:center; gap:6px; margin-top:9px; flex-wrap:wrap; }
+  .nb-tag { display:inline-block; padding:2px 9px; border-radius:20px; font-size:10px; font-weight:700; background:var(--surface); border:1px solid var(--border); color:var(--muted); }
 
-  /* Markdown preview */
-  .nb-preview { width:100%; min-height:240px; background:var(--surface2); border:1px solid var(--border); border-radius:0 0 var(--r-sm) var(--r-sm); color:var(--text); font-family:var(--sans); font-size:13px; line-height:1.8; padding:14px 16px; overflow-y:auto; }
-  .nb-preview h1 { font-size:18px; font-weight:800; margin-bottom:10px; color:var(--text); }
-  .nb-preview h2 { font-size:15px; font-weight:700; margin-bottom:8px; color:var(--text); }
-  .nb-preview h3 { font-size:13px; font-weight:700; margin-bottom:6px; color:var(--text); }
-  .nb-preview p { margin-bottom:10px; color:var(--text2); }
-  .nb-preview strong { color:var(--text); font-weight:700; }
-  .nb-preview em { color:var(--text2); font-style:italic; }
-  .nb-preview ul, .nb-preview ol { padding-left:20px; margin-bottom:10px; color:var(--text2); }
-  .nb-preview li { margin-bottom:4px; }
-  .nb-preview code { background:var(--surface3); padding:2px 6px; border-radius:4px; font-size:12px; color:var(--accent); }
-  .nb-preview blockquote { border-left:3px solid var(--accent); padding-left:12px; color:var(--muted); font-style:italic; margin:10px 0; }
-  .nb-preview hr { border:none; border-top:1px solid var(--border); margin:14px 0; }
-  .nb-preview a { color:var(--accent); text-decoration:underline; }
+  /* Notebook search */
+  .nb-search-wrap { position:relative; }
+  .nb-search-wrap input {
+    width:100%; padding:9px 12px 9px 34px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:10px;
+    color:var(--text); font-size:12px; font-family:var(--sans); outline:none; transition:border-color .2s;
+  }
+  .nb-search-wrap input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,.08); }
+  .nb-search-wrap svg { position:absolute; left:11px; top:50%; transform:translateY(-50%); pointer-events:none; }
 
-  /* Tag chips */
-  .nb-tag-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; cursor:pointer; transition:all .12s; border:1px solid transparent; }
-  .nb-tag-chip.active { border-color:var(--accent); background:rgba(99,102,241,.12); color:var(--accent); }
-  .nb-tag-chip:not(.active) { background:var(--surface3); color:var(--muted); }
+  /* Tag filter pills */
+  .nb-tag-chip {
+    display:inline-flex; align-items:center; padding:4px 12px;
+    border-radius:20px; font-size:11px; font-weight:600; cursor:pointer;
+    transition:all .15s; border:1px solid transparent; white-space:nowrap;
+  }
+  .nb-tag-chip.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
+  .nb-tag-chip:not(.active) { background:var(--surface2); border-color:var(--border); color:var(--muted); }
   .nb-tag-chip:hover { border-color:var(--border2); color:var(--text); }
 
-  /* Notebook search bar */
-  .nb-search-wrap { position:relative; }
-  .nb-search-wrap input { width:100%; padding:8px 10px 8px 30px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); color:var(--text); font-size:12px; font-family:var(--sans); outline:none; transition:border-color .2s; }
-  .nb-search-wrap input:focus { border-color:var(--accent); }
-  .nb-search-wrap svg { position:absolute; left:9px; top:50%; transform:translateY(-50%); pointer-events:none; }
+  /* Rich editor toolbar */
+  .nb-toolbar {
+    display:flex; align-items:center; gap:2px; padding:8px 12px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-bottom:none; border-radius:10px 10px 0 0; flex-wrap:wrap; gap:3px;
+  }
+  .nb-toolbar .tb-btn {
+    height:28px; min-width:28px; padding:0 6px;
+    display:flex; align-items:center; justify-content:center;
+    background:none; border:1px solid transparent; border-radius:7px;
+    color:var(--muted); cursor:pointer; font-size:11px; font-weight:700;
+    font-family:var(--sans); transition:all .12s; white-space:nowrap;
+  }
+  .nb-toolbar .tb-btn:hover { background:var(--surface3); border-color:var(--border); color:var(--text); }
+  .nb-toolbar .tb-btn.active { background:rgba(99,102,241,.15); border-color:rgba(99,102,241,.4); color:var(--accent); }
+  .nb-toolbar .tb-sep { width:1px; height:16px; background:var(--border2); margin:0 3px; flex-shrink:0; align-self:center; }
 
-  /* Daily recap template */
-  .recap-prompt { background:var(--surface3); border-left:3px solid var(--accent); border-radius:0 var(--r-sm) var(--r-sm) 0; padding:10px 14px; margin-bottom:10px; }
-  .recap-prompt label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--accent); display:block; margin-bottom:4px; }
-  .recap-prompt textarea { width:100%; background:transparent; border:none; color:var(--text2); font-family:var(--sans); font-size:12px; line-height:1.6; outline:none; resize:none; min-height:48px; }
+  /* Editor textarea */
+  .notebook-editor {
+    width:100%; min-height:300px; background:var(--surface2);
+    border:1px solid var(--border); border-top:none; border-radius:0;
+    color:var(--text); font-family:var(--sans); font-size:13.5px;
+    line-height:1.8; padding:16px 18px; resize:none;
+    outline:none; transition:border-color .2s; box-sizing:border-box;
+  }
+  .notebook-editor:focus { border-color:var(--accent); }
 
-  /* Word count / autosave indicator */
-  .nb-meta-bar { display:flex; align-items:center; justify-content:space-between; padding:6px 14px; background:var(--surface3); border:1px solid var(--border); border-top:none; border-radius:0 0 var(--r-sm) var(--r-sm); font-size:10px; color:var(--muted); }
+  /* Markdown preview */
+  .nb-preview {
+    width:100%; min-height:300px; background:var(--surface2);
+    border:1px solid var(--border); border-top:none; border-radius:0;
+    color:var(--text2); font-family:var(--sans); font-size:13.5px;
+    line-height:1.8; padding:16px 18px; overflow-y:auto; box-sizing:border-box;
+  }
+  .nb-preview h1,.nb-preview h2,.nb-preview h3 { color:var(--text); font-weight:800; margin:16px 0 8px; }
+  .nb-preview h1 { font-size:20px; } .nb-preview h2 { font-size:16px; } .nb-preview h3 { font-size:14px; }
+  .nb-preview p { margin-bottom:10px; }
+  .nb-preview strong { color:var(--text); font-weight:700; }
+  .nb-preview ul,.nb-preview ol { padding-left:22px; margin-bottom:10px; }
+  .nb-preview li { margin-bottom:4px; }
+  .nb-preview code { background:var(--surface3); padding:2px 6px; border-radius:5px; font-size:12px; color:var(--accent); }
+  .nb-preview blockquote { border-left:3px solid var(--accent); padding-left:14px; color:var(--muted); font-style:italic; margin:12px 0; }
+  .nb-preview hr { border:none; border-top:1px solid var(--border); margin:16px 0; }
+
+  /* Meta bar */
+  .nb-meta-bar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:7px 14px; background:var(--surface2);
+    border:1px solid var(--border); border-top:none; border-radius:0 0 10px 10px;
+    font-size:10px; color:var(--muted);
+  }
   .nb-autosave { display:flex; align-items:center; gap:5px; }
-  .nb-autosave-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:pulse-dot 2s infinite; }
-  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .nb-autosave-dot { width:6px; height:6px; border-radius:50%; background:var(--green); transition:background .3s; }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .nb-autosave-dot.unsaved { background:var(--yellow); animation:pulse-dot 1.2s infinite; }
+  @keyframes modalIn { from{opacity:0;transform:scale(.96) translateY(8px)} to{opacity:1;transform:scale(1) translateY(0)} }
 
   /* ── MOBILE ── */
   @media (max-width: 768px) {
@@ -10821,28 +10864,28 @@ function renderNotebooks() {
   if (emptyState) emptyState.style.display = 'none';
 
   list.innerHTML = notebooks.map(nb => {
-    const color   = nb.color || '#6366f1';
-    const entries = nb.entries || [];
+    const color    = nb.color || '#6366f1';
+    const entries  = nb.entries || [];
     const isActive = nb.id === activeNotebookId;
-    const pinnedCount = entries.filter(e=>e.pinned).length;
-    return `<div onclick="selectNotebook('${nb.id}')" style="
-      padding:12px 14px; border-radius:12px; cursor:pointer;
-      border:1px solid ${isActive?color:'var(--border)'};
-      background:${isActive?`${color}12`:'var(--surface)'};
-      transition:all .15s; position:relative; overflow:hidden;
-    " onmouseenter="if('${nb.id}'!=='${activeNotebookId}'){this.style.borderColor='var(--border2)'}" onmouseleave="if('${nb.id}'!=='${activeNotebookId}'){this.style.borderColor='${isActive?color:'var(--border)'}'}">
-      <div style="position:absolute;top:0;left:0;width:3px;height:100%;background:${color};border-radius:3px 0 0 3px;"></div>
-      <div style="display:flex;align-items:center;gap:9px;margin-bottom:3px;padding-left:6px;">
-        <div style="width:26px;height:26px;border-radius:7px;background:${color}20;border:1px solid ${color}40;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">${nb.emoji||'📓'}</div>
-        <div style="font-size:13px;font-weight:800;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nb.name}</div>
-        <span style="font-size:10px;font-weight:600;color:var(--muted);">${entries.length}</span>
+    const pinned   = entries.filter(e=>e.pinned).length;
+    const sorted   = [...entries].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const lastDate = sorted.length
+      ? new Date(sorted[0].date).toLocaleDateString('en-GB',{day:'numeric',month:'short'})
+      : null;
+    return `<div class="nb-sidebar-item${isActive?' active':''}"
+      style="--nb-color:${color};--nb-bg:${color}10;--nb-icon-bg:${color}15;--nb-icon-border:${color}30;"
+      onclick="selectNotebook('${nb.id}')">
+      <div class="nb-left-bar"></div>
+      <div class="nb-icon">${nb.emoji||'📓'}</div>
+      <div class="nb-info">
+        <div class="nb-name">${nb.name}</div>
+        <div class="nb-meta">${entries.length} entr${entries.length===1?'y':'ies'}${pinned?' · 📌 '+pinned:''}</div>
       </div>
-      ${nb.description ? `<div style="font-size:11px;color:var(--muted);line-height:1.4;padding-left:42px;margin-top:2px;">${nb.description}</div>` : ''}
-      ${pinnedCount ? `<div style="padding-left:42px;margin-top:4px;font-size:10px;color:${color};font-weight:700;">📌 ${pinnedCount} pinned</div>` : ''}
+      <span class="nb-count">${lastDate||entries.length}</span>
     </div>`;
   }).join('');
 
-  if (activeNotebookId) selectNotebook(activeNotebookId);
+  // Note: do NOT call selectNotebook here — would cause infinite loop
 }
 
 // ── Select & render a notebook's entries ─────────────────────────
@@ -10854,17 +10897,26 @@ function selectNotebook(id) {
 
   document.getElementById('notebook-editor-empty').style.display   = 'none';
   document.getElementById('notebook-editor-content').style.display = 'flex';
+  // Update header
   document.getElementById('nb-editor-title').textContent = nb.name;
+  const descEl = document.getElementById('nb-editor-desc');
+  if (descEl) descEl.textContent = nb.description || '';
+  const iconEl = document.getElementById('nb-editor-icon');
+  if (iconEl) {
+    const c = nb.color||'#6366f1';
+    iconEl.textContent = nb.emoji||'📓';
+    iconEl.style.background = c+'18';
+    iconEl.style.borderColor = c+'35';
+  }
 
   // Render tag filter bar
   const tagsBar = document.getElementById('nb-tags-bar');
   const allTags = getAllTags(nb);
   if (allTags.length) {
     tagsBar.style.display = 'flex';
-    tagsBar.innerHTML = `
-      <span class="nb-tag-chip ${!nbActiveTagFilter?'active':''}" onclick="setNbTagFilter('')">All</span>
-      ${allTags.map(t=>`<span class="nb-tag-chip ${nbActiveTagFilter===t?'active':''}" onclick="setNbTagFilter('${t}')">${t}</span>`).join('')}
-    `;
+    tagsBar.innerHTML =
+      `<span class="nb-tag-chip ${!nbActiveTagFilter?'active':''}" onclick="setNbTagFilter('')">All</span>` +
+      allTags.map(t=>`<span class="nb-tag-chip ${nbActiveTagFilter===t?'active':''}" onclick="setNbTagFilter('${t}')">${t}</span>`).join('');
   } else {
     tagsBar.style.display = 'none';
   }
@@ -10886,45 +10938,44 @@ function selectNotebook(id) {
   const entriesList = document.getElementById('nb-entries-list');
 
   if (!entries.length) {
-    entriesList.innerHTML = `<div style="text-align:center;padding:48px 20px;color:var(--muted);">
-      <div style="font-size:32px;margin-bottom:10px;">${nbSearchQuery||nbActiveTagFilter?'🔍':'✍️'}</div>
-      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;">${nbSearchQuery||nbActiveTagFilter?'No matching entries':'No entries yet'}</div>
-      <div style="font-size:12px;">${nbSearchQuery||nbActiveTagFilter?'Try a different search or tag filter':'Click "+ New Entry" to write your first note.'}</div>
+    entriesList.innerHTML = `<div style="text-align:center;padding:60px 20px;">
+      <div style="font-size:36px;margin-bottom:12px;">${nbSearchQuery||nbActiveTagFilter?'🔍':'✍️'}</div>
+      <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px;">${nbSearchQuery||nbActiveTagFilter?'No matches found':'Nothing here yet'}</div>
+      <div style="font-size:12px;color:var(--muted);">${nbSearchQuery||nbActiveTagFilter?'Try a different search or tag':'Hit "New Entry" to write your first note'}</div>
     </div>`;
   } else {
     entriesList.innerHTML = entries.map(e => {
-      const tags = (e.tags||[]).slice(0,4);
-      const dateStr = e.date ? new Date(e.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'}) : '—';
-      const wc = wordCount(e.content);
-      const linkedTrade = e.linkedTradeId ? `<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(99,102,241,.12);color:var(--accent);font-weight:700;margin-left:4px;">🔗 Trade</span>` : '';
-      return `<div class="notebook-entry${e.pinned?' pinned':''}" onclick="openNoteEntry('${id}','${e.id}')">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
-          <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
-            ${e.pinned?`<span style="font-size:11px;flex-shrink:0;">📌</span>`:''}
-            <div style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title||'Untitled'}</div>
-            ${linkedTrade}
+      const tags   = (e.tags||[]).slice(0,5);
+      const dateStr = e.date ? new Date(e.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'}) : '';
+      const wc     = wordCount(e.content);
+      const linked = e.linkedTradeId
+        ? `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:8px;background:rgba(99,102,241,.12);color:var(--accent);font-size:9px;font-weight:700;">🔗 Trade</span>`
+        : '';
+      return `<div class="nb-entry-card${e.pinned?' pinned':''}" onclick="openNoteEntry('${id}','${e.id}')">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+          <div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;">
+            ${e.pinned?'<span style="font-size:12px;flex-shrink:0;">📌</span>':''}
+            <div class="entry-title">${e.title||'Untitled'}</div>
+            ${linked}
           </div>
-          <div style="font-size:10px;color:var(--muted);flex-shrink:0;margin-left:10px;">${dateStr}</div>
+          <div style="font-size:10px;color:var(--muted);flex-shrink:0;white-space:nowrap;">${dateStr}</div>
         </div>
-        ${e.content ? `<div style="font-size:12px;color:var(--text2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${e.content.replace(/[#*_`>]/g,'')}</div>` : ''}
-        <div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;">
-          ${tags.map(t=>`<span style="padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;background:var(--surface3);color:var(--muted);">${t}</span>`).join('')}
-          ${wc ? `<span style="margin-left:auto;font-size:10px;color:var(--muted);">${wc} words</span>` : ''}
+        ${e.content ? `<div class="entry-preview">${e.content.replace(/[#*_\`>]/g,'').trim()}</div>` : ''}
+        <div class="entry-footer">
+          ${tags.map(t=>`<span class="nb-tag">${t}</span>`).join('')}
+          ${wc ? `<span style="margin-left:auto;font-size:10px;color:var(--muted);font-weight:600;">${wc}w</span>` : ''}
         </div>
       </div>`;
     }).join('');
   }
 
-  // Re-render list to update active state
+  // Re-render sidebar to update active state highlights
   const listEl = document.getElementById('notebooks-list');
   if (listEl) {
-    // update active highlights without full re-render loop
-    listEl.querySelectorAll('[data-nb-id]').forEach(el => {
-      const isActive = el.dataset.nbId === id;
-      el.style.borderColor = isActive ? (notebooks.find(n=>n.id===id)?.color||'var(--accent)') : 'var(--border)';
+    listEl.querySelectorAll('.nb-sidebar-item').forEach(el => {
+      el.classList.toggle('active', el.onclick && el.onclick.toString().includes(id));
     });
   }
-  renderNotebooks();
 }
 
 function setNbTagFilter(tag) {
@@ -10950,6 +11001,7 @@ function openNoteEntry(nbId, entryId) {
   document.getElementById('ne-linked-trade').value = e?.linkedTradeId || '';
   document.getElementById('ne-modal-title').textContent = entryId ? 'Edit Entry' : 'New Entry';
   document.getElementById('ne-delete-btn').style.display = entryId ? 'inline-flex' : 'none';
+  document.getElementById('ne-delete-btn').style.alignItems = entryId ? 'center' : '';
   document.getElementById('ne-pin-btn').title = e?.pinned ? 'Unpin entry' : 'Pin entry';
   document.getElementById('ne-pin-btn').style.color = e?.pinned ? 'var(--accent)' : '';
 
@@ -11019,6 +11071,25 @@ function nbFormat(cmd, val) {
   onNbContentChange();
 }
 
+// ── Template menu toggle ─────────────────────────────────────────
+function nbToggleTemplateMenu() {
+  const menu = document.getElementById('ne-template-menu');
+  if (!menu) return;
+  const open = menu.style.display === 'block';
+  menu.style.display = open ? 'none' : 'block';
+  if (!open) {
+    // close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', function _close(e) {
+        if (!menu.contains(e.target) && e.target.id !== 'ne-template-btn') {
+          menu.style.display = 'none';
+        }
+        document.removeEventListener('click', _close);
+      });
+    }, 10);
+  }
+}
+
 // ── Auto-save ─────────────────────────────────────────────────────
 function onNbContentChange() {
   nbEditorDirty = true;
@@ -11046,10 +11117,10 @@ function updateNbAutoSave(state) {
   const lbl = document.getElementById('nb-autosave-label');
   if (!dot || !lbl) return;
   if (state === 'saved') {
-    dot.style.background = 'var(--green)';
+    dot.classList.remove('unsaved');
     lbl.textContent = 'Saved';
   } else {
-    dot.style.background = 'var(--yellow)';
+    dot.classList.add('unsaved');
     lbl.textContent = 'Unsaved…';
   }
 }
@@ -11250,6 +11321,7 @@ function confirmAddNotebook() {
   activeNotebookId = nb.id;
   closeNewNotebookModal();
   renderNotebooks();
+  selectNotebook(nb.id);
   toast('Notebook created!','success');
 }
 
@@ -11277,10 +11349,10 @@ document.addEventListener('DOMContentLoaded', () => {
 function handleNotebooksMobile() {
   const main = document.getElementById('notebooks-main');
   if (!main) return;
-  if (window.innerWidth <= 768) {
+  if (window.innerWidth <= 820) {
     main.style.gridTemplateColumns = '1fr';
   } else {
-    main.style.gridTemplateColumns = '260px 1fr';
+    main.style.gridTemplateColumns = '280px 1fr';
   }
 }
 window.addEventListener('resize', handleNotebooksMobile);
@@ -11290,233 +11362,256 @@ handleNotebooksMobile();
 </script>
 
 <!-- ══════════════════════════════════════════ -->
-<!--  CHECKLIST PAGE                            -->
+<!--  NOTEBOOKS PAGE                           -->
 <!-- ══════════════════════════════════════════ -->
-<div class="page" id="page-notebooks" style="overflow-y:auto;padding:var(--page-py) var(--page-px);box-sizing:border-box;">
-  <div style="position:relative;z-index:1;">
+<div class="page" id="page-notebooks" style="display:flex;flex-direction:column;height:100vh;overflow:hidden;box-sizing:border-box;">
 
-    <div class="new-page-header">
+  <!-- ── Page header bar ── -->
+  <div style="flex-shrink:0;padding:28px var(--page-px) 0;position:relative;z-index:1;">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;">
       <div>
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:4px;">Notes</div>
-        <div class="new-page-title">Trade <span style="color:var(--accent);">Notebooks</span></div>
-        <div class="new-page-subtitle">Organize your thoughts, research, and trading insights</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:var(--muted);margin-bottom:6px;">Journal</div>
+        <div style="font-size:26px;font-weight:900;color:var(--text);letter-spacing:-0.5px;line-height:1;">Trade <span style="color:var(--accent);">Notebooks</span></div>
+        <div style="font-size:13px;color:var(--muted);margin-top:5px;">Your thoughts, research and trading insights — all in one place</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button onclick="addNotebook()" class="btn btn-primary" style="display:flex;align-items:center;gap:7px;font-size:12px;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          New Notebook
-        </button>
+      <button onclick="addNotebook()" class="btn btn-primary" style="display:flex;align-items:center;gap:8px;padding:10px 20px;font-size:13px;border-radius:12px;flex-shrink:0;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Notebook
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main two-col layout ── -->
+  <div id="notebooks-main" style="flex:1;display:grid;grid-template-columns:280px 1fr;gap:0;overflow:hidden;min-height:0;">
+
+    <!-- ── LEFT SIDEBAR ── -->
+    <div style="display:flex;flex-direction:column;gap:0;border-right:1px solid var(--border);overflow:hidden;">
+
+      <!-- Search -->
+      <div style="padding:14px 16px 14px;border-bottom:1px solid var(--border);">
+        <div class="nb-search-wrap">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="nb-global-search" type="text" placeholder="Search all entries…" oninput="onNbSearch(this.value)">
+        </div>
+      </div>
+
+      <!-- Notebook list -->
+      <div style="flex:1;overflow-y:auto;padding:12px 12px 20px;" id="notebooks-list-wrap">
+        <div id="notebooks-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <div id="notebooks-empty-state" style="display:none;text-align:center;padding:48px 16px;">
+          <div style="font-size:36px;margin-bottom:12px;">📓</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">No notebooks yet</div>
+          <div style="font-size:12px;color:var(--muted);">Hit "New Notebook" to get started</div>
+        </div>
       </div>
     </div>
 
-    <!-- Notebooks layout: sidebar + content -->
-    <div id="notebooks-main" style="display:grid;grid-template-columns:260px 1fr;gap:14px;min-height:400px;">
+    <!-- ── RIGHT PANEL ── -->
+    <div id="notebook-editor-panel" style="display:flex;flex-direction:column;overflow:hidden;">
 
-      <!-- Notebook list sidebar -->
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <!-- Global search -->
-        <div class="nb-search-wrap">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="Search entries…" oninput="onNbSearch(this.value)" id="nb-global-search">
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;" id="notebooks-list"></div>
-        <div id="notebooks-empty-state" style="display:none;text-align:center;padding:40px 16px;color:var(--muted);">
-          <div style="font-size:32px;margin-bottom:10px;">📓</div>
-          <div style="font-size:13px;font-weight:700;color:var(--text);">No notebooks</div>
-          <div style="font-size:11px;margin-top:4px;">Create one to get started</div>
+      <!-- Empty state -->
+      <div id="notebook-editor-empty" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+        <div style="width:64px;height:64px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;">📝</div>
+        <div style="text-align:center;">
+          <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:5px;">Pick a notebook</div>
+          <div style="font-size:12px;color:var(--muted);">Select one from the left to see its entries</div>
         </div>
       </div>
 
-      <!-- Note editor panel -->
-      <div class="panel" id="notebook-editor-panel" style="display:flex;flex-direction:column;min-height:400px;">
-        <div id="notebook-editor-empty" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--muted);">
-          <div style="font-size:40px;">📝</div>
-          <div style="font-size:14px;font-weight:700;color:var(--text);">Select a notebook</div>
-          <div style="font-size:12px;">Choose a notebook from the left, then add entries</div>
-        </div>
-        <div id="notebook-editor-content" style="display:none;flex:1;flex-direction:column;">
-          <div class="panel-header" style="flex-shrink:0;">
-            <div class="panel-header-left">
-              <div class="panel-title" id="nb-editor-title">Notebook</div>
+      <!-- Active notebook view -->
+      <div id="notebook-editor-content" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+        <!-- Notebook header -->
+        <div style="flex-shrink:0;padding:20px 24px 16px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+              <div id="nb-editor-icon" style="width:36px;height:36px;border-radius:10px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📓</div>
+              <div style="min-width:0;">
+                <div id="nb-editor-title" style="font-size:17px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Notebook</div>
+                <div id="nb-editor-desc" style="font-size:11px;color:var(--muted);margin-top:1px;"></div>
+              </div>
             </div>
-            <div style="display:flex;gap:6px;align-items:center;">
-              <button onclick="exportNotebook()" class="btn btn-ghost" style="font-size:11px;padding:5px 12px;display:flex;align-items:center;gap:5px;" title="Export notebook as text file">
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <button onclick="exportNotebook()" title="Export as .txt" style="height:32px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:5px;transition:all .15s;" onmouseenter="this.style.borderColor='var(--border2)';this.style.color='var(--text)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Export
               </button>
-              <button onclick="deleteNotebook()" class="btn btn-ghost" style="font-size:11px;padding:5px 12px;color:var(--red);" title="Delete notebook">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              <button onclick="deleteNotebook()" title="Delete notebook" style="height:32px;width:32px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;" onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
               </button>
-              <button onclick="addNoteEntry()" class="btn btn-primary" style="font-size:11px;padding:6px 14px;display:flex;align-items:center;gap:5px;">
+              <button onclick="addNoteEntry()" class="btn btn-primary" style="height:32px;padding:0 16px;font-size:12px;border-radius:9px;display:flex;align-items:center;gap:5px;">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 New Entry
               </button>
             </div>
           </div>
 
-          <!-- Tag filter bar -->
-          <div id="nb-tags-bar" style="display:none;flex-wrap:wrap;gap:6px;padding:10px 20px 0;"></div>
-
-          <!-- Entries list -->
-          <div id="nb-entries-list" style="flex:1;overflow-y:auto;"></div>
+          <!-- Tag filter pills -->
+          <div id="nb-tags-bar" style="display:none;align-items:center;gap:6px;margin-top:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border);overflow-x:auto;"></div>
         </div>
+
+        <!-- Entries list -->
+        <div id="nb-entries-list" style="flex:1;overflow-y:auto;padding:16px 0 20px;"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- New Notebook Modal -->
-<div id="new-notebook-modal" onclick="if(event.target===this)closeNewNotebookModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:28px;width:440px;max-width:92vw;box-shadow:0 24px 60px rgba(0,0,0,.5);">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div style="font-size:17px;font-weight:800;color:var(--text);">New Notebook</div>
-      <button onclick="closeNewNotebookModal()" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">&times;</button>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:14px;">
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- NEW NOTEBOOK MODAL                                      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="new-notebook-modal" onclick="if(event.target===this)closeNewNotebookModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:28px;width:440px;max-width:92vw;box-shadow:0 32px 80px rgba(0,0,0,.6);animation:modalIn .2s ease;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
       <div>
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Notebook Name</label>
+        <div style="font-size:18px;font-weight:900;color:var(--text);letter-spacing:-0.3px;">New Notebook</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;">Create a space for your notes</div>
+      </div>
+      <button onclick="closeNewNotebookModal()" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;transition:all .15s;" onmouseenter="this.style.borderColor='var(--border2)';this.style.color='var(--text)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;display:block;margin-bottom:8px;">Name</label>
         <input id="new-notebook-name" type="text" placeholder="e.g. Trade Journal, Strategy Notes…"
-          style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+          style="width:100%;padding:12px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:11px;color:var(--text);font-size:14px;font-weight:600;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
           onkeydown="if(event.key==='Enter')confirmAddNotebook()">
       </div>
       <div>
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;display:block;margin-bottom:8px;">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:.7;">(optional)</span></label>
         <input id="new-notebook-desc" type="text" placeholder="What is this notebook for?"
-          style="width:100%;padding:11px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+          style="width:100%;padding:11px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:11px;color:var(--text);font-size:13px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
           onkeydown="if(event.key==='Enter')confirmAddNotebook()">
       </div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:22px;justify-content:flex-end;">
-      <button onclick="closeNewNotebookModal()" class="btn btn-ghost" style="padding:10px 20px;font-size:13px;">Cancel</button>
-      <button onclick="confirmAddNotebook()" class="btn btn-primary" style="padding:10px 24px;font-size:13px;">Create</button>
+    <div style="display:flex;gap:10px;margin-top:24px;justify-content:flex-end;">
+      <button onclick="closeNewNotebookModal()" class="btn btn-ghost" style="padding:10px 20px;font-size:13px;border-radius:11px;">Cancel</button>
+      <button onclick="confirmAddNotebook()" class="btn btn-primary" style="padding:10px 26px;font-size:13px;border-radius:11px;font-weight:700;">Create</button>
     </div>
   </div>
 </div>
 
-<!-- Note Entry Modal — Rich Editor -->
-<div id="note-entry-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:999;align-items:center;justify-content:center;">
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:18px;width:700px;max-width:96vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.6);">
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- NOTE ENTRY MODAL — RICH EDITOR                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="note-entry-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;width:740px;max-width:96vw;max-height:94vh;display:flex;flex-direction:column;box-shadow:0 40px 100px rgba(0,0,0,.7);animation:modalIn .2s ease;">
 
-    <!-- Modal header -->
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 22px 14px;border-bottom:1px solid var(--border);flex-shrink:0;">
-      <div style="font-size:16px;font-weight:800;color:var(--text);" id="ne-modal-title">New Entry</div>
+    <!-- Header -->
+    <div style="flex-shrink:0;padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div id="ne-modal-title" style="font-size:16px;font-weight:900;color:var(--text);letter-spacing:-0.3px;">New Entry</div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <!-- Templates dropdown trigger -->
+
+        <!-- Templates -->
         <div style="position:relative;">
-          <button id="ne-template-btn" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block'"
-            style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:5px;">
-            📋 Templates
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          <button id="ne-template-btn" onclick="nbToggleTemplateMenu()"
+            style="height:32px;padding:0 12px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:5px;transition:all .15s;"
+            onmouseenter="this.style.borderColor='var(--border2)';this.style.color='var(--text)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Templates
           </button>
-          <div id="ne-template-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:6px;min-width:200px;box-shadow:0 12px 30px rgba(0,0,0,.4);z-index:10;">
-            <button onclick="insertDailyRecap();document.getElementById('ne-template-menu').style.display='none'" style="width:100%;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);text-align:left;display:flex;align-items:center;gap:8px;transition:background .12s;" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
-              📈 Daily Recap
+          <div id="ne-template-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:13px;padding:6px;min-width:200px;box-shadow:0 16px 40px rgba(0,0,0,.5);z-index:20;">
+            <button onclick="insertDailyRecap();nbToggleTemplateMenu()" style="width:100%;padding:10px 13px;border-radius:9px;border:none;background:none;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);text-align:left;display:flex;align-items:center;gap:9px;transition:background .12s;" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
+              <span style="font-size:16px;">📈</span> Daily Recap
             </button>
-            <button onclick="insertWeeklySummary();document.getElementById('ne-template-menu').style.display='none'" style="width:100%;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);text-align:left;display:flex;align-items:center;gap:8px;transition:background .12s;" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
-              📅 Weekly Summary
+            <button onclick="insertWeeklySummary();nbToggleTemplateMenu()" style="width:100%;padding:10px 13px;border-radius:9px;border:none;background:none;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);text-align:left;display:flex;align-items:center;gap:9px;transition:background .12s;" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background='none'">
+              <span style="font-size:16px;">📅</span> Weekly Summary
             </button>
           </div>
         </div>
-        <!-- Pin button -->
+
+        <!-- Pin -->
         <button id="ne-pin-btn" onclick="toggleNbPin()" title="Pin entry"
-          style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:14px;cursor:pointer;transition:all .15s;"
-          onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">📌</button>
+          style="height:32px;width:32px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;"
+          onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="if(!document.getElementById('ne-pinned').checked){this.style.borderColor='var(--border)';this.style.color='var(--muted)'}">📌</button>
         <input type="checkbox" id="ne-pinned" style="display:none;">
-        <button onclick="closeNoteEntryModal()" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">&times;</button>
+
+        <!-- Close -->
+        <button onclick="closeNoteEntryModal()" style="height:32px;width:32px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .15s;" onmouseenter="this.style.borderColor='var(--border2)';this.style.color='var(--text)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">&times;</button>
       </div>
     </div>
 
-    <!-- Scrollable body -->
-    <div style="flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:12px;">
+    <!-- Body -->
+    <div style="flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px;">
 
       <!-- Title -->
-      <input type="text" id="ne-title" placeholder="Entry title…"
-        style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:15px;font-weight:700;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
-        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+      <input type="text" id="ne-title" placeholder="Give this entry a title…"
+        style="width:100%;padding:0;background:transparent;border:none;border-bottom:2px solid var(--border);color:var(--text);font-size:20px;font-weight:800;font-family:var(--sans);box-sizing:border-box;outline:none;padding-bottom:10px;transition:border-color .2s;letter-spacing:-0.3px;"
+        onfocus="this.style.borderBottomColor='var(--accent)'" onblur="this.style.borderBottomColor='var(--border)'"
         oninput="onNbContentChange()">
 
-      <!-- Rich editor area -->
+      <!-- Toolbar + Editor -->
       <div>
-        <!-- Toolbar -->
         <div class="nb-toolbar">
-          <!-- Write / Preview toggle -->
-          <button id="nb-mode-write" class="active" onclick="setNbEditorMode('write')" title="Write mode" style="font-size:10px;width:auto;padding:0 8px;gap:4px;">✏️ Write</button>
-          <button id="nb-mode-preview" onclick="setNbEditorMode('preview')" title="Preview markdown" style="font-size:10px;width:auto;padding:0 8px;gap:4px;">👁 Preview</button>
+          <button class="tb-btn active" id="nb-mode-write" onclick="setNbEditorMode('write')">✏️ Write</button>
+          <button class="tb-btn" id="nb-mode-preview" onclick="setNbEditorMode('preview')">👁 Preview</button>
           <div class="tb-sep"></div>
-          <!-- Headings -->
-          <button onclick="nbFormat('h1')" title="Heading 1" style="font-size:11px;font-weight:900;">H1</button>
-          <button onclick="nbFormat('h2')" title="Heading 2" style="font-size:10px;font-weight:800;">H2</button>
-          <button onclick="nbFormat('h3')" title="Heading 3" style="font-size:10px;font-weight:700;">H3</button>
+          <button class="tb-btn" onclick="nbFormat('h1')" title="Heading 1" style="font-size:10px;font-weight:900;letter-spacing:.5px;">H1</button>
+          <button class="tb-btn" onclick="nbFormat('h2')" title="Heading 2" style="font-size:10px;font-weight:800;letter-spacing:.5px;">H2</button>
+          <button class="tb-btn" onclick="nbFormat('h3')" title="Heading 3" style="font-size:9px;font-weight:700;letter-spacing:.5px;">H3</button>
           <div class="tb-sep"></div>
-          <!-- Inline formatting -->
-          <button onclick="nbFormat('bold')" title="Bold (wrap selection)" style="font-weight:900;font-size:13px;">B</button>
-          <button onclick="nbFormat('italic')" title="Italic" style="font-style:italic;font-size:13px;">I</button>
-          <button onclick="nbFormat('code')" title="Inline code" style="font-family:monospace;font-size:12px;">`</button>
+          <button class="tb-btn" onclick="nbFormat('bold')" title="Bold" style="font-weight:900;font-size:13px;">B</button>
+          <button class="tb-btn" onclick="nbFormat('italic')" title="Italic" style="font-style:italic;font-size:13px;">I</button>
+          <button class="tb-btn" onclick="nbFormat('code')" title="Code" style="font-size:12px;font-family:monospace;">`</button>
           <div class="tb-sep"></div>
-          <!-- Lists -->
-          <button onclick="nbFormat('ul')" title="Bullet list">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg>
+          <button class="tb-btn" onclick="nbFormat('ul')" title="Bullet list">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg>
           </button>
-          <button onclick="nbFormat('ol')" title="Numbered list">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4M4 10h2M4 15.5A1.5 1.5 0 015.5 14v0A1.5 1.5 0 017 15.5v.5l-3 3h3" stroke-width="1.5"/></svg>
+          <button class="tb-btn" onclick="nbFormat('ol')" title="Numbered list">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="2" y="8" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif" font-weight="700">1.</text><text x="2" y="14" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif" font-weight="700">2.</text><text x="2" y="20" font-size="7" fill="currentColor" stroke="none" font-family="sans-serif" font-weight="700">3.</text></svg>
           </button>
-          <button onclick="nbFormat('quote')" title="Blockquote">
+          <button class="tb-btn" onclick="nbFormat('quote')" title="Quote">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
           </button>
-          <button onclick="nbFormat('hr')" title="Horizontal rule" style="font-size:11px;">—</button>
+          <button class="tb-btn" onclick="nbFormat('hr')" title="Divider" style="font-size:14px;font-weight:300;">—</button>
         </div>
 
-        <!-- Textarea -->
-        <div class="nb-toolbar-attached">
-          <textarea id="ne-content" class="notebook-editor" placeholder="Write your thoughts, analysis, or notes…&#10;&#10;Supports **bold**, *italic*, # headings, - lists, > quotes, \`code\`"
-            oninput="onNbContentChange()"></textarea>
-          <!-- Markdown preview (hidden by default) -->
-          <div id="ne-preview" class="nb-preview" style="display:none;"></div>
-        </div>
+        <textarea id="ne-content" class="notebook-editor"
+          placeholder="Start writing…&#10;&#10;Tips: **bold**  *italic*  # Heading  - list  > quote  \`code\`"
+          oninput="onNbContentChange()"></textarea>
+        <div id="ne-preview" class="nb-preview" style="display:none;min-height:300px;border-top:none;"></div>
 
-        <!-- Meta bar: word count + autosave -->
         <div class="nb-meta-bar">
-          <span id="nb-word-count" style="font-size:10px;color:var(--muted);">0 words</span>
+          <span id="nb-word-count">0 words</span>
           <div class="nb-autosave">
             <div class="nb-autosave-dot" id="nb-autosave-dot"></div>
-            <span id="nb-autosave-label">Saved</span>
+            <span id="nb-autosave-label" style="font-size:10px;">Saved</span>
           </div>
         </div>
       </div>
 
-      <!-- Tags -->
+      <!-- Tags row -->
       <div>
-        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;display:block;margin-bottom:6px;">Tags <span style="font-weight:400;text-transform:none;letter-spacing:0;">(comma separated)</span></label>
-        <input type="text" id="ne-tags-input" placeholder="pre-market, lesson-learned, EURUSD, breakout…"
-          style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:12px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+        <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;display:block;margin-bottom:8px;">Tags <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:.7;">— comma separated</span></label>
+        <input type="text" id="ne-tags-input" placeholder="pre-market, lesson, EURUSD, breakout…"
+          style="width:100%;padding:10px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:12px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
           oninput="onNbContentChange()">
-        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;" id="ne-suggested-tags">
-          <!-- Suggested existing tags rendered here by JS (optional enhancement) -->
-        </div>
       </div>
 
-      <!-- Link to trade (optional) -->
+      <!-- Link to Trade -->
       <div>
-        <label style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;display:block;margin-bottom:6px;">🔗 Linked Trade ID <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
-        <input type="text" id="ne-linked-trade" placeholder="Paste a trade ID to link this note to a specific trade"
-          style="width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:12px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+        <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;display:block;margin-bottom:8px;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle;margin-right:4px;"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+          Linked Trade ID <span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:.7;">(optional)</span>
+        </label>
+        <input type="text" id="ne-linked-trade" placeholder="Paste a trade ID to connect this note to a trade"
+          style="width:100%;padding:10px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:12px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
           oninput="onNbContentChange()">
       </div>
     </div>
 
-    <!-- Footer actions -->
-    <div style="display:flex;gap:10px;justify-content:space-between;align-items:center;padding:14px 22px;border-top:1px solid var(--border);flex-shrink:0;">
-      <button id="ne-delete-btn" onclick="deleteNoteEntry()" class="btn btn-danger" style="display:none;align-items:center;gap:5px;font-size:12px;">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+    <!-- Footer -->
+    <div style="flex-shrink:0;padding:14px 24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface2);border-radius:0 0 20px 20px;">
+      <button id="ne-delete-btn" onclick="deleteNoteEntry()" style="display:none;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;border:1px solid var(--red);background:var(--red-bg);color:var(--red);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.background='var(--red)';this.style.color='#fff'" onmouseleave="this.style.background='var(--red-bg)';this.style.color='var(--red)'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
         Delete
       </button>
       <div style="display:flex;gap:8px;margin-left:auto;">
-        <button onclick="closeNoteEntryModal()" class="btn btn-ghost" style="padding:10px 18px;font-size:12px;">Close</button>
-        <button onclick="saveNoteEntry()" class="btn btn-primary" style="padding:10px 24px;font-size:13px;">Save Entry</button>
+        <button onclick="closeNoteEntryModal()" style="padding:9px 18px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--border2)';this.style.color='var(--text)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Close</button>
+        <button onclick="saveNoteEntry()" class="btn btn-primary" style="padding:9px 26px;font-size:13px;border-radius:10px;font-weight:700;">Save Entry</button>
       </div>
     </div>
   </div>
