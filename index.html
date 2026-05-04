@@ -1686,10 +1686,26 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       <span class="sidebar-label">Dashboard</span>
     </button>
-    <button class="sidebar-item" data-label="Overview" onclick="switchPage('overview')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <span class="sidebar-label">Overview</span>
-    </button>
+    <!-- Overview sub-item under Dashboard -->
+    <div id="overview-subitem-wrap" style="display:flex;align-items:stretch;padding-left:22px;margin-top:-2px;margin-bottom:1px;">
+      <!-- tree line -->
+      <div style="position:relative;width:14px;flex-shrink:0;margin-right:4px;">
+        <div style="position:absolute;left:6px;top:0;bottom:10px;width:1px;background:var(--border);"></div>
+        <div style="position:absolute;left:6px;bottom:10px;width:8px;height:1px;background:var(--border);"></div>
+      </div>
+      <button onclick="switchPage('overview')" data-label="Overview"
+        style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;border:none;background:none;color:var(--muted);font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;text-align:left;white-space:nowrap;transition:all .15s;flex:1;"
+        id="overview-sub-btn"
+        onmouseenter="this.style.background='var(--surface2)';this.style.color='var(--text2)'"
+        onmouseleave="if(!this.classList.contains('ov-active')){this.style.background='none';this.style.color='var(--muted)'}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="sidebar-label" style="font-size:11px;">At a Glance</span>
+      </button>
+    </div>
+    <style>
+      #sidebar.collapsed #overview-subitem-wrap { display: none !important; }
+      #overview-sub-btn.ov-active { background: rgba(99,102,241,.12) !important; color: var(--accent) !important; }
+    </style>
     <button class="sidebar-item" data-label="Trades" onclick="switchPage('trades')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="4" height="8" rx="0.5"/><line x1="4" y1="2" x2="4" y2="5"/><line x1="4" y1="13" x2="4" y2="17"/><rect x="10" y="8" width="4" height="6" rx="0.5"/><line x1="12" y1="4" x2="12" y2="8"/><line x1="12" y1="14" x2="12" y2="19"/><rect x="18" y="4" width="4" height="9" rx="0.5"/><line x1="20" y1="1" x2="20" y2="4"/><line x1="20" y1="13" x2="20" y2="16"/></svg>
       <span class="sidebar-label">Trades</span>
@@ -4907,6 +4923,19 @@ function switchPage(name) {
     if (btn.id === 'settings-sidebar-btn') return;
     btn.classList.toggle('active', activeLabel === btn.getAttribute('data-label'));
   });
+  // Overview sub-button active state
+  const ovBtn = document.getElementById('overview-sub-btn');
+  if (ovBtn) {
+    if (name === 'overview') {
+      ovBtn.classList.add('ov-active');
+      ovBtn.style.background = 'rgba(99,102,241,.12)';
+      ovBtn.style.color = 'var(--accent)';
+    } else {
+      ovBtn.classList.remove('ov-active');
+      ovBtn.style.background = 'none';
+      ovBtn.style.color = 'var(--muted)';
+    }
+  }
   if (name === 'dashboard') refreshDashboard();
   if (name === 'overview')  initOverviewPage();
   if (name === 'trades')    renderTrades();
