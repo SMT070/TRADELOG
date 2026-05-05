@@ -1686,6 +1686,26 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       <span class="sidebar-label">Dashboard</span>
     </button>
+    <!-- Overview sub-item under Dashboard -->
+    <div id="overview-subitem-wrap" style="display:flex;align-items:stretch;padding-left:22px;margin-top:-2px;margin-bottom:1px;">
+      <!-- tree line -->
+      <div style="position:relative;width:14px;flex-shrink:0;margin-right:4px;">
+        <div style="position:absolute;left:6px;top:0;bottom:10px;width:1px;background:var(--border);"></div>
+        <div style="position:absolute;left:6px;bottom:10px;width:8px;height:1px;background:var(--border);"></div>
+      </div>
+      <button onclick="switchPage('overview')" data-label="Overview"
+        style="display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;border:none;background:none;color:var(--muted);font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;text-align:left;white-space:nowrap;transition:all .15s;flex:1;"
+        id="overview-sub-btn"
+        onmouseenter="this.style.background='var(--surface2)';this.style.color='var(--text2)'"
+        onmouseleave="if(!this.classList.contains('ov-active')){this.style.background='none';this.style.color='var(--muted)'}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="sidebar-label" style="font-size:11px;">At a Glance</span>
+      </button>
+    </div>
+    <style>
+      #sidebar.collapsed #overview-subitem-wrap { display: none !important; }
+      #overview-sub-btn.ov-active { background: rgba(99,102,241,.12) !important; color: var(--accent) !important; }
+    </style>
     <button class="sidebar-item" data-label="Trades" onclick="switchPage('trades')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="4" height="8" rx="0.5"/><line x1="4" y1="2" x2="4" y2="5"/><line x1="4" y1="13" x2="4" y2="17"/><rect x="10" y="8" width="4" height="6" rx="0.5"/><line x1="12" y1="4" x2="12" y2="8"/><line x1="12" y1="14" x2="12" y2="19"/><rect x="18" y="4" width="4" height="9" rx="0.5"/><line x1="20" y1="1" x2="20" y2="4"/><line x1="20" y1="13" x2="20" y2="16"/></svg>
       <span class="sidebar-label">Trades</span>
@@ -1815,6 +1835,165 @@
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  OVERVIEW PAGE                            -->
+<!-- ══════════════════════════════════════════ -->
+<style>
+/* ── Overview layout ── */
+#page-overview { display:flex;flex-direction:column;height:100vh;overflow:hidden;box-sizing:border-box; }
+
+/* Stat cards row */
+.ov-cards-row { display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:14px 20px;flex-shrink:0; }
+.ov-card {
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;display:flex;flex-direction:column;gap:6px;
+  position:relative;overflow:hidden;transition:border-color .2s, transform .2s;cursor:default;
+}
+.ov-card::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ov-accent,var(--accent));border-radius:14px 14px 0 0;opacity:.8; }
+.ov-card:hover { border-color:var(--border2);transform:translateY(-1px); }
+.ov-card-label { font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted); }
+.ov-card-value { font-size:24px;font-weight:900;letter-spacing:-1px;line-height:1;font-family:var(--mono); }
+.ov-card-sub { font-size:10px;color:var(--muted);font-weight:500; }
+
+/* Range selector */
+.ov-range-wrap { display:flex;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px; }
+.ov-range-btn { padding:4px 14px;border-radius:5px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:none;color:var(--muted);transition:all .15s; }
+.ov-range-btn.active { background:var(--surface3);color:var(--text); }
+
+/* Main body: trades left, calendar right */
+.ov-body { flex:1;display:grid;grid-template-columns:300px 1fr;min-height:0;overflow:hidden; }
+
+/* Trades panel */
+.ov-trades-panel { display:flex;flex-direction:column;border-right:1px solid var(--border);min-height:0;background:var(--surface); }
+.ov-trades-header { display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0; }
+.ov-trades-header-title { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text); }
+.ov-trades-header-sub { font-size:10px;color:var(--muted);font-weight:600; }
+.ov-trades-scroll { flex:1;overflow-y:auto; }
+.ov-trade-row { display:flex;align-items:center;padding:9px 16px;gap:0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s; }
+.ov-trade-row:hover { background:rgba(99,102,241,.05); }
+.ov-trade-row:last-child { border-bottom:none; }
+.ov-trade-date { font-size:11px;color:var(--muted);font-weight:600;width:54px;flex-shrink:0; }
+.ov-trade-symbol { font-size:13px;font-weight:800;color:var(--text);flex:1;letter-spacing:-0.2px; }
+.ov-trade-dir { font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;margin-right:10px;flex-shrink:0; }
+.ov-trade-pnl { font-size:13px;font-weight:800;font-family:var(--mono);width:72px;text-align:right;flex-shrink:0; }
+
+/* Calendar panel */
+.ov-cal-panel { display:flex;flex-direction:column;min-height:0;overflow:hidden; }
+.ov-cal-header { display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface); }
+.ov-cal-nav-btn { width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;font-size:16px;font-family:var(--sans);transition:all .15s;line-height:1; }
+.ov-cal-nav-btn:hover { border-color:var(--border2);color:var(--text); }
+.ov-cal-title { font-size:14px;font-weight:800;color:var(--text);letter-spacing:-0.3px; }
+.ov-cal-body { flex:1;display:flex;flex-direction:column;padding:12px 16px;min-height:0;overflow:hidden; }
+.ov-dow-row { display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px;flex-shrink:0; }
+.ov-dow { text-align:center;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:0.5px;padding:4px 0; }
+.ov-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:5px;flex:1;align-content:start; }
+.ov-cell {
+  border-radius:8px;cursor:pointer;transition:all .15s;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:7px 8px;min-height:64px;position:relative;overflow:hidden;
+  border:1px solid transparent;
+}
+.ov-cell:hover { filter:brightness(1.1); }
+.ov-cell.ov-empty { background:none;cursor:default;border:none; }
+.ov-cell.ov-blank { background:var(--surface);border:1px solid var(--border);opacity:.35;cursor:default; }
+.ov-cell.ov-green { background:rgba(0,255,187,0.12);border-color:rgba(0,255,187,0.18); }
+.ov-cell.ov-red   { background:rgba(255,59,92,0.12);border-color:rgba(255,59,92,0.18); }
+.ov-cell.ov-neutral { background:var(--surface2);border-color:var(--border); }
+.ov-cell.ov-today { outline:2px solid var(--accent);outline-offset:1px; }
+.ov-cell.ov-selected { outline:2px solid white;outline-offset:1px; }
+.ov-cell-num { font-size:11px;font-weight:700;color:var(--muted); }
+.ov-cell.ov-green .ov-cell-num { color:rgba(0,255,187,0.7); }
+.ov-cell.ov-red   .ov-cell-num { color:rgba(255,59,92,0.6); }
+.ov-cell-pnl { font-size:14px;font-weight:900;letter-spacing:-0.5px;line-height:1;font-family:var(--mono); }
+.ov-cell.ov-green .ov-cell-pnl { color:var(--green); }
+.ov-cell.ov-red   .ov-cell-pnl { color:var(--red); }
+.ov-cell-trades { font-size:9px;font-weight:600;color:var(--muted);margin-top:2px; }
+.ov-cell.ov-green .ov-cell-trades { color:rgba(0,255,187,0.5); }
+.ov-cell.ov-red   .ov-cell-trades { color:rgba(255,59,92,0.5); }
+.ov-cell.ov-outrange { opacity:.3; }
+</style>
+
+<div class="page" id="page-overview">
+
+  <!-- ── ROW 1: HEADER + STAT CARDS ── -->
+  <div style="flex-shrink:0;padding:14px 20px 0;background:var(--surface);border-bottom:1px solid var(--border);">
+    <!-- Header row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:3px;">At a Glance</div>
+        <div style="font-size:20px;font-weight:900;letter-spacing:-0.6px;color:var(--text);">Trading <span style="color:var(--accent);">Overview</span></div>
+      </div>
+      <div class="ov-range-wrap">
+        <button onclick="ovSetRange('today')" class="ov-range-btn active" id="ovr-today">Today</button>
+        <button onclick="ovSetRange('week')"  class="ov-range-btn" id="ovr-week">Week</button>
+        <button onclick="ovSetRange('month')" class="ov-range-btn" id="ovr-month">Month</button>
+        <button onclick="ovSetRange('all')"   class="ov-range-btn" id="ovr-all">All</button>
+      </div>
+    </div>
+    <!-- Stat cards -->
+    <div class="ov-cards-row" style="padding:0 0 14px;">
+      <div class="ov-card" style="--ov-accent:var(--green);">
+        <div class="ov-card-label">Net P&amp;L</div>
+        <div class="ov-card-value" id="ov-pnl" style="color:var(--text);">—</div>
+        <div class="ov-card-sub" id="ov-pnl-sub">0 trades</div>
+      </div>
+      <div class="ov-card" style="--ov-accent:#6366f1;">
+        <div class="ov-card-label">Win Rate</div>
+        <div class="ov-card-value" id="ov-wr" style="color:var(--text);">—</div>
+        <div class="ov-card-sub" id="ov-wr-sub">0W / 0L</div>
+      </div>
+      <div class="ov-card" style="--ov-accent:var(--yellow);">
+        <div class="ov-card-label">Profit Factor</div>
+        <div class="ov-card-value" id="ov-pf" style="color:var(--text);">—</div>
+        <div class="ov-card-sub">gross win ÷ loss</div>
+      </div>
+      <div class="ov-card" style="--ov-accent:var(--green);">
+        <div class="ov-card-label">Best Trade</div>
+        <div class="ov-card-value" id="ov-best" style="color:var(--green);">—</div>
+        <div class="ov-card-sub" id="ov-best-sym">—</div>
+      </div>
+      <div class="ov-card" style="--ov-accent:var(--red);">
+        <div class="ov-card-label">Worst Trade</div>
+        <div class="ov-card-value" id="ov-worst" style="color:var(--red);">—</div>
+        <div class="ov-card-sub" id="ov-worst-sym">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ROW 2: TRADES LEFT + CALENDAR RIGHT ── -->
+  <div class="ov-body">
+
+    <!-- LEFT: Trades list -->
+    <div class="ov-trades-panel">
+      <div class="ov-trades-header">
+        <span class="ov-trades-header-title">Recent Trades</span>
+        <span class="ov-trades-header-sub" id="ov-trades-period"></span>
+      </div>
+      <div class="ov-trades-scroll" id="ov-trades-list"></div>
+    </div>
+
+    <!-- RIGHT: Calendar -->
+    <div class="ov-cal-panel">
+      <div class="ov-cal-header">
+        <button class="ov-cal-nav-btn" onclick="ovCalNav(-1)">‹</button>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="ov-cal-title" id="ov-cal-title"></span>
+          <button onclick="ovCalGoToday()" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Today</button>
+        </div>
+        <button class="ov-cal-nav-btn" onclick="ovCalNav(1)">›</button>
+      </div>
+      <div class="ov-cal-body">
+        <div class="ov-dow-row">
+          <div class="ov-dow">Sun</div><div class="ov-dow">Mon</div><div class="ov-dow">Tue</div>
+          <div class="ov-dow">Wed</div><div class="ov-dow">Thu</div><div class="ov-dow">Fri</div><div class="ov-dow">Sat</div>
+        </div>
+        <div class="ov-grid" id="ov-cal-grid"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════ -->
 <!--  DASHBOARD PAGE                           -->
@@ -2867,6 +3046,47 @@
               <button type="button" id="res-be"   onclick="setResult('be')"   style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1px;transition:all .15s;">BE</button>
             </div>
             <input type="hidden" id="f-result" value="">
+          </div>
+
+          <!-- ── POSITION PACK ── -->
+          <div class="form-group full" id="pack-toggle-row">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;" onclick="togglePackMode()">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="font-size:18px;">📦</div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text);">Position Pack</div>
+                  <div style="font-size:11px;color:var(--muted);">Entered the same trade across multiple positions? Log them as a linked pack.</div>
+                </div>
+              </div>
+              <div id="pack-toggle-pill" style="width:40px;height:22px;border-radius:11px;background:var(--border2);position:relative;transition:background .2s;flex-shrink:0;">
+                <div id="pack-toggle-dot" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pack position rows (hidden by default) -->
+          <div id="pack-positions-wrap" class="form-group full" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <label style="margin-bottom:0;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;">Pack Positions</label>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button type="button" onclick="packRemoveRow()" style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .15s;" onmouseenter="this.style.borderColor='var(--border2)';this.style.color='var(--text)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">−</button>
+                <span id="pack-count-label" style="font-size:13px;font-weight:900;color:var(--accent);min-width:20px;text-align:center;">2</span>
+                <button type="button" onclick="packAddRow()" style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:all .15s;" onmouseenter="this.style.borderColor='var(--border2)';this.style.color='var(--text)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">+</button>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:20px 1fr 1fr 1fr 90px;gap:6px;margin-bottom:5px;padding:0 2px;">
+              <div></div>
+              <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Entry Price</div>
+              <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Lot Size</div>
+              <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">P&amp;L ($)</div>
+              <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Result</div>
+            </div>
+            <div id="pack-rows-container" style="display:flex;flex-direction:column;gap:5px;"></div>
+            <div style="margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);">Pack Combined P&amp;L</span>
+              <span id="pack-total-pnl" style="font-size:16px;font-weight:900;color:var(--text);font-family:var(--mono);">$0.00</span>
+            </div>
+            <div style="margin-top:6px;font-size:11px;color:var(--muted);">💡 Shared across all positions: Symbol · Direction · Dates · Notes · Photo · Tags · Emotion</div>
           </div>
 
           <div class="form-group full">
@@ -4088,7 +4308,7 @@ async function backgroundSync() {
         dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
         pnl: r.pnl, commission: r.commission, swap: r.swap || 0, netPnl: r.net_pnl, r: r.r,
         result: r.result, emotion: r.emotion, confidence: r.confidence,
-        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || [], packId: r.pack_id || null
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
       try {
@@ -4572,7 +4792,7 @@ async function loadAllFromSupabase() {
         dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
         pnl: r.pnl, commission: r.commission, swap: r.swap || 0, netPnl: r.net_pnl, r: r.r,
         result: r.result, emotion: r.emotion, confidence: r.confidence,
-        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || [], packId: r.pack_id || null
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
     }
@@ -4665,7 +4885,7 @@ async function saveTradeToSupabase(t) {
     exit: t.exit, sl: t.sl, tp: t.tp, pnl: t.pnl, commission: t.commission,
     swap: t.swap || 0, net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
     confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
-    strategies: t.strategies || []
+    strategies: t.strategies || [], pack_id: t.packId || null
   };
   const { error } = await sb.from('trades').upsert(row);
   if (error) { console.error('TradeLog: upsert error', error); throw error; }
@@ -4742,13 +4962,27 @@ function switchPage(name) {
   const nextPage = document.getElementById('page-' + name);
   if (!nextPage) { console.warn('switchPage: no page found for', name); return; }
   nextPage.classList.add('active');
-  const map = { dashboard:'Dashboard', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import Trades', mindset:'Mindset', events:'Events', playbook:'Playbook', checklist:'Checklist', rules:'Rules', notebooks:'Notebooks', fundamentals:'Fundamentals' };
+  const map = { dashboard:'Dashboard', overview:'Overview', trades:'Trades', analytics:'Analytics', calendar:'Calendar', add:'Add Trade', import:'Import Trades', mindset:'Mindset', events:'Events', playbook:'Playbook', checklist:'Checklist', rules:'Rules', notebooks:'Notebooks', fundamentals:'Fundamentals' };
   const activeLabel = map[name] || '';
   document.querySelectorAll('.sidebar-item[data-label]').forEach(btn => {
     if (btn.id === 'settings-sidebar-btn') return;
     btn.classList.toggle('active', activeLabel === btn.getAttribute('data-label'));
   });
+  // Overview sub-button active state
+  const ovBtn = document.getElementById('overview-sub-btn');
+  if (ovBtn) {
+    if (name === 'overview') {
+      ovBtn.classList.add('ov-active');
+      ovBtn.style.background = 'rgba(99,102,241,.12)';
+      ovBtn.style.color = 'var(--accent)';
+    } else {
+      ovBtn.classList.remove('ov-active');
+      ovBtn.style.background = 'none';
+      ovBtn.style.color = 'var(--muted)';
+    }
+  }
   if (name === 'dashboard') refreshDashboard();
+  if (name === 'overview')  initOverviewPage();
   if (name === 'trades')    renderTrades();
   if (name === 'analytics') renderAnalytics();
   if (name === 'calendar')  renderCalendar();
@@ -4793,6 +5027,7 @@ function clearForm() {
   editingScreenshot = null;
   document.getElementById('add-title').textContent = 'New Trade';
   document.getElementById('delete-btn').style.display = 'none';
+  if (typeof resetPackMode === 'function') resetPackMode();
   // Pre-fill Open Date to now
   const n = new Date();
   const dateStr = n.toISOString().slice(0,10);
@@ -5128,6 +5363,10 @@ function saveTradePhoto(file, id) {
     const idx = trades.findIndex(t => t.id === id);
     if (idx === -1) return;
     trades[idx].screenshot = e.target.result;
+    // Sync photo to all pack siblings
+    if (trades[idx].packId) {
+      trades.filter(x => x.packId === trades[idx].packId && x.id !== id).forEach(x => { x.screenshot = e.target.result; });
+    }
     save();
     showTradeDetail(id);
     if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
@@ -5161,6 +5400,10 @@ async function removeTradePhoto(id) {
   const idx = trades.findIndex(t => t.id === id);
   if (idx === -1) return;
   trades[idx].screenshot = null;
+  // Sync removal to all pack siblings
+  if (trades[idx].packId) {
+    trades.filter(x => x.packId === trades[idx].packId && x.id !== id).forEach(x => { x.screenshot = null; });
+  }
   save();
   showTradeDetail(id);
   if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
@@ -5181,6 +5424,77 @@ function openPhotoLightbox(id) {
 async function saveTrade() {
   const sym = document.getElementById('f-symbol').value.trim().toUpperCase();
   if (!sym) { toast('Symbol is required','error'); return; }
+
+  // ── PACK MODE: create multiple linked trades ──
+  if (typeof isPackMode === 'function' && isPackMode()) {
+    const packRows = getPackRows();
+    if (!packRows.length) { toast('Add at least one position','error'); return; }
+    const packId = 'pack_' + Date.now().toString(36);
+    const sharedDate      = document.getElementById('f-date').value;
+    const sharedCloseDate = document.getElementById('f-close-date').value || null;
+    const sharedDir       = document.getElementById('f-dir').value;
+    const sharedSl        = parseFloat(document.getElementById('f-sl').value) || 0;
+    const sharedTp        = parseFloat(document.getElementById('f-tp').value) || 0;
+    const sharedComm      = parseFloat(document.getElementById('f-commission').value) || 0;
+    const sharedNotes     = document.getElementById('f-notes').value.trim();
+    const sharedScreenshot= editingScreenshot || null;
+    const sharedStrategies= [...strategyTags];
+    const sharedEmotion   = selectedEmotion;
+    const sharedConf      = parseInt(document.getElementById('f-confidence').value) || 0;
+
+    const packTrades = packRows.map((row, i) => {
+      const pnl  = parseFloat(row.pnl) || 0;
+      const comm = i === 0 ? sharedComm : 0; // commission on first position only
+      const netPnl = pnl - comm;
+      const autoResult = netPnl === 0 ? 'be' : (netPnl > 0 ? 'win' : 'loss');
+      let r = 0;
+      const entry = parseFloat(row.entry) || 0;
+      const exit  = parseFloat(document.getElementById('f-exit').value) || 0;
+      if (sharedSl && entry && exit) {
+        const riskPts = Math.abs(entry - sharedSl);
+        const rewardPts = sharedDir === 'BUY' ? (exit - entry) : (entry - exit);
+        r = riskPts ? +(rewardPts / riskPts).toFixed(2) : 0;
+      }
+      return {
+        id: uid(),
+        packId,
+        symbol: sym,
+        date: sharedDate,
+        closeDate: sharedCloseDate,
+        dir: sharedDir,
+        lots: parseFloat(row.lots) || 0,
+        entry,
+        exit,
+        sl: sharedSl,
+        tp: sharedTp,
+        pnl,
+        commission: i === 0 ? sharedComm : 0,
+        swap: 0,
+        netPnl,
+        r,
+        result: row.result || autoResult,
+        emotion: sharedEmotion,
+        confidence: sharedConf,
+        notes: sharedNotes,
+        screenshot: sharedScreenshot,
+        strategies: sharedStrategies,
+      };
+    });
+
+    trades.unshift(...packTrades);
+    save();
+    clearForm();
+    toast(`✓ Pack saved — ${packTrades.length} positions`, 'success');
+    switchPage('dashboard');
+    refreshDashboard();
+    try {
+      await Promise.all(packTrades.map(t => guaranteedSaveToSupabase(t)));
+    } catch(e) {
+      toast('⚠️ Pack saved locally — sync failed', 'error');
+    }
+    return;
+  }
+  // ── END PACK MODE ──
   let pnl = parseFloat(document.getElementById('f-pnl').value) || 0;
   // Auto-sign: if user selected LOSS force negative, if WIN force positive, BE unchanged
   if (selectedResult === 'loss' && pnl > 0) pnl = -pnl;
@@ -5241,6 +5555,54 @@ async function saveTrade() {
 }
 
 function instantDelete(id) {
+  const t = trades.find(x => x.id === id);
+  const isPackTrade = t && t.packId;
+  const packSize    = isPackTrade ? trades.filter(x => x.packId === t.packId).length : 0;
+  const msg = isPackTrade
+    ? `This trade is part of a ${packSize}-position pack. Delete just this position, or the entire pack?`
+    : 'This trade will be permanently deleted.';
+  const okText = isPackTrade ? 'Delete Position Only' : 'Delete';
+
+  // If pack, add extra "Delete Entire Pack" button via a custom approach
+  if (isPackTrade) {
+    showConfirm({ icon:'📦', title:'Delete Pack Trade', message: msg, okText: 'Delete Position', okColor:'var(--red)',
+      onOk: async () => {
+        trades = trades.filter(x => x.id !== id);
+        save(); renderTrades(); refreshDashboard();
+        try { await guaranteedDeleteFromSupabase(id); toast('Position deleted','success'); }
+        catch(e) { toast('⚠️ Deleted locally','error'); }
+      }
+    });
+    // Inject a secondary "delete whole pack" link under the confirm buttons
+    setTimeout(() => {
+      const modal = document.getElementById('confirm-modal');
+      if (!modal) return;
+      const existing = modal.querySelector('#pack-delete-all-btn');
+      if (existing) return;
+      const btnsDiv = modal.querySelector('[id="confirm-ok-btn"]')?.parentNode;
+      if (!btnsDiv) return;
+      const packId = t.packId;
+      const btn = document.createElement('button');
+      btn.id = 'pack-delete-all-btn';
+      btn.textContent = `Delete Entire Pack (${packSize} positions)`;
+      btn.style.cssText = 'width:100%;margin-top:8px;padding:10px;border-radius:10px;border:1px solid var(--red);background:rgba(255,59,92,.08);color:var(--red);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);';
+      btn.onclick = async () => {
+        closeConfirmModal();
+        const packMateIds = trades.filter(x => x.packId === packId).map(x => x.id);
+        trades = trades.filter(x => x.packId !== packId);
+        save(); renderTrades(); refreshDashboard(); selectedId = null;
+        document.getElementById('trade-detail-body').innerHTML = '<div class="empty-state"><h3>Select a trade</h3></div>';
+        toast(`⏳ Deleting pack…`,'');
+        try {
+          await Promise.all(packMateIds.map(xid => guaranteedDeleteFromSupabase(xid)));
+          toast(`Pack deleted (${packMateIds.length} positions)`,'success');
+        } catch(e) { toast('⚠️ Deleted locally','error'); }
+      };
+      btnsDiv.appendChild(btn);
+    }, 80);
+    return;
+  }
+
   showConfirm({ icon:'🗑️', title:'Delete Trade', message:'This trade will be permanently deleted.', okText:'Delete', okColor:'var(--red)', onOk: async () => {
     trades = trades.filter(t => t.id !== id);
     save();
@@ -6288,9 +6650,11 @@ function renderTrades(skipTagRebuild) {
       ? `<span style="color:var(--green);font-size:10px;font-weight:700;background:var(--green-bg);padding:2px 8px;border-radius:4px;">WIN</span>`
       : `<span style="color:var(--red);font-size:10px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:4px;">LOSS</span>`;
     const isSelected = t.id===selectedId;
-    return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;"${isSelected?' class="selected"':''}>
+    const packBadge = t.packId ? `<span title="Part of a position pack" style="display:inline-block;padding:1px 6px;border-radius:5px;font-size:9px;font-weight:700;background:rgba(99,102,241,.15);color:var(--accent);border:1px solid rgba(99,102,241,.3);margin-left:3px;">📦</span>` : '';
+    const packBorderStyle = t.packId ? 'border-left:3px solid rgba(99,102,241,.4);' : '';
+    return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;${packBorderStyle}"${isSelected?' class="selected"':''}>
       <td style="color:var(--text);font-size:12px;white-space:nowrap;font-weight:600;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,19)+'</span>' : '—'}</td>
-      <td style="font-weight:600;">${t.symbol}</td>
+      <td style="font-weight:600;">${t.symbol}${packBadge}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
       <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
       <td style="color:var(--text);font-weight:500;">${t.entry||'—'}</td>
@@ -6595,6 +6959,42 @@ function showTradeDetail(id) {
     ? `<span style="display:inline-block;padding:4px 14px;border-radius:8px;background:var(--green-bg);color:var(--green);font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--green-glow);">WIN</span>`
     : `<span style="display:inline-block;padding:4px 14px;border-radius:8px;background:var(--red-bg);color:var(--red);font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--red-glow);">LOSS</span>`;
 
+  // Pack summary banner
+  let packBannerHTML = '';
+  if (t.packId) {
+    const packMates = trades.filter(x => x.packId === t.packId);
+    const packTotal = packMates.reduce((s,x) => s + getPnl(x), 0);
+    const packWins  = packMates.filter(x => getResult(x) === 'win').length;
+    const packLoss  = packMates.filter(x => getResult(x) === 'loss').length;
+    const packColor = packTotal >= 0 ? 'var(--green)' : 'var(--red)';
+    const sym2 = getCurrencySymbol();
+    const packStr = (packTotal >= 0 ? '+' + sym2 : '-' + sym2) + Math.abs(packTotal).toFixed(2);
+    const posNum  = packMates.findIndex(x => x.id === t.id) + 1;
+    packBannerHTML = `<div style="margin-bottom:14px;padding:12px 14px;border-radius:10px;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:14px;">📦</span>
+          <span style="font-size:11px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:1px;">Position Pack</span>
+          <span style="font-size:10px;color:var(--muted);">Position ${posNum} of ${packMates.length}</span>
+        </div>
+        <span style="font-size:15px;font-weight:900;color:${packColor};">${packStr}</span>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        ${packMates.map((x,i) => {
+          const xpnl = getPnl(x);
+          const xres = getResult(x);
+          const xclr = xres==='win'?'var(--green)':xres==='loss'?'var(--red)':'var(--yellow)';
+          const isCur = x.id === t.id;
+          const xs = getCurrencySymbol();
+          return '<div onclick="selectTrade(\''+x.id+'\');showTradeDetail(\''+x.id+'\')" style="display:flex;flex-direction:column;align-items:center;padding:6px 10px;border-radius:8px;cursor:pointer;border:1px solid '+(isCur?'var(--accent)':'var(--border)')+'background:'+(isCur?'rgba(99,102,241,.15)':'var(--surface2)')+';min-width:60px;transition:all .15s;background:'+(isCur?'rgba(99,102,241,.15)':'var(--surface2)')+'">'
+            + '<div style="font-size:9px;font-weight:700;color:var(--muted);">Pos '+(i+1)+'</div>'
+            + '<div style="font-size:12px;font-weight:800;color:'+xclr+';">'+(xpnl>=0?'+'+xs:'-'+xs)+Math.abs(xpnl).toFixed(0)+'</div>'
+            + '</div>';
+        }).join('')}
+      </div>
+    </div>`;
+  }
+
   // Duration
   let durationStr = '—';
   if (t.date && t.closeDate) {
@@ -6690,6 +7090,8 @@ function showTradeDetail(id) {
 
   document.getElementById('trade-detail-body').innerHTML = `
     <div style="padding:20px;display:flex;flex-direction:column;gap:0;">
+
+      ${packBannerHTML}
 
       <!-- Header: Symbol + P&L -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
@@ -7007,6 +7409,10 @@ function saveOverlayNotes(id, val) {
   const t = trades.find(x => x.id === id);
   if (!t) return;
   t.notes = val;
+  // Sync notes to all pack siblings
+  if (t.packId) {
+    trades.filter(x => x.packId === t.packId && x.id !== id).forEach(x => { x.notes = val; });
+  }
   save();
   // Update the static notes display in the side detail panel
   const clamp = document.querySelector('.notes-clamp');
@@ -7475,6 +7881,18 @@ async function saveInlineEdit(id) {
     const riskPts   = Math.abs(t.entry - t.sl);
     const rewardPts = t.dir === 'BUY' ? (t.exit - t.entry) : (t.entry - t.exit);
     t.r = riskPts ? +( rewardPts / riskPts ).toFixed(2) : 0;
+  }
+  // Sync shared fields to pack siblings
+  if (t.packId) {
+    trades.filter(x => x.packId === t.packId && x.id !== t.id).forEach(x => {
+      x.notes      = t.notes;
+      x.screenshot = t.screenshot;
+      x.strategies = [...t.strategies];
+      x.emotion    = t.emotion;
+      x.confidence = t.confidence;
+      x.symbol     = t.symbol;
+      x.dir        = t.dir;
+    });
   }
   save();
   collapseDetailPanel();
@@ -11781,6 +12199,254 @@ window.addEventListener('resize', () => {
 });
 </script>
 
+<!-- ══════════════════════════════════════════ -->
+<!--  OVERVIEW PAGE JS                         -->
+<!-- ══════════════════════════════════════════ -->
+<script>
+(function() {
+
+  let ovRange = 'month';
+  let ovCalYear, ovCalMonth;
+  let ovSelectedDay = null;
+
+  // ── Filter trades by range ──
+  function ovGetFiltered(range) {
+    const now = new Date();
+    const today = now.toISOString().slice(0,10);
+    return trades.filter(t => {
+      const d = (t.closeDate || t.date || '').slice(0,10);
+      if (!d) return false;
+      if (range === 'today') return d === today;
+      if (range === 'week') {
+        const day = now.getDay();
+        const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1)); mon.setHours(0,0,0,0);
+        const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999);
+        const td = new Date(d + 'T12:00:00');
+        return td >= mon && td <= sun;
+      }
+      if (range === 'month') return d.slice(0,7) === today.slice(0,7);
+      return true;
+    });
+  }
+
+  function ovFmt(v) {
+    const s = getCurrencySymbol();
+    const abs = Math.abs(v);
+    return (v >= 0 ? '+' + s : '-' + s) + abs.toFixed(2);
+  }
+  function ovFmtShort(v) {
+    const s = getCurrencySymbol();
+    const abs = Math.abs(v);
+    if (abs >= 10000) return (v<0?'-'+s:s)+(abs/1000).toFixed(0)+'k';
+    if (abs >= 1000)  return (v<0?'-'+s:s)+(abs/1000).toFixed(1)+'k';
+    return (v >= 0 ? '+' + s : '-' + s) + abs.toFixed(0);
+  }
+
+  // ── Range selector ──
+  window.ovSetRange = function(r) {
+    ovRange = r;
+    ovSelectedDay = null;
+    document.querySelectorAll('.ov-range-btn').forEach(b => {
+      const on = b.id === 'ovr-' + r;
+      b.classList.toggle('active', on);
+    });
+    renderOverview();
+  };
+
+  // ── Calendar nav ──
+  window.ovCalNav = function(dir) {
+    ovCalMonth += dir;
+    if (ovCalMonth > 11) { ovCalMonth = 0; ovCalYear++; }
+    if (ovCalMonth < 0)  { ovCalMonth = 11; ovCalYear--; }
+    renderOvCalendar();
+  };
+  window.ovCalGoToday = function() {
+    const now = new Date();
+    ovCalYear = now.getFullYear();
+    ovCalMonth = now.getMonth();
+    renderOvCalendar();
+  };
+  window.ovSelectDay = function(dateStr) {
+    ovSelectedDay = ovSelectedDay === dateStr ? null : dateStr;
+    renderOvCalendar();
+    renderOvTrades();
+  };
+
+  // ── Stats cards ──
+  function renderOvStats(filtered) {
+    const sym = getCurrencySymbol();
+    const totalPnl = filtered.reduce((s, t) => s + getPnl(t), 0);
+    const wins   = filtered.filter(t => getResult(t) === 'win');
+    const losses = filtered.filter(t => getResult(t) === 'loss');
+    const wr = (wins.length + losses.length) > 0 ? Math.round(wins.length / (wins.length + losses.length) * 100) : null;
+    const pnls = filtered.map(t => getPnl(t));
+    const bestPnl  = pnls.length ? Math.max(...pnls) : null;
+    const worstPnl = pnls.length ? Math.min(...pnls) : null;
+    const bestT  = bestPnl  !== null ? filtered.find(t => getPnl(t) === bestPnl)  : null;
+    const worstT = worstPnl !== null ? filtered.find(t => getPnl(t) === worstPnl) : null;
+    const grossWin  = wins.reduce((s,t)=>s+getPnl(t),0);
+    const grossLoss = Math.abs(losses.reduce((s,t)=>s+getPnl(t),0));
+    const pf = grossLoss > 0 ? (grossWin / grossLoss).toFixed(2) : wins.length > 0 ? '∞' : '—';
+
+    const pnlEl = document.getElementById('ov-pnl');
+    if (pnlEl) { pnlEl.textContent = filtered.length ? ovFmt(totalPnl) : '—'; pnlEl.style.color = totalPnl >= 0 ? 'var(--green)' : 'var(--red)'; }
+    const pnlSub = document.getElementById('ov-pnl-sub');
+    if (pnlSub) pnlSub.textContent = filtered.length + ' trade' + (filtered.length !== 1 ? 's' : '');
+    const wrEl = document.getElementById('ov-wr');
+    if (wrEl) { wrEl.textContent = wr !== null ? wr + '%' : '—'; wrEl.style.color = wr !== null ? (wr >= 50 ? 'var(--green)' : 'var(--red)') : 'var(--text)'; }
+    const wrSub = document.getElementById('ov-wr-sub');
+    if (wrSub) wrSub.textContent = wins.length + 'W / ' + losses.length + 'L';
+    const pfEl = document.getElementById('ov-pf');
+    if (pfEl) { pfEl.textContent = pf; pfEl.style.color = typeof pf === 'string' && parseFloat(pf) >= 1.5 ? 'var(--green)' : parseFloat(pf) < 1 ? 'var(--red)' : 'var(--yellow)'; }
+    const bEl = document.getElementById('ov-best');
+    if (bEl) { bEl.textContent = bestPnl !== null ? ovFmt(bestPnl) : '—'; }
+    const bSym = document.getElementById('ov-best-sym');
+    if (bSym) bSym.textContent = bestT ? bestT.symbol : '—';
+    const wEl = document.getElementById('ov-worst');
+    if (wEl) { wEl.textContent = worstPnl !== null ? ovFmt(worstPnl) : '—'; }
+    const wSym = document.getElementById('ov-worst-sym');
+    if (wSym) wSym.textContent = worstT ? worstT.symbol : '—';
+  }
+
+  // ── Calendar ──
+  function renderOvCalendar() {
+    const titleEl = document.getElementById('ov-cal-title');
+    const gridEl  = document.getElementById('ov-cal-grid');
+    if (!titleEl || !gridEl) return;
+
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    titleEl.textContent = months[ovCalMonth] + ' ' + ovCalYear;
+
+    // Build daily P&L map
+    const dayMap = {};
+    const dayCount = {};
+    trades.forEach(t => {
+      const d = (t.closeDate || t.date || '').slice(0,10);
+      if (!d) return;
+      if (!dayMap[d]) { dayMap[d] = 0; dayCount[d] = 0; }
+      dayMap[d] += getPnl(t);
+      dayCount[d]++;
+    });
+
+    const today = new Date().toISOString().slice(0,10);
+    const firstDow = new Date(ovCalYear, ovCalMonth, 1).getDay();
+    const daysInMonth = new Date(ovCalYear, ovCalMonth + 1, 0).getDate();
+
+    // Which dates are "in range"
+    const inRange = new Set();
+    const now = new Date();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = ovCalYear + '-' + String(ovCalMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      if (ovRange === 'all') { inRange.add(ds); continue; }
+      const tds = new Date(ds + 'T12:00:00');
+      if (ovRange === 'today') { if (ds === today) inRange.add(ds); }
+      else if (ovRange === 'week') {
+        const day = now.getDay();
+        const mon = new Date(now); mon.setDate(now.getDate() - (day===0?6:day-1)); mon.setHours(0,0,0,0);
+        const sun = new Date(mon); sun.setDate(mon.getDate()+6); sun.setHours(23,59,59,999);
+        if (tds >= mon && tds <= sun) inRange.add(ds);
+      } else if (ovRange === 'month') {
+        if (ds.slice(0,7) === today.slice(0,7)) inRange.add(ds);
+      }
+    }
+
+    let html = '';
+    for (let i = 0; i < firstDow; i++) html += '<div class="ov-cell ov-empty"></div>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const ds = ovCalYear + '-' + String(ovCalMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      const pnl   = dayMap[ds];
+      const count = dayCount[ds] || 0;
+      const hasTrades = pnl !== undefined;
+      const isToday    = ds === today;
+      const isSelected = ds === ovSelectedDay;
+      const isInRange  = inRange.has(ds);
+      let cls = 'ov-cell';
+      if (hasTrades) {
+        if (pnl > 0)      cls += ' ov-green';
+        else if (pnl < 0) cls += ' ov-red';
+        else              cls += ' ov-neutral';
+      } else {
+        cls += ' ov-blank';
+      }
+      if (isToday)    cls += ' ov-today';
+      if (isSelected) cls += ' ov-selected';
+      if (!isInRange) cls += ' ov-outrange';
+
+      const pnlHtml  = hasTrades ? `<div class="ov-cell-pnl">${ovFmtShort(pnl)}</div><div class="ov-cell-trades">${count} trade${count!==1?'s':''}</div>` : '';
+      html += `<div class="${cls}" onclick="ovSelectDay('${ds}')">
+        <div class="ov-cell-num">${d}</div>
+        <div>${pnlHtml}</div>
+      </div>`;
+    }
+    gridEl.innerHTML = html;
+  }
+
+  // ── Trades list ──
+  function renderOvTrades() {
+    const listEl   = document.getElementById('ov-trades-list');
+    const periodEl = document.getElementById('ov-trades-period');
+    if (!listEl) return;
+
+    let filtered;
+    if (ovSelectedDay) {
+      filtered = trades.filter(t => (t.closeDate || t.date || '').slice(0,10) === ovSelectedDay);
+      if (periodEl) periodEl.textContent = ovSelectedDay;
+    } else {
+      filtered = ovGetFiltered(ovRange);
+      const lbl = { today:'Today', week:'This Week', month:'This Month', all:'All Time' };
+      if (periodEl) periodEl.textContent = lbl[ovRange] + ' — ' + filtered.length;
+    }
+
+    if (!filtered.length) {
+      listEl.innerHTML = `<div style="padding:40px 16px;text-align:center;color:var(--muted);font-size:12px;">
+        <div style="font-size:28px;margin-bottom:8px;">📭</div>No trades for this period</div>`;
+      return;
+    }
+
+    const sorted = [...filtered].sort((a,b) => (b.closeDate||b.date||'').localeCompare(a.closeDate||a.date||''));
+    listEl.innerHTML = sorted.map(t => {
+      const pnl = getPnl(t);
+      const res = getResult(t);
+      const pnlColor = res === 'win' ? 'var(--green)' : res === 'loss' ? 'var(--red)' : 'var(--yellow)';
+      const dirBg    = t.dir === 'BUY' ? 'var(--green-bg)' : 'var(--red-bg)';
+      const dirColor = t.dir === 'BUY' ? 'var(--green)' : 'var(--red)';
+      const d = (t.closeDate || t.date || '').slice(5,10); // MM-DD
+      return `<div class="ov-trade-row" onclick="switchPage('trades')">
+        <span class="ov-trade-date">${d}</span>
+        <span class="ov-trade-symbol">${t.symbol||'—'}</span>
+        <span class="ov-trade-dir" style="background:${dirBg};color:${dirColor};">${t.dir||''}</span>
+        <span class="ov-trade-pnl" style="color:${pnlColor};">${ovFmt(pnl)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Master render ──
+  function renderOverview() {
+    const filtered = ovSelectedDay
+      ? trades.filter(t => (t.closeDate || t.date || '').slice(0,10) === ovSelectedDay)
+      : ovGetFiltered(ovRange);
+    renderOvStats(filtered);
+    renderOvCalendar();
+    renderOvTrades();
+  }
+
+  // ── Init ──
+  window.initOverviewPage = function() {
+    const now = new Date();
+    ovCalYear  = now.getFullYear();
+    ovCalMonth = now.getMonth();
+    // Reset to month range on open
+    ovRange = 'month';
+    ovSelectedDay = null;
+    document.querySelectorAll('.ov-range-btn').forEach(b => {
+      b.classList.toggle('active', b.id === 'ovr-month');
+    });
+    renderOverview();
+  };
+
+})();
+</script>
+
 </div><!-- /main-content -->
 </div><!-- /app-shell -->
 </div><!-- /app-root -->
@@ -11887,5 +12553,122 @@ window.addEventListener('resize', () => {
     <div id="mobile-sheet-body" style="padding:16px 20px;"></div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════ -->
+<!--  POSITION PACK JS                         -->
+<!-- ══════════════════════════════════════════ -->
+<script>
+(function() {
+
+  // ── State ──
+  let _packMode = false;
+  let _packRows = []; // [{entry, lots, pnl, result}]
+
+  // ── Toggle pack mode on/off ──
+  window.togglePackMode = function() {
+    if (document.getElementById('edit-id').value) return; // can't pack-edit existing
+    _packMode = !_packMode;
+    const pill = document.getElementById('pack-toggle-pill');
+    const dot  = document.getElementById('pack-toggle-dot');
+    const wrap = document.getElementById('pack-positions-wrap');
+    const single = document.getElementById('f-lots');
+    const singlePnl = document.getElementById('f-pnl');
+
+    if (_packMode) {
+      pill.style.background = 'var(--accent)';
+      dot.style.transform = 'translateX(18px)';
+      wrap.style.display = 'block';
+      // Seed with 2 rows pre-filled from single fields
+      _packRows = [
+        { entry: single?.value || '', lots: single?.value || '', pnl: '', result: '' },
+        { entry: '', lots: '', pnl: '', result: '' }
+      ];
+      renderPackRows();
+    } else {
+      pill.style.background = 'var(--border2)';
+      dot.style.transform = 'translateX(0)';
+      wrap.style.display = 'none';
+      _packRows = [];
+    }
+  };
+
+  window.packAddRow = function() {
+    if (_packRows.length >= 10) return;
+    _packRows.push({ entry: '', lots: '', pnl: '', result: '' });
+    renderPackRows();
+  };
+
+  window.packRemoveRow = function() {
+    if (_packRows.length <= 2) return;
+    _packRows.pop();
+    renderPackRows();
+  };
+
+  function renderPackRows() {
+    const container = document.getElementById('pack-rows-container');
+    const countLbl  = document.getElementById('pack-count-label');
+    if (!container) return;
+    if (countLbl) countLbl.textContent = _packRows.length;
+
+    const sym = typeof getCurrencySymbol === 'function' ? getCurrencySymbol() : '$';
+    const inputStyle = 'width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:12px;font-weight:600;font-family:var(--sans);box-sizing:border-box;outline:none;-moz-appearance:textfield;';
+
+    container.innerHTML = _packRows.map((row, i) => `
+      <div style="display:grid;grid-template-columns:20px 1fr 1fr 1fr 90px;gap:6px;align-items:center;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-align:center;">${i+1}</div>
+        <input type="number" step="0.00001" placeholder="Entry" value="${row.entry}"
+          style="${inputStyle}"
+          oninput="packUpdateField(${i},'entry',this.value)"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+        <input type="number" step="0.01" placeholder="Lots" value="${row.lots}"
+          style="${inputStyle}"
+          oninput="packUpdateField(${i},'lots',this.value)"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+        <input type="number" step="0.01" placeholder="P&L" value="${row.pnl}"
+          style="${inputStyle}"
+          oninput="packUpdateField(${i},'pnl',this.value)"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+        <select style="${inputStyle}padding:8px 4px;"
+          onchange="packUpdateField(${i},'result',this.value)">
+          <option value="" ${!row.result?'selected':''}>Auto</option>
+          <option value="win" ${row.result==='win'?'selected':''}>WIN</option>
+          <option value="loss" ${row.result==='loss'?'selected':''}>LOSS</option>
+          <option value="be"  ${row.result==='be'?'selected':''}>BE</option>
+        </select>
+      </div>`).join('');
+
+    updatePackTotal();
+  }
+
+  window.packUpdateField = function(i, field, val) {
+    if (_packRows[i]) _packRows[i][field] = val;
+    if (field === 'pnl') updatePackTotal();
+  };
+
+  function updatePackTotal() {
+    const total = _packRows.reduce((s, r) => s + (parseFloat(r.pnl) || 0), 0);
+    const el = document.getElementById('pack-total-pnl');
+    if (!el) return;
+    const sym = typeof getCurrencySymbol === 'function' ? getCurrencySymbol() : '$';
+    el.textContent = (total >= 0 ? '+' + sym : '-' + sym) + Math.abs(total).toFixed(2);
+    el.style.color = total >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+
+  // ── Expose state to saveTrade ──
+  window.isPackMode   = () => _packMode;
+  window.getPackRows  = () => _packRows;
+  window.resetPackMode = function() {
+    _packMode = false;
+    _packRows = [];
+    const pill = document.getElementById('pack-toggle-pill');
+    const dot  = document.getElementById('pack-toggle-dot');
+    const wrap = document.getElementById('pack-positions-wrap');
+    if (pill) { pill.style.background = 'var(--border2)'; }
+    if (dot)  { dot.style.transform = 'translateX(0)'; }
+    if (wrap) { wrap.style.display = 'none'; }
+  };
+
+})();
+</script>
 </body>
 </html>
