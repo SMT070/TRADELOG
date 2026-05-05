@@ -11965,25 +11965,72 @@ window.addEventListener('resize', () => {
 }
 #pack-select-bar.active { display: flex; }
 
+/* ── Pack separator row ── */
+tr.pack-separator td {
+  padding: 0 !important;
+  height: 1px !important;
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none;
+}
+tr.pack-separator td > div {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 18px, var(--border) 18px, var(--border) calc(100% - 18px), transparent calc(100% - 18px));
+  opacity: .55;
+}
+
 /* ── Pack header row ── */
 tr.pack-header-row td {
   background: var(--surface2) !important;
   border-bottom: none !important;
-  padding: 10px 18px !important;
+  padding: 0 !important;
   cursor: pointer;
 }
 tr.pack-header-row:hover td { background: var(--surface3) !important; }
-tr.pack-header-row.expanded td { border-bottom: 1px solid rgba(99,102,241,.2) !important; }
+tr.pack-header-row.expanded td { border-bottom: 1px solid rgba(99,102,241,.15) !important; }
+
+/* ── Pack stats block: fixed-width columns so they never shift ── */
+.pack-stat-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  gap: 2px;
+}
+.pack-stat-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.pack-stat-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+.pack-stat-value.pnl { font-size: 15px; font-weight: 900; letter-spacing: -.3px; }
 
 /* ── Pack child rows ── */
 tr.pack-child-row td {
   background: rgba(99,102,241,.03);
-  border-left: 3px solid rgba(99,102,241,.25);
+  border-left: 2px solid rgba(99,102,241,.2);
   font-size: 12px !important;
 }
-tr.pack-child-row td:first-child { padding-left: 28px !important; }
+tr.pack-child-row td:first-child { padding-left: 46px !important; }
 tr.pack-child-row:hover td { background: rgba(99,102,241,.07) !important; }
 tr.pack-child-row.hidden { display: none; }
+
+/* ── Auto-pack child rows (yellow tint) ── */
+tr.pack-child-row[data-pack^="_auto_"] td {
+  border-left: 2px solid rgba(245,158,11,.25);
+  background: rgba(245,158,11,.02);
+}
+tr.pack-child-row[data-pack^="_auto_"]:hover td { background: rgba(245,158,11,.06) !important; }
 
 /* ── Pack badge on individual trade rows ── */
 .pack-badge {
@@ -12493,112 +12540,141 @@ function renderSingleTradeRow(t, sym) {
 }
 
 // ── Render a pack header + child rows ─────────────────────────────
-function renderPackRows(packId, packTrades, sym) {
-  // Pack summary stats
-  const totalPnl = packTrades.reduce((s,t) => s + getPnl(t), 0);
-  const wins     = packTrades.filter(t => getResult(t) === 'win').length;
-  const losses   = packTrades.filter(t => getResult(t) === 'loss').length;
-  const decided  = wins + losses;
-  const wr       = decided ? Math.round(wins/decided*100) : 0;
-  const totalLots= packTrades.reduce((s,t) => s + (parseFloat(t.lots)||0), 0);
-  const symbols  = [...new Set(packTrades.map(t=>t.symbol))].join(', ');
-  const packName = packTrades[0]?.packName || 'Pack';
-  const isExpanded = packExpandedIds.has(packId);
-  const pnlColor = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
-  const pnlStr   = (totalPnl>=0?'+'+sym:'-'+sym)+Math.abs(totalPnl).toFixed(2);
-  const newestDate = packTrades.reduce((latest, t) => t.date > latest ? t.date : latest, packTrades[0]?.date || '');
-  const packResult = totalPnl > 0 ? 'win' : totalPnl < 0 ? 'loss' : 'be';
-  const resultBg = packResult === 'win' ? 'var(--green-bg)' : packResult === 'loss' ? 'var(--red-bg)' : 'rgba(245,158,11,.12)';
-  const resultColor = packResult === 'win' ? 'var(--green)' : packResult === 'loss' ? 'var(--red)' : 'var(--yellow)';
-  const resultLabel = packResult === 'win' ? 'WIN' : packResult === 'loss' ? 'LOSS' : 'BE';
-
-  // The checkbox column span when in select mode
-  const cbColspan = packSelectMode ? '' : '';
-  const colspanVal = packSelectMode ? 11 : 10;
-
-  // Pack header row
-  let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" onclick="togglePackExpand('${packId}',event)">
-    <td colspan="${colspanVal}" style="padding:0;">
-      <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;">
-        <!-- Expand chevron -->
-        <div class="pack-chevron" style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(99,102,241,.12);flex-shrink:0;transition:transform .2s;${isExpanded?'transform:rotate(90deg)':''}">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-        <!-- Pack icon + name -->
-        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
-          <div style="width:28px;height:28px;border-radius:8px;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">📦</div>
-          <div style="min-width:0;">
-            <div style="font-size:13px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${packName}</div>
-            <div style="font-size:10px;color:var(--muted);font-weight:600;margin-top:1px;">${symbols} · ${packTrades.length} positions · ${newestDate.slice(0,10)}</div>
-          </div>
-        </div>
-        <!-- Pack stats -->
-        <div style="display:flex;align-items:center;gap:18px;flex-shrink:0;">
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">Lots</div>
-            <div style="font-size:13px;font-weight:800;color:var(--text);font-family:var(--mono);">${totalLots.toFixed(2)}</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">Win Rate</div>
-            <div style="font-size:13px;font-weight:800;color:${wr>=50?'var(--green)':'var(--red)'};">${decided?wr+'%':'—'}</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">Net P&amp;L</div>
-            <div style="font-size:16px;font-weight:900;color:${pnlColor};letter-spacing:-0.5px;font-family:var(--mono);">${pnlStr}</div>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:6px;background:${resultBg};min-width:44px;">
-            <span style="font-size:10px;font-weight:800;color:${resultColor};">${resultLabel}</span>
-          </div>
-        </div>
-        <!-- Pack actions -->
-        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;" onclick="event.stopPropagation()">
-          <button onclick="renamePack('${packId}','${packName.replace(/'/g,"\\'")}',event)" title="Rename pack"
-            style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;"
-            onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-            onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </button>
-          <button onclick="dissolvePack('${packId}',event)" title="Ungroup pack"
-            style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;"
-            onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
-            onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-          </button>
+// Shared helper: build pack header inner HTML (used by both real and auto packs)
+function _buildPackHeaderInner(opts) {
+  // opts: { packId, packName, subLabel, accentColor, accentBg, icon, isExpanded,
+  //         totalLots, wr, decided, pnlStr, pnlColor, resultLabel, resultBg, resultColor,
+  //         actions /* html string */ }
+  const chevronColor = opts.accentColor || 'var(--accent)';
+  return `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;min-height:52px;">
+      <!-- Chevron -->
+      <div class="pack-chevron" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:${opts.accentBg};flex-shrink:0;transition:transform .2s;${opts.isExpanded?'transform:rotate(90deg)':''}">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="${chevronColor}" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <!-- Icon + name -->
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden;">
+        <div style="width:30px;height:30px;border-radius:8px;background:${opts.accentBg};border:1px solid ${opts.accentColor}40;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">${opts.icon}</div>
+        <div style="min-width:0;overflow:hidden;">
+          <div style="font-size:12px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${opts.packName}</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:600;margin-top:1px;white-space:nowrap;">${opts.subLabel}</div>
         </div>
       </div>
-    </td>
+      <!-- Stats: fixed-width blocks, always aligned -->
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <div class="pack-stat-block" style="min-width:52px;">
+          <span class="pack-stat-label">Lots</span>
+          <span class="pack-stat-value">${opts.totalLots}</span>
+        </div>
+        <div style="width:1px;height:28px;background:var(--border);opacity:.6;flex-shrink:0;"></div>
+        <div class="pack-stat-block" style="min-width:62px;">
+          <span class="pack-stat-label">Win Rate</span>
+          <span class="pack-stat-value" style="color:${opts.decided?(opts.wr>=50?'var(--green)':'var(--red)'):'var(--muted)'};">${opts.decided?opts.wr+'%':'—'}</span>
+        </div>
+        <div style="width:1px;height:28px;background:var(--border);opacity:.6;flex-shrink:0;"></div>
+        <div class="pack-stat-block" style="min-width:90px;">
+          <span class="pack-stat-label">Net P&amp;L</span>
+          <span class="pack-stat-value pnl" style="color:${opts.pnlColor};">${opts.pnlStr}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;padding:5px 11px;border-radius:6px;background:${opts.resultBg};min-width:46px;flex-shrink:0;">
+          <span style="font-size:10px;font-weight:800;letter-spacing:.4px;color:${opts.resultColor};">${opts.resultLabel}</span>
+        </div>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;width:60px;justify-content:flex-end;" onclick="event.stopPropagation()">
+        ${opts.actions}
+      </div>
+    </div>`;
+}
+
+// Shared helper: build a child trade row for a pack
+function _buildPackChildRow(t, sym, packId, isExpanded, isAutoChildRow) {
+  const pnl      = getPnl(t);
+  const result   = getResult(t);
+  const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const pnlStr   = (pnl >= 0 ? '+' + sym : '-' + sym) + Math.abs(pnl).toFixed(2);
+  const badge    = result === 'be'
+    ? `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800;color:var(--yellow);background:rgba(245,158,11,.15);">BE</span>`
+    : result === 'win'
+    ? `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800;color:var(--green);background:var(--green-bg);">WIN</span>`
+    : `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800;color:var(--red);background:var(--red-bg);">LOSS</span>`;
+  const isSelected = t.id === selectedId;
+  const dateHtml   = t.date
+    ? `<span style="font-size:11px;font-weight:600;color:var(--text2);">${t.date.slice(0,10)}</span><br><span style="font-size:10px;color:var(--muted);font-weight:500;">${t.date.slice(11,19)}</span>`
+    : '—';
+  return `<tr class="pack-child-row${isExpanded?'':' hidden'}${isSelected?' selected':''}" data-id="${t.id}" data-pack="${packId}"
+    onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;">
+    <td style="white-space:nowrap;line-height:1.4;">${dateHtml}</td>
+    <td style="font-weight:700;font-size:12px;color:var(--text);">${t.symbol}</td>
+    <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:9px;">${t.dir}</span></td>
+    <td style="color:var(--text2);font-weight:600;font-size:12px;font-family:var(--mono);">${t.lots||'—'}</td>
+    <td style="color:var(--text2);font-weight:500;font-size:12px;font-family:var(--mono);">${t.entry||'—'}</td>
+    <td style="color:var(--text2);font-weight:500;font-size:12px;font-family:var(--mono);">${t.exit||'—'}</td>
+    <td style="color:${pnlColor};font-weight:800;font-size:12px;font-family:var(--mono);">${pnlStr}</td>
+    <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-weight:600;font-size:12px;font-family:var(--mono);">${t.commission ? sym+parseFloat(t.commission).toFixed(2) : '—'}</td>
+    <td>${badge}</td>
+    <td data-col="tags" style="max-width:110px;overflow:hidden;">${renderRowTagsHTML(t.strategies)}</td>
   </tr>`;
+}
 
-  // Child rows (individual trades)
-  packTrades.forEach(t => {
-    const pnl = getPnl(t);
-    const result = getResult(t);
-    const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
-    const pnlStr = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
-    const badge = result === 'be'
-      ? `<span style="color:var(--yellow);font-size:10px;font-weight:700;background:rgba(245,158,11,.15);padding:2px 8px;border-radius:4px;">BE</span>`
-      : result === 'win'
-      ? `<span style="color:var(--green);font-size:10px;font-weight:700;background:var(--green-bg);padding:2px 8px;border-radius:4px;">WIN</span>`
-      : `<span style="color:var(--red);font-size:10px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:4px;">LOSS</span>`;
-    const isSelected = t.id === selectedId;
+// Thin separator row between packs
+function _packSeparator(colspan) {
+  return `<tr class="pack-separator"><td colspan="${colspan}"><div></div></td></tr>`;
+}
 
-    html += `<tr class="pack-child-row${isExpanded?'':' hidden'}${isSelected?' selected':''}" data-id="${t.id}" data-pack="${packId}"
-      onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;">
-      <td style="color:var(--text2);font-size:11px;white-space:nowrap;font-weight:600;padding-left:44px !important;"${packSelectMode?' colspan="1"':''}>${t.date ? t.date.slice(0,10)+'<br><span style="font-size:10px;color:var(--muted);">'+t.date.slice(11,19)+'</span>' : '—'}</td>
-      <td style="font-weight:700;font-size:12px;">${t.symbol}</td>
-      <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:9px;">${t.dir}</span></td>
-      <td style="color:var(--text);font-weight:500;font-size:12px;">${t.lots||'—'}</td>
-      <td style="color:var(--text);font-weight:500;font-size:12px;">${t.entry||'—'}</td>
-      <td style="color:var(--text);font-weight:500;font-size:12px;">${t.exit||'—'}</td>
-      <td style="color:${pnlColor};font-weight:700;font-size:12px;">${pnlStr}</td>
-      <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-family:var(--mono);font-weight:600;font-size:12px;">${t.commission ? sym+parseFloat(t.commission).toFixed(2) : '—'}</td>
-      <td>${badge}</td>
-      <td data-col="tags" style="max-width:110px;overflow:hidden;">${renderRowTagsHTML(t.strategies)}</td>
-    </tr>`;
+function renderPackRows(packId, packTrades, sym) {
+  const totalPnl   = packTrades.reduce((s,t) => s + getPnl(t), 0);
+  const wins       = packTrades.filter(t => getResult(t) === 'win').length;
+  const losses     = packTrades.filter(t => getResult(t) === 'loss').length;
+  const decided    = wins + losses;
+  const wr         = decided ? Math.round(wins/decided*100) : 0;
+  const totalLots  = packTrades.reduce((s,t) => s + (parseFloat(t.lots)||0), 0);
+  const symbols    = [...new Set(packTrades.map(t=>t.symbol))].join(', ');
+  const packName   = packTrades[0]?.packName || 'Pack';
+  const isExpanded = packExpandedIds.has(packId);
+  const pnlColor   = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const pnlStr     = (totalPnl>=0?'+'+sym:'-'+sym)+Math.abs(totalPnl).toFixed(2);
+  const newestDate = packTrades.reduce((l,t) => t.date>l?t.date:l, packTrades[0]?.date||'');
+  const packResult = totalPnl>0?'win':totalPnl<0?'loss':'be';
+  const resultBg   = packResult==='win'?'var(--green-bg)':packResult==='loss'?'var(--red-bg)':'rgba(245,158,11,.12)';
+  const resultColor= packResult==='win'?'var(--green)':packResult==='loss'?'var(--red)':'var(--yellow)';
+  const resultLabel= packResult==='win'?'WIN':packResult==='loss'?'LOSS':'BE';
+  const colspanVal = packSelectMode ? 11 : 10;
+  const safePackName = packName.replace(/'/g,"\\'");
+
+  const actions = `
+    <button onclick="renamePack('${packId}','${safePackName}',event)" title="Rename pack"
+      style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;"
+      onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+      onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </button>
+    <button onclick="dissolvePack('${packId}',event)" title="Ungroup pack"
+      style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;"
+      onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
+      onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+    </button>`;
+
+  const inner = _buildPackHeaderInner({
+    packId, packName,
+    subLabel: `${symbols} · ${packTrades.length} position${packTrades.length!==1?'s':''} · ${newestDate.slice(0,10)}`,
+    accentColor: 'var(--accent)', accentBg: 'rgba(99,102,241,.12)',
+    icon: '📦', isExpanded,
+    totalLots: totalLots.toFixed(2),
+    wr, decided, pnlStr, pnlColor,
+    resultLabel, resultBg, resultColor,
+    actions
   });
 
-  // Pack summary footer row (always visible when collapsed, hidden when expanded)
-  // Actually we just show it as part of the header — no footer needed.
+  let html = _packSeparator(colspanVal);
+  html += `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" onclick="togglePackExpand('${packId}',event)">
+    <td colspan="${colspanVal}" style="padding:0;">${inner}</td>
+  </tr>`;
+
+  packTrades.forEach(t => {
+    html += _buildPackChildRow(t, sym, packId, isExpanded, false);
+  });
 
   return html;
 }
@@ -12721,24 +12797,34 @@ function toggleSelectAll(e) {
 
 // ══════════════════════════════════════════════════════════════════
 //  AUTO-PACK FEATURE
-//  When enabled, trades on the same symbol whose execution times
-//  fall within 60 seconds of each other are automatically grouped
-//  into a pack. The user can toggle this on/off; it is purely a
-//  display/grouping layer — it does NOT mutate packId on disk
-//  unless the user confirms via the prompt.
+//  A purely visual grouping layer. When ON, standalone trades on
+//  the same symbol whose timestamps are within 60 s of each other
+//  are rendered as a collapsed pack.
+//
+//  SAFETY RULES:
+//  • Never writes to trades[], localStorage (trades), or Supabase.
+//  • Temporary packId/packName are applied only during renderTrades
+//    and are always restored in a finally{} block so no crash can
+//    leave data dirty.
+//  • Auto-pack rows get NO rename/dissolve buttons (they are
+//    display-only and have no real packId to operate on).
+//  • Real packs (trades that already have a packId) are never
+//    touched or re-grouped.
+//  • Pack select mode is unaffected; auto-packs are ignored there.
 // ══════════════════════════════════════════════════════════════════
 
 function toggleAutoPack() {
-  const current = localStorage.getItem('tradelog_autopack') === 'true';
-  const next = !current;
-  localStorage.setItem('tradelog_autopack', next);
+  const next = !(localStorage.getItem('tradelog_autopack') === 'true');
+  localStorage.setItem('tradelog_autopack', String(next));
   const btn = document.getElementById('auto-pack-btn');
   if (btn) btn.classList.toggle('active', next);
-  if (next) {
-    toast('⚡ Auto-Pack ON — trades within 1 min on same symbol are grouped', 'success');
-  } else {
-    toast('Auto-Pack OFF', '');
+  // Sync notice bar visibility
+  if (!next) {
+    const note = document.getElementById('autopack-notice');
+    if (note) note.remove();
   }
+  if (next) toast('⚡ Auto-Pack ON — trades within 1 min on same symbol are grouped', 'success');
+  else       toast('Auto-Pack OFF', '');
   renderTrades();
 }
 
@@ -12746,178 +12832,337 @@ function isAutoPack() {
   return localStorage.getItem('tradelog_autopack') === 'true';
 }
 
-// Build virtual auto-pack groups from a list of trades.
-// Returns a map: virtualPackKey → trades[]
-// Trades that are already in a real pack are excluded (real packs take priority).
-function buildAutoPackGroups(list) {
-  if (!isAutoPack()) return {};
+// Returns { autoGroups: { key→trades[] }, tradeKey: { id→key } }
+// Only for standalone (no real packId) trades, 2+ per group, ≤60 s apart.
+function buildAutoPackGroups(filteredList) {
+  const autoGroups  = {};
+  const tradeKey    = {};
+  if (!isAutoPack()) return { autoGroups, tradeKey };
 
-  // Only consider standalone trades (no real packId)
-  const standalone = list.filter(t => !t.packId);
-
-  // Group by symbol first
+  // Bucket by symbol — skip trades that already belong to a real pack
   const bySymbol = {};
-  standalone.forEach(t => {
-    const sym = (t.symbol || '').toUpperCase();
-    if (!bySymbol[sym]) bySymbol[sym] = [];
-    bySymbol[sym].push(t);
+  filteredList.forEach(t => {
+    if (t.packId) return; // real pack — never touch
+    const s = (t.symbol || '').toUpperCase();
+    if (!bySymbol[s]) bySymbol[s] = [];
+    bySymbol[s].push(t);
   });
-
-  const autoGroups = {}; // key → trades[]
 
   Object.entries(bySymbol).forEach(([sym, symTrades]) => {
-    // Sort by date ascending
-    const sorted = [...symTrades].sort((a, b) => {
-      return new Date(a.date || 0) - new Date(b.date || 0);
-    });
+    // Sort ascending by date
+    const sorted = symTrades.slice().sort((a, b) =>
+      new Date(a.date || 0) - new Date(b.date || 0)
+    );
 
-    // Sliding window cluster: if gap between consecutive trades ≤ 60s → same group
-    let groupIdx = 0;
-    let groups = [[ sorted[0] ]];
+    // Cluster: consecutive gap ≤ 60 s → same group
+    const groups = [[ sorted[0] ]];
     for (let i = 1; i < sorted.length; i++) {
-      const prev = new Date(sorted[i-1].date || 0);
-      const curr = new Date(sorted[i].date || 0);
-      const diffSec = (curr - prev) / 1000;
-      if (diffSec <= 60) {
-        groups[groups.length - 1].push(sorted[i]);
-      } else {
-        groups.push([ sorted[i] ]);
-      }
+      const diffSec = (new Date(sorted[i].date || 0) - new Date(sorted[i-1].date || 0)) / 1000;
+      if (diffSec <= 60) groups[groups.length - 1].push(sorted[i]);
+      else               groups.push([ sorted[i] ]);
     }
 
-    // Only emit groups with 2+ trades
     groups.forEach((grp, gi) => {
-      if (grp.length >= 2) {
-        const key = `auto:${sym}:${gi}:${grp[0].id}`;
-        autoGroups[key] = grp;
-      }
+      if (grp.length < 2) return; // singleton — leave as standalone
+      const key = `_auto_${sym}_${gi}_${grp[0].id}`;
+      autoGroups[key] = grp;
+      grp.forEach(t => { tradeKey[t.id] = key; });
     });
   });
 
-  return autoGroups;
+  return { autoGroups, tradeKey };
 }
 
-// ── Patch renderTrades to also handle auto-packs ──────────────────
-const _origRenderTradesAutopack = renderTrades;
-renderTrades = function(skipTagRebuild) {
-  // If auto-pack is off, just run the original
-  if (!isAutoPack()) { _origRenderTradesAutopack(skipTagRebuild); return; }
+// Render an auto-pack header + child rows — no rename/dissolve buttons
+function renderAutoPackRows(key, packTrades, sym) {
+  const totalPnl  = packTrades.reduce((s, t) => s + getPnl(t), 0);
+  const wins      = packTrades.filter(t => getResult(t) === 'win').length;
+  const losses    = packTrades.filter(t => getResult(t) === 'loss').length;
+  const decided   = wins + losses;
+  const wr        = decided ? Math.round(wins / decided * 100) : 0;
+  const totalLots = packTrades.reduce((s, t) => s + (parseFloat(t.lots) || 0), 0);
+  const symbols   = [...new Set(packTrades.map(t => t.symbol))].join(', ');
 
-  // Run original rendering pipeline except for tbody fill — we intercept below.
-  // Easiest: call original (which fills tbody), then re-render tbody with auto-packs mixed in.
-  // But since renderTrades re-builds the full tbody, we patch the list used there.
-  // We wrap the whole tbody building part by temporarily patching packMap logic.
+  // Label: symbol + time range
+  const earliest = packTrades.reduce((e, t) => t.date < e ? t.date : e, packTrades[0].date || '');
+  const latest   = packTrades.reduce((l, t) => t.date > l ? t.date : l, packTrades[0].date || '');
+  const timeStr  = earliest.slice(11, 16) + (earliest !== latest ? '–' + latest.slice(11, 16) : '');
+  const packLabel = `⚡ ${symbols} · ${timeStr}`;
 
-  // Store auto-groups so renderTrades grouping code can see them
-  window._autoPackGroupsForRender = null; // signal to rebuild
-  _origRenderTradesAutopack(skipTagRebuild);
-};
+  const isExpanded  = packExpandedIds.has(key);
+  const pnlColor    = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const pnlStr      = (totalPnl >= 0 ? '+' + sym : '-' + sym) + Math.abs(totalPnl).toFixed(2);
+  const packResult  = totalPnl > 0 ? 'win' : totalPnl < 0 ? 'loss' : 'be';
+  const resultBg    = packResult === 'win' ? 'var(--green-bg)' : packResult === 'loss' ? 'var(--red-bg)' : 'rgba(245,158,11,.12)';
+  const resultColor = packResult === 'win' ? 'var(--green)' : packResult === 'loss' ? 'var(--red)' : 'var(--yellow)';
+  const resultLabel = packResult === 'win' ? 'WIN' : packResult === 'loss' ? 'LOSS' : 'BE';
+  const colspanVal  = packSelectMode ? 11 : 10;
+  const newestDate  = latest;
 
-// ── Override the INNER tbody grouping inside renderTrades ─────────
-// We do this by patching after the fact: after _origRenderTrades runs,
-// we intercept at the tbody.innerHTML assignment level.
-// Simpler approach: patch the renderItems building section by monkey-patching
-// the renderTrades body. Since the whole function is re-assigned above via closures,
-// we instead patch buildAutoPackGroups into the renderTrades we already overrode.
+  let html = `<tr class="pack-header-row${isExpanded ? ' expanded' : ''}" data-pack="${key}" onclick="togglePackExpand('${key}',event)">
+    <td colspan="${colspanVal}" style="padding:0;">
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;">
+        <div class="pack-chevron" style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(245,158,11,.12);flex-shrink:0;transition:transform .2s;${isExpanded ? 'transform:rotate(90deg)' : ''}">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+          <div style="width:28px;height:28px;border-radius:8px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">⚡</div>
+          <div style="min-width:0;">
+            <div style="font-size:13px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${packLabel}</div>
+            <div style="font-size:10px;color:var(--muted);font-weight:600;margin-top:1px;">${packTrades.length} trades · auto-grouped · ${newestDate.slice(0,10)}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:18px;flex-shrink:0;">
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">Lots</div>
+            <div style="font-size:13px;font-weight:800;color:var(--text);font-family:var(--mono);">${totalLots.toFixed(2)}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">Win Rate</div>
+            <div style="font-size:13px;font-weight:800;color:${wr >= 50 ? 'var(--green)' : 'var(--red)'};">${decided ? wr + '%' : '—'}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">Net P&amp;L</div>
+            <div style="font-size:16px;font-weight:900;color:${pnlColor};letter-spacing:-0.5px;font-family:var(--mono);">${pnlStr}</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:6px;background:${resultBg};min-width:44px;">
+            <span style="font-size:10px;font-weight:800;color:${resultColor};">${resultLabel}</span>
+          </div>
+        </div>
+        <!-- No rename/dissolve buttons for auto-packs — they are view-only -->
+        <div style="width:60px;flex-shrink:0;"></div>
+      </div>
+    </td>
+  </tr>`;
 
-// Actually the cleanest approach: re-override renderTrades fully to inject auto-groups.
-{
-  const _base = _origRenderTradesAutopack; // the version BEFORE this file's first override
-  renderTrades = function(skipTagRebuild) {
-    if (!isAutoPack()) { _base(skipTagRebuild); return; }
+  packTrades.forEach(t => {
+    const pnl      = getPnl(t);
+    const result   = getResult(t);
+    const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const pnlStr   = (pnl >= 0 ? '+' + sym : '-' + sym) + Math.abs(pnl).toFixed(2);
+    const badge    = result === 'be'
+      ? `<span style="color:var(--yellow);font-size:10px;font-weight:700;background:rgba(245,158,11,.15);padding:2px 8px;border-radius:4px;">BE</span>`
+      : result === 'win'
+      ? `<span style="color:var(--green);font-size:10px;font-weight:700;background:var(--green-bg);padding:2px 8px;border-radius:4px;">WIN</span>`
+      : `<span style="color:var(--red);font-size:10px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:4px;">LOSS</span>`;
+    const isSelected = t.id === selectedId;
 
-    // We need to inject auto-groups into the grouped rendering.
-    // Strategy: temporarily tag auto-group trades with a virtual packId,
-    // run base render, then un-tag them.
-    if (!skipTagRebuild) { try { rebuildTagDropdown(); } catch(e){} }
+    html += `<tr class="pack-child-row${isExpanded ? '' : ' hidden'}${isSelected ? ' selected' : ''}" data-id="${t.id}" data-pack="${key}"
+      onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;">
+      <td style="color:var(--text2);font-size:11px;white-space:nowrap;font-weight:600;padding-left:44px !important;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:10px;color:var(--muted);">'+t.date.slice(11,19)+'</span>' : '—'}</td>
+      <td style="font-weight:700;font-size:12px;">${t.symbol}</td>
+      <td><span class="badge ${t.dir === 'BUY' ? 'buy' : 'sell'}" style="font-size:9px;">${t.dir}</span></td>
+      <td style="color:var(--text);font-weight:500;font-size:12px;">${t.lots || '—'}</td>
+      <td style="color:var(--text);font-weight:500;font-size:12px;">${t.entry || '—'}</td>
+      <td style="color:var(--text);font-weight:500;font-size:12px;">${t.exit || '—'}</td>
+      <td style="color:${pnlColor};font-weight:700;font-size:12px;">${pnlStr}</td>
+      <td style="color:${t.commission ? 'var(--red)' : 'var(--text2)'};font-family:var(--mono);font-weight:600;font-size:12px;">${t.commission ? sym + parseFloat(t.commission).toFixed(2) : '—'}</td>
+      <td>${badge}</td>
+      <td data-col="tags" style="max-width:110px;overflow:hidden;">${renderRowTagsHTML(t.strategies)}</td>
+    </tr>`;
+  });
 
-    const q   = (document.getElementById('search-input')?.value||'').toLowerCase();
-    const dir = document.getElementById('filter-dir')?.value || '';
+  return html;
+}
+
+// ── Single-point override of renderTrades for auto-pack support ───
+// Captures the already-patched renderTrades (which has real-pack support)
+// and wraps it. Auto-pack is OFF by default so the wrapper is a no-op.
+(function patchRenderTradesForAutoPack() {
+  const _prev = renderTrades; // whatever renderTrades is now (real-pack version)
+
+  renderTrades = function renderTradesWithAutoPack(skipTagRebuild) {
+    // ── Auto-Pack OFF: delegate entirely, zero overhead ───────────
+    if (!isAutoPack()) {
+      _prev(skipTagRebuild);
+      return;
+    }
+
+    // ── Auto-Pack ON ──────────────────────────────────────────────
+    // We run the tag rebuild and summary-bar logic the same way
+    // the original does, then build the tbody ourselves so we can
+    // insert auto-pack rows without touching any trade objects.
+    if (!skipTagRebuild) { try { rebuildTagDropdown(); } catch(e) {} }
+
+    // ── Replicate the filter/sort from the original renderTrades ──
+    const q   = (document.getElementById('search-input')?.value || '').toLowerCase();
+    const dir = document.getElementById('filter-dir')?.value   || '';
     const res = document.getElementById('filter-result')?.value || '';
-    const tag = document.getElementById('filter-tag')?.value || '';
+    const tag = document.getElementById('filter-tag')?.value   || '';
 
     const now = new Date();
-    const pad = n => String(n).padStart(2,'0');
+    const pad = n => String(n).padStart(2, '0');
     const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
     let fromStr = '', toStr = '';
     if (typeof tradesRange !== 'undefined') {
       if (tradesRange === 'today')  { fromStr = todayStr; toStr = todayStr; }
       else if (tradesRange === 'week') {
-        const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+        const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7));
         fromStr = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
-        toStr = todayStr;
+        toStr   = todayStr;
       }
       else if (tradesRange === 'month') { fromStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-01`; toStr = todayStr; }
-      else if (typeof customFrom !== 'undefined' && tradesRange === 'custom') { fromStr = customFrom; toStr = customTo; }
+      else if (tradesRange === 'custom' && typeof customFrom !== 'undefined') { fromStr = customFrom; toStr = customTo; }
     }
 
     let list = trades.filter(t => {
-      const d = (t.date||'').slice(0,10);
+      const d = (t.date || '').slice(0, 10);
       if (fromStr && d < fromStr) return false;
       if (toStr   && d > toStr)   return false;
-      if (q && !t.symbol.toLowerCase().includes(q) && !(t.notes||'').toLowerCase().includes(q) && !(t.date||'').includes(q) && !(t.strategies||[]).some(s=>s.toLowerCase().includes(q)) && !(t.packName||'').toLowerCase().includes(q)) return false;
+      if (q && !t.symbol.toLowerCase().includes(q) &&
+               !(t.notes||'').toLowerCase().includes(q) &&
+               !(t.date||'').includes(q) &&
+               !(t.strategies||[]).some(s => s.toLowerCase().includes(q)) &&
+               !(t.packName||'').toLowerCase().includes(q)) return false;
       if (dir && t.dir !== dir) return false;
-      if (res) { const r = getResult(t); if (r !== res) return false; }
+      if (res) { if (getResult(t) !== res) return false; }
       if (tag && !(t.strategies||[]).includes(tag)) return false;
       return true;
     });
 
-    // Build auto-pack groups for standalone trades in this list
-    const autoGroups = buildAutoPackGroups(list);
+    // ── Summary bar (same as original) ───────────────────────────
+    const sym      = getCurrencySymbol();
+    const totalPnl = list.reduce((s, t) => s + getPnl(t), 0);
+    const wins_    = list.filter(t => getResult(t) === 'win');
+    const losses_  = list.filter(t => getResult(t) === 'loss');
+    const bes_     = list.filter(t => getResult(t) === 'be');
+    const decided_ = wins_.length + losses_.length;
+    const wr_      = decided_ ? Math.round(wins_.length / decided_ * 100) : 0;
+    const tbCount  = document.getElementById('tb-count');  if (tbCount)  tbCount.textContent = list.length;
+    const tbPnl    = document.getElementById('tb-pnl');
+    if (tbPnl) { tbPnl.textContent = (totalPnl>=0?'+'+sym:'-'+sym)+Math.abs(totalPnl).toFixed(2); tbPnl.style.color = totalPnl>=0?'var(--green)':'var(--red)'; }
+    const tbWr     = document.getElementById('tb-wr');
+    if (tbWr) { tbWr.textContent = wr_+'%'; tbWr.style.color = wr_>=50?'var(--green)':'var(--red)'; }
+    const tbBal    = document.getElementById('tb-balance');
+    if (tbBal) { const bal = getBalance(); const acct = bal>0 ? bal+totalPnl : null; tbBal.textContent = acct!==null ? 'Balance: '+sym+acct.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) : 'Balance: —'; }
+    const tbWins   = document.getElementById('tb-wins');   if (tbWins)   tbWins.textContent   = wins_.length;
+    const tbLosses = document.getElementById('tb-losses'); if (tbLosses) tbLosses.textContent = losses_.length;
+    const tbBes    = document.getElementById('tb-bes');    if (tbBes)    tbBes.textContent    = bes_.length;
 
-    // Map trade id → virtual pack key
-    const tradeToAutoKey = {};
-    Object.entries(autoGroups).forEach(([key, grp]) => {
-      grp.forEach(t => { tradeToAutoKey[t.id] = key; });
-    });
-
-    // Temporarily assign virtual packId + packName for rendering
-    const origFields = {}; // id → {packId, packName}
-    list.forEach(t => {
-      if (tradeToAutoKey[t.id]) {
-        origFields[t.id] = { packId: t.packId, packName: t.packName };
-        const key = tradeToAutoKey[t.id];
-        const sym = (t.symbol || '').toUpperCase();
-        // packName: symbol + time range
-        const grp = autoGroups[key];
-        const earliest = grp.reduce((e, x) => x.date < e ? x.date : e, grp[0].date);
-        const latest   = grp.reduce((l, x) => x.date > l ? x.date : l, grp[0].date);
-        const timeStr  = earliest.slice(11,16) + (earliest !== latest ? '–'+latest.slice(11,16) : '');
-        t.packId   = key;
-        t.packName = `⚡ ${sym} · ${timeStr}`;
+    // ── Sort (same as original) ───────────────────────────────────
+    list.sort((a, b) => {
+      let av, bv;
+      switch (sortCol) {
+        case 'date':       av = new Date(a.date||0);    bv = new Date(b.date||0);    break;
+        case 'symbol':     av = a.symbol||'';           bv = b.symbol||'';           break;
+        case 'dir':        av = a.dir||'';              bv = b.dir||'';              break;
+        case 'lots':       av = parseFloat(a.lots)||0;  bv = parseFloat(b.lots)||0;  break;
+        case 'entry':      av = parseFloat(a.entry)||0; bv = parseFloat(b.entry)||0; break;
+        case 'exit':       av = parseFloat(a.exit)||0;  bv = parseFloat(b.exit)||0;  break;
+        case 'pnl':        av = getPnl(a);              bv = getPnl(b);              break;
+        case 'commission': av = parseFloat(a.commission)||0; bv = parseFloat(b.commission)||0; break;
+        case 'result':     av = a.result||'';           bv = b.result||'';           break;
+        default:           av = 0;                      bv = 0;
       }
+      if (av < bv) return -1 * sortDir;
+      if (av > bv) return  1 * sortDir;
+      return 0;
     });
+    if (typeof updateSortIndicators === 'function') updateSortIndicators();
 
-    // Run the base renderer (it will use the virtual packId/packName)
-    _base(skipTagRebuild);
-
-    // Restore original fields
-    Object.entries(origFields).forEach(([id, fields]) => {
-      const t = trades.find(x => x.id === id);
-      if (t) { t.packId = fields.packId; t.packName = fields.packName; }
-    });
-
-    // Show auto-pack info label if any groups exist
     const tbody = document.getElementById('all-tbody');
-    if (tbody && Object.keys(autoGroups).length > 0) {
-      // Add a subtle top note
-      const note = document.getElementById('autopack-notice');
-      if (!note) {
-        const tradesGrid = document.getElementById('trades-grid');
-        if (tradesGrid) {
-          const el = document.createElement('div');
-          el.id = 'autopack-notice';
-          el.style.cssText = 'font-size:10px;font-weight:700;color:var(--yellow);opacity:.7;padding:2px 4px 6px;display:flex;align-items:center;gap:5px;';
-          el.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Auto-Pack active — grouping trades within 1 min`;
-          tradesGrid.parentNode.insertBefore(el, tradesGrid);
-        }
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state"><h3>No trades found</h3></div></td></tr>';
+      return;
+    }
+
+    // ── Build auto-pack clusters (read-only, no mutation) ─────────
+    const { autoGroups, tradeKey } = buildAutoPackGroups(list);
+
+    // ── Group real packs (same logic as original) ─────────────────
+    const packMap  = {};
+    const standalone = [];
+    list.forEach(t => {
+      if (t.packId) {
+        if (!packMap[t.packId]) packMap[t.packId] = [];
+        packMap[t.packId].push(t);
+      } else if (tradeKey[t.id]) {
+        // will be handled by auto-pack rendering below
+      } else {
+        standalone.push(t);
       }
-    } else {
-      const note = document.getElementById('autopack-notice');
-      if (note) note.remove();
+    });
+    // Real packs with only 1 visible trade → standalone
+    Object.entries(packMap).forEach(([pid, arr]) => {
+      if (arr.length < 2) { arr.forEach(t => standalone.push(t)); delete packMap[pid]; }
+    });
+
+    // ── Build render order ────────────────────────────────────────
+    const addedPackIds   = new Set();
+    const addedAutoKeys  = new Set();
+    let rowsHtml = '';
+
+    list.forEach(t => {
+      // Real pack
+      if (t.packId && packMap[t.packId] && !addedPackIds.has(t.packId)) {
+        addedPackIds.add(t.packId);
+        rowsHtml += renderPackRows(t.packId, packMap[t.packId], sym);
+      }
+      // Auto-pack
+      else if (tradeKey[t.id] && !addedAutoKeys.has(tradeKey[t.id])) {
+        const akey = tradeKey[t.id];
+        addedAutoKeys.add(akey);
+        rowsHtml += renderAutoPackRows(akey, autoGroups[akey], sym);
+      }
+      // Standalone (no real pack, not in an auto-pack group, or real pack dissolved to standalone)
+      else if (!t.packId && !tradeKey[t.id]) {
+        rowsHtml += renderSingleTradeRow(t, sym);
+      }
+      // already added as part of a real pack → skip
+    });
+
+    // ── Balance events (same as original) ────────────────────────
+    if (typeof balanceEvents !== 'undefined' && balanceEvents && balanceEvents.length) {
+      let beFiltered = balanceEvents;
+      if (fromStr || toStr) {
+        beFiltered = balanceEvents.filter(e => {
+          const d = (e.time || '').slice(0, 10);
+          if (fromStr && d < fromStr) return false;
+          if (toStr   && d > toStr)   return false;
+          return true;
+        });
+      }
+      if (beFiltered.length) {
+        rowsHtml += `<tr style="pointer-events:none;"><td colspan="11" style="padding:6px 18px 4px;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);">⬇ Account Events — excluded from all statistics</span></td></tr>`;
+        rowsHtml += beFiltered.map(e => {
+          const isDeposit = e.type === 'deposit';
+          const amt       = parseFloat(e.amount) || 0;
+          const amtColor  = isDeposit ? 'var(--green)' : 'var(--red)';
+          const amtStr    = (isDeposit ? '+' : '') + sym + Math.abs(amt).toFixed(2);
+          const typeLabel = isDeposit ? 'DEPOSIT' : 'WITHDRAWAL';
+          const typeBg    = isDeposit ? 'var(--green-bg)' : 'var(--red-bg)';
+          const timeStr   = e.time ? e.time.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+e.time.slice(11,19)+'</span>' : '—';
+          return `<tr style="opacity:0.8;cursor:default;">
+            <td style="color:var(--muted);font-size:12px;white-space:nowrap;font-weight:600;">${timeStr}</td>
+            <td style="color:var(--muted);font-weight:600;">—</td>
+            <td><span style="display:inline-block;padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800;letter-spacing:.5px;background:${typeBg};color:${amtColor};">${typeLabel}</span></td>
+            <td style="color:var(--muted);">—</td><td style="color:var(--muted);">—</td><td style="color:var(--muted);">—</td>
+            <td style="color:${amtColor};font-weight:800;font-family:var(--mono);">${amtStr}</td>
+            <td style="color:var(--muted);">—</td>
+            <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(99,102,241,0.1);color:var(--accent);">EVENT</span></td>
+            <td style="color:var(--muted);font-size:11px;" colspan="2">${e.comment || ''}</td>
+          </tr>`;
+        }).join('');
+      }
+    }
+
+    tbody.innerHTML = rowsHtml;
+
+    // ── Notice bar ────────────────────────────────────────────────
+    const hasAutoGroups  = Object.keys(autoGroups).length > 0;
+    let notice = document.getElementById('autopack-notice');
+    if (hasAutoGroups && !notice) {
+      notice = document.createElement('div');
+      notice.id        = 'autopack-notice';
+      notice.style.cssText = 'font-size:10px;font-weight:700;color:var(--yellow);opacity:.75;padding:2px 4px 6px;display:flex;align-items:center;gap:5px;flex-shrink:0;';
+      notice.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Auto-Pack active — grouping trades within 1 min on the same symbol`;
+      const tradesGrid = document.getElementById('trades-grid');
+      if (tradesGrid) tradesGrid.parentNode.insertBefore(notice, tradesGrid);
+    } else if (!hasAutoGroups && notice) {
+      notice.remove();
     }
   };
-}
+})();
 
 console.log('TradeLog: Pack system loaded ✓');
 </script>
