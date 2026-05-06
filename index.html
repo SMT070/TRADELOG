@@ -2280,22 +2280,38 @@
             Features
             <svg id="features-drop-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .2s;opacity:.5;"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div id="features-drop-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:6px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,0.35);min-width:180px;">
+          <div id="features-drop-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:6px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,0.35);min-width:220px;">
+
             <!-- Auto BE -->
-            <button id="feat-auto-be-btn" onclick="toggleFeaturesDrop();autoMarkBE();" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:left;transition:all .15s;" onmouseenter="this.style.background='rgba(245,158,11,0.1)';this.style.color='var(--yellow)'" onmouseleave="this.style.background='none';this.style.color='var(--text2)'">
-              <span style="font-size:15px;">⚖</span>
-              <div><div style="font-size:12px;font-weight:700;">Auto BE</div><div style="font-size:10px;color:var(--muted);font-weight:500;">Mark ±0.02% trades as BE</div></div>
+            <button id="feat-auto-be-btn" onclick="featToggleAutoBE()" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:left;transition:background .15s,color .15s;">
+              <span id="feat-be-icon" style="font-size:15px;">⚖</span>
+              <div style="flex:1;min-width:0;">
+                <div id="feat-be-label" style="font-size:12px;font-weight:700;">Auto BE</div>
+                <div style="font-size:10px;color:var(--muted);font-weight:500;">Mark ±0.02% trades as BE</div>
+              </div>
+              <div id="feat-be-pill" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.5px;background:var(--surface3);color:var(--muted);flex-shrink:0;">OFF</div>
             </button>
+
             <!-- Auto Pack -->
-            <button id="feat-auto-pack-btn" onclick="toggleFeaturesDrop();toggleAutoPack();" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:left;transition:all .15s;" onmouseenter="this.style.background='rgba(245,158,11,0.08)';this.style.color='var(--yellow)'" onmouseleave="this.style.background='none';this.style.color='var(--text2)'">
+            <button id="feat-auto-pack-btn" onclick="featToggleAutoPack()" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:left;transition:background .15s,color .15s;">
               <span style="font-size:15px;">⚡</span>
-              <div><div style="font-size:12px;font-weight:700;">Auto-Pack</div><div style="font-size:10px;color:var(--muted);font-weight:500;">Group same-symbol trades</div></div>
+              <div style="flex:1;min-width:0;">
+                <div id="feat-pack-label" style="font-size:12px;font-weight:700;">Auto-Pack</div>
+                <div style="font-size:10px;color:var(--muted);font-weight:500;">Group same-symbol trades</div>
+              </div>
+              <div id="feat-pack-pill" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.5px;background:var(--surface3);color:var(--muted);flex-shrink:0;">OFF</div>
             </button>
-            <!-- Select -->
-            <button id="feat-select-btn" onclick="toggleFeaturesDrop();togglePackSelectMode();" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:left;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.1)';this.style.color='var(--accent)'" onmouseleave="this.style.background='none';this.style.color='var(--text2)'">
+
+            <!-- Select Trades -->
+            <button id="feat-select-btn" onclick="featToggleSelect()" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:left;transition:background .15s,color .15s;">
               <span style="font-size:15px;">☑️</span>
-              <div><div style="font-size:12px;font-weight:700;">Select Trades</div><div style="font-size:10px;color:var(--muted);font-weight:500;">Multi-select & group into pack</div></div>
+              <div style="flex:1;min-width:0;">
+                <div id="feat-select-label" style="font-size:12px;font-weight:700;">Select Trades</div>
+                <div style="font-size:10px;color:var(--muted);font-weight:500;">Multi-select & group into pack</div>
+              </div>
+              <div id="feat-select-pill" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.5px;background:var(--surface3);color:var(--muted);flex-shrink:0;">OFF</div>
             </button>
+
           </div>
         </div>
         <button class="btn btn-primary" onclick="switchPage('add')" style="flex-shrink:0;">+ Add Trade</button>
@@ -13164,7 +13180,6 @@ function toggleFeaturesDrop() {
   menu.style.display = open ? 'block' : 'none';
   if (chevron) chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
   if (btn) { btn.style.borderColor = open ? 'var(--accent)' : 'var(--border2)'; btn.style.color = open ? 'var(--text)' : 'var(--text2)'; }
-  // Sync active states
   _syncFeatureDropStates();
   if (open) {
     setTimeout(() => document.addEventListener('click', _closeFeaturesDropOutside), 10);
@@ -13183,35 +13198,61 @@ function _closeFeaturesDropOutside(e) {
     document.removeEventListener('click', _closeFeaturesDropOutside);
   }
 }
+
+// ── Shared pill updater ───────────────────────────────────────────────────────
+function _setFeatPill(pillId, btnId, on, onBg, onColor) {
+  const pill = document.getElementById(pillId);
+  const btn  = document.getElementById(btnId);
+  if (pill) {
+    pill.textContent = on ? 'ON' : 'OFF';
+    pill.style.background = on ? onBg  : 'var(--surface3)';
+    pill.style.color      = on ? onColor : 'var(--muted)';
+  }
+  if (btn) {
+    btn.style.background = on ? onBg.replace(')', ',0.12)').replace('rgba(', 'rgba(') : 'none';
+    btn.style.color      = on ? onColor : 'var(--text2)';
+  }
+}
+
 function _syncFeatureDropStates() {
-  // Auto BE state
-  const beBtn = document.getElementById('feat-auto-be-btn');
-  if (beBtn) {
-    if (_autoBEActive) {
-      beBtn.style.background = 'rgba(245,158,11,0.15)';
-      beBtn.style.color = 'var(--yellow)';
-      beBtn.querySelector('div > div:first-child').textContent = '↩ Undo BE';
-    } else {
-      beBtn.style.background = 'none';
-      beBtn.style.color = 'var(--text2)';
-      beBtn.querySelector('div > div:first-child').textContent = 'Auto BE';
-    }
-  }
-  // Auto-Pack state
-  const apBtn = document.getElementById('feat-auto-pack-btn');
-  const autoPackOn = localStorage.getItem('tradelog_autopack') === 'true';
-  if (apBtn) {
-    apBtn.style.background = autoPackOn ? 'rgba(245,158,11,0.12)' : 'none';
-    apBtn.style.color = autoPackOn ? 'var(--yellow)' : 'var(--text2)';
-    apBtn.querySelector('div > div:first-child').textContent = autoPackOn ? '⚡ Auto-Pack ON' : 'Auto-Pack';
-  }
-  // Select state
-  const selBtn = document.getElementById('feat-select-btn');
-  if (selBtn) {
-    selBtn.style.background = packSelectMode ? 'rgba(99,102,241,0.12)' : 'none';
-    selBtn.style.color = packSelectMode ? 'var(--accent)' : 'var(--text2)';
-    selBtn.querySelector('div > div:first-child').textContent = packSelectMode ? '✓ Selecting…' : 'Select Trades';
-  }
+  // Auto BE
+  _setFeatPill('feat-be-pill',     'feat-auto-be-btn',  _autoBEActive,                              'rgba(245,158,11,0.25)', 'var(--yellow)');
+  const beLabel = document.getElementById('feat-be-label');
+  if (beLabel) beLabel.textContent = _autoBEActive ? '↩ Undo Auto BE' : 'Auto BE';
+
+  // Auto-Pack
+  const apOn = localStorage.getItem('tradelog_autopack') === 'true';
+  _setFeatPill('feat-pack-pill',   'feat-auto-pack-btn', apOn,                                      'rgba(245,158,11,0.25)', 'var(--yellow)');
+
+  // Select Trades
+  _setFeatPill('feat-select-pill', 'feat-select-btn',    packSelectMode,                             'rgba(99,102,241,0.2)',  'var(--accent)');
+}
+
+// ── Feature action wrappers (keep dropdown open while toggling) ───────────────
+function featToggleAutoBE() {
+  autoMarkBE();
+  // State sync happens after confirm resolves — pill stays in sync via _syncFeatureDropStates
+  setTimeout(_syncFeatureDropStates, 50);
+}
+
+function featToggleAutoPack() {
+  toggleAutoPack();
+  _syncFeatureDropStates();
+}
+
+function featToggleSelect() {
+  togglePackSelectMode();
+  _syncFeatureDropStates();
+  // Close dropdown after toggling select mode so the bar is visible
+  const drop = document.getElementById('features-drop');
+  const menu = document.getElementById('features-drop-menu');
+  const chevron = document.getElementById('features-drop-chevron');
+  const btn  = document.getElementById('features-drop-btn');
+  if (drop) drop.classList.remove('open');
+  if (menu) menu.style.display = 'none';
+  if (chevron) chevron.style.transform = 'rotate(0deg)';
+  if (btn) { btn.style.borderColor = 'var(--border2)'; btn.style.color = 'var(--text2)'; }
+  document.removeEventListener('click', _closeFeaturesDropOutside);
 }
 
 // ── AUTO BREAK-EVEN ───────────────────────────────────────────────────────────
@@ -13240,7 +13281,8 @@ async function autoMarkBE() {
       okText: 'Undo',
       okColor: 'var(--accent)',
       onOk: async () => {
-        _autoBESnapshot.forEach(({ id, result }) => {
+        const snap = [..._autoBESnapshot];
+        snap.forEach(({ id, result }) => {
           const idx = trades.findIndex(x => x.id === id);
           if (idx !== -1) trades[idx].result = result;
         });
@@ -13250,9 +13292,10 @@ async function autoMarkBE() {
         invalidateStatCache();
         renderTrades();
         refreshDashboard();
+        _syncFeatureDropStates();
         toast('↩ Auto BE undone', '');
         try {
-          await Promise.all(_autoBESnapshot.map(({ id }) => {
+          await Promise.all(snap.map(({ id }) => {
             const t = trades.find(x => x.id === id);
             return t ? guaranteedSaveToSupabase(t) : Promise.resolve();
           }));
@@ -13292,6 +13335,7 @@ async function autoMarkBE() {
       invalidateStatCache();
       renderTrades();
       refreshDashboard();
+      _syncFeatureDropStates();
       toast(`✓ ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} marked as BE — press again to undo`, 'success');
       try {
         await Promise.all(candidates.map(t => {
