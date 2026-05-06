@@ -2274,6 +2274,7 @@
         </div>
 
         <!-- Add Trade right next to filters -->
+        <button onclick="autoMarkBE()" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid rgba(245,158,11,0.4);background:rgba(245,158,11,0.1);color:var(--yellow);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.background='rgba(245,158,11,0.2)'" onmouseleave="this.style.background='rgba(245,158,11,0.1)'" title="Mark trades within ±0.1% of balance as Break Even">⚖ Auto BE</button>
         <button class="btn btn-primary" onclick="switchPage('add')" style="flex-shrink:0;">+ Add Trade</button>
         <span id="mobile-tap-hint" style="font-size:10px;color:var(--muted);font-weight:600;display:none;">Double tap to view</span>
 
@@ -13165,6 +13166,59 @@ function renderAutoPackRows(key, packTrades, sym) {
 })();
 
 console.log('TradeLog: Pack system loaded ✓');
+
+// ── AUTO BREAK-EVEN ───────────────────────────────────────────────────────────
+// Marks any trade whose |netPnl| is within ±0.1% of account balance as BE.
+// If no balance is set, falls back to ±0.1% of total absolute P&L as a proxy.
+async function autoMarkBE() {
+  const bal = getBalance();
+  const threshold = bal > 0
+    ? bal * 0.001
+    : Math.abs(trades.reduce((s,t) => s + getPnl(t), 0)) * 0.001;
+
+  if (threshold <= 0) {
+    toast('Set your account balance first (Settings → Set Balance)', 'error');
+    return;
+  }
+
+  const candidates = trades.filter(t => {
+    const pnl = getPnl(t);
+    return Math.abs(pnl) <= threshold && getResult(t) !== 'be';
+  });
+
+  if (!candidates.length) {
+    toast('No trades found within ±0.1% of balance', '');
+    return;
+  }
+
+  showConfirm({
+    icon: '⚖',
+    title: 'Auto Break-Even',
+    message: `Mark ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} as BE? These trades are within ±${getCurrencySymbol()}${threshold.toFixed(2)} (0.1% of balance).`,
+    okText: 'Mark as BE',
+    okColor: 'var(--yellow)',
+    onOk: async () => {
+      candidates.forEach(t => {
+        const idx = trades.findIndex(x => x.id === t.id);
+        if (idx === -1) return;
+        trades[idx].result = 'be';
+      });
+      save();
+      invalidateStatCache();
+      renderTrades();
+      refreshDashboard();
+      toast(`✓ ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} marked as BE`, 'success');
+      try {
+        await Promise.all(candidates.map(t => {
+          const updated = trades.find(x => x.id === t.id);
+          return updated ? guaranteedSaveToSupabase(updated) : Promise.resolve();
+        }));
+      } catch(e) {
+        console.warn('Auto BE sync failed:', e);
+      }
+    }
+  });
+}
 </script>
 </body>
 </html>
