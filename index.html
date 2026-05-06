@@ -2273,8 +2273,31 @@
           </div>
         </div>
 
-        <!-- Add Trade right next to filters -->
-        <button onclick="autoMarkBE()" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid rgba(245,158,11,0.4);background:rgba(245,158,11,0.1);color:var(--yellow);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.background='rgba(245,158,11,0.2)'" onmouseleave="this.style.background='rgba(245,158,11,0.1)'" title="Mark trades within ±0.1% of balance as Break Even">⚖ Auto BE</button>
+        <!-- Features dropdown -->
+        <div id="features-drop" style="position:relative;flex-shrink:0;">
+          <button id="features-drop-btn" onclick="toggleFeaturesDrop()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap;" onmouseenter="this.style.borderColor='var(--border2)';this.style.color='var(--text)'" onmouseleave="if(!document.getElementById('features-drop').classList.contains('open')){this.style.borderColor='var(--border2)';this.style.color='var(--text2)'}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+            Features
+            <svg id="features-drop-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .2s;opacity:.5;"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="features-drop-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:6px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,0.35);min-width:180px;">
+            <!-- Auto BE -->
+            <button id="feat-auto-be-btn" onclick="toggleFeaturesDrop();autoMarkBE();" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:left;transition:all .15s;" onmouseenter="this.style.background='rgba(245,158,11,0.1)';this.style.color='var(--yellow)'" onmouseleave="this.style.background='none';this.style.color='var(--text2)'">
+              <span style="font-size:15px;">⚖</span>
+              <div><div style="font-size:12px;font-weight:700;">Auto BE</div><div style="font-size:10px;color:var(--muted);font-weight:500;">Mark ±0.02% trades as BE</div></div>
+            </button>
+            <!-- Auto Pack -->
+            <button id="feat-auto-pack-btn" onclick="toggleFeaturesDrop();toggleAutoPack();" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:left;transition:all .15s;" onmouseenter="this.style.background='rgba(245,158,11,0.08)';this.style.color='var(--yellow)'" onmouseleave="this.style.background='none';this.style.color='var(--text2)'">
+              <span style="font-size:15px;">⚡</span>
+              <div><div style="font-size:12px;font-weight:700;">Auto-Pack</div><div style="font-size:10px;color:var(--muted);font-weight:500;">Group same-symbol trades</div></div>
+            </button>
+            <!-- Select -->
+            <button id="feat-select-btn" onclick="toggleFeaturesDrop();togglePackSelectMode();" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:left;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.1)';this.style.color='var(--accent)'" onmouseleave="this.style.background='none';this.style.color='var(--text2)'">
+              <span style="font-size:15px;">☑️</span>
+              <div><div style="font-size:12px;font-weight:700;">Select Trades</div><div style="font-size:10px;color:var(--muted);font-weight:500;">Multi-select & group into pack</div></div>
+            </button>
+          </div>
+        </div>
         <button class="btn btn-primary" onclick="switchPage('add')" style="flex-shrink:0;">+ Add Trade</button>
         <span id="mobile-tap-hint" style="font-size:10px;color:var(--muted);font-weight:600;display:none;">Double tap to view</span>
 
@@ -12117,33 +12140,7 @@ let packExpandedIds = new Set(); // which packs are currently expanded
 
 // ── Inject "Select" button into the trades filter bar ────────────
 (function injectPackSelectButton() {
-  // Find the "+ Add Trade" button and insert Select before it
-  const addTradeBtn = document.querySelector('#page-trades .btn-primary[onclick*="switchPage(\'add\')"]');
-  if (!addTradeBtn) return;
-
-  const selectBtn = document.createElement('button');
-  selectBtn.id = 'pack-select-btn';
-  selectBtn.innerHTML = `
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-    Select
-  `;
-  selectBtn.onclick = togglePackSelectMode;
-  addTradeBtn.parentNode.insertBefore(selectBtn, addTradeBtn);
-
-  // ── Auto-Pack toggle button ───────────────────────────────────────
-  const autoPackBtn = document.createElement('button');
-  autoPackBtn.id = 'auto-pack-btn';
-  autoPackBtn.title = 'Auto-Pack: automatically group trades on the same symbol executed within 1 minute of each other';
-  const autoPackOn = localStorage.getItem('tradelog_autopack') === 'true';
-  autoPackBtn.innerHTML = `
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-    Auto-Pack
-  `;
-  if (autoPackOn) autoPackBtn.classList.add('active');
-  autoPackBtn.onclick = toggleAutoPack;
-  addTradeBtn.parentNode.insertBefore(autoPackBtn, selectBtn);
-
-  // Inject the selection action bar ABOVE the table/detail grid
+  // Buttons are now inside the Features dropdown — just inject the selection bar
   const tradesGrid = document.getElementById('trades-grid');
   if (tradesGrid) {
     const bar = document.createElement('div');
@@ -12176,8 +12173,6 @@ function togglePackSelectMode() {
 function enterPackSelectMode() {
   packSelectMode = true;
   packSelectedIds.clear();
-  const btn = document.getElementById('pack-select-btn');
-  if (btn) btn.classList.add('selecting');
   const bar = document.getElementById('pack-select-bar');
   if (bar) bar.classList.add('active');
   renderTrades();
@@ -12186,8 +12181,6 @@ function enterPackSelectMode() {
 function exitPackSelectMode() {
   packSelectMode = false;
   packSelectedIds.clear();
-  const btn = document.getElementById('pack-select-btn');
-  if (btn) btn.classList.remove('selecting');
   const bar = document.getElementById('pack-select-bar');
   if (bar) bar.classList.remove('active');
   renderTrades();
@@ -12743,8 +12736,6 @@ enterPackSelectMode = function() {
   packSelectMode = true;
   packSelectedIds.clear();
   updatePackSelectionBar();
-  const btn = document.getElementById('pack-select-btn');
-  if (btn) btn.classList.add('selecting');
   const bar = document.getElementById('pack-select-bar');
   if (bar) bar.classList.add('active');
   // Add checkbox TH to thead
@@ -12763,8 +12754,6 @@ const _origExitPackSelectMode = exitPackSelectMode;
 exitPackSelectMode = function() {
   packSelectMode = false;
   packSelectedIds.clear();
-  const btn = document.getElementById('pack-select-btn');
-  if (btn) btn.classList.remove('selecting');
   const bar = document.getElementById('pack-select-bar');
   if (bar) bar.classList.remove('active');
   // Remove checkbox TH
@@ -12817,9 +12806,6 @@ function toggleSelectAll(e) {
 function toggleAutoPack() {
   const next = !(localStorage.getItem('tradelog_autopack') === 'true');
   localStorage.setItem('tradelog_autopack', String(next));
-  const btn = document.getElementById('auto-pack-btn');
-  if (btn) btn.classList.toggle('active', next);
-  // Sync notice bar visibility
   if (!next) {
     const note = document.getElementById('autopack-notice');
     if (note) note.remove();
@@ -13167,55 +13153,152 @@ function renderAutoPackRows(key, packTrades, sym) {
 
 console.log('TradeLog: Pack system loaded ✓');
 
+// ── FEATURES DROPDOWN ────────────────────────────────────────────────────────
+function toggleFeaturesDrop() {
+  const drop = document.getElementById('features-drop');
+  const menu = document.getElementById('features-drop-menu');
+  const chevron = document.getElementById('features-drop-chevron');
+  const btn = document.getElementById('features-drop-btn');
+  if (!drop) return;
+  const open = drop.classList.toggle('open');
+  menu.style.display = open ? 'block' : 'none';
+  if (chevron) chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+  if (btn) { btn.style.borderColor = open ? 'var(--accent)' : 'var(--border2)'; btn.style.color = open ? 'var(--text)' : 'var(--text2)'; }
+  // Sync active states
+  _syncFeatureDropStates();
+  if (open) {
+    setTimeout(() => document.addEventListener('click', _closeFeaturesDropOutside), 10);
+  }
+}
+function _closeFeaturesDropOutside(e) {
+  const drop = document.getElementById('features-drop');
+  if (drop && !drop.contains(e.target)) {
+    drop.classList.remove('open');
+    const menu = document.getElementById('features-drop-menu');
+    const chevron = document.getElementById('features-drop-chevron');
+    const btn = document.getElementById('features-drop-btn');
+    if (menu) menu.style.display = 'none';
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+    if (btn) { btn.style.borderColor = 'var(--border2)'; btn.style.color = 'var(--text2)'; }
+    document.removeEventListener('click', _closeFeaturesDropOutside);
+  }
+}
+function _syncFeatureDropStates() {
+  // Auto BE state
+  const beBtn = document.getElementById('feat-auto-be-btn');
+  if (beBtn) {
+    if (_autoBEActive) {
+      beBtn.style.background = 'rgba(245,158,11,0.15)';
+      beBtn.style.color = 'var(--yellow)';
+      beBtn.querySelector('div > div:first-child').textContent = '↩ Undo BE';
+    } else {
+      beBtn.style.background = 'none';
+      beBtn.style.color = 'var(--text2)';
+      beBtn.querySelector('div > div:first-child').textContent = 'Auto BE';
+    }
+  }
+  // Auto-Pack state
+  const apBtn = document.getElementById('feat-auto-pack-btn');
+  const autoPackOn = localStorage.getItem('tradelog_autopack') === 'true';
+  if (apBtn) {
+    apBtn.style.background = autoPackOn ? 'rgba(245,158,11,0.12)' : 'none';
+    apBtn.style.color = autoPackOn ? 'var(--yellow)' : 'var(--text2)';
+    apBtn.querySelector('div > div:first-child').textContent = autoPackOn ? '⚡ Auto-Pack ON' : 'Auto-Pack';
+  }
+  // Select state
+  const selBtn = document.getElementById('feat-select-btn');
+  if (selBtn) {
+    selBtn.style.background = packSelectMode ? 'rgba(99,102,241,0.12)' : 'none';
+    selBtn.style.color = packSelectMode ? 'var(--accent)' : 'var(--text2)';
+    selBtn.querySelector('div > div:first-child').textContent = packSelectMode ? '✓ Selecting…' : 'Select Trades';
+  }
+}
+
 // ── AUTO BREAK-EVEN ───────────────────────────────────────────────────────────
-// Marks any trade whose |netPnl| is within ±0.1% of account balance as BE.
-// If no balance is set, falls back to ±0.1% of total absolute P&L as a proxy.
+// Marks any trade whose |netPnl| is within ±0.02% of account balance as BE.
+// Press again to undo — restores original results.
+let _autoBEActive = false;
+let _autoBESnapshot = []; // { id, result } before marking
+
 async function autoMarkBE() {
   const bal = getBalance();
   const threshold = bal > 0
-    ? bal * 0.001
-    : Math.abs(trades.reduce((s,t) => s + getPnl(t), 0)) * 0.001;
+    ? bal * 0.0002
+    : Math.abs(trades.reduce((s,t) => s + getPnl(t), 0)) * 0.0002;
 
   if (threshold <= 0) {
     toast('Set your account balance first (Settings → Set Balance)', 'error');
     return;
   }
 
+  // ── UNDO mode ──
+  if (_autoBEActive && _autoBESnapshot.length) {
+    showConfirm({
+      icon: '↩️',
+      title: 'Undo Auto BE',
+      message: `Restore original results for ${_autoBESnapshot.length} trade${_autoBESnapshot.length !== 1 ? 's' : ''}?`,
+      okText: 'Undo',
+      okColor: 'var(--accent)',
+      onOk: async () => {
+        _autoBESnapshot.forEach(({ id, result }) => {
+          const idx = trades.findIndex(x => x.id === id);
+          if (idx !== -1) trades[idx].result = result;
+        });
+        _autoBEActive = false;
+        _autoBESnapshot = [];
+        save();
+        invalidateStatCache();
+        renderTrades();
+        refreshDashboard();
+        toast('↩ Auto BE undone', '');
+        try {
+          await Promise.all(_autoBESnapshot.map(({ id }) => {
+            const t = trades.find(x => x.id === id);
+            return t ? guaranteedSaveToSupabase(t) : Promise.resolve();
+          }));
+        } catch(e) { console.warn('Auto BE undo sync failed:', e); }
+      }
+    });
+    return;
+  }
+
+  // ── DO mode ──
   const candidates = trades.filter(t => {
     const pnl = getPnl(t);
     return Math.abs(pnl) <= threshold && getResult(t) !== 'be';
   });
 
   if (!candidates.length) {
-    toast('No trades found within ±0.1% of balance', '');
+    toast('No trades found within ±0.02% of balance', '');
     return;
   }
 
   showConfirm({
     icon: '⚖',
     title: 'Auto Break-Even',
-    message: `Mark ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} as BE? These trades are within ±${getCurrencySymbol()}${threshold.toFixed(2)} (0.1% of balance).`,
+    message: `Mark ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} as BE? These trades are within ±${getCurrencySymbol()}${threshold.toFixed(2)} (0.02% of balance).`,
     okText: 'Mark as BE',
     okColor: 'var(--yellow)',
     onOk: async () => {
+      // Save snapshot for undo
+      _autoBESnapshot = candidates.map(t => ({ id: t.id, result: t.result || getResult(t) }));
       candidates.forEach(t => {
         const idx = trades.findIndex(x => x.id === t.id);
         if (idx === -1) return;
         trades[idx].result = 'be';
       });
+      _autoBEActive = true;
       save();
       invalidateStatCache();
       renderTrades();
       refreshDashboard();
-      toast(`✓ ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} marked as BE`, 'success');
+      toast(`✓ ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} marked as BE — press again to undo`, 'success');
       try {
         await Promise.all(candidates.map(t => {
           const updated = trades.find(x => x.id === t.id);
           return updated ? guaranteedSaveToSupabase(updated) : Promise.resolve();
         }));
-      } catch(e) {
-        console.warn('Auto BE sync failed:', e);
-      }
+      } catch(e) { console.warn('Auto BE sync failed:', e); }
     }
   });
 }
