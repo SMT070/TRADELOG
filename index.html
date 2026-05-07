@@ -10816,16 +10816,32 @@ function captureShareCard_old() { return captureShareCard(); }
 function _isMobile() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
 
 function shareToApp(app) {
+  // On mobile: capture image and use native share sheet
+  // On desktop: download image + open app directly (no Windows share popup)
+  const isMob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   captureShareCard().then(({ blob, canvas }) => {
-    const file = new File([blob], 'tradelog-summary.png', { type: 'image/png' });
-    // Use native Web Share API with image if supported (works on mobile)
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: "TradeLog — Today's Summary" })
-        .catch(() => _shareToAppFallback(app, canvas));
-      return;
+    if (isMob) {
+      const file = new File([blob], 'tradelog-summary.png', { type: 'image/png' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: "TradeLog — Today's Summary" }).catch(() => {});
+        return;
+      }
     }
-    _shareToAppFallback(app, canvas);
+    // Desktop: download the image, then open the specific app URL
+    const a = document.createElement('a');
+    a.download = 'tradelog-summary.png';
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => {
+      let url = '';
+      if (app === 'x')             url = 'https://twitter.com/intent/tweet';
+      else if (app === 'whatsapp') url = 'https://web.whatsapp.com/';
+      else if (app === 'telegram') url = 'https://web.telegram.org/';
+      if (url) window.open(url, '_blank');
+    }, 400);
   }).catch(() => {
+    // Capture failed — open app with plain text
     const text = encodeURIComponent(buildShareText());
     let url = '';
     if (app === 'x')             url = 'https://twitter.com/intent/tweet?text=' + text;
@@ -10833,21 +10849,6 @@ function shareToApp(app) {
     else if (app === 'telegram') url = 'https://t.me/share/url?url=https://tradelog.app&text=' + text;
     if (url) window.open(url, '_blank');
   });
-}
-
-function _shareToAppFallback(app, canvas) {
-  // Save the image for the user to attach manually, then open the app
-  const a = document.createElement('a');
-  a.download = 'tradelog-summary.png';
-  a.href = canvas.toDataURL('image/png');
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(() => {
-    let url = '';
-    if (app === 'x')             url = 'https://twitter.com/intent/tweet';
-    else if (app === 'whatsapp') url = 'https://wa.me/';
-    else if (app === 'telegram') url = 'https://t.me/share/url?url=https://tradelog.app';
-    if (url) window.open(url, '_blank');
-  }, 400);
 }
 
 document.getElementById('share-modal').addEventListener('click', function(e) {
