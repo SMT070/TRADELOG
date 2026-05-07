@@ -821,9 +821,9 @@
   .cal-cell:not(.empty):hover { background: var(--surface2); }
   .cal-cell.selected-day { outline: 2px solid var(--accent) !important; outline-offset: -2px; border-radius: 10px; }
   .cal-cell.weekend-cell { /* opacity handled inline */ }
-  .cal-cell.today { outline: 2px solid var(--accent) !important; outline-offset: -2px; background: var(--surface) !important; border-radius: 10px; }
-  .cal-cell.today .cal-day-num { color: var(--accent) !important; font-weight: 900; }
-  .cal-cell.today .cal-pnl, .cal-cell.today .cal-trades { color: inherit !important; }
+  .cal-cell.today { outline: none; background: var(--accent) !important; border-radius: 10px; }
+  .cal-cell.today .cal-day-num { color: #fff; font-weight: 900; }
+  .cal-cell.today .cal-pnl, .cal-cell.today .cal-trades { color: rgba(255,255,255,0.85) !important; }
   .cal-cell.has-win  { background: rgba(0,255,187,0.14); box-shadow: inset 0 2px 0 rgba(0,255,187,0.45); }
   .cal-cell.has-loss { background: rgba(255,59,92,0.14); box-shadow: inset 0 2px 0 rgba(255,59,92,0.45); }
   .cal-cell.has-win:hover  { background: rgba(0,255,187,0.22); }
@@ -3817,107 +3817,93 @@ window.switchPage = function(name) {
 
 
 <!-- SHARE MODAL -->
-<div id="share-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
-  <div style="width:420px;max-width:95vw;">
+<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div style="width:400px;max-width:95vw;">
 
-    <!-- The card that gets shared -->
-    <div id="share-card" style="
-      border-radius: 24px;
-      padding: 32px;
-      position: relative;
-      overflow: hidden;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    ">
-      <!-- Glow orbs -->
-      <div id="share-glow-1" style="position:absolute;top:-80px;right:-80px;width:240px;height:240px;border-radius:50%;pointer-events:none;"></div>
-      <div id="share-glow-2" style="position:absolute;bottom:-60px;left:-60px;width:180px;height:180px;border-radius:50%;pointer-events:none;"></div>
+    <!-- Share card (canvas target) -->
+    <div id="share-card" style="border-radius:20px;padding:28px;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;">
+      <div id="share-glow-1" style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;pointer-events:none;"></div>
+      <div id="share-glow-2" style="position:absolute;bottom:-40px;left:-40px;width:150px;height:150px;border-radius:50%;pointer-events:none;"></div>
 
       <!-- Header -->
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;position:relative;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;position:relative;">
         <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;opacity:0.5;" id="share-date-label">Today · Mar 11, 2026</div>
-          <div style="font-size:13px;font-weight:700;opacity:0.65;" id="share-trades-label">0 trades</div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;opacity:0.5;" id="share-date-label">Today</div>
+          <div style="font-size:12px;font-weight:600;opacity:0.6;" id="share-trades-label">0 trades</div>
         </div>
-        <!-- Logo mark -->
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:9px;display:flex;align-items:center;justify-content:center;">
-            <svg width="15" height="15" viewBox="0 0 28 28"><polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/><polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/><polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/><rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/></svg>
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div style="width:26px;height:26px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="13" height="13" viewBox="0 0 28 28"><polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/><polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/><polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/><rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/></svg>
           </div>
-          <div id="share-logo-text" style="font-size:13px;font-weight:800;letter-spacing:-0.3px;">TRADE<span style="color:#6366f1;">LOG</span></div>
+          <div id="share-logo-text" style="font-size:12px;font-weight:800;">TRADE<span style="color:#6366f1;">LOG</span></div>
         </div>
       </div>
 
-      <!-- Big P&L -->
-      <div style="margin-bottom:24px;position:relative;">
-        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:0.4;margin-bottom:10px;" id="share-pnl-label">Today's P&L</div>
-        <div id="share-pnl" style="font-size:62px;font-weight:900;letter-spacing:-3px;line-height:1;">+$0.00</div>
-        <div id="share-pnl-sub" style="display:none;"></div>
+      <!-- P&L -->
+      <div style="margin-bottom:18px;position:relative;">
+        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:0.4;margin-bottom:8px;" id="share-pnl-label">Today's P&L</div>
+        <div id="share-pnl" style="font-size:52px;font-weight:900;letter-spacing:-3px;line-height:1;">+$0.00</div>
       </div>
 
-      <!-- Stats strip: Trades · Best Trade · Symbols (no win rate) -->
-      <div id="share-stats-strip" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;border-radius:14px;overflow:hidden;margin-bottom:20px;">
-        <div id="share-stat-1" style="padding:14px 16px;">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.4;margin-bottom:5px;">Trades</div>
-          <div id="share-wr" style="font-size:21px;font-weight:800;">—</div>
+      <!-- Stats strip -->
+      <div id="share-stats-strip" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;border-radius:12px;overflow:hidden;margin-bottom:16px;">
+        <div id="share-stat-1" style="padding:12px 14px;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.4;margin-bottom:4px;">Trades</div>
+          <div id="share-wr" style="font-size:18px;font-weight:800;">—</div>
         </div>
-        <div id="share-stat-2" style="padding:14px 16px;">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.4;margin-bottom:5px;">Best Trade</div>
-          <div id="share-best" style="font-size:21px;font-weight:800;">—</div>
+        <div id="share-stat-2" style="padding:12px 14px;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.4;margin-bottom:4px;">Best Trade</div>
+          <div id="share-best" style="font-size:18px;font-weight:800;">—</div>
         </div>
-        <div id="share-stat-3" style="padding:14px 16px;">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.4;margin-bottom:5px;">Symbols</div>
-          <div id="share-symbols" style="font-size:13px;font-weight:700;margin-top:2px;line-height:1.4;opacity:0.75;">—</div>
+        <div id="share-stat-3" style="padding:12px 14px;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.4;margin-bottom:4px;">Symbols</div>
+          <div id="share-symbols" style="font-size:12px;font-weight:700;margin-top:2px;line-height:1.4;opacity:0.75;">—</div>
         </div>
       </div>
 
-      <!-- Trade list preview -->
-      <div id="share-trade-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:22px;position:relative;"></div>
+      <!-- Trade list -->
+      <div id="share-trade-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:18px;position:relative;"></div>
 
       <!-- Footer -->
-      <div id="share-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:16px;">
-        <div style="font-size:10px;font-weight:500;opacity:1.0;">tradelog.app</div>
-        <div style="font-size:10px;font-weight:500;opacity:1.0;">Track. Analyse. Improve.</div>
+      <div id="share-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:14px;">
+        <div style="font-size:10px;font-weight:500;opacity:0.35;">tradelog.app</div>
+        <div style="font-size:10px;font-weight:500;opacity:0.35;">Track. Analyse. Improve.</div>
       </div>
     </div>
 
-    <!-- Action buttons -->
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px;">
+    <!-- Buttons -->
+    <div style="display:flex;flex-direction:column;gap:7px;margin-top:12px;">
 
-      <!-- Mobile-first: big "Share…" button that uses native share sheet with image -->
-      <button id="share-native-btn" onclick="shareNative()" style="display:none;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 4px 20px rgba(99,102,241,0.4);">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-        Share to App…
-      </button>
-
-      <!-- Platform buttons -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-        <button onclick="shareToX()" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:10px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#e2e8f0';this.style.background='#111'" onmouseleave="this.style.borderColor='#1e293b';this.style.background='#080808'">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          Post to X
+      <!-- Row 1: Copy + Save -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+        <button onclick="shareCardCopy()" id="share-cp-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:10px;border:1px solid #2d3f55;background:rgba(99,102,241,0.1);color:#6366f1;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.2)'" onmouseleave="this.style.background='rgba(99,102,241,0.1)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Image
         </button>
-        <button onclick="shareToWhatsApp()" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:10px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#25D366';this.style.background='rgba(37,211,102,0.08)'" onmouseleave="this.style.borderColor='#1e293b';this.style.background='#080808'">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          WhatsApp
-        </button>
-        <button onclick="shareToFacebook()" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:10px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#1877F2';this.style.background='rgba(24,119,242,0.08)'" onmouseleave="this.style.borderColor='#1e293b';this.style.background='#080808'">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-          Facebook
-        </button>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button onclick="downloadShareCard()" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;border-radius:10px;border:1px solid #2d3f55;background:rgba(99,102,241,0.1);color:#6366f1;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.2)'" onmouseleave="this.style.background='rgba(99,102,241,0.1)'">
+        <button onclick="shareCardDownload()" id="share-dl-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:10px;border:1px solid #2d3f55;background:rgba(99,102,241,0.1);color:#6366f1;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.2)'" onmouseleave="this.style.background='rgba(99,102,241,0.1)'">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Save Image
         </button>
-        <button id="copy-img-btn" onclick="copyShareCard()" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:11px;border-radius:10px;border:1px solid #2d3f55;background:rgba(99,102,241,0.1);color:#6366f1;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.2)'" onmouseleave="this.style.background='rgba(99,102,241,0.1)'">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copy Image
+      </div>
+
+      <!-- Row 2: Share to apps -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;">
+        <button onclick="shareToApp('x')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;border-radius:10px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#e2e8f0'" onmouseleave="this.style.borderColor='#1e293b'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          Post to X
+        </button>
+        <button onclick="shareToApp('whatsapp')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;border-radius:10px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#25D366'" onmouseleave="this.style.borderColor='#1e293b'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp
+        </button>
+        <button onclick="shareToApp('telegram')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;border-radius:10px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#29B6F6'" onmouseleave="this.style.borderColor='#1e293b'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#29B6F6"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+          Telegram
         </button>
       </div>
 
       <button onclick="closeShareModal()" style="padding:10px;border-radius:10px;border:1px solid #1e293b;background:none;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
-        Cancel
+        Close
       </button>
     </div>
   </div>
@@ -9552,7 +9538,7 @@ function renderCalendar() {
       </div>`;
     } else {
       // Dim past days with no trades
-      const dimStyle = (!isToday && !data && (isPast || isWeekend)) ? 'opacity:0.65;' : '';
+      const dimStyle = (!isToday && !data && (isPast || isWeekend)) ? 'opacity:0.30;' : '';
       let cellClass = 'cal-cell';
       if (isToday)   cellClass += ' today';
       if (isWeekend && !isToday) cellClass += ' weekend-cell';
@@ -9607,7 +9593,7 @@ function renderCalendar() {
         html += '<div style="font-size:9px;color:var(--muted);font-weight:600;">' + weekTradeDays + 'd</div>';
         html += '</div>';
       } else {
-        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:transparent;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;opacity:1.0;">';
+        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:transparent;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;opacity:0.35;">';
         html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Week ' + weekNum + '</div>';
         html += '<div style="font-size:11px;font-weight:700;color:var(--border2);">—</div>';
         html += '</div>';
@@ -10471,7 +10457,7 @@ function selectCalDay(dateStr) {
   if (!hasAnything) {
     body.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;gap:10px;height:100%;box-sizing:border-box;">
-        <div style="font-size:32px;opacity:1.0;">📅</div>
+        <div style="font-size:32px;opacity:0.35;">📅</div>
         <div style="font-size:13px;font-weight:700;color:var(--text2);">Nothing recorded</div>
         <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.5;">No trades, mindset entry,<br>or account events for this day.</div>
       </div>`;
@@ -10677,103 +10663,70 @@ function openShareModal() {
   const pad = n => String(n).padStart(2,'0');
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   const sym = getCurrencySymbol();
-
   const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
-  const pnl = todayTrades.reduce((s,t) => s + getPnl(t), 0);
-  const wins = todayTrades.filter(t => getResult(t) === 'win').length;
+  const pnl    = todayTrades.reduce((s,t) => s + getPnl(t), 0);
+  const wins   = todayTrades.filter(t => getResult(t) === 'win').length;
   const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
-  const wr = todayTrades.length ? Math.round(wins / todayTrades.length * 100) : 0;
-  const best = todayTrades.length ? Math.max(...todayTrades.map(t => getPnl(t))) : 0;
-  const symbols = [...new Set(todayTrades.map(t => t.symbol).filter(Boolean))].slice(0, 4).join(', ') || '—';
-  const isPos = pnl >= 0;
+  const best   = todayTrades.length ? Math.max(...todayTrades.map(t => getPnl(t))) : 0;
+  const symbols= [...new Set(todayTrades.map(t=>t.symbol).filter(Boolean))].slice(0,4).join(', ') || '—';
+  const isPos  = pnl >= 0;
 
-  // ── Theme palette ──────────────────────────────────────────────────────────
   const theme = localStorage.getItem('tradelog_theme') || 'dark';
   const palettes = {
-    dark:  { bg: 'linear-gradient(145deg,#0b0f1a 0%,#111827 60%,#0d1220 100%)', border: '#2d3f55', statBg: 'rgba(255,255,255,0.04)', statBorder: '#1e293b', text: '#f1f5f9', muted: '#64748b', glow1: 'rgba(99,102,241,0.18)', glow2: 'rgba(0,255,187,0.08)', pos: '#00FFBB', neg: '#ff3b5c', tradeRow: 'rgba(255,255,255,0.04)', footerBorder: '#1e293b' },
-    gray:  { bg: 'linear-gradient(145deg,#1a1f2e 0%,#1e2536 60%,#161b28 100%)', border: '#2d3a50', statBg: 'rgba(255,255,255,0.05)', statBorder: '#252d3d', text: '#e2e8f0', muted: '#64748b', glow1: 'rgba(99,102,241,0.15)', glow2: 'rgba(0,255,187,0.07)', pos: '#00FFBB', neg: '#ff3b5c', tradeRow: 'rgba(255,255,255,0.05)', footerBorder: '#252d3d' },
-    black: { bg: 'linear-gradient(145deg,#000000 0%,#080808 60%,#050505 100%)', border: '#1a1a1a', statBg: 'rgba(255,255,255,0.04)', statBorder: '#111', text: '#f1f5f9', muted: '#444', glow1: 'rgba(99,102,241,0.12)', glow2: 'rgba(0,255,187,0.06)', pos: '#00FFBB', neg: '#ff3b5c', tradeRow: 'rgba(255,255,255,0.04)', footerBorder: '#111' },
-    light: { bg: 'linear-gradient(145deg,#ffffff 0%,#f8fafc 60%,#f1f5f9 100%)', border: '#e2e8f0', statBg: 'rgba(0,0,0,0.04)', statBorder: '#e2e8f0', text: '#0f172a', muted: '#94a3b8', glow1: 'rgba(99,102,241,0.10)', glow2: 'rgba(99,102,241,0.05)', pos: '#059669', neg: '#dc2626', tradeRow: 'rgba(0,0,0,0.04)', footerBorder: '#e2e8f0' },
+    dark:  { bg:'linear-gradient(145deg,#0b0f1a 0%,#111827 60%,#0d1220 100%)', border:'#2d3f55', statBg:'#0b0f1a', statBorder:'#1e293b', text:'#f1f5f9', muted:'#64748b', glow1:'rgba(99,102,241,0.18)', glow2:'rgba(0,255,187,0.08)', pos:'#00FFBB', neg:'#ff3b5c', tradeRow:'rgba(255,255,255,0.04)', footerBorder:'#1e293b' },
+    gray:  { bg:'linear-gradient(145deg,#1a1f2e 0%,#1e2536 60%,#161b28 100%)', border:'#2d3a50', statBg:'#1a1f2e',  statBorder:'#252d3d', text:'#e2e8f0', muted:'#64748b', glow1:'rgba(99,102,241,0.15)', glow2:'rgba(0,255,187,0.07)', pos:'#00FFBB', neg:'#ff3b5c', tradeRow:'rgba(255,255,255,0.05)', footerBorder:'#252d3d' },
+    black: { bg:'linear-gradient(145deg,#000000 0%,#080808 60%,#050505 100%)', border:'#1a1a1a', statBg:'#080808',  statBorder:'#111',    text:'#f1f5f9', muted:'#444',    glow1:'rgba(99,102,241,0.12)', glow2:'rgba(0,255,187,0.06)', pos:'#00FFBB', neg:'#ff3b5c', tradeRow:'rgba(255,255,255,0.04)', footerBorder:'#111' },
+    light: { bg:'linear-gradient(145deg,#ffffff 0%,#f8fafc 60%,#f1f5f9 100%)', border:'#e2e8f0', statBg:'#ffffff',  statBorder:'#e2e8f0', text:'#0f172a', muted:'#94a3b8', glow1:'rgba(99,102,241,0.10)', glow2:'rgba(99,102,241,0.05)', pos:'#059669', neg:'#dc2626', tradeRow:'rgba(0,0,0,0.04)',   footerBorder:'#e2e8f0' },
   };
   const p = palettes[theme] || palettes.dark;
   const posCol = isPos ? p.pos : p.neg;
 
-  // Apply card styles
   const card = document.getElementById('share-card');
-  card.style.background = p.bg;
-  card.style.border = `1px solid ${p.border}`;
-  card.style.color = p.text;
-
-  // Glows
+  card.style.cssText += `;background:${p.bg};border:1px solid ${p.border};color:${p.text};`;
   document.getElementById('share-glow-1').style.background = `radial-gradient(circle,${p.glow1},transparent 70%)`;
   document.getElementById('share-glow-2').style.background = `radial-gradient(circle,${p.glow2},transparent 70%)`;
-
-  // Logo
   document.getElementById('share-logo-text').style.color = p.text;
-
-  // Stats strip gap color
-  const strip = document.getElementById('share-stats-strip');
-  strip.style.background = p.statBorder;
+  document.getElementById('share-stats-strip').style.background = p.statBorder;
   ['share-stat-1','share-stat-2','share-stat-3'].forEach(id => {
-    const el = document.getElementById(id);
-    el.style.background = p.statBg === 'rgba(255,255,255,0.04)' ? p.bg.split('(')[0] === 'linear-gradient' ? '#0b0f1a' : p.statBg : p.statBg;
-    // For light theme use white
-    if (theme === 'light') el.style.background = '#ffffff';
-    if (theme === 'black') el.style.background = '#080808';
-    if (theme === 'dark')  el.style.background = '#0b0f1a';
-    if (theme === 'gray')  el.style.background = '#1a1f2e';
+    document.getElementById(id).style.background = p.statBg;
   });
-
-  // Footer border
   document.getElementById('share-footer').style.borderTop = `1px solid ${p.footerBorder}`;
 
-  // Date label
-  const dateLabel = now.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short', year:'numeric'});
+  const dateLabel = now.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
   document.getElementById('share-date-label').textContent = `Today · ${dateLabel}`;
-  document.getElementById('share-trades-label').textContent = `${todayTrades.length} trade${todayTrades.length !== 1 ? 's' : ''} · ${wins}W / ${losses}L`;
+  document.getElementById('share-trades-label').textContent = `${todayTrades.length} trade${todayTrades.length!==1?'s':''} · ${wins}W / ${losses}L`;
 
-  // P&L
   const pnlEl = document.getElementById('share-pnl');
-  pnlEl.textContent = (isPos ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
+  pnlEl.textContent = (isPos?'+':'-') + sym + Math.abs(pnl).toFixed(2);
   pnlEl.style.color = posCol;
 
-  const pnlSub = document.getElementById('share-pnl-sub');
-  if (pnlSub) pnlSub.style.display = 'none';
-
-  document.getElementById('share-wr').textContent = todayTrades.length ? `${todayTrades.length}` : '0';
-  document.getElementById('share-wr').style.color = '';
-
-  const bestEl = document.getElementById('share-best');
-  bestEl.textContent = todayTrades.length ? (best >= 0 ? '+' : '-') + sym + Math.abs(best).toFixed(2) : '—';
-  bestEl.style.color = best >= 0 ? p.pos : p.neg;
-
+  document.getElementById('share-wr').textContent   = todayTrades.length || '0';
+  document.getElementById('share-best').textContent = todayTrades.length ? (best>=0?'+':'-')+sym+Math.abs(best).toFixed(2) : '—';
+  document.getElementById('share-best').style.color = best>=0 ? p.pos : p.neg;
   document.getElementById('share-symbols').textContent = symbols;
 
-  // Trade list (max 5)
   const listEl = document.getElementById('share-trade-list');
-  listEl.innerHTML = todayTrades.slice(0, 5).map(t => {
+  listEl.innerHTML = todayTrades.slice(0,5).map(t => {
     const tp = getPnl(t);
-    const col = tp >= 0 ? p.pos : p.neg;
-    const pStr = (tp >= 0 ? '+' : '-') + sym + Math.abs(tp).toFixed(2);
-    const dirPos = t.dir === 'BUY';
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:${p.tradeRow};border-radius:8px;border:1px solid ${p.statBorder};">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:12px;font-weight:800;color:${p.text};">${t.symbol || '—'}</span>
-        <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:${dirPos?`${p.pos}18`:`${p.neg}18`};color:${dirPos?p.pos:p.neg};">${t.dir||''}</span>
+    const col = tp>=0 ? p.pos : p.neg;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 11px;background:${p.tradeRow};border-radius:7px;border:1px solid ${p.statBorder};">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;font-weight:800;color:${p.text};">${t.symbol||'—'}</span>
+        <span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:${t.dir==='BUY'?p.pos+'18':p.neg+'18'};color:${t.dir==='BUY'?p.pos:p.neg};">${t.dir||''}</span>
       </div>
-      <span style="font-size:13px;font-weight:800;color:${col};">${pStr}</span>
+      <span style="font-size:13px;font-weight:800;color:${col};">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
     </div>`;
   }).join('');
-
-  if (todayTrades.length > 5) {
-    listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.muted};padding:4px;">+${todayTrades.length - 5} more trades</div>`;
-  }
+  if (todayTrades.length > 5)
+    listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.muted};padding:4px;">+${todayTrades.length-5} more</div>`;
 
   document.getElementById('share-modal').style.display = 'flex';
 }
 
 function closeShareModal() {
   document.getElementById('share-modal').style.display = 'none';
+  // release any cached canvas to free memory
+  window._shareCanvas = null;
 }
 
 function buildShareText() {
@@ -10782,249 +10735,91 @@ function buildShareText() {
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   const sym = getCurrencySymbol();
   const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
-  const pnl = todayTrades.reduce((s,t) => s + getPnl(t), 0);
-  const wins = todayTrades.filter(t => getResult(t) === 'win').length;
+  const pnl    = todayTrades.reduce((s,t) => s + getPnl(t), 0);
+  const wins   = todayTrades.filter(t => getResult(t) === 'win').length;
   const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
-  const wr = todayTrades.length ? Math.round(wins / todayTrades.length * 100) : 0;
-  const pnlStr = (pnl >= 0 ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
-  return `📊 Today's Trading Summary\n\nP&L: ${pnlStr}\nWin Rate: ${wr}% (${wins}W / ${losses}L)\nTrades: ${todayTrades.length}\n\nTracked with TradeLog 📈`;
+  const wr     = todayTrades.length ? Math.round(wins/todayTrades.length*100) : 0;
+  return `📊 Today's Trading Summary\n\nP&L: ${(pnl>=0?'+':'-')+sym+Math.abs(pnl).toFixed(2)}\nWin Rate: ${wr}% (${wins}W / ${losses}L)\nTrades: ${todayTrades.length}\n\nTracked with TradeLog 📈`;
 }
 
-// ── CAPTURE SHARE CARD AS PNG ─────────────────────────────────────────────────
+// ── Single shared capture function — caches result, runs off main thread via timeout ──
+let _capturePromise = null;
 function captureShareCard() {
-  return new Promise((resolve, reject) => {
+  // Return cached canvas if available (same session open)
+  if (window._shareCanvas) {
+    return Promise.resolve({ blob: window._shareBlob, canvas: window._shareCanvas });
+  }
+  if (_capturePromise) return _capturePromise;
+
+  _capturePromise = new Promise((resolve, reject) => {
     if (typeof html2canvas === 'undefined') { reject(new Error('html2canvas not loaded')); return; }
-    const card = document.getElementById('share-card');
+    const card  = document.getElementById('share-card');
     const theme = localStorage.getItem('tradelog_theme') || 'dark';
-    const bg = theme === 'light' ? '#ffffff' : '#0b0f1a';
-    html2canvas(card, { backgroundColor: bg, scale: 2, useCORS: true, logging: false })
-      .then(canvas => {
-        canvas.toBlob(blob => {
-          if (blob) resolve({ blob, canvas });
-          else reject(new Error('blob failed'));
-        }, 'image/png');
-      }).catch(reject);
+    const bg    = theme === 'light' ? '#ffffff' : '#0b0f1a';
+    // Use scale:1.5 instead of 2 — 44% fewer pixels, much faster, still crisp
+    setTimeout(() => {
+      html2canvas(card, { backgroundColor: bg, scale: 1.5, useCORS: true, logging: false, imageTimeout: 0 })
+        .then(canvas => {
+          canvas.toBlob(blob => {
+            if (!blob) { reject(new Error('blob failed')); return; }
+            window._shareCanvas = canvas;
+            window._shareBlob   = blob;
+            _capturePromise     = null;
+            resolve({ blob, canvas });
+          }, 'image/png');
+        }).catch(e => { _capturePromise = null; reject(e); });
+    }, 80); // yield to browser paint first
   });
+  return _capturePromise;
 }
 
-// ── DOWNLOAD ──────────────────────────────────────────────────────────────────
-function downloadShareCard() {
-  const btn = document.querySelector('[onclick="downloadShareCard()"]');
-  const orig = btn ? btn.innerHTML : '';
+// Invalidate cache when modal closes or theme changes
+function _invalidateShareCache() { window._shareCanvas = null; window._shareBlob = null; }
+
+function shareCardDownload() {
+  const btn = document.getElementById('share-dl-btn');
   if (btn) btn.innerHTML = '⏳ Saving…';
   captureShareCard().then(({ canvas }) => {
     const a = document.createElement('a');
     a.download = 'tradelog-' + new Date().toISOString().slice(0,10) + '.png';
     a.href = canvas.toDataURL('image/png');
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    if (btn) { btn.innerHTML = '✓ Saved!'; setTimeout(() => btn.innerHTML = orig, 2000); }
+    if (btn) { btn.innerHTML = '✓ Saved!'; setTimeout(() => btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save Image', 2000); }
     toast('Image saved!', 'success');
   }).catch(() => {
-    if (btn) btn.innerHTML = orig;
+    if (btn) btn.innerHTML = 'Save Image';
     toast('Save failed', 'error');
   });
 }
 
-// ── COPY TO CLIPBOARD ─────────────────────────────────────────────────────────
-function copyShareCard() {
-  const btn = document.getElementById('copy-img-btn');
-  const orig = btn ? btn.innerHTML : '';
+function shareCardCopy() {
+  const btn = document.getElementById('share-cp-btn');
   if (btn) btn.innerHTML = '⏳ Copying…';
   captureShareCard().then(({ blob }) => {
     navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
       .then(() => {
-        if (btn) {
-          btn.innerHTML = '✓ Copied!';
-          btn.style.cssText += ';color:#00FFBB;border-color:rgba(0,255,187,0.4);background:rgba(0,255,187,0.1)';
-          setTimeout(() => {
-            btn.innerHTML = orig;
-            btn.style.color = '#6366f1';
-            btn.style.borderColor = '#2d3f55';
-            btn.style.background = 'rgba(99,102,241,0.1)';
-          }, 2500);
-        }
+        if (btn) { btn.innerHTML = '✓ Copied!'; setTimeout(() => btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image', 2000); }
         toast('Image copied!', 'success');
       })
-      .catch(() => {
-        if (btn) btn.innerHTML = orig;
-        downloadShareCard();
-        toast('Clipboard blocked — downloading instead', '');
-      });
+      .catch(() => { if (btn) btn.innerHTML = 'Copy Image'; shareCardDownload(); });
   }).catch(() => {
-    if (btn) btn.innerHTML = orig;
+    if (btn) btn.innerHTML = 'Copy Image';
     toast('Could not capture card', 'error');
   });
 }
 
-// ── SOCIAL SHARE ──────────────────────────────────────────────────────────────
-// Detects mobile vs desktop and uses deep links / Web Share API appropriately.
-// Never triggers the generic OS share sheet — always goes to the chosen app.
+// Legacy aliases (kept so any old onclick refs still work)
+function downloadShareCard() { shareCardDownload(); }
+function copyShareCard()     { shareCardCopy(); }
+function captureShareCard_old() { return captureShareCard(); }
 
-function _isMobile() {
-  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
+function _isMobile() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
 
-function _downloadBlob(canvas, filename) {
-  const a = document.createElement('a');
-  a.download = filename;
-  a.href = canvas.toDataURL('image/png');
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
-
-async function shareToX() {
-  const btn = document.querySelector('[onclick="shareToX()"]');
-  const orig = btn ? btn.innerHTML : '';
-  if (btn) btn.innerHTML = '⏳ …';
-  try {
-    const text = buildShareText();
-    const encoded = encodeURIComponent(text);
-    const { blob, canvas } = await captureShareCard();
-    const filename = 'tradelog-' + new Date().toISOString().slice(0,10) + '.png';
-
-    if (_isMobile()) {
-      // On mobile: try Web Share API with image file so it goes straight to X
-      const file = new File([blob], filename, { type: 'image/png' });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ title: 'TradeLog P&L', text, files: [file] });
-          if (btn) btn.innerHTML = orig;
-          return;
-        } catch(shareErr) { /* user cancelled or not supported, fall through */ }
-      }
-      // Fallback: download + open X app deep link
-      _downloadBlob(canvas, filename);
-      setTimeout(() => {
-        window.location.href = `twitter://post?message=${encoded}`;
-        setTimeout(() => window.open(`https://twitter.com/compose/tweet?text=${encoded}`, '_blank'), 1500);
-      }, 600);
-    } else {
-      // Desktop: download image then open X web compose
-      _downloadBlob(canvas, filename);
-      setTimeout(() => {
-        window.open(`https://twitter.com/compose/tweet?text=${encoded}`, '_blank');
-        toast('Image saved — attach it to your tweet!', 'success');
-      }, 600);
-    }
-  } catch(e) {
-    window.open('https://twitter.com/compose/tweet', '_blank');
-  }
-  if (btn) btn.innerHTML = orig;
-}
-
-async function shareToWhatsApp() {
-  const btn = document.querySelector('[onclick="shareToWhatsApp()"]');
-  const orig = btn ? btn.innerHTML : '';
-  if (btn) btn.innerHTML = '⏳ …';
-  try {
-    const text = buildShareText();
-    const encoded = encodeURIComponent(text);
-    const { blob, canvas } = await captureShareCard();
-    const filename = 'tradelog-' + new Date().toISOString().slice(0,10) + '.png';
-
-    if (_isMobile()) {
-      // On mobile: try Web Share API with image so WhatsApp can receive it
-      const file = new File([blob], filename, { type: 'image/png' });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ title: 'TradeLog P&L', text, files: [file] });
-          if (btn) btn.innerHTML = orig;
-          return;
-        } catch(shareErr) { /* fall through */ }
-      }
-      // Fallback: download + open WhatsApp deep link with text
-      _downloadBlob(canvas, filename);
-      setTimeout(() => {
-        window.location.href = `whatsapp://send?text=${encoded}`;
-        setTimeout(() => window.open(`https://wa.me/?text=${encoded}`, '_blank'), 1500);
-      }, 600);
-    } else {
-      // Desktop: download image + open WhatsApp Web
-      _downloadBlob(canvas, filename);
-      setTimeout(() => {
-        window.open(`https://web.whatsapp.com/`, '_blank');
-        toast('Image saved — attach it in WhatsApp!', 'success');
-      }, 600);
-    }
-  } catch(e) {
-    window.open(_isMobile() ? 'whatsapp://send' : 'https://web.whatsapp.com/', '_blank');
-  }
-  if (btn) btn.innerHTML = orig;
-}
-
-async function shareToFacebook() {
-  const btn = document.querySelector('[onclick="shareToFacebook()"]');
-  const orig = btn ? btn.innerHTML : '';
-  if (btn) btn.innerHTML = '⏳ …';
-  try {
-    const { blob, canvas } = await captureShareCard();
-    const filename = 'tradelog-' + new Date().toISOString().slice(0,10) + '.png';
-    const text = buildShareText();
-
-    if (_isMobile()) {
-      // On mobile: try Web Share API with image
-      const file = new File([blob], filename, { type: 'image/png' });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ title: 'TradeLog P&L', text, files: [file] });
-          if (btn) btn.innerHTML = orig;
-          return;
-        } catch(shareErr) { /* fall through */ }
-      }
-      // Fallback: download + open Facebook app
-      _downloadBlob(canvas, filename);
-      setTimeout(() => {
-        window.location.href = 'fb://composer';
-        setTimeout(() => window.open('https://www.facebook.com/', '_blank'), 1500);
-      }, 600);
-    } else {
-      // Desktop: download + open Facebook
-      _downloadBlob(canvas, filename);
-      setTimeout(() => {
-        window.open('https://www.facebook.com/', '_blank');
-        toast('Image saved — attach it to your Facebook post!', 'success');
-      }, 600);
-    }
-  } catch(e) {
-    window.open('https://www.facebook.com/', '_blank');
-  }
-  if (btn) btn.innerHTML = orig;
-}
 document.getElementById('share-modal').addEventListener('click', function(e) {
   if (e.target === this) closeShareModal();
 });
 
-// Native share (mobile "Share to App…" button) — uses Web Share API with image
-async function shareNative() {
-  const btn = document.getElementById('share-native-btn');
-  const orig = btn ? btn.innerHTML : '';
-  if (btn) btn.innerHTML = '⏳ Preparing…';
-  try {
-    const { blob } = await captureShareCard();
-    const filename = 'tradelog-' + new Date().toISOString().slice(0,10) + '.png';
-    const file = new File([blob], filename, { type: 'image/png' });
-    const text = buildShareText();
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ title: 'TradeLog P&L', text, files: [file] });
-    } else {
-      const a = document.createElement('a');
-      a.download = filename;
-      a.href = URL.createObjectURL(blob);
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      toast('Image saved!', 'success');
-    }
-  } catch(e) {
-    if (e.name !== 'AbortError') toast('Share failed', 'error');
-  }
-  if (btn) btn.innerHTML = orig;
-}
 
-// On mobile: show the big "Share to App…" button
-(function initShareButtons() {
-  if (_isMobile()) {
-    const nb = document.getElementById('share-native-btn');
-    if (nb) nb.style.display = 'flex';
-  }
-})();
 function updateGreeting() {
   const h = new Date().getHours();
   const greet = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Up late, trader 🌙';
