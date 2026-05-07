@@ -3886,8 +3886,8 @@ window.switchPage = function(name) {
         </button>
       </div>
 
-      <!-- Row 2: Share to apps -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;">
+      <!-- Row 2: Share to apps — mobile only -->
+      <div id="share-app-btns" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;">
         <button onclick="shareToApp('x')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;border-radius:10px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#e2e8f0'" onmouseleave="this.style.borderColor='#1e293b'">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           Post to X
@@ -10816,44 +10816,34 @@ function captureShareCard_old() { return captureShareCard(); }
 function _isMobile() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
 
 function shareToApp(app) {
-  // On mobile: capture image and use native share sheet
-  // On desktop: download image + open app directly (no Windows share popup)
   const isMob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-  captureShareCard().then(({ blob, canvas }) => {
-    if (isMob) {
-      const file = new File([blob], 'tradelog-summary.png', { type: 'image/png' });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: "TradeLog — Today's Summary" }).catch(() => {});
-        return;
-      }
+  if (!isMob) return; // desktop never reaches here — buttons are hidden
+  captureShareCard().then(({ blob }) => {
+    const file = new File([blob], 'tradelog-summary.png', { type: 'image/png' });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: "TradeLog — Today's Summary" }).catch(() => {});
+      return;
     }
-    // Desktop: download the image, then open the specific app URL
-    const a = document.createElement('a');
-    a.download = 'tradelog-summary.png';
-    a.href = canvas.toDataURL('image/png');
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(() => {
-      let url = '';
-      if (app === 'x')             url = 'https://twitter.com/intent/tweet';
-      else if (app === 'whatsapp') url = 'https://web.whatsapp.com/';
-      else if (app === 'telegram') url = 'https://web.telegram.org/';
-      if (url) window.open(url, '_blank');
-    }, 400);
-  }).catch(() => {
-    // Capture failed — open app with plain text
+    // Fallback: open the specific app with text
     const text = encodeURIComponent(buildShareText());
     let url = '';
     if (app === 'x')             url = 'https://twitter.com/intent/tweet?text=' + text;
     else if (app === 'whatsapp') url = 'https://wa.me/?text=' + text;
     else if (app === 'telegram') url = 'https://t.me/share/url?url=https://tradelog.app&text=' + text;
     if (url) window.open(url, '_blank');
-  });
+  }).catch(() => {});
 }
 
 document.getElementById('share-modal').addEventListener('click', function(e) {
   if (e.target === this) closeShareModal();
 });
+
+// Hide app share buttons on desktop — show only Copy + Save
+(function() {
+  const isMob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const row = document.getElementById('share-app-btns');
+  if (row) row.style.display = isMob ? 'grid' : 'none';
+})();
 
 
 function updateGreeting() {
