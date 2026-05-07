@@ -10729,19 +10729,6 @@ function closeShareModal() {
   window._shareCanvas = null;
 }
 
-function shareToApp(app) {
-  const text = encodeURIComponent(buildShareText());
-  let url = '';
-  if (app === 'x') {
-    url = 'https://twitter.com/intent/tweet?text=' + text;
-  } else if (app === 'whatsapp') {
-    url = 'https://wa.me/?text=' + text;
-  } else if (app === 'telegram') {
-    url = 'https://t.me/share/url?url=https://tradelog.app&text=' + text;
-  }
-  if (url) window.open(url, '_blank');
-}
-
 function buildShareText() {
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
@@ -10827,6 +10814,41 @@ function copyShareCard()     { shareCardCopy(); }
 function captureShareCard_old() { return captureShareCard(); }
 
 function _isMobile() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+
+function shareToApp(app) {
+  captureShareCard().then(({ blob, canvas }) => {
+    const file = new File([blob], 'tradelog-summary.png', { type: 'image/png' });
+    // Use native Web Share API with image if supported (works on mobile)
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: "TradeLog — Today's Summary" })
+        .catch(() => _shareToAppFallback(app, canvas));
+      return;
+    }
+    _shareToAppFallback(app, canvas);
+  }).catch(() => {
+    const text = encodeURIComponent(buildShareText());
+    let url = '';
+    if (app === 'x')             url = 'https://twitter.com/intent/tweet?text=' + text;
+    else if (app === 'whatsapp') url = 'https://wa.me/?text=' + text;
+    else if (app === 'telegram') url = 'https://t.me/share/url?url=https://tradelog.app&text=' + text;
+    if (url) window.open(url, '_blank');
+  });
+}
+
+function _shareToAppFallback(app, canvas) {
+  // Save the image for the user to attach manually, then open the app
+  const a = document.createElement('a');
+  a.download = 'tradelog-summary.png';
+  a.href = canvas.toDataURL('image/png');
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => {
+    let url = '';
+    if (app === 'x')             url = 'https://twitter.com/intent/tweet';
+    else if (app === 'whatsapp') url = 'https://wa.me/';
+    else if (app === 'telegram') url = 'https://t.me/share/url?url=https://tradelog.app';
+    if (url) window.open(url, '_blank');
+  }, 400);
+}
 
 document.getElementById('share-modal').addEventListener('click', function(e) {
   if (e.target === this) closeShareModal();
