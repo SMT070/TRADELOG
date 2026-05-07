@@ -10729,6 +10729,19 @@ function closeShareModal() {
   window._shareCanvas = null;
 }
 
+function shareToApp(app) {
+  const text = encodeURIComponent(buildShareText());
+  let url = '';
+  if (app === 'x') {
+    url = 'https://twitter.com/intent/tweet?text=' + text;
+  } else if (app === 'whatsapp') {
+    url = 'https://wa.me/?text=' + text;
+  } else if (app === 'telegram') {
+    url = 'https://t.me/share/url?url=https://tradelog.app&text=' + text;
+  }
+  if (url) window.open(url, '_blank');
+}
+
 function buildShareText() {
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
