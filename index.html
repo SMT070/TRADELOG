@@ -4173,9 +4173,10 @@ async function backgroundSync() {
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
       try {
-        const { data: beSync } = await sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false });
-        if (beSync) balanceEvents = beSync.map(r => ({ ticket: r.ticket, type: r.type, amount: r.amount, time: r.time, comment: r.comment || '' }));
-      } catch(e) {}
+        const { data: beSync, error: beSyncErr } = await sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false });
+        if (beSyncErr) { console.error('TradeLog: bgSync balance_events error', beSyncErr); }
+        else if (beSync) balanceEvents = beSync.map(r => ({ ticket: r.ticket, type: r.type, amount: r.amount, time: r.time, comment: r.comment || '' }));
+      } catch(e) { console.error('TradeLog: bgSync balance_events failed', e); }
       if (dataChanged) {
         refreshDashboard();
         if (document.getElementById('page-trades').classList.contains('active')) renderTrades();
@@ -4661,9 +4662,10 @@ async function loadAllFromSupabase() {
 
   // 3b. Balance events
   try {
-    const { data: beData } = await sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false });
-    if (beData) balanceEvents = beData.map(r => ({ ticket: r.ticket, type: r.type, amount: r.amount, time: r.time, comment: r.comment || '' }));
-  } catch(e) { console.warn('TradeLog: loadBalanceEvents failed', e); }
+    const { data: beData, error: beErr } = await sb.from('balance_events').select('*').eq('user_id', uid).order('time', { ascending: false });
+    if (beErr) { console.error('TradeLog: loadBalanceEvents error', beErr); }
+    else if (beData) balanceEvents = beData.map(r => ({ ticket: r.ticket, type: r.type, amount: r.amount, time: r.time, comment: r.comment || '' }));
+  } catch(e) { console.error('TradeLog: loadBalanceEvents failed', e); }
 
   // 3. User data (journal, mindset, tags)
   try {
@@ -4935,58 +4937,96 @@ function clearBEForm() {
 }
 
 async function saveBalanceEvent() {
-  const type   = window._entryType; // 'deposit' or 'withdrawal'
-  const amount = parseFloat(document.getElementById('be-amount')?.value);
+  const isEditing  = typeof window._beEditIdx !== 'undefined' && window._beEditIdx !== null;
+  const type       = window._entryType; // 'deposit' or 'withdrawal'
+  const amount     = parseFloat(document.getElementById('be-amount')?.value);
   if (!amount || amount <= 0) { toast('Enter a valid amount', 'error'); return; }
 
-  const dateVal = document.getElementById('be-date')?.value || '';
-  const time    = dateVal || new Date().toISOString().slice(0, 16);
-  const note    = document.getElementById('be-note')?.value?.trim() || '';
-
-  // Final amount: deposits are positive, withdrawals negative
+  const dateVal    = document.getElementById('be-date')?.value || '';
+  const time       = dateVal || new Date().toISOString().slice(0, 16);
+  const note       = document.getElementById('be-note')?.value?.trim() || '';
   const finalAmount = type === 'deposit' ? Math.abs(amount) : -Math.abs(amount);
+  const sym        = getCurrencySymbol();
 
-  const event = {
-    ticket:  uid(),
-    type,
-    amount:  finalAmount,
-    time,
-    comment: note
-  };
+  const uid2 = await getValidUid();
 
-  // Add to local balanceEvents array
-  balanceEvents.unshift(event);
+  if (isEditing) {
+    // ── UPDATE existing event ──
+    const idx = window._beEditIdx;
+    const ev  = balanceEvents[idx];
+    if (!ev) { window._beEditIdx = null; return; }
 
-  // Update stored account balance — always apply, even if balance is 0
-  const currentBal = getBalance();
-  const newBal = currentBal + finalAmount;
-  localStorage.setItem(BAL_KEY, String(Math.max(0, newBal)));
+    const oldAmount = parseFloat(ev.amount) || 0;
+    const oldTicket = ev.ticket;
 
-  // Save to Supabase balance_events table
-  try {
-    const uid2 = await getValidUid();
-    if (uid2) {
-      await sb.from('balance_events').insert({
-        user_id: uid2,
-        ticket:  event.ticket,
-        type:    event.type,
-        amount:  event.amount,
-        time:    event.time,
-        comment: event.comment
-      });
+    // Adjust balance: reverse old, apply new
+    const currentBal = getBalance();
+    localStorage.setItem(BAL_KEY, String(Math.max(0, currentBal - oldAmount + finalAmount)));
+
+    // Update local array
+    balanceEvents[idx] = { ticket: oldTicket, type, amount: finalAmount, time, comment: note };
+
+    // Persist to Supabase
+    if (!uid2) {
+      toast('Not logged in — update saved locally only', 'error');
+    } else {
+      const { error } = await sb.from('balance_events').update({
+        type, amount: finalAmount, time, comment: note
+      }).eq('user_id', uid2).eq('ticket', oldTicket);
+      if (error) {
+        console.error('TradeLog: balance_events update error', error);
+        toast('Update failed: ' + (error.message || 'Supabase error'), 'error');
+        // Revert local change on failure
+        balanceEvents[idx] = ev;
+        localStorage.setItem(BAL_KEY, String(Math.max(0, currentBal)));
+        return;
+      }
     }
-  } catch(e) {
-    console.warn('TradeLog: balance event sync failed', e);
+
+    toast(`✓ ${type === 'deposit' ? 'Deposit' : 'Withdrawal'} updated: ${finalAmount > 0 ? '+' : ''}${sym}${Math.abs(finalAmount).toFixed(2)}`, 'success');
+    window._beEditIdx = null;
+    const saveBtn = document.getElementById('be-save-btn');
+    if (saveBtn) saveBtn.style.background = '';
+
+  } else {
+    // ── NEW event ──
+    const ticket = uid();
+    const event  = { ticket, type, amount: finalAmount, time, comment: note };
+
+    // Add locally
+    balanceEvents.unshift(event);
+
+    // Adjust balance
+    const currentBal = getBalance();
+    localStorage.setItem(BAL_KEY, String(Math.max(0, currentBal + finalAmount)));
+
+    // Persist to Supabase
+    if (!uid2) {
+      toast('Not logged in — event saved locally only', 'error');
+    } else {
+      const { error } = await sb.from('balance_events').insert({
+        user_id: uid2, ticket, type, amount: finalAmount, time, comment: note
+      });
+      if (error) {
+        console.error('TradeLog: balance_events insert error', error);
+        toast('Save failed: ' + (error.message || 'Supabase error'), 'error');
+        // Revert local change on failure
+        balanceEvents.shift();
+        localStorage.setItem(BAL_KEY, String(Math.max(0, currentBal)));
+        return;
+      }
+    }
+
+    const sign = finalAmount > 0 ? '+' : '';
+    toast(`✓ ${type === 'deposit' ? 'Deposit' : 'Withdrawal'} saved: ${sign}${sym}${Math.abs(finalAmount).toFixed(2)}`, 'success');
   }
 
-  const sym  = getCurrencySymbol();
-  const sign = finalAmount > 0 ? '+' : '';
-  toast(`✓ ${type === 'deposit' ? 'Deposit' : 'Withdrawal'} saved: ${sign}${sym}${Math.abs(finalAmount).toFixed(2)}`, 'success');
-
   clearBEForm();
-  setEntryType('trade'); // return to trade tab
+  setEntryType('trade');
+  renderBEHistory();
   refreshDashboard();
   renderTrades();
+  if (document.getElementById('page-calendar')?.classList.contains('active')) renderCalendar();
 }
 
 // ── BALANCE EVENT HISTORY ─────────────────────────────────────────────────────
@@ -5111,14 +5151,21 @@ async function deleteBEEvent(idx) {
       balanceEvents.splice(idx, 1);
 
       // Remove from Supabase
-      try {
-        const uid2 = await getValidUid();
-        if (uid2 && ev.ticket) {
-          await sb.from('balance_events').delete().eq('user_id', uid2).eq('ticket', ev.ticket);
+      const uid2 = await getValidUid();
+      if (!uid2) {
+        toast(`🗑 ${label} deleted (local only — not logged in)`, '');
+      } else if (ev.ticket) {
+        const { error } = await sb.from('balance_events').delete().eq('user_id', uid2).eq('ticket', ev.ticket);
+        if (error) {
+          console.error('TradeLog: balance_events delete error', error);
+          toast('Delete failed on server: ' + (error.message || 'Supabase error'), 'error');
+        } else {
+          toast(`🗑 ${label} deleted`, '');
         }
-      } catch(e) { console.warn('TradeLog: balance event delete sync failed', e); }
+      } else {
+        toast(`🗑 ${label} deleted`, '');
+      }
 
-      toast(`🗑 ${label} deleted`, '');
       renderBEHistory();
       refreshDashboard();
       renderTrades();
@@ -5126,62 +5173,6 @@ async function deleteBEEvent(idx) {
     }
   });
 }
-
-// Patch saveBalanceEvent to handle edit mode
-const _origSaveBalanceEvent = saveBalanceEvent;
-saveBalanceEvent = async function() {
-  // Edit mode
-  if (typeof window._beEditIdx !== 'undefined' && window._beEditIdx !== null) {
-    const idx  = window._beEditIdx;
-    const ev   = balanceEvents[idx];
-    if (!ev) { window._beEditIdx = null; return; }
-
-    const type   = window._entryType;
-    const amount = parseFloat(document.getElementById('be-amount')?.value);
-    if (!amount || amount <= 0) { toast('Enter a valid amount', 'error'); return; }
-
-    const dateVal     = document.getElementById('be-date')?.value || '';
-    const time        = dateVal || new Date().toISOString().slice(0, 16);
-    const note        = document.getElementById('be-note')?.value?.trim() || '';
-    const finalAmount = type === 'deposit' ? Math.abs(amount) : -Math.abs(amount);
-
-    // Reverse old amount, apply new — always update balance
-    const currentBal  = getBalance();
-    const adjusted = currentBal - parseFloat(ev.amount) + finalAmount;
-    localStorage.setItem(BAL_KEY, String(Math.max(0, adjusted)));
-
-    const oldTicket = ev.ticket;
-    balanceEvents[idx] = { ticket: oldTicket, type, amount: finalAmount, time, comment: note };
-
-    // Update in Supabase
-    try {
-      const uid2 = await getValidUid();
-      if (uid2 && oldTicket) {
-        await sb.from('balance_events').update({ type, amount: finalAmount, time, comment: note }).eq('user_id', uid2).eq('ticket', oldTicket);
-      }
-    } catch(e) { console.warn('TradeLog: balance event update sync failed', e); }
-
-    const sym  = getCurrencySymbol();
-    toast(`✓ ${type === 'deposit' ? 'Deposit' : 'Withdrawal'} updated: ${finalAmount > 0 ? '+' : ''}${sym}${Math.abs(finalAmount).toFixed(2)}`, 'success');
-
-    window._beEditIdx = null;
-    const saveBtn = document.getElementById('be-save-btn');
-    if (saveBtn) { saveBtn.style.background = ''; }
-
-    clearBEForm();
-    setEntryType('trade');
-    renderBEHistory();
-    refreshDashboard();
-    renderTrades();
-    if (document.getElementById('page-calendar')?.classList.contains('active')) renderCalendar();
-    return;
-  }
-
-  // Normal save
-  await _origSaveBalanceEvent();
-  renderBEHistory();
-  if (document.getElementById('page-calendar')?.classList.contains('active')) renderCalendar();
-};
 
 // ── FORM ─────────────────────────────────────────────────────────────────────
 function clearForm() {
