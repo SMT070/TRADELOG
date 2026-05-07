@@ -1653,6 +1653,11 @@
     .sidebar-item { justify-content: center; padding: 12px 0; }
     #sidebar .account-card { justify-content: center; padding: 10px 0; }
   }
+
+  /* ── Feature info tooltips ── */
+  .feat-info-btn:hover { border-color: var(--border2); color: var(--text2); background: var(--surface3); }
+  .feat-info-wrap:hover .feat-info-tip,
+  .feat-info-wrap:focus-within .feat-info-tip { display: block !important; }
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
@@ -2290,7 +2295,10 @@
               <span id="feat-be-icon" style="font-size:15px;">⚖</span>
               <div style="flex:1;min-width:0;">
                 <div id="feat-be-label" style="font-size:12px;font-weight:700;">Auto BE</div>
-                <div style="font-size:10px;color:var(--muted);font-weight:500;">Mark ±0.02% trades as BE</div>
+                <div style="display:flex;align-items:center;gap:5px;">
+                  <span style="font-size:10px;color:var(--muted);font-weight:500;">Mark ±0.02% trades as BE</span>
+                  <span title="Marks any trade whose net P&L is within ±0.02% of your account balance as Break Even. Press again to undo." style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);color:var(--muted);font-size:9px;font-weight:800;cursor:help;flex-shrink:0;line-height:1;" onmouseenter="this.style.background='var(--surface2)';this.style.color='var(--text2)'" onmouseleave="this.style.background='var(--surface3)';this.style.color='var(--muted)'">i</span>
+                </div>
               </div>
               <div id="feat-be-pill" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.5px;background:var(--surface3);color:var(--muted);flex-shrink:0;">OFF</div>
             </button>
@@ -2300,7 +2308,10 @@
               <span style="font-size:15px;">⚡</span>
               <div style="flex:1;min-width:0;">
                 <div id="feat-pack-label" style="font-size:12px;font-weight:700;">Auto-Pack</div>
-                <div style="font-size:10px;color:var(--muted);font-weight:500;">Group same-symbol trades</div>
+                <div style="display:flex;align-items:center;gap:5px;">
+                  <span style="font-size:10px;color:var(--muted);font-weight:500;">Group same-symbol trades</span>
+                  <span title="Groups trades on the same symbol and direction that open within 1 minute of each other. Uses open time only. Click + Add Trade on any group to add more trades manually." style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);color:var(--muted);font-size:9px;font-weight:800;cursor:help;flex-shrink:0;line-height:1;" onmouseenter="this.style.background='var(--surface2)';this.style.color='var(--text2)'" onmouseleave="this.style.background='var(--surface3)';this.style.color='var(--muted)'">i</span>
+                </div>
               </div>
               <div id="feat-pack-pill" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.5px;background:var(--surface3);color:var(--muted);flex-shrink:0;">OFF</div>
             </button>
@@ -13160,10 +13171,7 @@ function toggleSelectAll(e) {
 function toggleAutoPack() {
   const next = !(localStorage.getItem('tradelog_autopack') === 'true');
   localStorage.setItem('tradelog_autopack', String(next));
-  if (!next) {
-    const note = document.getElementById('autopack-notice');
-    if (note) note.remove();
-  }
+  if (!next) { /* notice bar removed */ }
   if (next) toast('⚡ Auto-Pack ON — trades within 1 min on same symbol are grouped', 'success');
   else       toast('Auto-Pack OFF', '');
   renderTrades();
@@ -13604,19 +13612,7 @@ function renderAutoPackRows(key, packTrades, sym) {
 
     tbody.innerHTML = rowsHtml;
 
-    // ── Notice bar ────────────────────────────────────────────────
-    const hasAutoGroups  = Object.keys(autoGroups).length > 0;
-    let notice = document.getElementById('autopack-notice');
-    if (hasAutoGroups && !notice) {
-      notice = document.createElement('div');
-      notice.id        = 'autopack-notice';
-      notice.style.cssText = 'font-size:10px;font-weight:700;color:var(--yellow);opacity:.75;padding:2px 4px 6px;display:flex;align-items:center;gap:5px;flex-shrink:0;';
-      notice.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Auto-Pack active — grouping trades within 1 min on the same symbol`;
-      const tradesGrid = document.getElementById('trades-grid');
-      if (tradesGrid) tradesGrid.parentNode.insertBefore(notice, tradesGrid);
-    } else if (!hasAutoGroups && notice) {
-      notice.remove();
-    }
+    // Notice bar removed — info is shown via ⓘ tooltip in the Features dropdown
   };
 })();
 
