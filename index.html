@@ -4243,7 +4243,7 @@ let selectedResult = '';
 let pendingImport = [];
 let editingScreenshot = null;
 
-function getPnl(t) { return t.netPnl !== undefined ? t.netPnl : (t.pnl || 0); }
+function getPnl(t) { return (t.netPnl !== undefined && t.netPnl !== null) ? t.netPnl : (t.pnl || 0); }
 function getResult(t) {
   const pnl = getPnl(t);
   if (t.result) return t.result;
@@ -4470,7 +4470,7 @@ function closeConfirmModal() {
 function saveBalance() {
   const val = parseFloat(document.getElementById('modal-balance-input').value);
   if (!val || val <= 0) { toast('Enter a valid balance', 'error'); return; }
- localStorage.setItem(BAL_KEY, val);
+  localStorage.setItem(BAL_KEY, String(val));
   saveProfileToSupabase();
   closeBalanceModal();
   toast('Balance saved — $' + val.toLocaleString(), 'success');
@@ -4965,9 +4965,9 @@ async function saveBalanceEvent() {
     const oldAmount = parseFloat(ev.amount) || 0;
     const oldTicket = ev.ticket;
 
-    // Adjust balance: reverse old, apply new
+    // Adjust balance: reverse old effect, apply new effect
     const currentBal = getBalance();
-    localStorage.setItem(BAL_KEY, String(Math.max(0, currentBal - oldAmount + finalAmount)));
+    localStorage.setItem(BAL_KEY, String(currentBal - oldAmount + finalAmount));
 
     // Update local array
     balanceEvents[idx] = { ticket: oldTicket, type, amount: finalAmount, time, comment: note };
@@ -5004,7 +5004,7 @@ async function saveBalanceEvent() {
 
     // Adjust balance
     const currentBal = getBalance();
-    localStorage.setItem(BAL_KEY, String(Math.max(0, currentBal + finalAmount)));
+    localStorage.setItem(BAL_KEY, String(currentBal + finalAmount));
 
     // Persist to Supabase — upsert so MT5 auto-sync and manual entry never conflict
     if (!uid2) {
@@ -5150,10 +5150,10 @@ async function deleteBEEvent(idx) {
     okText: 'Delete',
     okColor: 'var(--red)',
     onOk: async () => {
-      // Reverse the event's effect on balance (always apply)
+      // Reverse the event's effect on balance
       const currentBal = getBalance();
       const reversed = currentBal - parseFloat(ev.amount);
-      localStorage.setItem(BAL_KEY, String(Math.max(0, reversed)));
+      localStorage.setItem(BAL_KEY, String(reversed));
 
       balanceEvents.splice(idx, 1);
 
@@ -5909,7 +5909,7 @@ function refreshDashboard() {
   document.getElementById('avg-win-bar').style.width = winPct + '%';
   document.getElementById('avg-loss-bar').style.width = lossPct + '%';
   document.getElementById('avg-win-lbl').textContent = getCurrencySymbol()+avgWin.toFixed(0);
-  document.getElementById('avg-loss-lbl').textContent = '-'+getCurrencySymbol()+avgLoss.toFixed(0);
+  document.getElementById('avg-loss-lbl').textContent = '-'+getCurrencySymbol()+Math.abs(avgLoss).toFixed(0);
 
   // Ring
   document.getElementById('wr-big').textContent = s.wr.toFixed(1)+'%';
@@ -5925,9 +5925,9 @@ function refreshDashboard() {
   document.getElementById('avg-loss-val').textContent = fmt(s.avgLoss);
   document.getElementById('avg-loss-val').style.color = 'var(--red)';
   document.getElementById('best-trade').textContent   = fmt(s.best);
-  document.getElementById('best-trade').style.color   = 'var(--green)';
+  document.getElementById('best-trade').style.color   = s.best >= 0 ? 'var(--green)' : 'var(--red)';
   document.getElementById('worst-trade').textContent  = fmt(s.worst);
-  document.getElementById('worst-trade').style.color  = 'var(--red)';
+  document.getElementById('worst-trade').style.color  = s.worst >= 0 ? 'var(--green)' : 'var(--red)';
   document.getElementById('consec-wins').textContent  = s.mcw;
   document.getElementById('consec-loss').textContent  = s.mcl;
 
@@ -6711,7 +6711,7 @@ function renderTrades(skipTagRebuild) {
       <td style="color:var(--text);font-weight:500;">${t.entry||'—'}</td>
       <td style="color:var(--text);font-weight:500;">${t.exit||'—'}</td>
       <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
-      <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-family:var(--mono);font-weight:600;">${t.commission ? sym+parseFloat(t.commission).toFixed(2) : '—'}</td>
+      <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-family:var(--mono);font-weight:600;">${t.commission ? '-'+sym+Math.abs(parseFloat(t.commission)).toFixed(2) : '—'}</td>
       <td>${badge}</td>
       <td data-col="tags" style="max-width:110px;overflow:hidden;">${renderRowTagsHTML(t.strategies)}</td>
     </tr>`;
