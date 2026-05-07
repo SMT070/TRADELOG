@@ -2857,12 +2857,15 @@
               <button id="be-save-btn" class="btn btn-primary" onclick="saveBalanceEvent()" style="min-width:140px;">Save Deposit</button>
             </div>
           </div>
+        </div>
 
-          <!-- ── HISTORY ── -->
-          <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px;">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;">History</div>
-            <div id="be-history-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <!-- ── DEPOSIT / WITHDRAWAL HISTORY ── -->
+        <div id="be-history-section" style="display:none;border-top:1px solid var(--border);padding:20px 28px 24px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);">History</div>
+            <div id="be-history-count" style="font-size:10px;color:var(--muted);font-weight:600;"></div>
           </div>
+          <div id="be-history-list" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;padding-right:4px;"></div>
         </div>
 
         <div class="form-grid" id="trade-form">
@@ -4877,6 +4880,7 @@ function setEntryType(type) {
     if (saveBtn)  saveBtn.textContent  = type === 'deposit' ? 'Save Deposit' : 'Save Withdrawal';
     if (currSym)  currSym.textContent  = getCurrencySymbol();
     updateBEPreview();
+    renderBEHistory();
   }
 }
 
@@ -4917,6 +4921,10 @@ function clearBEForm() {
   if (timeEl) timeEl.value = '';
   if (dispEl) { dispEl.textContent = 'Pick date…'; dispEl.style.color = 'var(--muted)'; }
   if (btnEl)  btnEl.style.color = 'var(--muted)';
+  // Reset edit mode
+  window._beEditIdx = null;
+  const saveBtn = document.getElementById('be-save-btn');
+  if (saveBtn) { saveBtn.style.background = ''; saveBtn.textContent = window._entryType === 'deposit' ? 'Save Deposit' : 'Save Withdrawal'; }
   updateBEPreview();
 }
 
@@ -4976,6 +4984,186 @@ async function saveBalanceEvent() {
   refreshDashboard();
   renderTrades();
 }
+
+// ── BALANCE EVENT HISTORY ─────────────────────────────────────────────────────
+
+function renderBEHistory() {
+  const section  = document.getElementById('be-history-section');
+  const listEl   = document.getElementById('be-history-list');
+  const countEl  = document.getElementById('be-history-count');
+  if (!section || !listEl) return;
+
+  if (!balanceEvents || balanceEvents.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  const sym = getCurrencySymbol();
+  if (countEl) countEl.textContent = balanceEvents.length + ' record' + (balanceEvents.length !== 1 ? 's' : '');
+
+  listEl.innerHTML = balanceEvents.map((ev, idx) => {
+    const isDeposit = ev.type === 'deposit';
+    const amt       = Math.abs(parseFloat(ev.amount) || 0);
+    const amtStr    = (isDeposit ? '+' : '-') + sym + amt.toFixed(2);
+    const color     = isDeposit ? 'var(--green)' : 'var(--red)';
+    const bg        = isDeposit ? 'var(--green-bg)' : 'var(--red-bg)';
+    const icon      = isDeposit ? '💰' : '💸';
+    const label     = isDeposit ? 'DEPOSIT' : 'WITHDRAWAL';
+    const dateStr   = ev.time ? ev.time.slice(0,10) : '—';
+    const timeStr   = ev.time && ev.time.length > 10 ? ev.time.slice(11,16) : '';
+    const note      = ev.comment || '';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--border2)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="font-size:20px;flex-shrink:0;">${icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-weight:800;color:${color};">${amtStr}</span>
+          <span style="padding:2px 7px;border-radius:5px;font-size:9px;font-weight:800;letter-spacing:.5px;background:${bg};color:${color};">${label}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;font-weight:500;">${dateStr}${timeStr ? ' · ' + timeStr : ''}${note ? ' · ' + note : ''}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button onclick="editBEEvent(${idx})" title="Edit" style="padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer;font-size:11px;font-weight:700;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.background='var(--surface3)';this.style.color='var(--text)'" onmouseleave="this.style.background='none';this.style.color='var(--text2)'">✏️ Edit</button>
+        <button onclick="deleteBEEvent(${idx})" title="Delete" style="padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--red);cursor:pointer;font-size:11px;font-weight:700;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.background='var(--red-bg)'" onmouseleave="this.style.background='none'">🗑 Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editBEEvent(idx) {
+  const ev = balanceEvents[idx];
+  if (!ev) return;
+
+  // Switch to the correct tab
+  setEntryType(ev.type);
+
+  // Fill form fields
+  const amtEl  = document.getElementById('be-amount');
+  const noteEl = document.getElementById('be-note');
+  const dateEl = document.getElementById('be-date');
+  const dispEl = document.getElementById('be-date-display');
+  const btnEl  = document.getElementById('be-date-btn');
+  const timeEl = document.getElementById('be-date-time');
+
+  if (amtEl)  amtEl.value  = Math.abs(parseFloat(ev.amount) || 0);
+  if (noteEl) noteEl.value = ev.comment || '';
+
+  if (ev.time) {
+    const datePart = ev.time.slice(0,10);
+    const timePart = ev.time.length > 10 ? ev.time.slice(11,16) : '';
+    if (dateEl)  dateEl.value  = ev.time;
+    if (dispEl) { dispEl.textContent = datePart; dispEl.style.color = 'var(--text)'; }
+    if (btnEl)   btnEl.style.color = 'var(--text)';
+    if (timeEl)  timeEl.value  = timePart;
+  }
+
+  updateBEPreview();
+
+  // Mark as editing
+  window._beEditIdx = idx;
+  const saveBtn = document.getElementById('be-save-btn');
+  if (saveBtn) {
+    saveBtn.textContent = ev.type === 'deposit' ? 'Update Deposit' : 'Update Withdrawal';
+    saveBtn.style.background = 'var(--yellow)';
+  }
+  // Scroll form into view
+  document.getElementById('be-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function deleteBEEvent(idx) {
+  const ev = balanceEvents[idx];
+  if (!ev) return;
+  const sym = getCurrencySymbol();
+  const amt = Math.abs(parseFloat(ev.amount) || 0);
+  const label = ev.type === 'deposit' ? 'Deposit' : 'Withdrawal';
+
+  showConfirm({
+    icon: '🗑',
+    title: 'Delete ' + label,
+    message: `Delete this ${label.toLowerCase()} of ${sym}${amt.toFixed(2)}? This cannot be undone.`,
+    okText: 'Delete',
+    okColor: 'var(--red)',
+    onOk: async () => {
+      // Reverse effect on balance
+      const currentBal = getBalance();
+      if (currentBal > 0) {
+        const reversed = currentBal - parseFloat(ev.amount);
+        localStorage.setItem(BAL_KEY, String(Math.max(0, reversed)));
+      }
+
+      balanceEvents.splice(idx, 1);
+
+      // Remove from Supabase
+      try {
+        const uid2 = await getValidUid();
+        if (uid2 && ev.ticket) {
+          await sb.from('balance_events').delete().eq('user_id', uid2).eq('ticket', ev.ticket);
+        }
+      } catch(e) { console.warn('TradeLog: balance event delete sync failed', e); }
+
+      toast(`🗑 ${label} deleted`, '');
+      renderBEHistory();
+      refreshDashboard();
+      renderTrades();
+    }
+  });
+}
+
+// Patch saveBalanceEvent to handle edit mode
+const _origSaveBalanceEvent = saveBalanceEvent;
+saveBalanceEvent = async function() {
+  // Edit mode
+  if (typeof window._beEditIdx !== 'undefined' && window._beEditIdx !== null) {
+    const idx  = window._beEditIdx;
+    const ev   = balanceEvents[idx];
+    if (!ev) { window._beEditIdx = null; return; }
+
+    const type   = window._entryType;
+    const amount = parseFloat(document.getElementById('be-amount')?.value);
+    if (!amount || amount <= 0) { toast('Enter a valid amount', 'error'); return; }
+
+    const dateVal     = document.getElementById('be-date')?.value || '';
+    const time        = dateVal || new Date().toISOString().slice(0, 16);
+    const note        = document.getElementById('be-note')?.value?.trim() || '';
+    const finalAmount = type === 'deposit' ? Math.abs(amount) : -Math.abs(amount);
+
+    // Reverse old amount, apply new
+    const currentBal  = getBalance();
+    if (currentBal > 0) {
+      const adjusted = currentBal - parseFloat(ev.amount) + finalAmount;
+      localStorage.setItem(BAL_KEY, String(Math.max(0, adjusted)));
+    }
+
+    const oldTicket = ev.ticket;
+    balanceEvents[idx] = { ticket: oldTicket, type, amount: finalAmount, time, comment: note };
+
+    // Update in Supabase
+    try {
+      const uid2 = await getValidUid();
+      if (uid2 && oldTicket) {
+        await sb.from('balance_events').update({ type, amount: finalAmount, time, comment: note }).eq('user_id', uid2).eq('ticket', oldTicket);
+      }
+    } catch(e) { console.warn('TradeLog: balance event update sync failed', e); }
+
+    const sym  = getCurrencySymbol();
+    toast(`✓ ${type === 'deposit' ? 'Deposit' : 'Withdrawal'} updated: ${finalAmount > 0 ? '+' : ''}${sym}${Math.abs(finalAmount).toFixed(2)}`, 'success');
+
+    window._beEditIdx = null;
+    const saveBtn = document.getElementById('be-save-btn');
+    if (saveBtn) { saveBtn.style.background = ''; }
+
+    clearBEForm();
+    setEntryType('trade');
+    renderBEHistory();
+    refreshDashboard();
+    renderTrades();
+    return;
+  }
+
+  // Normal save
+  await _origSaveBalanceEvent();
+  renderBEHistory();
+};
 
 // ── FORM ─────────────────────────────────────────────────────────────────────
 function clearForm() {
