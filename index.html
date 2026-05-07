@@ -2812,7 +2812,8 @@
         </div>
 
         <!-- ── DEPOSIT / WITHDRAWAL FORM ── -->
-        <div id="be-form" style="display:none;padding:28px;">
+        <div id="be-form" style="display:none;">
+        <div style="padding:28px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
 
             <div class="form-group">
@@ -2862,11 +2863,12 @@
         <!-- ── DEPOSIT / WITHDRAWAL HISTORY ── -->
         <div id="be-history-section" style="display:none;border-top:1px solid var(--border);padding:20px 28px 24px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);">History</div>
+            <div id="be-history-title" style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);">Deposit History</div>
             <div id="be-history-count" style="font-size:10px;color:var(--muted);font-weight:600;"></div>
           </div>
           <div id="be-history-list" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;padding-right:4px;"></div>
         </div>
+        </div><!-- end be-form -->
 
         <div class="form-grid" id="trade-form">
           <input type="hidden" id="edit-id">
@@ -4869,6 +4871,7 @@ function setEntryType(type) {
   if (type === 'trade') {
     tradeForm.style.display = 'grid';
     beForm.style.display    = 'none';
+    // Ensure history is hidden (it's inside be-form, so hiding be-form covers it)
   } else {
     tradeForm.style.display = 'none';
     beForm.style.display    = 'block';
@@ -4951,12 +4954,10 @@ async function saveBalanceEvent() {
   // Add to local balanceEvents array
   balanceEvents.unshift(event);
 
-  // Update stored account balance
+  // Update stored account balance — always apply, even if balance is 0
   const currentBal = getBalance();
-  if (currentBal > 0) {
-    const newBal = currentBal + finalAmount;
-    localStorage.setItem(BAL_KEY, String(Math.max(0, newBal)));
-  }
+  const newBal = currentBal + finalAmount;
+  localStorage.setItem(BAL_KEY, String(Math.max(0, newBal)));
 
   // Save to Supabase balance_events table
   try {
@@ -4991,18 +4992,33 @@ function renderBEHistory() {
   const section  = document.getElementById('be-history-section');
   const listEl   = document.getElementById('be-history-list');
   const countEl  = document.getElementById('be-history-count');
+  const titleEl  = document.getElementById('be-history-title');
   if (!section || !listEl) return;
 
-  if (!balanceEvents || balanceEvents.length === 0) {
+  const currentType = window._entryType; // 'deposit' or 'withdrawal'
+  // Only show history when on deposit or withdrawal tab
+  if (currentType === 'trade') {
+    section.style.display = 'none';
+    return;
+  }
+
+  // Filter to only the current tab's type
+  const filtered = (balanceEvents || []).filter(ev => ev.type === currentType);
+
+  if (titleEl) titleEl.textContent = currentType === 'deposit' ? 'Deposit History' : 'Withdrawal History';
+
+  if (filtered.length === 0) {
     section.style.display = 'none';
     return;
   }
 
   section.style.display = 'block';
   const sym = getCurrencySymbol();
-  if (countEl) countEl.textContent = balanceEvents.length + ' record' + (balanceEvents.length !== 1 ? 's' : '');
+  if (countEl) countEl.textContent = filtered.length + ' record' + (filtered.length !== 1 ? 's' : '');
 
-  listEl.innerHTML = balanceEvents.map((ev, idx) => {
+  listEl.innerHTML = filtered.map((ev) => {
+    // Find real index in balanceEvents for edit/delete
+    const realIdx   = balanceEvents.indexOf(ev);
     const isDeposit = ev.type === 'deposit';
     const amt       = Math.abs(parseFloat(ev.amount) || 0);
     const amtStr    = (isDeposit ? '+' : '-') + sym + amt.toFixed(2);
@@ -5023,8 +5039,8 @@ function renderBEHistory() {
         <div style="font-size:11px;color:var(--muted);margin-top:3px;font-weight:500;">${dateStr}${timeStr ? ' · ' + timeStr : ''}${note ? ' · ' + note : ''}</div>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0;">
-        <button onclick="editBEEvent(${idx})" title="Edit" style="padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer;font-size:11px;font-weight:700;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.background='var(--surface3)';this.style.color='var(--text)'" onmouseleave="this.style.background='none';this.style.color='var(--text2)'">✏️ Edit</button>
-        <button onclick="deleteBEEvent(${idx})" title="Delete" style="padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--red);cursor:pointer;font-size:11px;font-weight:700;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.background='var(--red-bg)'" onmouseleave="this.style.background='none'">🗑 Delete</button>
+        <button onclick="editBEEvent(${realIdx})" title="Edit" style="padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer;font-size:11px;font-weight:700;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.background='var(--surface3)';this.style.color='var(--text)'" onmouseleave="this.style.background='none';this.style.color='var(--text2)'">✏️ Edit</button>
+        <button onclick="deleteBEEvent(${realIdx})" title="Delete" style="padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--red);cursor:pointer;font-size:11px;font-weight:700;font-family:var(--sans);transition:all .15s;" onmouseenter="this.style.background='var(--red-bg)'" onmouseleave="this.style.background='none'">🗑 Delete</button>
       </div>
     </div>`;
   }).join('');
@@ -5084,12 +5100,10 @@ async function deleteBEEvent(idx) {
     okText: 'Delete',
     okColor: 'var(--red)',
     onOk: async () => {
-      // Reverse effect on balance
+      // Reverse the event's effect on balance (always apply)
       const currentBal = getBalance();
-      if (currentBal > 0) {
-        const reversed = currentBal - parseFloat(ev.amount);
-        localStorage.setItem(BAL_KEY, String(Math.max(0, reversed)));
-      }
+      const reversed = currentBal - parseFloat(ev.amount);
+      localStorage.setItem(BAL_KEY, String(Math.max(0, reversed)));
 
       balanceEvents.splice(idx, 1);
 
@@ -5105,6 +5119,7 @@ async function deleteBEEvent(idx) {
       renderBEHistory();
       refreshDashboard();
       renderTrades();
+      if (document.getElementById('page-calendar')?.classList.contains('active')) renderCalendar();
     }
   });
 }
@@ -5127,12 +5142,10 @@ saveBalanceEvent = async function() {
     const note        = document.getElementById('be-note')?.value?.trim() || '';
     const finalAmount = type === 'deposit' ? Math.abs(amount) : -Math.abs(amount);
 
-    // Reverse old amount, apply new
+    // Reverse old amount, apply new — always update balance
     const currentBal  = getBalance();
-    if (currentBal > 0) {
-      const adjusted = currentBal - parseFloat(ev.amount) + finalAmount;
-      localStorage.setItem(BAL_KEY, String(Math.max(0, adjusted)));
-    }
+    const adjusted = currentBal - parseFloat(ev.amount) + finalAmount;
+    localStorage.setItem(BAL_KEY, String(Math.max(0, adjusted)));
 
     const oldTicket = ev.ticket;
     balanceEvents[idx] = { ticket: oldTicket, type, amount: finalAmount, time, comment: note };
@@ -5157,12 +5170,14 @@ saveBalanceEvent = async function() {
     renderBEHistory();
     refreshDashboard();
     renderTrades();
+    if (document.getElementById('page-calendar')?.classList.contains('active')) renderCalendar();
     return;
   }
 
   // Normal save
   await _origSaveBalanceEvent();
   renderBEHistory();
+  if (document.getElementById('page-calendar')?.classList.contains('active')) renderCalendar();
 };
 
 // ── FORM ─────────────────────────────────────────────────────────────────────
@@ -9578,6 +9593,28 @@ function renderCalendar() {
       html += '<div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">';
       html += '<div style="height:100%;width:' + barW + '%;background:' + barColor + ';border-radius:3px;transition:width .3s;"></div>';
       html += '</div>';
+      // BE event badges
+      const wkBEevts = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
+      const wkHasDep = wkBEevts.some(e => e.type === 'deposit');
+      const wkHasWdr = wkBEevts.some(e => e.type === 'withdrawal');
+      if (wkHasDep || wkHasWdr) {
+        html += '<div style="display:flex;gap:2px;align-items:center;flex-shrink:0;">';
+        if (wkHasDep) {
+          const depAmt = wkBEevts.filter(e=>e.type==='deposit').reduce((s,e)=>s+Math.abs(parseFloat(e.amount)||0),0);
+          html += '<div style="display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;background:var(--green-bg);border:1px solid rgba(0,255,187,0.2);">'
+            + '<span style="font-size:11px;">💰</span>'
+            + '<span style="font-size:10px;font-weight:800;color:var(--green);">+' + getCurrencySymbol() + depAmt.toFixed(0) + '</span>'
+            + '</div>';
+        }
+        if (wkHasWdr) {
+          const wdrAmt = wkBEevts.filter(e=>e.type==='withdrawal').reduce((s,e)=>s+Math.abs(parseFloat(e.amount)||0),0);
+          html += '<div style="display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;background:var(--red-bg);border:1px solid rgba(255,59,92,0.2);">'
+            + '<span style="font-size:11px;">💸</span>'
+            + '<span style="font-size:10px;font-weight:800;color:var(--red);">-' + getCurrencySymbol() + wdrAmt.toFixed(0) + '</span>'
+            + '</div>';
+        }
+        html += '</div>';
+      }
       // Stats
       if (data) {
         html += '<div style="width:80px;text-align:right;flex-shrink:0;font-size:11px;color:var(--muted);">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
@@ -9740,13 +9777,17 @@ function renderCalendar() {
 
       const dayNumStyle = data ? 'color:var(--text);font-weight:800;' : (isToday ? '' : 'color:var(--muted);');
       let inner = `<div class="cal-day-num" style="${dayNumStyle}">${d}</div>`;
-      // Balance event indicator (💰 or 💸 dot top-right)
-      const hasBEevt = (balanceEvents||[]).some(e => (e.time||'').slice(0,10) === dateStr);
-      if (hasBEevt) {
-        const evtType = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr)
-          .some(e => e.type === 'deposit') ? 'deposit' : 'withdrawal';
-        inner += '<div style="position:absolute;top:6px;right:7px;font-size:9px;line-height:1;opacity:0.85;">' + (evtType==='deposit'?'💰':'💸') + '</div>';
+      // Balance event indicator — show 💰 and/or 💸 top-right
+      const dayBEall  = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
+      const hasDeposit    = dayBEall.some(e => e.type === 'deposit');
+      const hasWithdrawal = dayBEall.some(e => e.type === 'withdrawal');
+      if (hasDeposit || hasWithdrawal) {
+        inner += '<div style="position:absolute;top:5px;right:6px;display:flex;gap:1px;line-height:1;">'
+          + (hasDeposit    ? '<span style="font-size:9px;opacity:0.9;">💰</span>' : '')
+          + (hasWithdrawal ? '<span style="font-size:9px;opacity:0.9;">💸</span>' : '')
+          + '</div>';
       }
+      const hasBEevt = dayBEall.length > 0;
       if (data) {
         const pnlClass = data.pnl >= 0 ? 'pos' : 'neg';
         const abs  = Math.abs(data.pnl);
