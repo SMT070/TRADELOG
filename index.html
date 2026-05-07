@@ -12364,15 +12364,15 @@ tr.pack-separator td > div {
   opacity: .55;
 }
 
-/* ── Pack header row ── */
+/* ── Pack header row — looks like a normal trade row ── */
 tr.pack-header-row td {
-  background: var(--surface2) !important;
-  border-bottom: none !important;
-  padding: 0 !important;
+  background: transparent !important;
+  border-bottom: 1px solid var(--border) !important;
+  padding: 13px 18px !important;
   cursor: pointer;
 }
-tr.pack-header-row:hover td { background: var(--surface3) !important; }
-tr.pack-header-row.expanded td { border-bottom: 1px solid rgba(99,102,241,.15) !important; }
+tr.pack-header-row:hover td { background: rgba(99,102,241,.04) !important; }
+tr.pack-header-row.expanded td { border-bottom: 1px solid var(--border) !important; }
 
 /* ── Pack stats block: fixed-width columns so they never shift ── */
 .pack-stat-block {
@@ -12400,22 +12400,21 @@ tr.pack-header-row.expanded td { border-bottom: 1px solid rgba(99,102,241,.15) !
 }
 .pack-stat-value.pnl { font-size: 15px; font-weight: 900; letter-spacing: -.3px; }
 
-/* ── Pack child rows ── */
+/* ── Pack child rows — same as normal rows but dimmed ── */
 tr.pack-child-row td {
-  background: rgba(99,102,241,.025) !important;
-  border-left: 2px solid rgba(99,102,241,.18) !important;
-  /* inherit same padding/font as normal rows — no override */
+  background: transparent !important;
+  border-left: 2px solid var(--border) !important;
+  opacity: 0.55;
 }
-tr.pack-child-row td:first-child { padding-left: 46px !important; }
-tr.pack-child-row:hover td { background: rgba(99,102,241,.06) !important; }
+tr.pack-child-row td:first-child { padding-left: 32px !important; }
+tr.pack-child-row:hover td { opacity: 0.85; }
 tr.pack-child-row.hidden { display: none; }
 
-/* ── Auto-pack child rows (yellow tint) ── */
+/* ── Auto-pack child rows — same style, no color difference ── */
 tr.pack-child-row[data-pack^="_auto_"] td {
-  border-left: 2px solid rgba(245,158,11,.22) !important;
-  background: rgba(245,158,11,.018) !important;
+  border-left: 2px solid var(--border) !important;
 }
-tr.pack-child-row[data-pack^="_auto_"]:hover td { background: rgba(245,158,11,.055) !important; }
+tr.pack-child-row[data-pack^="_auto_"]:hover td { opacity: 0.85; }
 
 /* ── Pack badge on individual trade rows ── */
 .pack-badge {
@@ -12899,72 +12898,46 @@ function renderSingleTradeRow(t, sym) {
 }
 
 // ── Render a pack header + child rows ─────────────────────────────
-// Shared helper: build pack header inner HTML (used by both real and auto packs)
+// Shared helper: builds a pack header row that looks identical to a normal trade row.
+// No logo icon, no separate stat panel — just the same columns with a chevron arrow.
 function _buildPackHeaderInner(opts) {
-  // opts: { packId, packName, subLabel, accentColor, accentBg, icon, isExpanded,
-  //         totalLots, wr, decided, pnlStr, pnlColor, resultLabel, resultBg, resultColor,
-  //         actions /* html string */ }
-  const chevronColor = opts.accentColor || 'var(--accent)';
-  return `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;min-height:52px;">
-      <!-- Chevron -->
-      <div class="pack-chevron" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:${opts.accentBg};flex-shrink:0;transition:transform .2s;${opts.isExpanded?'transform:rotate(90deg)':''}">
-        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="${chevronColor}" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
-      </div>
-      <!-- Icon + name -->
-      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden;">
-        <div style="width:30px;height:30px;border-radius:8px;background:${opts.accentBg};border:1px solid ${opts.accentColor}40;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">${opts.icon}</div>
-        <div style="min-width:0;overflow:hidden;">
-          <div style="font-size:12px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${opts.packName}</div>
-          <div style="font-size:10px;color:var(--muted);font-weight:600;margin-top:1px;white-space:nowrap;">${opts.subLabel}</div>
-        </div>
-      </div>
-      <!-- Stats: fixed-width blocks, always aligned -->
-      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-        <div class="pack-stat-block" style="min-width:52px;">
-          <span class="pack-stat-label">Lots</span>
-          <span class="pack-stat-value">${opts.totalLots}</span>
-        </div>
-        <div style="width:1px;height:28px;background:var(--border);opacity:.6;flex-shrink:0;"></div>
-        <div class="pack-stat-block" style="min-width:62px;">
-          <span class="pack-stat-label">Win Rate</span>
-          <span class="pack-stat-value" style="color:${opts.decided?(opts.wr>=50?'var(--green)':'var(--red)'):'var(--muted)'};">${opts.decided?opts.wr+'%':'—'}</span>
-        </div>
-        <div style="width:1px;height:28px;background:var(--border);opacity:.6;flex-shrink:0;"></div>
-        <div class="pack-stat-block" style="min-width:90px;">
-          <span class="pack-stat-label">Net P&amp;L</span>
-          <span class="pack-stat-value pnl" style="color:${opts.pnlColor};">${opts.pnlStr}</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:center;padding:5px 11px;border-radius:6px;background:${opts.resultBg};min-width:46px;flex-shrink:0;">
-          <span style="font-size:10px;font-weight:800;letter-spacing:.4px;color:${opts.resultColor};">${opts.resultLabel}</span>
-        </div>
-      </div>
-      <!-- Actions -->
-      <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;width:60px;justify-content:flex-end;" onclick="event.stopPropagation()">
-        ${opts.actions}
-      </div>
-    </div>`;
+  // Returns an object with individual td contents so renderPackRows can compose the <tr>
+  const chevron = `<svg class="pack-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;${opts.isExpanded?'transform:rotate(90deg)':''}"><polyline points="9 18 15 12 9 6"/></svg>`;
+  return {
+    chevron,
+    dateHtml: opts.dateHtml,
+    symbol: opts.packName,
+    lots: opts.totalLots,
+    pnlStr: opts.pnlStr,
+    pnlColor: opts.pnlColor,
+    resultBg: opts.resultBg,
+    resultColor: opts.resultColor,
+    resultLabel: opts.resultLabel,
+    tradeCount: opts.tradeCount,
+    actions: opts.actions,
+  };
 }
 
 // Shared helper: build a child trade row for a pack
+// Child rows look exactly like normal trade rows — dimming is handled via CSS opacity
 function _buildPackChildRow(t, sym, packId, isExpanded, isAutoChildRow) {
   const pnl      = getPnl(t);
   const result   = getResult(t);
   const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
   const pnlStr   = (pnl >= 0 ? '+' + sym : '-' + sym) + Math.abs(pnl).toFixed(2);
   const badge    = result === 'be'
-    ? `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800;color:var(--yellow);background:rgba(245,158,11,.15);">BE</span>`
+    ? `<span style="color:var(--yellow);font-size:10px;font-weight:700;background:rgba(245,158,11,.15);padding:2px 8px;border-radius:4px;">BE</span>`
     : result === 'win'
-    ? `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800;color:var(--green);background:var(--green-bg);">WIN</span>`
-    : `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800;color:var(--red);background:var(--red-bg);">LOSS</span>`;
+    ? `<span style="color:var(--green);font-size:10px;font-weight:700;background:var(--green-bg);padding:2px 8px;border-radius:4px;">WIN</span>`
+    : `<span style="color:var(--red);font-size:10px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:4px;">LOSS</span>`;
   const isSelected = t.id === selectedId;
-  const dateHtml   = t.date
-    ? `<span style="font-size:11px;font-weight:600;color:var(--text2);">${t.date.slice(0,10)}</span><br><span style="font-size:10px;color:var(--muted);font-weight:500;">${t.date.slice(11,19)}</span>`
+  const dateStr = t.date
+    ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,19)+'</span>'
     : '—';
   return `<tr class="pack-child-row${isExpanded?'':' hidden'}${isSelected?' selected':''}" data-id="${t.id}" data-pack="${packId}"
     onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;">
-    <td style="color:var(--text);font-size:12px;white-space:nowrap;font-weight:600;">${dateHtml}</td>
-    <td style="font-weight:700;color:var(--text);">${t.symbol}</td>
+    <td style="color:var(--text);font-size:12px;white-space:nowrap;font-weight:600;">${dateStr}</td>
+    <td style="font-weight:600;color:var(--text);">${t.symbol}</td>
     <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
     <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
     <td style="color:var(--text);font-weight:500;">${t.entry||'—'}</td>
@@ -12983,10 +12956,6 @@ function _packSeparator(colspan) {
 
 function renderPackRows(packId, packTrades, sym) {
   const totalPnl   = packTrades.reduce((s,t) => s + getPnl(t), 0);
-  const wins       = packTrades.filter(t => getResult(t) === 'win').length;
-  const losses     = packTrades.filter(t => getResult(t) === 'loss').length;
-  const decided    = wins + losses;
-  const wr         = decided ? Math.round(wins/decided*100) : 0;
   const totalLots  = packTrades.reduce((s,t) => s + (parseFloat(t.lots)||0), 0);
   const symbols    = [...new Set(packTrades.map(t=>t.symbol))].join(', ');
   const packName   = packTrades[0]?.packName || 'Pack';
@@ -13001,34 +12970,40 @@ function renderPackRows(packId, packTrades, sym) {
   const colspanVal = packSelectMode ? 11 : 10;
   const safePackName = packName.replace(/'/g,"\\'");
 
-  const actions = `
-    <button onclick="renamePack('${packId}','${safePackName}',event)" title="Rename pack"
-      style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;"
-      onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-      onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-    </button>
-    <button onclick="dissolvePack('${packId}',event)" title="Ungroup pack"
-      style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;"
-      onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--red)'"
-      onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-    </button>`;
+  const chevronSvg = `<svg class="pack-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;margin-right:5px;vertical-align:middle;${isExpanded?'transform:rotate(90deg)':''}"><polyline points="9 18 15 12 9 6"/></svg>`;
 
-  const inner = _buildPackHeaderInner({
-    packId, packName,
-    subLabel: `${symbols} · ${packTrades.length} position${packTrades.length!==1?'s':''} · ${newestDate.slice(0,10)}`,
-    accentColor: 'var(--accent)', accentBg: 'rgba(99,102,241,.12)',
-    icon: '📦', isExpanded,
-    totalLots: totalLots.toFixed(2),
-    wr, decided, pnlStr, pnlColor,
-    resultLabel, resultBg, resultColor,
-    actions
-  });
+  const dateStr = newestDate
+    ? newestDate.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+newestDate.slice(11,19)+'</span>'
+    : '—';
 
-  let html = _packSeparator(colspanVal);
-  html += `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" onclick="togglePackExpand('${packId}',event)">
-    <td colspan="${colspanVal}" style="padding:0;">${inner}</td>
+  const countBadge = `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);letter-spacing:.3px;">${packTrades.length}×</span>`;
+
+  const resultBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:${resultBg};color:${resultColor};">${resultLabel}</span>`;
+
+  const actions = `<span onclick="renamePack('${packId}','${safePackName}',event)" title="Rename"
+    style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;border:1px solid transparent;color:var(--muted);cursor:pointer;transition:all .15s;"
+    onmouseenter="this.style.borderColor='var(--border2)';this.style.color='var(--text)'"
+    onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+  </span>
+  <span onclick="dissolvePack('${packId}',event)" title="Ungroup"
+    style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;border:1px solid transparent;color:var(--muted);cursor:pointer;transition:all .15s;"
+    onmouseenter="this.style.borderColor='var(--red-glow)';this.style.color='var(--red)'"
+    onmouseleave="this.style.borderColor='transparent';this.style.color='var(--muted)'">
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+  </span>`;
+
+  let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" onclick="togglePackExpand('${packId}',event)" style="cursor:pointer;">
+    <td style="color:var(--text);font-size:12px;white-space:nowrap;font-weight:600;"><div style="display:flex;align-items:center;">${chevronSvg}${dateStr}</div></td>
+    <td style="font-weight:600;color:var(--text);">${symbols}</td>
+    <td>${countBadge}</td>
+    <td style="color:var(--text);font-weight:500;">${totalLots.toFixed(2)}</td>
+    <td style="color:var(--muted);">—</td>
+    <td style="color:var(--muted);">—</td>
+    <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
+    <td style="color:var(--muted);">—</td>
+    <td>${resultBadge}</td>
+    <td style="max-width:110px;overflow:hidden;" onclick="event.stopPropagation()"><div style="display:flex;align-items:center;gap:4px;">${actions}</div></td>
   </tr>`;
 
   packTrades.forEach(t => {
@@ -13359,72 +13334,26 @@ function renderAutoPackRows(key, packTrades, sym) {
   const colspanVal  = packSelectMode ? 11 : 10;
   const newestDate  = latest;
 
-  let html = `<tr class="pack-header-row${isExpanded ? ' expanded' : ''}" data-pack="${key}" onclick="togglePackExpand('${key}',event)">
-    <td colspan="${colspanVal}" style="padding:0;">
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;min-height:52px;">
-        <!-- Chevron -->
-        <div class="pack-chevron" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(245,158,11,.12);flex-shrink:0;transition:transform .2s;${isExpanded ? 'transform:rotate(90deg)' : ''}">
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-        <!-- Icon + name -->
-        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow:hidden;">
-          <div style="width:30px;height:30px;border-radius:8px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">⚡</div>
-          <div style="min-width:0;overflow:hidden;">
-            <div style="font-size:12px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${packLabel}</div>
-            <div style="font-size:10px;color:var(--muted);font-weight:600;margin-top:1px;white-space:nowrap;">${packTrades.length} trade${packTrades.length!==1?'s':''} · auto-grouped · ${newestDate.slice(0,10)}</div>
-          </div>
-        </div>
-        <!-- Stats: same fixed-width blocks as real pack -->
-        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-          <div class="pack-stat-block" style="min-width:52px;">
-            <span class="pack-stat-label">Lots</span>
-            <span class="pack-stat-value">${totalLots.toFixed(2)}</span>
-          </div>
-          <div style="width:1px;height:28px;background:var(--border);opacity:.6;flex-shrink:0;"></div>
-          <div class="pack-stat-block" style="min-width:62px;">
-            <span class="pack-stat-label">Win Rate</span>
-            <span class="pack-stat-value" style="color:${decided?(wr>=50?'var(--green)':'var(--red)'):'var(--muted)'};">${decided?wr+'%':'—'}</span>
-          </div>
-          <div style="width:1px;height:28px;background:var(--border);opacity:.6;flex-shrink:0;"></div>
-          <div class="pack-stat-block" style="min-width:90px;">
-            <span class="pack-stat-label">Net P&amp;L</span>
-            <span class="pack-stat-value pnl" style="color:${pnlColor};">${pnlStr}</span>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:center;padding:5px 11px;border-radius:6px;background:${resultBg};min-width:46px;flex-shrink:0;">
-            <span style="font-size:10px;font-weight:800;letter-spacing:.4px;color:${resultColor};">${resultLabel}</span>
-          </div>
-        </div>
-        <!-- spacer to align with real pack actions area -->
-        <div style="width:60px;flex-shrink:0;"></div>
-      </div>
-    </td>
+  const autoChevron = `<svg class="pack-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;margin-right:5px;vertical-align:middle;${isExpanded ? 'transform:rotate(90deg)' : ''}"><polyline points="9 18 15 12 9 6"/></svg>`;
+  const autoDateStr = newestDate ? newestDate.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+timeStr+'</span>' : '—';
+  const autoCountBadge = `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:var(--surface3);color:var(--muted);letter-spacing:.3px;">${packTrades.length}×</span>`;
+  const autoResultBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;background:${resultBg};color:${resultColor};">${resultLabel}</span>`;
+
+  let html = `<tr class="pack-header-row${isExpanded ? ' expanded' : ''}" data-pack="${key}" onclick="togglePackExpand('${key}',event)" style="cursor:pointer;">
+    <td style="color:var(--text);font-size:12px;white-space:nowrap;font-weight:600;"><div style="display:flex;align-items:center;">${autoChevron}${autoDateStr}</div></td>
+    <td style="font-weight:600;color:var(--text);">${symbols}</td>
+    <td>${autoCountBadge}</td>
+    <td style="color:var(--text);font-weight:500;">${totalLots.toFixed(2)}</td>
+    <td style="color:var(--muted);">—</td>
+    <td style="color:var(--muted);">—</td>
+    <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
+    <td style="color:var(--muted);">—</td>
+    <td>${autoResultBadge}</td>
+    <td style="max-width:110px;overflow:hidden;"></td>
   </tr>`;
 
   packTrades.forEach(t => {
-    const pnl      = getPnl(t);
-    const result   = getResult(t);
-    const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
-    const pnlStr   = (pnl >= 0 ? '+' + sym : '-' + sym) + Math.abs(pnl).toFixed(2);
-    const badge    = result === 'be'
-      ? `<span style="color:var(--yellow);font-size:10px;font-weight:700;background:rgba(245,158,11,.15);padding:2px 8px;border-radius:4px;">BE</span>`
-      : result === 'win'
-      ? `<span style="color:var(--green);font-size:10px;font-weight:700;background:var(--green-bg);padding:2px 8px;border-radius:4px;">WIN</span>`
-      : `<span style="color:var(--red);font-size:10px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:4px;">LOSS</span>`;
-    const isSelected = t.id === selectedId;
-
-    html += `<tr class="pack-child-row${isExpanded ? '' : ' hidden'}${isSelected ? ' selected' : ''}" data-id="${t.id}" data-pack="${key}"
-      onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;">
-      <td style="color:var(--text);font-size:12px;white-space:nowrap;font-weight:600;padding-left:46px !important;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,19)+'</span>' : '—'}</td>
-      <td style="font-weight:700;color:var(--text);">${t.symbol}</td>
-      <td><span class="badge ${t.dir === 'BUY' ? 'buy' : 'sell'}">${t.dir}</span></td>
-      <td style="color:var(--text);font-weight:500;">${t.lots || '—'}</td>
-      <td style="color:var(--text);font-weight:500;">${t.entry || '—'}</td>
-      <td style="color:var(--text);font-weight:500;">${t.exit || '—'}</td>
-      <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
-      <td style="color:${t.commission ? 'var(--red)' : 'var(--text2)'};font-family:var(--mono);font-weight:600;">${t.commission ? sym + parseFloat(t.commission).toFixed(2) : '—'}</td>
-      <td>${badge}</td>
-      <td data-col="tags" style="max-width:110px;overflow:hidden;">${renderRowTagsHTML(t.strategies)}</td>
-    </tr>`;
+    html += _buildPackChildRow(t, sym, key, isExpanded, true);
   });
 
   return html;
