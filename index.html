@@ -13389,12 +13389,7 @@ function renderAutoPackRows(key, packTrades, sym) {
             <span style="font-size:10px;font-weight:800;color:${resultColor};">${resultLabel}</span>
           </div>
         </div>
-        <!-- Add trade to auto-pack / convert to real pack -->
-        <div style="display:flex;gap:6px;flex-shrink:0;">
-          <button onclick="addTradeToAutoPack('${key}',event)" title="Add another trade to this group" style="padding:4px 10px;border-radius:7px;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.08);color:var(--yellow);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--sans);white-space:nowrap;">+ Add Trade</button>
-          <button onclick="convertAutoPackToReal('${key}',event)" title="Save as a named pack" style="padding:4px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--sans);white-space:nowrap;">Save Pack</button>
-        </div>
-        <div style="width:8px;flex-shrink:0;"></div>
+        <div style="width:60px;flex-shrink:0;"></div>
       </div>
     </td>
   </tr>`;
