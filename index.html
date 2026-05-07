@@ -3432,12 +3432,13 @@ async function copyApiKey() {
 // ── DOWNLOAD EA FILE ──────────────────────────────────────────────────────────
 function downloadEA() {
   const eaCode = `//+------------------------------------------------------------------+
-//| TradeLog Auto-Sync EA v1.4                                       |
-//| v1.4: Deposit/Withdrawal events sent as balance_events[]         |
-//|        They are excluded from all trading stats in the app.      |
+//| TradeLog Auto-Sync EA v1.5                                       |
+//| v1.5: Balance events track their own newest time so deposits &   |
+//|        withdrawals never get skipped on balance-only sync days.  |
+//|        Amounts normalized: deposits +, withdrawals -.            |
 //+------------------------------------------------------------------+
 #property copyright "TradeLog"
-#property version   "1.40"
+#property version   "1.50"
 #property strict
 
 input string ApiKey              = "";   // Your TradeLog API key
@@ -3589,16 +3590,20 @@ void DoSync()
       if(!g_firstRun && evTime<=g_lastSyncTime) continue;
       double amount=HistoryDealGetDouble(tk,DEAL_PROFIT);
       string comment=HistoryDealGetString(tk,DEAL_COMMENT);
-      // Determine deposit vs withdrawal
+      // Determine deposit vs withdrawal by comment keywords first, then sign of amount
       string evType="deposit";
       string commentLower=comment; StringToLower(commentLower);
       if(StringFind(commentLower,"withdrawal")>=0 || StringFind(commentLower,"withdraw")>=0 || amount<0)
          evType="withdrawal";
+      // Track newest balance event time alongside trade close times
+      if(evTime>newestClose) newestClose=evTime;
       if(!firstBal) balanceJson+=",";
       balanceJson+="{";
       balanceJson+="\\"ticket\\":"+IntegerToString((long)tk)+",";
       balanceJson+="\\"type\\":\\""+evType+"\\",";
-      balanceJson+="\\"amount\\":"+DoubleToString(amount,2)+",";
+      // Always send deposits as positive, withdrawals as negative
+      double sendAmount=(evType=="deposit") ? MathAbs(amount) : -MathAbs(amount);
+      balanceJson+="\\"amount\\":"+DoubleToString(sendAmount,2)+",";
       balanceJson+="\\"time\\":\\""+ToISO(evTime)+"\\",";
       balanceJson+="\\"comment\\":\\""+JsonEscape(comment)+"\\"";
       balanceJson+="}";
@@ -3606,6 +3611,7 @@ void DoSync()
    }
    balanceJson+="]";
 
+   // Send if we have trades OR balance events (don't skip balance-only syncs)
    if(tradesSent==0 && balSent==0) { SendHeartbeat(); return; }
 
    string broker=AccountInfoString(ACCOUNT_COMPANY); string account=IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN));
@@ -5000,15 +5006,16 @@ async function saveBalanceEvent() {
     const currentBal = getBalance();
     localStorage.setItem(BAL_KEY, String(Math.max(0, currentBal + finalAmount)));
 
-    // Persist to Supabase
+    // Persist to Supabase — upsert so MT5 auto-sync and manual entry never conflict
     if (!uid2) {
       toast('Not logged in — event saved locally only', 'error');
     } else {
-      const { error } = await sb.from('balance_events').insert({
-        user_id: uid2, ticket, type, amount: finalAmount, time, comment: note
-      });
+      const { error } = await sb.from('balance_events').upsert(
+        { user_id: uid2, ticket, type, amount: finalAmount, time, comment: note },
+        { onConflict: 'ticket' }
+      );
       if (error) {
-        console.error('TradeLog: balance_events insert error', error);
+        console.error('TradeLog: balance_events upsert error', error);
         toast('Save failed: ' + (error.message || 'Supabase error'), 'error');
         // Revert local change on failure
         balanceEvents.shift();
