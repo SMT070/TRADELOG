@@ -2763,44 +2763,23 @@
       <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr) 80px;grid-auto-rows:1fr;gap:4px;background:var(--bg);flex:1;padding:6px;overflow-y:auto;border-radius:0 0 14px 14px;min-height:0;"></div>
     </div>
 
-    <!-- Right: tabbed panel (Day Detail | Economic Events) -->
+    <!-- Right: Day Detail panel (single, no tabs) -->
     <div id="cal-day-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
 
-      <!-- Tab bar -->
-      <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;">
-        <button id="cal-panel-tab-day" onclick="setCalPanelTab('day')" style="flex:1;padding:12px 8px;border:none;background:transparent;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);color:var(--accent);border-bottom:2px solid var(--accent);transition:all .15s;">
-          📅 Day Detail
-        </button>
-        <button id="cal-panel-tab-events" onclick="setCalPanelTab('events')" style="flex:1;padding:12px 8px;border:none;background:transparent;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;">
-          📰 My Events
-        </button>
+      <!-- Header -->
+      <div style="padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:14px;font-weight:800;color:var(--text);" id="cal-day-panel-title">Day Detail</div>
+        <div id="cal-day-panel-date" style="font-size:11px;color:var(--muted);font-weight:600;"></div>
       </div>
 
-      <!-- Day detail content -->
+      <!-- Day detail body -->
       <div id="cal-panel-day" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
-        <div style="padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;">
-          <div style="font-size:14px;font-weight:800;color:var(--text);" id="cal-day-panel-title">Select a Day</div>
-        </div>
         <div id="cal-day-body" style="flex:1;">
           <div class="empty-state" style="padding:40px 20px;">
             <h3 style="font-size:15px;">📅 Click any day</h3>
-            <p>See that day's trades here</p>
+            <p>Trades, mindset &amp; account events appear here</p>
           </div>
         </div>
-      </div>
-
-      <!-- My Events content -->
-      <div id="cal-panel-events" style="flex:1;display:none;flex-direction:column;overflow:hidden;">
-        <!-- Header with Add button -->
-        <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-          <div style="font-size:12px;font-weight:800;color:var(--text);">Upcoming Events</div>
-          <button onclick="openEventModal()" style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;border:1px solid var(--accent);background:rgba(99,102,241,.1);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add
-          </button>
-        </div>
-        <!-- Events list -->
-        <div id="cal-events-list" style="flex:1;overflow-y:auto;padding:10px 10px;"></div>
       </div>
 
     </div>
@@ -10454,7 +10433,7 @@ function renderMindsetWeekStats(entries) {
 
 
 // ── CALENDAR → TRADES LINK ────────────────────────────────────────────────────
-// Override selectCalDay to also support jumping to trades filtered by that day
+// selectCalDay — shows trades, mindset (plan/review/confidence/emotion), deposits & withdrawals
 function selectCalDay(dateStr) {
   selectedCalDay = dateStr;
   document.querySelectorAll('#cal-grid .cal-cell').forEach(c => {
@@ -10464,121 +10443,183 @@ function selectCalDay(dateStr) {
 
   const dayTrades = trades.filter(t => (t.date||'').slice(0,10) === dateStr);
   const dayBEevts = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
-  const panel = document.getElementById('cal-day-panel');
-  const title = document.getElementById('cal-day-panel-title');
   const body  = document.getElementById('cal-day-body');
-  if (!panel) return;
+  const titleEl = document.getElementById('cal-day-panel-title');
+  const dateEl  = document.getElementById('cal-day-panel-date');
+  if (!body) return;
 
-  const d = new Date(dateStr);
-  title.textContent = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'long'});
+  const d = new Date(dateStr + 'T12:00:00');
+  const todayStr = new Date().toISOString().slice(0,10);
+  const isToday  = dateStr === todayStr;
 
-  if (!dayTrades.length && !dayBEevts.length) {
-    body.innerHTML = `<div class="empty-state" style="padding:32px 20px;"><h3 style="font-size:14px;">No trades</h3><p>No trades or events on this day.</p></div>`;
-    return;
-  }
+  if (titleEl) titleEl.textContent = d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
+  if (dateEl)  dateEl.textContent  = isToday ? 'Today' : d.getFullYear() !== new Date().getFullYear() ? d.getFullYear() : '';
 
-  const dayPnl = dayTrades.reduce((s,t) => s + getPnl(t), 0);
-  const dayWins = dayTrades.filter(t => getResult(t) === 'win').length;
-  const dayLosses = dayTrades.filter(t => getResult(t) === 'loss').length;
   const sym = getCurrencySymbol();
-  const pnlColor = dayPnl >= 0 ? 'var(--green)' : 'var(--red)';
 
-  // ── Fetch mindset entry for this day ──
+  // ── Mindset entry ──
   const mindsetEntry = (() => {
     try { return (getMindsetData().entries || {})[dateStr] || null; } catch(e) { return null; }
   })();
-
   const confLabels = ['','Terrible','Poor','Low','Okay','Moderate','Good','Confident','Strong','Excellent','Peak'];
   const confColors = ['','var(--red)','var(--red)','var(--red)','var(--yellow)','var(--yellow)','var(--yellow)','var(--green)','var(--green)','var(--green)','var(--green)'];
 
-  const mindsetHTML = mindsetEntry ? (() => {
-    const conf     = mindsetEntry.confidence || 0;
-    const emotion  = mindsetEntry.emotion    || '';
-    const plan     = mindsetEntry.plan       || '';
-    const review   = mindsetEntry.review     || '';
-    const hasAny   = conf || emotion || plan || review;
-    if (!hasAny) return '';
+  // ── Nothing at all ──
+  const hasAnything = dayTrades.length || dayBEevts.length ||
+    (mindsetEntry && (mindsetEntry.plan || mindsetEntry.review || mindsetEntry.confidence || mindsetEntry.emotion));
 
+  if (!hasAnything) {
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;gap:10px;height:100%;box-sizing:border-box;">
+        <div style="font-size:32px;opacity:0.35;">📅</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text2);">Nothing recorded</div>
+        <div style="font-size:11px;color:var(--muted);text-align:center;line-height:1.5;">No trades, mindset entry,<br>or account events for this day.</div>
+      </div>`;
+    return;
+  }
+
+  // ── Trades summary ──
+  const dayPnl    = dayTrades.reduce((s,t) => s + getPnl(t), 0);
+  const dayWins   = dayTrades.filter(t => getResult(t) === 'win').length;
+  const dayLosses = dayTrades.filter(t => getResult(t) === 'loss').length;
+  const dayBEs    = dayTrades.filter(t => getResult(t) === 'be').length;
+  const pnlColor  = dayPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const pnlSign   = dayPnl >= 0 ? '+' : '';
+
+  const tradesHTML = dayTrades.length ? `
+    <!-- ── TRADES SECTION ── -->
+    <div style="margin-bottom:16px;">
+      <!-- Day P&L header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div>
+          <div style="font-size:30px;font-weight:900;color:${pnlColor};letter-spacing:-1px;line-height:1;">${pnlSign}${sym}${Math.abs(dayPnl).toFixed(2)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:8px;align-items:center;">
+            <span>${dayTrades.length} trade${dayTrades.length!==1?'s':''}</span>
+            ${dayWins ? `<span style="color:var(--green);font-weight:700;">·  ${dayWins}W</span>` : ''}
+            ${dayLosses ? `<span style="color:var(--red);font-weight:700;">${dayWins?'':' ·'} ${dayLosses}L</span>` : ''}
+            ${dayBEs ? `<span style="color:var(--yellow);font-weight:700;"> ${dayBEs}BE</span>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <div style="font-size:10px;color:var(--muted);font-weight:600;">Win Rate</div>
+          <div style="font-size:18px;font-weight:900;color:${(dayWins+dayLosses)?((dayWins/(dayWins+dayLosses))>=0.5?'var(--green)':'var(--red)'):'var(--muted)'};">
+            ${(dayWins+dayLosses) ? Math.round(dayWins/(dayWins+dayLosses)*100)+'%' : '—'}
+          </div>
+        </div>
+      </div>
+
+      <!-- Trade rows -->
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${dayTrades.sort((a,b) => (a.date||'').localeCompare(b.date||'')).map(t => {
+          const pnl    = getPnl(t);
+          const result = getResult(t);
+          const col    = result==='be' ? 'var(--yellow)' : pnl>=0 ? 'var(--green)' : 'var(--red)';
+          const bg     = result==='be' ? 'rgba(245,158,11,0.08)' : pnl>=0 ? 'rgba(0,255,187,0.08)' : 'rgba(255,59,92,0.08)';
+          const border = result==='be' ? 'rgba(245,158,11,0.25)' : pnl>=0 ? 'rgba(0,255,187,0.25)' : 'rgba(255,59,92,0.25)';
+          const pnlStr = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
+          const timeStr = (t.date||'').slice(11,16) || '';
+          const rVal = getR(t);
+          return `<div onclick="selectTrade('${t.id}');switchPage('trades');" style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:10px;background:${bg};border:1px solid ${border};cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+              <div style="width:3px;height:32px;border-radius:2px;background:${col};flex-shrink:0;"></div>
+              <div style="min-width:0;">
+                <div style="font-size:12px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:5px;">
+                  ${t.symbol}
+                  <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:8px;padding:1px 6px;">${t.dir}</span>
+                </div>
+                <div style="font-size:10px;color:var(--muted);margin-top:1px;">${timeStr}${timeStr&&t.lots?' · ':''}${t.lots?t.lots+' lots':''}${t.entry?' · @'+t.entry:''}</div>
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:13px;font-weight:900;color:${col};">${pnlStr}</div>
+              ${rVal !== null ? `<div style="font-size:10px;font-weight:700;color:${rVal>=0?'var(--green)':'var(--red)'};">${rVal>=0?'+':''}${rVal.toFixed(2)}R</div>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <button class="btn btn-ghost" style="width:100%;margin-top:10px;font-size:11px;padding:8px;" onclick="jumpToDateTrades('${dateStr}')">
+        View in Trades →
+      </button>
+    </div>` : '';
+
+  // ── Mindset HTML ──
+  const mindsetHTML = (() => {
+    if (!mindsetEntry) return '';
+    const conf    = mindsetEntry.confidence || 0;
+    const emotion = mindsetEntry.emotion    || '';
+    const plan    = mindsetEntry.plan       || '';
+    const review  = mindsetEntry.review     || '';
+    if (!conf && !emotion && !plan && !review) return '';
     const confColor = confColors[conf] || 'var(--muted)';
     const confLabel = confLabels[conf] || '';
 
     return `
-      <div style="margin:14px 0 0;padding-top:14px;border-top:1px solid var(--border);">
-        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:12px;">Mental State</div>
-
-        ${(conf || emotion) ? `
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:${(plan||review)?'12px':'0'};">
-          ${conf ? `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;flex:1;">
-            <div style="font-size:22px;font-weight:900;color:${confColor};line-height:1;letter-spacing:-1px;">${conf}<span style="font-size:11px;font-weight:600;color:var(--muted);">/10</span></div>
-            <div style="font-size:9px;font-weight:700;color:${confColor};text-transform:uppercase;letter-spacing:1px;">${confLabel}</div>
-            <div style="font-size:8px;color:var(--muted);font-weight:600;">Confidence</div>
-          </div>` : ''}
-          ${emotion ? `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;flex:1;">
-            <div style="font-size:22px;line-height:1;">${emotion.slice(0,2)}</div>
-            <div style="font-size:10px;font-weight:700;color:var(--text);margin-top:2px;">${emotion.slice(2).trim()}</div>
-            <div style="font-size:8px;color:var(--muted);font-weight:600;">Emotion</div>
-          </div>` : ''}
-        </div>` : ''}
-
-        ${plan ? `<div style="margin-bottom:8px;">
-          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">📋 Plan</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;">${plan.replace(/\n/g,'<br>')}</div>
-        </div>` : ''}
-
-        ${review ? `<div>
-          <div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">🔁 Review</div>
-          <div style="font-size:11px;color:var(--text2);line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;">${review.replace(/\n/g,'<br>')}</div>
-        </div>` : ''}
-      </div>`;
-  })() : '';
-
-  const dayBodyHTML = `
-    <div style="padding:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">
-        <div style="font-size:28px;font-weight:800;color:${pnlColor};">${dayPnl>=0?'+':''}${sym}${Math.abs(dayPnl).toFixed(2)}</div>
-        <div style="text-align:right;font-size:12px;color:var(--muted);">
-          <div><span style="color:var(--green);font-weight:700;">${dayWins}W</span> / <span style="color:var(--red);font-weight:700;">${dayLosses}L</span></div>
-          <div>${dayTrades.length} trade${dayTrades.length!==1?'s':''}</div>
-        </div>
+    <!-- ── MINDSET SECTION ── -->
+    <div style="padding-top:14px;border-top:1px solid var(--border);margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
+        <div style="width:3px;height:14px;border-radius:2px;background:var(--accent);"></div>
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);">Mindset</div>
+        <button onclick="window._mindsetViewDate='${dateStr}';switchPage('mindset');" style="margin-left:auto;font-size:10px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:var(--sans);font-weight:700;padding:0;opacity:.8;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.8'">Open →</button>
       </div>
-      ${dayTrades.map(t => {
-        const pnl = getPnl(t);
-        const col = pnl >= 0 ? 'var(--green)' : 'var(--red)';
-        const pnlStr = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
-          <div>
-            <div style="font-size:13px;font-weight:700;color:var(--text);">${t.symbol} <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:9px;">${t.dir}</span></div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px;">${(t.date||'').slice(11)||'—'} · ${t.lots||'—'} lots</div>
-          </div>
-          <div style="font-size:14px;font-weight:800;color:${col};">${pnlStr}</div>
-        </div>`;
-      }).join('')}
-      <button class="btn btn-ghost" style="width:100%;margin-top:14px;font-size:11px;" onclick="jumpToDateTrades('${dateStr}')">View in Trades →</button>
-      ${mindsetHTML}
-      ${dayBEevts.length ? `
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
-          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">Account Events</div>
-          ${dayBEevts.map(ev => {
-            const isDeposit = ev.type === 'deposit';
-            const amt = parseFloat(ev.amount) || 0;
-            const amtColor = isDeposit ? 'var(--green)' : 'var(--red)';
-            const amtStr = (isDeposit ? '+' : '') + sym + Math.abs(amt).toFixed(2);
-            const icon = isDeposit ? '💰' : '💸';
-            const label = isDeposit ? 'Deposit' : 'Withdrawal';
-            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:16px;">${icon}</span>
-                <div>
-                  <div style="font-size:12px;font-weight:700;color:var(--text);">${label}</div>
-                  ${ev.comment ? '<div style="font-size:10px;color:var(--muted);">'+ev.comment+'</div>' : ''}
-                </div>
-              </div>
-              <div style="font-size:14px;font-weight:800;color:${amtColor};">${amtStr}</div>
-            </div>`;
-          }).join('')}
+
+      ${(conf || emotion) ? `
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        ${conf ? `<div style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:20px;font-weight:900;color:${confColor};line-height:1;">${conf}<span style="font-size:10px;color:var(--muted);font-weight:600;">/10</span></div>
+          <div style="font-size:9px;font-weight:700;color:${confColor};text-transform:uppercase;letter-spacing:.8px;margin-top:3px;">${confLabel}</div>
+          <div style="font-size:8px;color:var(--muted);font-weight:600;margin-top:2px;">Confidence</div>
         </div>` : ''}
-    </div>
-  `;
+        ${emotion ? `<div style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-size:22px;line-height:1;">${emotion.split(' ')[0]}</div>
+          <div style="font-size:10px;font-weight:700;color:var(--text);margin-top:4px;">${emotion.replace(/^\S+\s*/,'')}</div>
+          <div style="font-size:8px;color:var(--muted);font-weight:600;margin-top:2px;">Mood</div>
+        </div>` : ''}
+      </div>` : ''}
+
+      ${plan ? `
+      <div style="margin-bottom:8px;">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:5px;">📋 Pre-Market Plan</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.65;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:9px 12px;">${plan.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
+      </div>` : ''}
+
+      ${review ? `
+      <div>
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--green);margin-bottom:5px;">🔁 End of Day Review</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.65;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:0 8px 8px 0;padding:9px 12px;">${review.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
+      </div>` : ''}
+    </div>`;
+  })();
+
+  // ── Deposits & Withdrawals HTML ──
+  const accountHTML = dayBEevts.length ? `
+    <!-- ── ACCOUNT EVENTS ── -->
+    <div style="padding-top:14px;border-top:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+        <div style="width:3px;height:14px;border-radius:2px;background:var(--yellow);"></div>
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);">Account Events</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${dayBEevts.map(ev => {
+          const isDeposit = ev.type === 'deposit';
+          const amt    = parseFloat(ev.amount) || 0;
+          const col    = isDeposit ? 'var(--green)' : 'var(--red)';
+          const bg     = isDeposit ? 'rgba(0,255,187,0.08)' : 'rgba(255,59,92,0.08)';
+          const border = isDeposit ? 'rgba(0,255,187,0.25)' : 'rgba(255,59,92,0.25)';
+          const amtStr = (isDeposit?'+':'-') + sym + Math.abs(amt).toFixed(2);
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:${bg};border:1px solid ${border};">
+            <div style="font-size:20px;line-height:1;">${isDeposit?'💰':'💸'}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:800;color:var(--text);">${isDeposit?'Deposit':'Withdrawal'}</div>
+              ${ev.comment ? `<div style="font-size:10px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev.comment}</div>` : ''}
+            </div>
+            <div style="font-size:14px;font-weight:900;color:${col};flex-shrink:0;">${amtStr}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+  const dayBodyHTML = `<div style="padding:16px;display:flex;flex-direction:column;gap:0;">${tradesHTML}${mindsetHTML}${accountHTML}</div>`;
 
   body.innerHTML = dayBodyHTML;
 
@@ -10586,7 +10627,7 @@ function selectCalDay(dateStr) {
   if (window.innerWidth <= 768) {
     const sheet = document.getElementById('cal-day-sheet');
     const sheetTitle = document.getElementById('cal-day-sheet-title');
-    const sheetBody = document.getElementById('cal-day-sheet-body');
+    const sheetBody  = document.getElementById('cal-day-sheet-body');
     if (sheet) {
       sheetTitle.textContent = d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
       sheetBody.innerHTML = dayBodyHTML;
