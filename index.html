@@ -12583,7 +12583,11 @@ async function confirmCreatePack() {
     return;
   }
   const packId = uid();
-  const ids = [...packSelectedIds];
+  // If coming from "Save Pack" on an auto-pack, use those ids; otherwise use manual selection
+  const ids = (window._pendingAutoPackIds && window._pendingAutoPackIds.length)
+    ? [...window._pendingAutoPackIds]
+    : [...packSelectedIds];
+  window._pendingAutoPackIds = null;
 
   // Assign packId + packName to each selected trade
   const updated = [];
@@ -13176,38 +13180,149 @@ function buildAutoPackGroups(filteredList) {
   const tradeKey    = {};
   if (!isAutoPack()) return { autoGroups, tradeKey };
 
-  // Bucket by symbol — skip trades that already belong to a real pack
-  const bySymbol = {};
+  // Bucket by symbol + direction: only same symbol AND same direction get auto-grouped
+  const bySymbolDir = {};
   filteredList.forEach(t => {
-    if (t.packId) return; // real pack — never touch
-    const s = (t.symbol || '').toUpperCase();
-    if (!bySymbol[s]) bySymbol[s] = [];
-    bySymbol[s].push(t);
+    if (t.packId) return;
+    const bucketKey = (t.symbol || '').toUpperCase() + '|' + (t.dir || '').toUpperCase();
+    if (!bySymbolDir[bucketKey]) bySymbolDir[bucketKey] = [];
+    bySymbolDir[bucketKey].push(t);
   });
 
-  Object.entries(bySymbol).forEach(([sym, symTrades]) => {
-    // Sort ascending by date
+  Object.entries(bySymbolDir).forEach(([symDir, symTrades]) => {
+    const sym = symDir.split('|')[0];
+
+    // Sort ascending by OPEN time (t.date)
     const sorted = symTrades.slice().sort((a, b) =>
       new Date(a.date || 0) - new Date(b.date || 0)
     );
 
-    // Cluster: consecutive gap ≤ 60 s → same group
+    // Cluster: every trade must open within 60 s of the FIRST trade in the group
     const groups = [[ sorted[0] ]];
     for (let i = 1; i < sorted.length; i++) {
-      const diffSec = (new Date(sorted[i].date || 0) - new Date(sorted[i-1].date || 0)) / 1000;
-      if (diffSec <= 60) groups[groups.length - 1].push(sorted[i]);
+      const currentGroup = groups[groups.length - 1];
+      const firstInGroup = currentGroup[0];
+      const diffSec = (new Date(sorted[i].date || 0) - new Date(firstInGroup.date || 0)) / 1000;
+      if (diffSec <= 60) currentGroup.push(sorted[i]);
       else               groups.push([ sorted[i] ]);
     }
 
     groups.forEach((grp, gi) => {
-      if (grp.length < 2) return; // singleton — leave as standalone
-      const key = `_auto_${sym}_${gi}_${grp[0].id}`;
+      if (grp.length < 2) return;
+      const key = `_auto_${symDir}_${gi}_${grp[0].id}`;
       autoGroups[key] = grp;
       grp.forEach(t => { tradeKey[t.id] = key; });
     });
   });
 
   return { autoGroups, tradeKey };
+}
+
+// ── Add a standalone trade to an existing auto-pack (converts to real pack) ──
+function addTradeToAutoPack(autoKey, e) {
+  if (e) e.stopPropagation();
+
+  // Get the current group members from a fresh build
+  const { autoGroups } = buildAutoPackGroups(trades);
+  const groupTrades = autoGroups[autoKey];
+  if (!groupTrades || !groupTrades.length) {
+    toast('Group not found', 'error');
+    return;
+  }
+
+  const groupSymbol = groupTrades[0].symbol.toUpperCase();
+  const groupDir    = groupTrades[0].dir.toUpperCase();
+  const groupIds    = new Set(groupTrades.map(t => t.id));
+
+  // Find standalone trades with same symbol + direction that are NOT already in this group
+  const candidates = trades.filter(t =>
+    !t.packId &&
+    !groupIds.has(t.id) &&
+    (t.symbol || '').toUpperCase() === groupSymbol &&
+    (t.dir    || '').toUpperCase() === groupDir
+  );
+
+  if (!candidates.length) {
+    toast(`No other ${groupSymbol} ${groupDir} trades to add`, '');
+    return;
+  }
+
+  // Show a simple picker modal
+  const sym = getCurrencySymbol();
+  let listHtml = candidates.map(t => {
+    const pnl = getPnl(t);
+    const pnlStr = (pnl >= 0 ? '+' + sym : '-' + sym) + Math.abs(pnl).toFixed(2);
+    const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+    return `<label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px;cursor:pointer;transition:background .15s;" onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background=''">
+      <input type="checkbox" data-trade-id="${t.id}" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:700;color:var(--text);">${t.symbol} <span style="color:var(--muted);font-weight:500;">${t.date ? t.date.slice(0,16).replace('T',' ') : ''}</span></div>
+        <div style="font-size:11px;color:var(--muted);">${t.lots || '—'} lots · <span style="color:${pnlColor};font-weight:700;">${pnlStr}</span></div>
+      </div>
+    </label>`;
+  }).join('');
+
+  // Reuse confirm modal as a picker by customising it
+  const modal = document.getElementById('confirm-modal');
+  const icon  = modal.querySelector('[id="confirm-icon"]') || modal.querySelector('div[style*="font-size:36px"]');
+  const title = document.getElementById('confirm-title');
+  const msg   = document.getElementById('confirm-message');
+  const okBtn = document.getElementById('confirm-ok-btn');
+
+  if (icon)  icon.textContent  = '➕';
+  if (title) title.textContent = `Add Trade to Group`;
+  if (msg)   msg.innerHTML     = `<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Pick ${groupSymbol} ${groupDir} trades to add:</div>${listHtml}`;
+  if (okBtn) { okBtn.textContent = 'Add Selected'; okBtn.style.background = 'var(--accent)'; }
+
+  window._confirmCallback = () => {
+    const checked = [...modal.querySelectorAll('input[data-trade-id]:checked')].map(el => el.dataset.tradeId);
+    if (!checked.length) { toast('No trades selected', 'error'); closeConfirmModal(); return; }
+    closeConfirmModal();
+
+    // Convert auto-group + selected trades into a real named pack
+    const packId   = uid();
+    const allIds   = [...groupIds, ...checked];
+    const updated  = [];
+
+    allIds.forEach(id => {
+      const idx = trades.findIndex(t => t.id === id);
+      if (idx === -1) return;
+      trades[idx].packId   = packId;
+      trades[idx].packName = groupSymbol + ' ' + groupDir;
+      updated.push(trades[idx]);
+    });
+
+    save();
+    invalidateStatCache();
+    packExpandedIds.add(packId);
+    renderTrades();
+    toast(`✓ Added ${checked.length} trade${checked.length > 1 ? 's' : ''} to group`, 'success');
+    try { Promise.all(updated.map(t => guaranteedSaveToSupabase(t))); } catch(err) {}
+  };
+
+  modal.style.display = 'flex';
+}
+
+// ── Convert an auto-pack to a saved named pack ────────────────────────────────
+async function convertAutoPackToReal(autoKey, e) {
+  if (e) e.stopPropagation();
+
+  const { autoGroups } = buildAutoPackGroups(trades);
+  const groupTrades = autoGroups[autoKey];
+  if (!groupTrades || !groupTrades.length) { toast('Group not found', 'error'); return; }
+
+  // Pre-fill the name modal with a sensible default
+  const sym  = groupTrades[0].symbol;
+  const dir  = groupTrades[0].dir;
+  const input    = document.getElementById('pack-name-input');
+  const subtitle = document.getElementById('pack-modal-subtitle');
+  if (input)    input.value = `${sym} ${dir}`;
+  if (subtitle) subtitle.textContent = `Save ${groupTrades.length} trades as a named pack`;
+
+  window._packRenameId = null;
+  window._pendingAutoPackIds = groupTrades.map(t => t.id);
+  document.getElementById('pack-name-modal').style.display = 'flex';
+  setTimeout(() => input && input.focus(), 80);
 }
 
 // Render an auto-pack header + child rows — no rename/dissolve buttons
@@ -13266,8 +13381,12 @@ function renderAutoPackRows(key, packTrades, sym) {
             <span style="font-size:10px;font-weight:800;color:${resultColor};">${resultLabel}</span>
           </div>
         </div>
-        <!-- No rename/dissolve buttons for auto-packs — they are view-only -->
-        <div style="width:60px;flex-shrink:0;"></div>
+        <!-- Add trade to auto-pack / convert to real pack -->
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button onclick="addTradeToAutoPack('${key}',event)" title="Add another trade to this group" style="padding:4px 10px;border-radius:7px;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.08);color:var(--yellow);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--sans);white-space:nowrap;">+ Add Trade</button>
+          <button onclick="convertAutoPackToReal('${key}',event)" title="Save as a named pack" style="padding:4px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--sans);white-space:nowrap;">Save Pack</button>
+        </div>
+        <div style="width:8px;flex-shrink:0;"></div>
       </div>
     </td>
   </tr>`;
