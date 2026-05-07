@@ -4855,7 +4855,7 @@ function switchPage(name) {
   if (name === 'analytics') renderAnalytics();
   if (name === 'calendar')  renderCalendar();
   if (name === 'mindset')   initMindsetPage();
-  if (name === 'add') { if (!document.getElementById('edit-id').value) clearForm(); }
+  if (name === 'add') { if (!document.getElementById('edit-id').value) { clearForm(); setEntryType('trade'); } }
   } catch(e) { console.warn('switchPage error:', name, e); }
 }
 
@@ -4866,6 +4866,144 @@ function toast(msg, type='') {
   el.textContent = msg;
   el.className = 'toast show ' + type;
   setTimeout(() => el.className = 'toast', 2800);
+}
+
+// ── ENTRY TYPE SWITCHER (Trade / Deposit / Withdrawal) ───────────────────────
+window._entryType = 'trade';
+
+function setEntryType(type) {
+  window._entryType = type;
+  const tradeForm = document.getElementById('trade-form');
+  const beForm    = document.getElementById('be-form');
+  const ids       = ['etype-trade','etype-deposit','etype-withdrawal'];
+
+  // Tab styling
+  ids.forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    const isActive = id === 'etype-' + type;
+    btn.style.border        = isActive ? '1px solid var(--border)' : '1px solid transparent';
+    btn.style.borderBottom  = 'none';
+    btn.style.background    = isActive ? 'var(--surface)' : 'transparent';
+    btn.style.zIndex        = isActive ? '1' : '0';
+    btn.style.position      = 'relative';
+    if (id === 'etype-trade')      btn.style.color = isActive ? 'var(--accent)' : 'var(--muted)';
+    if (id === 'etype-deposit')    btn.style.color = isActive ? 'var(--green)'  : 'var(--muted)';
+    if (id === 'etype-withdrawal') btn.style.color = isActive ? 'var(--red)'    : 'var(--muted)';
+  });
+
+  if (type === 'trade') {
+    tradeForm.style.display = 'grid';
+    beForm.style.display    = 'none';
+  } else {
+    tradeForm.style.display = 'none';
+    beForm.style.display    = 'block';
+    // Update labels & save button for deposit vs withdrawal
+    const amtLabel  = document.getElementById('be-amount-label');
+    const saveBtn   = document.getElementById('be-save-btn');
+    const currSym   = document.getElementById('be-currency-sym');
+    if (amtLabel) amtLabel.textContent = type === 'deposit' ? `Amount (${getCurrencySymbol()})` : `Amount (${getCurrencySymbol()})`;
+    if (saveBtn)  saveBtn.textContent  = type === 'deposit' ? 'Save Deposit' : 'Save Withdrawal';
+    if (currSym)  currSym.textContent  = getCurrencySymbol();
+    updateBEPreview();
+  }
+}
+
+function updateBEPreview() {
+  const type   = window._entryType;
+  const amount = parseFloat(document.getElementById('be-amount')?.value) || 0;
+  const valEl  = document.getElementById('be-preview-val');
+  const iconEl = document.getElementById('be-preview-icon');
+  const lblEl  = document.getElementById('be-preview-label');
+  if (!valEl) return;
+  const sym = getCurrencySymbol();
+  if (!amount) {
+    valEl.textContent = '—';
+    valEl.style.color = 'var(--muted)';
+    return;
+  }
+  if (type === 'deposit') {
+    valEl.textContent = '+' + sym + amount.toFixed(2);
+    valEl.style.color = 'var(--green)';
+    if (iconEl) { iconEl.setAttribute('stroke','var(--green)'); }
+  } else {
+    valEl.textContent = '-' + sym + amount.toFixed(2);
+    valEl.style.color = 'var(--red)';
+    if (iconEl) { iconEl.setAttribute('stroke','var(--red)'); }
+  }
+}
+
+function clearBEForm() {
+  const amtEl  = document.getElementById('be-amount');
+  const noteEl = document.getElementById('be-note');
+  const dateEl = document.getElementById('be-date');
+  const dispEl = document.getElementById('be-date-display');
+  const btnEl  = document.getElementById('be-date-btn');
+  const timeEl = document.getElementById('be-date-time');
+  if (amtEl)  amtEl.value  = '';
+  if (noteEl) noteEl.value = '';
+  if (dateEl) dateEl.value = '';
+  if (timeEl) timeEl.value = '';
+  if (dispEl) { dispEl.textContent = 'Pick date…'; dispEl.style.color = 'var(--muted)'; }
+  if (btnEl)  btnEl.style.color = 'var(--muted)';
+  updateBEPreview();
+}
+
+async function saveBalanceEvent() {
+  const type   = window._entryType; // 'deposit' or 'withdrawal'
+  const amount = parseFloat(document.getElementById('be-amount')?.value);
+  if (!amount || amount <= 0) { toast('Enter a valid amount', 'error'); return; }
+
+  const dateVal = document.getElementById('be-date')?.value || '';
+  const time    = dateVal || new Date().toISOString().slice(0, 16);
+  const note    = document.getElementById('be-note')?.value?.trim() || '';
+
+  // Final amount: deposits are positive, withdrawals negative
+  const finalAmount = type === 'deposit' ? Math.abs(amount) : -Math.abs(amount);
+
+  const event = {
+    ticket:  uid(),
+    type,
+    amount:  finalAmount,
+    time,
+    comment: note
+  };
+
+  // Add to local balanceEvents array
+  balanceEvents.unshift(event);
+
+  // Update stored account balance
+  const currentBal = getBalance();
+  if (currentBal > 0) {
+    const newBal = currentBal + finalAmount;
+    localStorage.setItem(BAL_KEY, String(Math.max(0, newBal)));
+  }
+
+  // Save to Supabase balance_events table
+  try {
+    const uid2 = await getValidUid();
+    if (uid2) {
+      await sb.from('balance_events').insert({
+        user_id: uid2,
+        ticket:  event.ticket,
+        type:    event.type,
+        amount:  event.amount,
+        time:    event.time,
+        comment: event.comment
+      });
+    }
+  } catch(e) {
+    console.warn('TradeLog: balance event sync failed', e);
+  }
+
+  const sym  = getCurrencySymbol();
+  const sign = finalAmount > 0 ? '+' : '';
+  toast(`✓ ${type === 'deposit' ? 'Deposit' : 'Withdrawal'} saved: ${sign}${sym}${Math.abs(finalAmount).toFixed(2)}`, 'success');
+
+  clearBEForm();
+  setEntryType('trade'); // return to trade tab
+  refreshDashboard();
+  renderTrades();
 }
 
 // ── FORM ─────────────────────────────────────────────────────────────────────
@@ -9443,6 +9581,13 @@ function renderCalendar() {
 
       const dayNumStyle = isPast && !isToday && !data ? 'color:var(--muted);' : '';
       let inner = `<div class="cal-day-num" style="${dayNumStyle}">${d}</div>`;
+      // Balance event indicator (💰 or 💸 dot top-right)
+      const hasBEevt = (balanceEvents||[]).some(e => (e.time||'').slice(0,10) === dateStr);
+      if (hasBEevt) {
+        const evtType = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr)
+          .some(e => e.type === 'deposit') ? 'deposit' : 'withdrawal';
+        inner += '<div style="position:absolute;top:6px;right:7px;font-size:9px;line-height:1;opacity:0.85;">' + (evtType==='deposit'?'💰':'💸') + '</div>';
+      }
       if (data) {
         const pnlClass = data.pnl >= 0 ? 'pos' : 'neg';
         const abs  = Math.abs(data.pnl);
@@ -9456,6 +9601,12 @@ function renderCalendar() {
         inner += '<div class="cal-pnl ' + pnlClass + '">' + pnlStr + '</div>';
         inner += '<div class="cal-trades">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
         inner += '<div class="cal-cell-bar ' + pnlClass + '"></div>';
+      } else if (hasBEevt) {
+        // Only balance event on this day — show the amount
+        const dayEvts = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
+        const evtTotal = dayEvts.reduce((s,e) => s + (parseFloat(e.amount)||0), 0);
+        const evtSym = getCurrencySymbol();
+        inner += '<div style="font-size:11px;font-weight:800;color:' + (evtTotal>=0?'var(--green)':'var(--red)') + ';text-align:center;">' + (evtTotal>=0?'+':'-') + evtSym + Math.abs(evtTotal).toFixed(0) + '</div>';
       }
       html += `<div class="${cellClass}" style="${dimStyle}" onclick="selectCalDay('${dateStr}')">${inner}</div>`;
     }
@@ -10312,6 +10463,7 @@ function selectCalDay(dateStr) {
   });
 
   const dayTrades = trades.filter(t => (t.date||'').slice(0,10) === dateStr);
+  const dayBEevts = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
   const panel = document.getElementById('cal-day-panel');
   const title = document.getElementById('cal-day-panel-title');
   const body  = document.getElementById('cal-day-body');
@@ -10320,8 +10472,8 @@ function selectCalDay(dateStr) {
   const d = new Date(dateStr);
   title.textContent = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'long'});
 
-  if (!dayTrades.length) {
-    body.innerHTML = `<div class="empty-state" style="padding:32px 20px;"><h3 style="font-size:14px;">No trades</h3><p>No trades recorded on this day.</p></div>`;
+  if (!dayTrades.length && !dayBEevts.length) {
+    body.innerHTML = `<div class="empty-state" style="padding:32px 20px;"><h3 style="font-size:14px;">No trades</h3><p>No trades or events on this day.</p></div>`;
     return;
   }
 
@@ -10403,6 +10555,28 @@ function selectCalDay(dateStr) {
       }).join('')}
       <button class="btn btn-ghost" style="width:100%;margin-top:14px;font-size:11px;" onclick="jumpToDateTrades('${dateStr}')">View in Trades →</button>
       ${mindsetHTML}
+      ${dayBEevts.length ? `
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;">Account Events</div>
+          ${dayBEevts.map(ev => {
+            const isDeposit = ev.type === 'deposit';
+            const amt = parseFloat(ev.amount) || 0;
+            const amtColor = isDeposit ? 'var(--green)' : 'var(--red)';
+            const amtStr = (isDeposit ? '+' : '') + sym + Math.abs(amt).toFixed(2);
+            const icon = isDeposit ? '💰' : '💸';
+            const label = isDeposit ? 'Deposit' : 'Withdrawal';
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:16px;">${icon}</span>
+                <div>
+                  <div style="font-size:12px;font-weight:700;color:var(--text);">${label}</div>
+                  ${ev.comment ? '<div style="font-size:10px;color:var(--muted);">'+ev.comment+'</div>' : ''}
+                </div>
+              </div>
+              <div style="font-size:14px;font-weight:800;color:${amtColor};">${amtStr}</div>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
     </div>
   `;
 
