@@ -78,7 +78,10 @@
   }
   [data-theme="black"] body::before { display:none; }
 
-  * { margin:0; padding:0; box-sizing:border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; cursor: default; }
+  input, textarea, [contenteditable] { cursor: text; }
+  button, select, label[for], [onclick], [role="button"] { cursor: pointer; }
+  a { cursor: pointer; }
 
   /* ── GLOBAL SCALE UP ── */
   html { font-size: 111%; }
