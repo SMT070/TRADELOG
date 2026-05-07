@@ -820,38 +820,38 @@
   .cal-cell.empty { cursor: default; background: transparent !important; border-radius: 10px; }
   .cal-cell:not(.empty):hover { background: var(--surface2); }
   .cal-cell.selected-day { outline: 2px solid var(--accent) !important; outline-offset: -2px; border-radius: 10px; }
-  .cal-cell.weekend-cell { opacity: 0.45; }
+  .cal-cell.weekend-cell { /* opacity handled inline */ }
   .cal-cell.today { outline: none; background: var(--accent) !important; border-radius: 10px; }
   .cal-cell.today .cal-day-num { color: #fff; font-weight: 900; }
   .cal-cell.today .cal-pnl, .cal-cell.today .cal-trades { color: rgba(255,255,255,0.85) !important; }
-  .cal-cell.has-win  { background: rgba(0,255,187,0.08); }
-  .cal-cell.has-loss { background: rgba(255,59,92,0.08); }
-  .cal-cell.has-win:hover  { background: rgba(0,255,187,0.13); }
-  .cal-cell.has-loss:hover { background: rgba(255,59,92,0.13); }
+  .cal-cell.has-win  { background: rgba(0,255,187,0.14); box-shadow: inset 0 2px 0 rgba(0,255,187,0.45); }
+  .cal-cell.has-loss { background: rgba(255,59,92,0.14); box-shadow: inset 0 2px 0 rgba(255,59,92,0.45); }
+  .cal-cell.has-win:hover  { background: rgba(0,255,187,0.22); }
+  .cal-cell.has-loss:hover { background: rgba(255,59,92,0.22); }
 
   [data-theme="light"] .cal-cell { background: #fff; border-radius: 10px; }
   [data-theme="light"] .cal-cell.empty { background: transparent !important; }
   [data-theme="light"] .cal-cell:not(.empty):hover { background: #f8fafc; }
-  [data-theme="light"] .cal-cell.has-win  { background: rgba(5,150,105,0.09); }
-  [data-theme="light"] .cal-cell.has-loss { background: rgba(225,29,72,0.09); }
-  [data-theme="light"] .cal-cell.has-win:hover  { background: rgba(5,150,105,0.14); }
-  [data-theme="light"] .cal-cell.has-loss:hover { background: rgba(225,29,72,0.12); }
+  [data-theme="light"] .cal-cell.has-win  { background: rgba(5,150,105,0.13); box-shadow: inset 0 2px 0 rgba(5,150,105,0.4); }
+  [data-theme="light"] .cal-cell.has-loss { background: rgba(225,29,72,0.12); box-shadow: inset 0 2px 0 rgba(225,29,72,0.35); }
+  [data-theme="light"] .cal-cell.has-win:hover  { background: rgba(5,150,105,0.20); }
+  [data-theme="light"] .cal-cell.has-loss:hover { background: rgba(225,29,72,0.18); }
 
   [data-theme="gray"] .cal-cell { background: var(--surface); border-radius: 10px; }
   [data-theme="gray"] .cal-cell.empty { background: transparent !important; }
   [data-theme="gray"] .cal-cell:not(.empty):hover { background: var(--surface2); }
-  [data-theme="gray"] .cal-cell.has-win  { background: rgba(0,255,187,0.08); }
-  [data-theme="gray"] .cal-cell.has-loss { background: rgba(255,59,92,0.08); }
-  [data-theme="gray"] .cal-cell.has-win:hover  { background: rgba(0,255,187,0.13); }
-  [data-theme="gray"] .cal-cell.has-loss:hover { background: rgba(255,59,92,0.13); }
+  [data-theme="gray"] .cal-cell.has-win  { background: rgba(0,255,187,0.14); box-shadow: inset 0 2px 0 rgba(0,255,187,0.45); }
+  [data-theme="gray"] .cal-cell.has-loss { background: rgba(255,59,92,0.14); box-shadow: inset 0 2px 0 rgba(255,59,92,0.45); }
+  [data-theme="gray"] .cal-cell.has-win:hover  { background: rgba(0,255,187,0.22); }
+  [data-theme="gray"] .cal-cell.has-loss:hover { background: rgba(255,59,92,0.22); }
 
   [data-theme="black"] .cal-cell { background: #0d0d0d; border-radius: 10px; }
   [data-theme="black"] .cal-cell.empty { background: transparent !important; }
   [data-theme="black"] .cal-cell:not(.empty):hover { background: #161616; }
-  [data-theme="black"] .cal-cell.has-win  { background: rgba(0,255,187,0.08); }
-  [data-theme="black"] .cal-cell.has-loss { background: rgba(255,59,92,0.08); }
-  [data-theme="black"] .cal-cell.has-win:hover  { background: rgba(0,255,187,0.13); }
-  [data-theme="black"] .cal-cell.has-loss:hover { background: rgba(255,59,92,0.13); }
+  [data-theme="black"] .cal-cell.has-win  { background: rgba(0,255,187,0.14); box-shadow: inset 0 2px 0 rgba(0,255,187,0.45); }
+  [data-theme="black"] .cal-cell.has-loss { background: rgba(255,59,92,0.14); box-shadow: inset 0 2px 0 rgba(255,59,92,0.45); }
+  [data-theme="black"] .cal-cell.has-win:hover  { background: rgba(0,255,187,0.22); }
+  [data-theme="black"] .cal-cell.has-loss:hover { background: rgba(255,59,92,0.22); }
 
   .cal-day-num {
     position: absolute; top: 8px; left: 10px;
@@ -859,11 +859,11 @@
     color: var(--muted); line-height: 1;
   }
   .cal-cell.today .cal-cell-bar { opacity: 0.5; }
-  .cal-cell.has-win  .cal-day-num { color: var(--text2); }
-  .cal-cell.has-loss .cal-day-num { color: var(--text2); }
+  .cal-cell.has-win  .cal-day-num { color: var(--text); font-weight: 800; }
+  .cal-cell.has-loss .cal-day-num { color: var(--text); font-weight: 800; }
 
   .cal-pnl {
-    font-size: 16px; font-weight: 800;
+    font-size: 15px; font-weight: 900;
     letter-spacing: -0.5px; line-height: 1;
     text-align: center;
   }
@@ -873,7 +873,7 @@
   .cal-trades {
     position: absolute; bottom: 8px; left: 0; right: 0;
     text-align: center;
-    font-size: 10px; color: var(--muted);
+    font-size: 10px; color: var(--text2);
     font-weight: 600; letter-spacing: 0.2px;
   }
 
@@ -881,8 +881,8 @@
     position: absolute; bottom: 0; left: 6px; right: 6px; height: 2px;
     border-radius: 2px;
   }
-  .cal-cell-bar.pos { background: var(--green); opacity: 0.5; }
-  .cal-cell-bar.neg { background: var(--red);   opacity: 0.5; }
+  .cal-cell-bar.pos { background: var(--green); opacity: 0.7; }
+  .cal-cell-bar.neg { background: var(--red);   opacity: 0.7; }
 
   /* Calendar summary cards */
   .cal-summary-card {
@@ -9573,13 +9573,13 @@ function renderCalendar() {
       </div>`;
     } else {
       // Dim past days with no trades
-      const dimStyle = (isPast && !isToday && !data) ? 'opacity:0.38;' : '';
+      const dimStyle = (!isToday && !data && (isPast || isWeekend)) ? 'opacity:0.30;' : '';
       let cellClass = 'cal-cell';
       if (isToday)   cellClass += ' today';
       if (isWeekend && !isToday) cellClass += ' weekend-cell';
       if (data)      cellClass += data.pnl >= 0 ? ' has-win' : ' has-loss';
 
-      const dayNumStyle = isPast && !isToday && !data ? 'color:var(--muted);' : '';
+      const dayNumStyle = data ? 'color:var(--text);font-weight:800;' : (isToday ? '' : 'color:var(--muted);');
       let inner = `<div class="cal-day-num" style="${dayNumStyle}">${d}</div>`;
       // Balance event indicator (💰 or 💸 dot top-right)
       const hasBEevt = (balanceEvents||[]).some(e => (e.time||'').slice(0,10) === dateStr);
