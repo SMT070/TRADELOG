@@ -14,8 +14,15 @@
 <script>
   // Apply theme instantly before any rendering to prevent flash
   (function() {
-    const t = localStorage.getItem('tradelog_theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', t);
+    const autoOn = localStorage.getItem('tradelog_auto_theme') === 'true';
+    if (autoOn) {
+      const h = new Date().getHours();
+      const t = (h >= 7 && h < 20) ? 'light' : 'black';
+      document.documentElement.setAttribute('data-theme', t);
+    } else {
+      const t = localStorage.getItem('tradelog_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    }
   })();
 </script>
 <style>
@@ -1764,11 +1771,14 @@
 
         <!-- Theme -->
         <div class="settings-section-label">Theme</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:0 2px 8px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:0 2px 4px;">
           <button onclick="setTheme('dark')"  id="theme-btn-dark"  style="padding:7px 4px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s;">🌑 Dark</button>
           <button onclick="setTheme('gray')"  id="theme-btn-gray"  style="padding:7px 4px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s;">🌫 Gray</button>
           <button onclick="setTheme('black')" id="theme-btn-black" style="padding:7px 4px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s;">⚫ Black</button>
           <button onclick="setTheme('light')" id="theme-btn-light" style="padding:7px 4px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s;">☀️ Light</button>
+        </div>
+        <div style="padding:0 2px 8px;">
+          <button onclick="toggleAutoTheme()" id="theme-btn-auto" style="width:100%;padding:7px 4px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s;">🌓 Auto</button>
         </div>
 
         <!-- Currency -->
@@ -3848,92 +3858,92 @@ window.switchPage = function(name) {
 
 
 <!-- SHARE MODAL -->
-<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
-  <div style="width:400px;max-width:95vw;">
+<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(6px);">
+  <div style="width:500px;max-width:96vw;">
 
     <!-- Share card (canvas target) -->
-    <div id="share-card" style="border-radius:20px;padding:28px;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;">
-      <div id="share-glow-1" style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;pointer-events:none;"></div>
-      <div id="share-glow-2" style="position:absolute;bottom:-40px;left:-40px;width:150px;height:150px;border-radius:50%;pointer-events:none;"></div>
+    <div id="share-card" style="border-radius:24px;padding:36px;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;">
 
-      <!-- Header -->
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;position:relative;">
+      <!-- Ambient glow blobs -->
+      <div id="share-glow-1" style="position:absolute;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;pointer-events:none;"></div>
+      <div id="share-glow-2" style="position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;border-radius:50%;pointer-events:none;"></div>
+      <div id="share-glow-3" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;pointer-events:none;opacity:0.4;"></div>
+
+      <!-- Header row -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;position:relative;">
         <div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;opacity:0.5;" id="share-date-label">Today</div>
-          <div style="font-size:12px;font-weight:600;opacity:0.6;" id="share-trades-label">0 trades</div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:5px;opacity:0.45;" id="share-date-label">Today</div>
+          <div style="font-size:13px;font-weight:600;opacity:0.55;" id="share-trades-label">0 trades</div>
         </div>
-        <div style="display:flex;align-items:center;gap:7px;">
-          <div style="width:26px;height:26px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:8px;display:flex;align-items:center;justify-content:center;">
-            <svg width="13" height="13" viewBox="0 0 28 28"><polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/><polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/><polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/><rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/></svg>
+        <!-- Logo -->
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div style="width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px rgba(99,102,241,0.45);">
+            <svg width="16" height="16" viewBox="0 0 28 28"><polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/><polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/><polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/><rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/></svg>
           </div>
-          <div id="share-logo-text" style="font-size:12px;font-weight:800;">TRADE<span style="color:#6366f1;">LOG</span></div>
+          <div id="share-logo-text" style="font-size:14px;font-weight:800;letter-spacing:-0.3px;">TRADE<span style="color:#6366f1;">LOG</span></div>
         </div>
       </div>
 
-      <!-- P&L -->
-      <div style="margin-bottom:18px;position:relative;">
-        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:0.4;margin-bottom:8px;" id="share-pnl-label">Today's P&L</div>
-        <div id="share-pnl" style="font-size:52px;font-weight:900;letter-spacing:-3px;line-height:1;">+$0.00</div>
+      <!-- P&L hero -->
+      <div style="margin-bottom:28px;position:relative;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;opacity:0.38;margin-bottom:10px;" id="share-pnl-label">Today's P&L</div>
+        <div id="share-pnl" style="font-size:68px;font-weight:900;letter-spacing:-4px;line-height:1;">+$0.00</div>
+        <div id="share-pnl-bar" style="margin-top:14px;height:3px;border-radius:3px;width:60px;opacity:0.5;"></div>
       </div>
 
-      <!-- Stats strip -->
-      <div id="share-stats-strip" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;border-radius:12px;overflow:hidden;margin-bottom:16px;">
-        <div id="share-stat-1" style="padding:12px 14px;">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.4;margin-bottom:4px;">Trades</div>
-          <div id="share-wr" style="font-size:18px;font-weight:800;">—</div>
+      <!-- Stats strip — 3 blocks -->
+      <div id="share-stats-strip" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;border-radius:14px;overflow:hidden;margin-bottom:20px;">
+        <div id="share-stat-1" style="padding:14px 16px;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;opacity:0.38;margin-bottom:6px;">Trades</div>
+          <div id="share-wr" style="font-size:22px;font-weight:800;">—</div>
         </div>
-        <div id="share-stat-2" style="padding:12px 14px;">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.4;margin-bottom:4px;">Best Trade</div>
-          <div id="share-best" style="font-size:18px;font-weight:800;">—</div>
+        <div id="share-stat-2" style="padding:14px 16px;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;opacity:0.38;margin-bottom:6px;">Best Trade</div>
+          <div id="share-best" style="font-size:22px;font-weight:800;">—</div>
         </div>
-        <div id="share-stat-3" style="padding:12px 14px;">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:0.4;margin-bottom:4px;">Symbols</div>
-          <div id="share-symbols" style="font-size:12px;font-weight:700;margin-top:2px;line-height:1.4;opacity:0.75;">—</div>
+        <div id="share-stat-3" style="padding:14px 16px;">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;opacity:0.38;margin-bottom:6px;">Win Rate</div>
+          <div id="share-winrate" style="font-size:22px;font-weight:800;">—</div>
         </div>
       </div>
 
       <!-- Trade list -->
-      <div id="share-trade-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:18px;position:relative;"></div>
+      <div id="share-trade-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:28px;position:relative;"></div>
 
       <!-- Footer -->
-      <div id="share-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:14px;">
-        <div style="font-size:10px;font-weight:500;opacity:0.35;">tradelog.app</div>
-        <div style="font-size:10px;font-weight:500;opacity:0.35;">Track. Analyse. Improve.</div>
+      <div id="share-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:16px;">
+        <div style="font-size:10px;font-weight:600;opacity:0.28;letter-spacing:0.5px;">tradelog.app</div>
+        <div style="font-size:10px;font-weight:600;opacity:0.28;letter-spacing:0.5px;">Track · Analyse · Improve</div>
       </div>
     </div>
 
-    <!-- Buttons -->
-    <div style="display:flex;flex-direction:column;gap:7px;margin-top:12px;">
-
-      <!-- Row 1: Copy + Save -->
+    <!-- Action buttons -->
+    <div style="display:flex;flex-direction:column;gap:7px;margin-top:14px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
-        <button onclick="shareCardCopy()" id="share-cp-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:10px;border:1px solid #2d3f55;background:rgba(99,102,241,0.1);color:#6366f1;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.2)'" onmouseleave="this.style.background='rgba(99,102,241,0.1)'">
+        <button onclick="shareCardCopy()" id="share-cp-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:13px;border-radius:12px;border:1px solid #2d3f55;background:rgba(99,102,241,0.12);color:#6366f1;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.22)'" onmouseleave="this.style.background='rgba(99,102,241,0.12)'">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           Copy Image
         </button>
-        <button onclick="shareCardDownload()" id="share-dl-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border-radius:10px;border:1px solid #2d3f55;background:rgba(99,102,241,0.1);color:#6366f1;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.2)'" onmouseleave="this.style.background='rgba(99,102,241,0.1)'">
+        <button onclick="shareCardDownload()" id="share-dl-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:13px;border-radius:12px;border:1px solid #2d3f55;background:rgba(99,102,241,0.12);color:#6366f1;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.22)'" onmouseleave="this.style.background='rgba(99,102,241,0.12)'">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Save Image
         </button>
       </div>
-
-      <!-- Row 2: Share to apps — mobile only -->
       <div id="share-app-btns" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;">
-        <button onclick="shareToApp('x')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;border-radius:10px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#e2e8f0'" onmouseleave="this.style.borderColor='#1e293b'">
+        <button onclick="shareToApp('x')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:12px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#e2e8f0'" onmouseleave="this.style.borderColor='#1e293b'">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           Post to X
         </button>
-        <button onclick="shareToApp('whatsapp')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;border-radius:10px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#25D366'" onmouseleave="this.style.borderColor='#1e293b'">
+        <button onclick="shareToApp('whatsapp')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:12px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#25D366'" onmouseleave="this.style.borderColor='#1e293b'">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           WhatsApp
         </button>
-        <button onclick="shareToApp('telegram')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;border-radius:10px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#29B6F6'" onmouseleave="this.style.borderColor='#1e293b'">
+        <button onclick="shareToApp('telegram')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:12px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#29B6F6'" onmouseleave="this.style.borderColor='#1e293b'">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="#29B6F6"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
           Telegram
         </button>
       </div>
-
-      <button onclick="closeShareModal()" style="padding:10px;border-radius:10px;border:1px solid #1e293b;background:none;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">
+      <button onclick="closeShareModal()" style="padding:11px;border-radius:12px;border:1px solid #1e293b;background:none;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:border-color .15s;" onmouseenter="this.style.borderColor='#64748b'" onmouseleave="this.style.borderColor='#1e293b'">
         Close
       </button>
     </div>
@@ -4283,9 +4293,14 @@ function uid() { return Date.now().toString(36) + Math.random().toString(36).sli
 // ── THEME ────────────────────────────────────────────────────────────────────
 const THEMES = ['dark','gray','black','light'];
 const THEME_LABELS = { dark:'Dark', gray:'Gray', black:'Black', light:'Light' };
+const AUTO_THEME_KEY = 'tradelog_auto_theme';
+let _autoThemeInterval = null;
 
 function setTheme(t) {
-document.documentElement.setAttribute('data-theme', t);
+  // Selecting a manual theme disables auto mode
+  localStorage.setItem(AUTO_THEME_KEY, 'false');
+  _stopAutoTheme();
+  document.documentElement.setAttribute('data-theme', t);
   localStorage.setItem(THEME_KEY, t);
   updateThemeButtons(t);
   saveProfileToSupabase();
@@ -4300,12 +4315,74 @@ function updateThemeButtons(t) {
     btn.style.color = th === t ? '#fff' : 'var(--text2)';
     btn.style.borderColor = th === t ? 'var(--accent)' : 'var(--border2)';
   });
+  // Auto button highlight
+  const autoOn = localStorage.getItem(AUTO_THEME_KEY) === 'true';
+  const autoBtn = document.getElementById('theme-btn-auto');
+  if (autoBtn) {
+    autoBtn.style.background = autoOn ? 'var(--accent)' : 'var(--surface2)';
+    autoBtn.style.color = autoOn ? '#fff' : 'var(--text2)';
+    autoBtn.style.borderColor = autoOn ? 'var(--accent)' : 'var(--border2)';
+  }
+}
+
+function _getAutoThemeForHour() {
+  const h = new Date().getHours();
+  return (h >= 7 && h < 20) ? 'light' : 'black';
+}
+
+function _applyAutoTheme() {
+  const t = _getAutoThemeForHour();
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem(THEME_KEY, t);
+  // Update manual buttons to reflect current applied theme, keep auto highlighted
+  THEMES.forEach(th => {
+    const btn = document.getElementById('theme-btn-' + th);
+    if (!btn) return;
+    btn.style.background = 'var(--surface2)';
+    btn.style.color = 'var(--text2)';
+    btn.style.borderColor = 'var(--border2)';
+  });
+  const autoBtn = document.getElementById('theme-btn-auto');
+  if (autoBtn) {
+    autoBtn.style.background = 'var(--accent)';
+    autoBtn.style.color = '#fff';
+    autoBtn.style.borderColor = 'var(--accent)';
+  }
+  if (equityChartInst) refreshDashboard();
+}
+
+function _stopAutoTheme() {
+  if (_autoThemeInterval) { clearInterval(_autoThemeInterval); _autoThemeInterval = null; }
+}
+
+function toggleAutoTheme() {
+  const wasOn = localStorage.getItem(AUTO_THEME_KEY) === 'true';
+  if (wasOn) {
+    // Turn off — revert to stored manual theme
+    localStorage.setItem(AUTO_THEME_KEY, 'false');
+    _stopAutoTheme();
+    const t = localStorage.getItem(THEME_KEY) || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    updateThemeButtons(t);
+  } else {
+    // Turn on
+    localStorage.setItem(AUTO_THEME_KEY, 'true');
+    _applyAutoTheme();
+    // Check every 60 seconds if hour changed
+    _autoThemeInterval = setInterval(_applyAutoTheme, 60000);
+  }
 }
 
 function loadTheme() {
-  const t = localStorage.getItem(THEME_KEY) || 'dark';
-  document.documentElement.setAttribute('data-theme', t);
-  updateThemeButtons(t);
+  const autoOn = localStorage.getItem(AUTO_THEME_KEY) === 'true';
+  if (autoOn) {
+    _applyAutoTheme();
+    _autoThemeInterval = setInterval(_applyAutoTheme, 60000);
+  } else {
+    const t = localStorage.getItem(THEME_KEY) || 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    updateThemeButtons(t);
+  }
 }
 
 function toggleTheme() {
@@ -10915,23 +10992,26 @@ function openShareModal() {
   const wins   = todayTrades.filter(t => getResult(t) === 'win').length;
   const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
   const best   = todayTrades.length ? Math.max(...todayTrades.map(t => getPnl(t))) : 0;
-  const symbols= [...new Set(todayTrades.map(t=>t.symbol).filter(Boolean))].slice(0,4).join(', ') || '—';
+  const decided = wins + losses;
+  const wr     = decided ? Math.round(wins / decided * 100) : 0;
   const isPos  = pnl >= 0;
 
   const theme = localStorage.getItem('tradelog_theme') || 'dark';
   const palettes = {
-    dark:  { bg:'linear-gradient(145deg,#0b0f1a 0%,#111827 60%,#0d1220 100%)', border:'#2d3f55', statBg:'#0b0f1a', statBorder:'#1e293b', text:'#f1f5f9', muted:'#64748b', glow1:'rgba(99,102,241,0.18)', glow2:'rgba(0,255,187,0.08)', pos:'#00FFBB', neg:'#ff3b5c', tradeRow:'rgba(255,255,255,0.04)', footerBorder:'#1e293b' },
-    gray:  { bg:'linear-gradient(145deg,#1a1f2e 0%,#1e2536 60%,#161b28 100%)', border:'#2d3a50', statBg:'#1a1f2e',  statBorder:'#252d3d', text:'#e2e8f0', muted:'#64748b', glow1:'rgba(99,102,241,0.15)', glow2:'rgba(0,255,187,0.07)', pos:'#00FFBB', neg:'#ff3b5c', tradeRow:'rgba(255,255,255,0.05)', footerBorder:'#252d3d' },
-    black: { bg:'linear-gradient(145deg,#000000 0%,#080808 60%,#050505 100%)', border:'#1a1a1a', statBg:'#080808',  statBorder:'#111',    text:'#f1f5f9', muted:'#444',    glow1:'rgba(99,102,241,0.12)', glow2:'rgba(0,255,187,0.06)', pos:'#00FFBB', neg:'#ff3b5c', tradeRow:'rgba(255,255,255,0.04)', footerBorder:'#111' },
-    light: { bg:'linear-gradient(145deg,#ffffff 0%,#f8fafc 60%,#f1f5f9 100%)', border:'#e2e8f0', statBg:'#ffffff',  statBorder:'#e2e8f0', text:'#0f172a', muted:'#94a3b8', glow1:'rgba(99,102,241,0.10)', glow2:'rgba(99,102,241,0.05)', pos:'#059669', neg:'#dc2626', tradeRow:'rgba(0,0,0,0.04)',   footerBorder:'#e2e8f0' },
+    dark:  { bg:'linear-gradient(150deg,#0d1117 0%,#0b0f1a 45%,#0f1520 100%)', border:'rgba(99,102,241,0.2)', statBg:'rgba(255,255,255,0.04)', statBorder:'rgba(255,255,255,0.06)', text:'#f1f5f9', muted:'#64748b', glow1:'rgba(99,102,241,0.22)', glow2:'rgba(0,255,187,0.10)', glow3:'rgba(99,102,241,0.04)', pos:'#00FFBB', neg:'#ff3b5c', tradeRowBg:'rgba(255,255,255,0.04)', tradeRowBorder:'rgba(255,255,255,0.07)', footerBorder:'rgba(255,255,255,0.07)' },
+    gray:  { bg:'linear-gradient(150deg,#1a1d26 0%,#1e2230 45%,#191d28 100%)', border:'rgba(99,102,241,0.18)', statBg:'rgba(255,255,255,0.05)', statBorder:'rgba(255,255,255,0.07)', text:'#e2e8f0', muted:'#64748b', glow1:'rgba(99,102,241,0.18)', glow2:'rgba(0,255,187,0.09)', glow3:'rgba(99,102,241,0.04)', pos:'#00FFBB', neg:'#ff3b5c', tradeRowBg:'rgba(255,255,255,0.05)', tradeRowBorder:'rgba(255,255,255,0.08)', footerBorder:'rgba(255,255,255,0.08)' },
+    black: { bg:'linear-gradient(150deg,#000000 0%,#040404 45%,#060606 100%)', border:'rgba(99,102,241,0.15)', statBg:'rgba(255,255,255,0.03)', statBorder:'rgba(255,255,255,0.05)', text:'#f0f0f0', muted:'#444',    glow1:'rgba(99,102,241,0.16)', glow2:'rgba(0,255,187,0.07)', glow3:'rgba(99,102,241,0.03)', pos:'#00FFBB', neg:'#ff3b5c', tradeRowBg:'rgba(255,255,255,0.03)', tradeRowBorder:'rgba(255,255,255,0.06)', footerBorder:'rgba(255,255,255,0.06)' },
+    light: { bg:'linear-gradient(150deg,#ffffff 0%,#f8fafc 45%,#f1f5f9 100%)', border:'rgba(99,102,241,0.18)', statBg:'rgba(99,102,241,0.05)', statBorder:'rgba(99,102,241,0.10)', text:'#0f172a', muted:'#94a3b8', glow1:'rgba(99,102,241,0.12)', glow2:'rgba(99,102,241,0.07)', glow3:'rgba(99,102,241,0.03)', pos:'#059669', neg:'#dc2626', tradeRowBg:'rgba(0,0,0,0.03)',   tradeRowBorder:'rgba(0,0,0,0.07)',   footerBorder:'rgba(0,0,0,0.08)' },
   };
   const p = palettes[theme] || palettes.dark;
   const posCol = isPos ? p.pos : p.neg;
 
   const card = document.getElementById('share-card');
-  card.style.cssText += `;background:${p.bg};border:1px solid ${p.border};color:${p.text};`;
+  card.style.cssText += `;background:${p.bg};border:1.5px solid ${p.border};color:${p.text};`;
+
   document.getElementById('share-glow-1').style.background = `radial-gradient(circle,${p.glow1},transparent 70%)`;
   document.getElementById('share-glow-2').style.background = `radial-gradient(circle,${p.glow2},transparent 70%)`;
+  document.getElementById('share-glow-3').style.background = `radial-gradient(circle,${p.glow3},transparent 70%)`;
   document.getElementById('share-logo-text').style.color = p.text;
   document.getElementById('share-stats-strip').style.background = p.statBorder;
   ['share-stat-1','share-stat-2','share-stat-3'].forEach(id => {
@@ -10947,25 +11027,35 @@ function openShareModal() {
   pnlEl.textContent = (isPos?'+':'-') + sym + Math.abs(pnl).toFixed(2);
   pnlEl.style.color = posCol;
 
+  // Accent bar under P&L
+  const barEl = document.getElementById('share-pnl-bar');
+  if (barEl) { barEl.style.background = posCol; barEl.style.boxShadow = `0 0 12px ${posCol}80`; }
+
   document.getElementById('share-wr').textContent   = todayTrades.length || '0';
   document.getElementById('share-best').textContent = todayTrades.length ? (best>=0?'+':'-')+sym+Math.abs(best).toFixed(2) : '—';
   document.getElementById('share-best').style.color = best>=0 ? p.pos : p.neg;
-  document.getElementById('share-symbols').textContent = symbols;
+  document.getElementById('share-winrate').textContent = decided ? wr + '%' : '—';
+  document.getElementById('share-winrate').style.color = decided ? (wr >= 50 ? p.pos : p.neg) : p.muted;
 
   const listEl = document.getElementById('share-trade-list');
   listEl.innerHTML = todayTrades.slice(0,5).map(t => {
     const tp = getPnl(t);
     const col = tp>=0 ? p.pos : p.neg;
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 11px;background:${p.tradeRow};border-radius:7px;border:1px solid ${p.statBorder};">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:12px;font-weight:800;color:${p.text};">${t.symbol||'—'}</span>
-        <span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:${t.dir==='BUY'?p.pos+'18':p.neg+'18'};color:${t.dir==='BUY'?p.pos:p.neg};">${t.dir||''}</span>
+    const dirBg = t.dir==='BUY' ? p.pos+'1a' : p.neg+'1a';
+    const dirCol = t.dir==='BUY' ? p.pos : p.neg;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:${p.tradeRowBg};border-radius:10px;border:1px solid ${p.tradeRowBorder};">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;font-weight:800;color:${p.text};">${t.symbol||'—'}</span>
+        <span style="font-size:9px;font-weight:800;padding:3px 8px;border-radius:5px;background:${dirBg};color:${dirCol};letter-spacing:0.5px;">${t.dir||''}</span>
       </div>
-      <span style="font-size:13px;font-weight:800;color:${col};">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
+      <span style="font-size:14px;font-weight:800;color:${col};">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
     </div>`;
   }).join('');
   if (todayTrades.length > 5)
-    listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.muted};padding:4px;">+${todayTrades.length-5} more</div>`;
+    listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.muted};padding:6px;font-weight:600;">+${todayTrades.length-5} more trades</div>`;
+
+  // Invalidate cache so fresh render at new size
+  _invalidateShareCache();
 
   document.getElementById('share-modal').style.display = 'flex';
 }
@@ -11005,7 +11095,7 @@ function captureShareCard() {
     const bg    = theme === 'light' ? '#ffffff' : '#0b0f1a';
     // Use scale:1.5 instead of 2 — 44% fewer pixels, much faster, still crisp
     setTimeout(() => {
-      html2canvas(card, { backgroundColor: bg, scale: 1.5, useCORS: true, logging: false, imageTimeout: 0 })
+      html2canvas(card, { backgroundColor: bg, scale: 3, useCORS: true, logging: false, imageTimeout: 0 })
         .then(canvas => {
           canvas.toBlob(blob => {
             if (!blob) { reject(new Error('blob failed')); return; }
