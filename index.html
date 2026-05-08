@@ -12378,17 +12378,17 @@ tr.pack-child-row td {
   opacity: 0.75;
   border-left: 2px solid var(--border) !important;
 }
-/* ── Unified date column alignment: all rows get 36px left pad ── */
+/* ── Unified date column alignment: ALL rows same left pad ── */
 .trades-table td:first-child {
   position: relative;
   padding-left: 36px !important;
 }
 .trades-table tr.pack-header-row td:first-child {
-  padding-left: 46px !important;
+  padding-left: 36px !important;
 }
 .date-chevron {
   position: absolute;
-  left: 16px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -13305,7 +13305,7 @@ function renderAutoPackRows(key, packTrades, sym) {
   const autoResultBadge = `<span style="color:${resultColor};font-size:10px;font-weight:700;background:${resultBg};padding:2px 8px;border-radius:4px;">${resultLabel}</span>`;
 
   let html = `<tr class="pack-header-row${isExpanded ? ' expanded' : ''}" data-pack="${key}" onclick="togglePackExpand('${key}',event)" style="cursor:pointer;">
-    <td style="color:var(--text);font-size:12px;white-space:nowrap;font-weight:600;"><div class="date-chevron">${autoChevron}</div>${autoDateHtml}</td>
+    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;"><div class="date-chevron">${autoChevron}</div><div style="line-height:1.4;">${autoDateHtml}</div></td>
     <td style="font-weight:600;">${symbols}</td>
     <td><div style="display:flex;align-items:center;">${autoDirBadge}${autoCountPill}</div></td>
     <td style="color:var(--text);font-weight:500;">${totalLots.toFixed(2)}</td>
