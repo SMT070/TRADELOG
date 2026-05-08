@@ -3858,73 +3858,95 @@ window.switchPage = function(name) {
 
 
 <!-- SHARE MODAL -->
-<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(6px);">
-  <div style="width:500px;max-width:96vw;">
+<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(12px);">
+  <div style="width:520px;max-width:96vw;">
 
-    <!-- Share card (canvas target) -->
-    <div id="share-card" style="border-radius:24px;padding:36px;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;">
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- SHARE CARD — canvas capture target                  -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div id="share-card" style="border-radius:28px;padding:0;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 40px 120px rgba(0,0,0,0.8);">
 
-      <!-- Ambient glow blobs -->
-      <div id="share-glow-1" style="position:absolute;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;pointer-events:none;"></div>
-      <div id="share-glow-2" style="position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;border-radius:50%;pointer-events:none;"></div>
-      <div id="share-glow-3" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;pointer-events:none;opacity:0.4;"></div>
+      <!-- ── NOISE TEXTURE OVERLAY ── -->
+      <div style="position:absolute;inset:0;opacity:0.03;pointer-events:none;z-index:1;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22/></filter><rect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22 opacity=%221%22/></svg>');background-size:180px;"></div>
 
-      <!-- Header row -->
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;position:relative;">
-        <div>
-          <div style="font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:5px;opacity:0.45;" id="share-date-label">Today</div>
-          <div style="font-size:13px;font-weight:600;opacity:0.55;" id="share-trades-label">0 trades</div>
-        </div>
-        <!-- Logo -->
-        <div style="display:flex;align-items:center;gap:9px;">
-          <div style="width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px rgba(99,102,241,0.45);">
-            <svg width="16" height="16" viewBox="0 0 28 28"><polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/><polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/><polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/><rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/></svg>
+      <!-- ── GLOW ORBS ── -->
+      <div id="share-glow-1" style="position:absolute;top:-100px;right:-80px;width:360px;height:360px;border-radius:50%;pointer-events:none;z-index:0;"></div>
+      <div id="share-glow-2" style="position:absolute;bottom:-80px;left:-60px;width:280px;height:280px;border-radius:50%;pointer-events:none;z-index:0;"></div>
+      <div id="share-glow-3" style="position:absolute;top:40%;left:30%;width:200px;height:200px;border-radius:50%;pointer-events:none;z-index:0;opacity:0.6;"></div>
+
+      <!-- ── INNER CONTENT ── -->
+      <div style="position:relative;z-index:2;padding:36px 36px 28px;">
+
+        <!-- TOP BAR: date left, logo right -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:36px;">
+          <div>
+            <div id="share-date-label" style="font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-bottom:5px;opacity:0.4;">TODAY</div>
+            <div id="share-trades-label" style="font-size:13px;font-weight:700;opacity:0.65;">0 trades</div>
           </div>
-          <div id="share-logo-text" style="font-size:14px;font-weight:800;letter-spacing:-0.3px;">TRADE<span style="color:#6366f1;">LOG</span></div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:36px;height:36px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(99,102,241,0.6),0 0 48px rgba(99,102,241,0.2);">
+              <svg width="18" height="18" viewBox="0 0 28 28"><polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.12)"/><polygon points="5,14 2,4 10,12" fill="white" opacity="0.95"/><polygon points="23,14 26,4 18,12" fill="white" opacity="0.95"/><rect x="9" y="19" width="10" height="4" rx="2" fill="white"/></svg>
+            </div>
+            <div id="share-logo-text" style="font-size:15px;font-weight:900;letter-spacing:-0.5px;">TRADE<span style="color:#818cf8;">LOG</span></div>
+          </div>
         </div>
-      </div>
 
-      <!-- P&L hero -->
-      <div style="margin-bottom:28px;position:relative;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;opacity:0.38;margin-bottom:10px;" id="share-pnl-label">Today's P&L</div>
-        <div id="share-pnl" style="font-size:68px;font-weight:900;letter-spacing:-4px;line-height:1;">+$0.00</div>
-        <div id="share-pnl-bar" style="margin-top:14px;height:3px;border-radius:3px;width:60px;opacity:0.5;"></div>
-      </div>
-
-      <!-- Stats strip — 3 blocks -->
-      <div id="share-stats-strip" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;border-radius:14px;overflow:hidden;margin-bottom:20px;">
-        <div id="share-stat-1" style="padding:14px 16px;">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;opacity:0.38;margin-bottom:6px;">Trades</div>
-          <div id="share-wr" style="font-size:22px;font-weight:800;">—</div>
+        <!-- HERO P&L SECTION -->
+        <div style="margin-bottom:30px;">
+          <div id="share-pnl-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;opacity:0.35;margin-bottom:12px;">TODAY'S P&L</div>
+          <!-- P&L number with glow text effect via text-shadow set by JS -->
+          <div id="share-pnl" style="font-size:76px;font-weight:900;letter-spacing:-5px;line-height:0.95;font-variant-numeric:tabular-nums;">+$0.00</div>
+          <!-- Animated-looking progress bar -->
+          <div style="margin-top:18px;display:flex;align-items:center;gap:12px;">
+            <div id="share-wr-bar-wrap" style="flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,0.08);overflow:hidden;">
+              <div id="share-wr-bar" style="height:100%;border-radius:4px;width:0%;transition:width 0s;"></div>
+            </div>
+            <div id="share-wr-pct" style="font-size:12px;font-weight:800;letter-spacing:0.5px;opacity:0.7;">0% WIN</div>
+          </div>
         </div>
-        <div id="share-stat-2" style="padding:14px 16px;">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;opacity:0.38;margin-bottom:6px;">Best Trade</div>
-          <div id="share-best" style="font-size:22px;font-weight:800;">—</div>
+
+        <!-- STAT CARDS ROW -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;">
+          <div id="share-stat-1" style="border-radius:16px;padding:16px 14px;">
+            <div style="font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:8px;">TRADES</div>
+            <div id="share-wr" style="font-size:26px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
+            <div id="share-wl" style="font-size:10px;font-weight:700;opacity:0.45;margin-top:4px;">0W · 0L</div>
+          </div>
+          <div id="share-stat-2" style="border-radius:16px;padding:16px 14px;">
+            <div style="font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:8px;">BEST TRADE</div>
+            <div id="share-best" style="font-size:26px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
+            <div id="share-best-sym" style="font-size:10px;font-weight:700;opacity:0.45;margin-top:4px;">—</div>
+          </div>
+          <div id="share-stat-3" style="border-radius:16px;padding:16px 14px;">
+            <div style="font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:8px;">WIN RATE</div>
+            <div id="share-winrate" style="font-size:26px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
+            <div id="share-winrate-sub" style="font-size:10px;font-weight:700;opacity:0.45;margin-top:4px;">of decided</div>
+          </div>
         </div>
-        <div id="share-stat-3" style="padding:14px 16px;">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;opacity:0.38;margin-bottom:6px;">Win Rate</div>
-          <div id="share-winrate" style="font-size:22px;font-weight:800;">—</div>
+
+        <!-- TRADE LIST -->
+        <div id="share-trade-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:28px;"></div>
+
+        <!-- FOOTER -->
+        <div id="share-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:18px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div id="share-footer-dot" style="width:6px;height:6px;border-radius:50%;"></div>
+            <div style="font-size:10px;font-weight:700;opacity:0.3;letter-spacing:1px;">TRADELOG.APP</div>
+          </div>
+          <div style="font-size:10px;font-weight:600;opacity:0.22;letter-spacing:0.5px;">Track · Analyse · Improve</div>
         </div>
-      </div>
 
-      <!-- Trade list -->
-      <div id="share-trade-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:28px;position:relative;"></div>
+      </div><!-- /inner content -->
+    </div><!-- /share-card -->
 
-      <!-- Footer -->
-      <div id="share-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:16px;">
-        <div style="font-size:10px;font-weight:600;opacity:0.28;letter-spacing:0.5px;">tradelog.app</div>
-        <div style="font-size:10px;font-weight:600;opacity:0.28;letter-spacing:0.5px;">Track · Analyse · Improve</div>
-      </div>
-    </div>
-
-    <!-- Action buttons -->
+    <!-- ACTION BUTTONS -->
     <div style="display:flex;flex-direction:column;gap:7px;margin-top:14px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
-        <button onclick="shareCardCopy()" id="share-cp-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:13px;border-radius:12px;border:1px solid #2d3f55;background:rgba(99,102,241,0.12);color:#6366f1;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.22)'" onmouseleave="this.style.background='rgba(99,102,241,0.12)'">
+        <button onclick="shareCardCopy()" id="share-cp-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:14px;border-radius:14px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.12);color:#818cf8;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.25)';this.style.borderColor='rgba(99,102,241,0.6)'" onmouseleave="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(99,102,241,0.3)'">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           Copy Image
         </button>
-        <button onclick="shareCardDownload()" id="share-dl-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:13px;border-radius:12px;border:1px solid #2d3f55;background:rgba(99,102,241,0.12);color:#6366f1;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.22)'" onmouseleave="this.style.background='rgba(99,102,241,0.12)'">
+        <button onclick="shareCardDownload()" id="share-dl-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:14px;border-radius:14px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.12);color:#818cf8;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.25)';this.style.borderColor='rgba(99,102,241,0.6)'" onmouseleave="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(99,102,241,0.3)'">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Save Image
         </button>
@@ -3943,7 +3965,7 @@ window.switchPage = function(name) {
           Telegram
         </button>
       </div>
-      <button onclick="closeShareModal()" style="padding:11px;border-radius:12px;border:1px solid #1e293b;background:none;color:#64748b;font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:border-color .15s;" onmouseenter="this.style.borderColor='#64748b'" onmouseleave="this.style.borderColor='#1e293b'">
+      <button onclick="closeShareModal()" style="padding:12px;border-radius:12px;border:1px solid #1e293b;background:none;color:#475569;font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#475569';this.style.color='#94a3b8'" onmouseleave="this.style.borderColor='#1e293b';this.style.color='#475569'">
         Close
       </button>
     </div>
@@ -10991,72 +11013,215 @@ function openShareModal() {
   const pnl    = todayTrades.reduce((s,t) => s + getPnl(t), 0);
   const wins   = todayTrades.filter(t => getResult(t) === 'win').length;
   const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
-  const best   = todayTrades.length ? Math.max(...todayTrades.map(t => getPnl(t))) : 0;
   const decided = wins + losses;
   const wr     = decided ? Math.round(wins / decided * 100) : 0;
   const isPos  = pnl >= 0;
+  const bestTrade = todayTrades.length
+    ? todayTrades.reduce((b,t) => getPnl(t) > getPnl(b) ? t : b, todayTrades[0])
+    : null;
+  const best = bestTrade ? getPnl(bestTrade) : 0;
 
-  const theme = localStorage.getItem('tradelog_theme') || 'dark';
+  // ── CINEMATIC PALETTES ────────────────────────────────────────────
+  const rawTheme = localStorage.getItem('tradelog_theme') || 'dark';
+  const theme = rawTheme === 'light' ? 'light' : (rawTheme === 'black' ? 'black' : rawTheme === 'gray' ? 'gray' : 'dark');
+
   const palettes = {
-    dark:  { bg:'linear-gradient(150deg,#0d1117 0%,#0b0f1a 45%,#0f1520 100%)', border:'rgba(99,102,241,0.2)', statBg:'rgba(255,255,255,0.04)', statBorder:'rgba(255,255,255,0.06)', text:'#f1f5f9', muted:'#64748b', glow1:'rgba(99,102,241,0.22)', glow2:'rgba(0,255,187,0.10)', glow3:'rgba(99,102,241,0.04)', pos:'#00FFBB', neg:'#ff3b5c', tradeRowBg:'rgba(255,255,255,0.04)', tradeRowBorder:'rgba(255,255,255,0.07)', footerBorder:'rgba(255,255,255,0.07)' },
-    gray:  { bg:'linear-gradient(150deg,#1a1d26 0%,#1e2230 45%,#191d28 100%)', border:'rgba(99,102,241,0.18)', statBg:'rgba(255,255,255,0.05)', statBorder:'rgba(255,255,255,0.07)', text:'#e2e8f0', muted:'#64748b', glow1:'rgba(99,102,241,0.18)', glow2:'rgba(0,255,187,0.09)', glow3:'rgba(99,102,241,0.04)', pos:'#00FFBB', neg:'#ff3b5c', tradeRowBg:'rgba(255,255,255,0.05)', tradeRowBorder:'rgba(255,255,255,0.08)', footerBorder:'rgba(255,255,255,0.08)' },
-    black: { bg:'linear-gradient(150deg,#000000 0%,#040404 45%,#060606 100%)', border:'rgba(99,102,241,0.15)', statBg:'rgba(255,255,255,0.03)', statBorder:'rgba(255,255,255,0.05)', text:'#f0f0f0', muted:'#444',    glow1:'rgba(99,102,241,0.16)', glow2:'rgba(0,255,187,0.07)', glow3:'rgba(99,102,241,0.03)', pos:'#00FFBB', neg:'#ff3b5c', tradeRowBg:'rgba(255,255,255,0.03)', tradeRowBorder:'rgba(255,255,255,0.06)', footerBorder:'rgba(255,255,255,0.06)' },
-    light: { bg:'linear-gradient(150deg,#ffffff 0%,#f8fafc 45%,#f1f5f9 100%)', border:'rgba(99,102,241,0.18)', statBg:'rgba(99,102,241,0.05)', statBorder:'rgba(99,102,241,0.10)', text:'#0f172a', muted:'#94a3b8', glow1:'rgba(99,102,241,0.12)', glow2:'rgba(99,102,241,0.07)', glow3:'rgba(99,102,241,0.03)', pos:'#059669', neg:'#dc2626', tradeRowBg:'rgba(0,0,0,0.03)',   tradeRowBorder:'rgba(0,0,0,0.07)',   footerBorder:'rgba(0,0,0,0.08)' },
+    dark: {
+      bg:            'linear-gradient(145deg,#060910 0%,#0b0f1c 40%,#0a0e1a 70%,#060910 100%)',
+      cardBorder:    'rgba(139,92,246,0.25)',
+      text:          '#f1f5f9',
+      subText:       'rgba(241,245,249,0.5)',
+      pos:           '#00FFB2',
+      neg:           '#FF3B5C',
+      posGlow:       'rgba(0,255,178,0.35)',
+      negGlow:       'rgba(255,59,92,0.35)',
+      glow1:         'rgba(99,102,241,0.28)',
+      glow2:         'rgba(139,92,246,0.18)',
+      glow3:         'rgba(0,255,178,0.06)',
+      statBg:        'rgba(255,255,255,0.045)',
+      statBorder:    'rgba(255,255,255,0.075)',
+      tradeRowBg:    'rgba(255,255,255,0.04)',
+      tradeRowBorder:'rgba(255,255,255,0.08)',
+      footerBorder:  'rgba(255,255,255,0.07)',
+      barTrack:      'rgba(255,255,255,0.08)',
+    },
+    gray: {
+      bg:            'linear-gradient(145deg,#13151e 0%,#191c28 40%,#16192400 70%,#13151e 100%)',
+      cardBorder:    'rgba(139,92,246,0.2)',
+      text:          '#e8eaf2',
+      subText:       'rgba(232,234,242,0.5)',
+      pos:           '#00FFB2',
+      neg:           '#FF3B5C',
+      posGlow:       'rgba(0,255,178,0.3)',
+      negGlow:       'rgba(255,59,92,0.3)',
+      glow1:         'rgba(99,102,241,0.22)',
+      glow2:         'rgba(139,92,246,0.14)',
+      glow3:         'rgba(0,255,178,0.05)',
+      statBg:        'rgba(255,255,255,0.05)',
+      statBorder:    'rgba(255,255,255,0.08)',
+      tradeRowBg:    'rgba(255,255,255,0.045)',
+      tradeRowBorder:'rgba(255,255,255,0.09)',
+      footerBorder:  'rgba(255,255,255,0.08)',
+      barTrack:      'rgba(255,255,255,0.09)',
+    },
+    black: {
+      bg:            'linear-gradient(145deg,#000000 0%,#050507 40%,#030305 70%,#000000 100%)',
+      cardBorder:    'rgba(139,92,246,0.18)',
+      text:          '#f0f0f5',
+      subText:       'rgba(240,240,245,0.45)',
+      pos:           '#00FFB2',
+      neg:           '#FF3B5C',
+      posGlow:       'rgba(0,255,178,0.3)',
+      negGlow:       'rgba(255,59,92,0.3)',
+      glow1:         'rgba(99,102,241,0.2)',
+      glow2:         'rgba(139,92,246,0.12)',
+      glow3:         'rgba(0,255,178,0.05)',
+      statBg:        'rgba(255,255,255,0.032)',
+      statBorder:    'rgba(255,255,255,0.055)',
+      tradeRowBg:    'rgba(255,255,255,0.03)',
+      tradeRowBorder:'rgba(255,255,255,0.06)',
+      footerBorder:  'rgba(255,255,255,0.055)',
+      barTrack:      'rgba(255,255,255,0.07)',
+    },
+    light: {
+      bg:            'linear-gradient(145deg,#fafbff 0%,#f4f6ff 40%,#eef1ff 70%,#fafbff 100%)',
+      cardBorder:    'rgba(99,102,241,0.2)',
+      text:          '#0f1020',
+      subText:       'rgba(15,16,32,0.5)',
+      pos:           '#059669',
+      neg:           '#dc2626',
+      posGlow:       'rgba(5,150,105,0.25)',
+      negGlow:       'rgba(220,38,38,0.25)',
+      glow1:         'rgba(99,102,241,0.14)',
+      glow2:         'rgba(139,92,246,0.1)',
+      glow3:         'rgba(99,102,241,0.06)',
+      statBg:        'rgba(99,102,241,0.06)',
+      statBorder:    'rgba(99,102,241,0.12)',
+      tradeRowBg:    'rgba(99,102,241,0.05)',
+      tradeRowBorder:'rgba(99,102,241,0.12)',
+      footerBorder:  'rgba(0,0,0,0.08)',
+      barTrack:      'rgba(0,0,0,0.08)',
+    },
   };
-  const p = palettes[theme] || palettes.dark;
-  const posCol = isPos ? p.pos : p.neg;
+  const p = palettes[theme];
+  const pnlColor = isPos ? p.pos : p.neg;
+  const pnlGlow  = isPos ? p.posGlow : p.negGlow;
 
+  // ── APPLY CARD STYLES ─────────────────────────────────────────────
   const card = document.getElementById('share-card');
-  card.style.cssText += `;background:${p.bg};border:1.5px solid ${p.border};color:${p.text};`;
+  card.style.cssText = `border-radius:28px;padding:0;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 40px 120px rgba(0,0,0,0.8);background:${p.bg};border:1.5px solid ${p.cardBorder};color:${p.text};`;
 
+  // Glows
   document.getElementById('share-glow-1').style.background = `radial-gradient(circle,${p.glow1},transparent 70%)`;
   document.getElementById('share-glow-2').style.background = `radial-gradient(circle,${p.glow2},transparent 70%)`;
   document.getElementById('share-glow-3').style.background = `radial-gradient(circle,${p.glow3},transparent 70%)`;
+
+  // Logo
   document.getElementById('share-logo-text').style.color = p.text;
-  document.getElementById('share-stats-strip').style.background = p.statBorder;
-  ['share-stat-1','share-stat-2','share-stat-3'].forEach(id => {
-    document.getElementById(id).style.background = p.statBg;
-  });
+
+  // Footer border
   document.getElementById('share-footer').style.borderTop = `1px solid ${p.footerBorder}`;
+  document.getElementById('share-footer-dot').style.background = pnlColor;
+  document.getElementById('share-footer-dot').style.boxShadow = `0 0 6px ${pnlColor}`;
 
-  const dateLabel = now.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-  document.getElementById('share-date-label').textContent = `Today · ${dateLabel}`;
+  // ── HEADER ────────────────────────────────────────────────────────
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateLabel = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  document.getElementById('share-date-label').textContent = dateLabel;
+  document.getElementById('share-date-label').style.color = p.subText;
   document.getElementById('share-trades-label').textContent = `${todayTrades.length} trade${todayTrades.length!==1?'s':''} · ${wins}W / ${losses}L`;
+  document.getElementById('share-trades-label').style.color = p.subText;
 
+  // ── P&L HERO ──────────────────────────────────────────────────────
+  document.getElementById('share-pnl-label').style.color = p.subText;
   const pnlEl = document.getElementById('share-pnl');
-  pnlEl.textContent = (isPos?'+':'-') + sym + Math.abs(pnl).toFixed(2);
-  pnlEl.style.color = posCol;
+  pnlEl.textContent = (isPos ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
+  pnlEl.style.color = pnlColor;
+  pnlEl.style.textShadow = `0 0 60px ${pnlGlow}, 0 0 120px ${pnlGlow}`;
 
-  // Accent bar under P&L
-  const barEl = document.getElementById('share-pnl-bar');
-  if (barEl) { barEl.style.background = posCol; barEl.style.boxShadow = `0 0 12px ${posCol}80`; }
+  // Win-rate progress bar
+  const barEl = document.getElementById('share-wr-bar');
+  const barWrap = document.getElementById('share-wr-bar-wrap');
+  if (barEl && barWrap) {
+    barWrap.style.background = p.barTrack;
+    barEl.style.width = (decided ? wr : 0) + '%';
+    barEl.style.background = `linear-gradient(90deg, ${pnlColor}, ${pnlColor}aa)`;
+    barEl.style.boxShadow = `0 0 10px ${pnlGlow}`;
+  }
+  const wrPctEl = document.getElementById('share-wr-pct');
+  if (wrPctEl) {
+    wrPctEl.textContent = decided ? `${wr}% WIN` : 'NO DATA';
+    wrPctEl.style.color = p.subText;
+  }
 
-  document.getElementById('share-wr').textContent   = todayTrades.length || '0';
-  document.getElementById('share-best').textContent = todayTrades.length ? (best>=0?'+':'-')+sym+Math.abs(best).toFixed(2) : '—';
-  document.getElementById('share-best').style.color = best>=0 ? p.pos : p.neg;
-  document.getElementById('share-winrate').textContent = decided ? wr + '%' : '—';
-  document.getElementById('share-winrate').style.color = decided ? (wr >= 50 ? p.pos : p.neg) : p.muted;
+  // ── STAT CARDS ────────────────────────────────────────────────────
+  ['share-stat-1','share-stat-2','share-stat-3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.background = p.statBg;
+      el.style.border = `1px solid ${p.statBorder}`;
+    }
+  });
 
+  // Trades count
+  document.getElementById('share-wr').textContent = todayTrades.length || '0';
+  document.getElementById('share-wr').style.color = p.text;
+  document.getElementById('share-wl').textContent = `${wins}W · ${losses}L`;
+  document.getElementById('share-wl').style.color = p.subText;
+
+  // Best trade
+  const bestEl = document.getElementById('share-best');
+  const bestSymEl = document.getElementById('share-best-sym');
+  if (bestTrade) {
+    bestEl.textContent = (best >= 0 ? '+' : '-') + sym + Math.abs(best).toFixed(2);
+    bestEl.style.color = best >= 0 ? p.pos : p.neg;
+    bestEl.style.textShadow = `0 0 20px ${best >= 0 ? p.posGlow : p.negGlow}`;
+    bestSymEl.textContent = bestTrade.symbol || '—';
+  } else {
+    bestEl.textContent = '—';
+    bestEl.style.color = p.text;
+    bestSymEl.textContent = '—';
+  }
+  bestSymEl.style.color = p.subText;
+
+  // Win rate
+  const wrEl = document.getElementById('share-winrate');
+  const wrSubEl = document.getElementById('share-winrate-sub');
+  wrEl.textContent = decided ? wr + '%' : '—';
+  wrEl.style.color = decided ? (wr >= 50 ? p.pos : p.neg) : p.text;
+  if (decided) wrEl.style.textShadow = `0 0 20px ${wr >= 50 ? p.posGlow : p.negGlow}`;
+  wrSubEl.textContent = decided ? `${decided} decided` : 'no data';
+  wrSubEl.style.color = p.subText;
+
+  // ── TRADE LIST ────────────────────────────────────────────────────
   const listEl = document.getElementById('share-trade-list');
-  listEl.innerHTML = todayTrades.slice(0,5).map(t => {
-    const tp = getPnl(t);
-    const col = tp>=0 ? p.pos : p.neg;
-    const dirBg = t.dir==='BUY' ? p.pos+'1a' : p.neg+'1a';
-    const dirCol = t.dir==='BUY' ? p.pos : p.neg;
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:${p.tradeRowBg};border-radius:10px;border:1px solid ${p.tradeRowBorder};">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:13px;font-weight:800;color:${p.text};">${t.symbol||'—'}</span>
-        <span style="font-size:9px;font-weight:800;padding:3px 8px;border-radius:5px;background:${dirBg};color:${dirCol};letter-spacing:0.5px;">${t.dir||''}</span>
-      </div>
-      <span style="font-size:14px;font-weight:800;color:${col};">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
-    </div>`;
-  }).join('');
-  if (todayTrades.length > 5)
-    listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.muted};padding:6px;font-weight:600;">+${todayTrades.length-5} more trades</div>`;
+  if (todayTrades.length === 0) {
+    listEl.innerHTML = `<div style="text-align:center;padding:18px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">No trades yet today</div>`;
+  } else {
+    listEl.innerHTML = todayTrades.slice(0,5).map((t,i) => {
+      const tp   = getPnl(t);
+      const col  = tp >= 0 ? p.pos : p.neg;
+      const glow = tp >= 0 ? p.posGlow : p.negGlow;
+      const dirBg  = t.dir === 'BUY' ? p.pos + '18' : p.neg + '18';
+      const dirCol = t.dir === 'BUY' ? p.pos : p.neg;
+      const res = getResult(t);
+      const resDot = res === 'win' ? p.pos : res === 'loss' ? p.neg : '#f59e0b';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:${p.tradeRowBg};border-radius:12px;border:1px solid ${p.tradeRowBorder};">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:${resDot};box-shadow:0 0 6px ${resDot};flex-shrink:0;"></div>
+          <span style="font-size:13px;font-weight:800;color:${p.text};letter-spacing:-0.3px;">${t.symbol || '—'}</span>
+          <span style="font-size:9px;font-weight:800;padding:3px 8px;border-radius:6px;background:${dirBg};color:${dirCol};letter-spacing:1px;">${t.dir || ''}</span>
+        </div>
+        <span style="font-size:14px;font-weight:900;color:${col};text-shadow:0 0 16px ${glow};letter-spacing:-0.5px;">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
+      </div>`;
+    }).join('');
+    if (todayTrades.length > 5) {
+      listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.subText};padding:6px 0;font-weight:700;letter-spacing:1px;">+ ${todayTrades.length - 5} MORE TRADES</div>`;
+    }
+  }
 
-  // Invalidate cache so fresh render at new size
   _invalidateShareCache();
-
   document.getElementById('share-modal').style.display = 'flex';
 }
 
