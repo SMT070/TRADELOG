@@ -831,9 +831,9 @@
   .cal-cell:not(.empty):hover { background: var(--surface2); }
   .cal-cell.selected-day { outline: 2px solid var(--accent) !important; outline-offset: -2px; border-radius: 10px; }
   .cal-cell.weekend-cell { /* opacity handled inline */ }
-  .cal-cell.today { outline: none; background: transparent; }
-  .cal-cell.today .cal-day-num { background: var(--accent); color: #fff; font-weight: 900; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin: 2px auto 0; }
-  .cal-cell.today .cal-pnl, .cal-cell.today .cal-trades { color: var(--muted) !important; }
+  .cal-cell.today { outline: none; background: var(--accent) !important; border-radius: 10px; }
+  .cal-cell.today .cal-day-num { color: #fff; font-weight: 900; }
+  .cal-cell.today .cal-pnl, .cal-cell.today .cal-trades { color: rgba(255,255,255,0.85) !important; }
   .cal-cell.has-win  { background: rgba(0,255,187,0.14); box-shadow: inset 0 2px 0 rgba(0,255,187,0.45); }
   .cal-cell.has-loss { background: rgba(255,59,92,0.14); box-shadow: inset 0 2px 0 rgba(255,59,92,0.45); }
   .cal-cell.has-win:hover  { background: rgba(0,255,187,0.22); }
@@ -3861,14 +3861,6 @@ window.switchPage = function(name) {
 <div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(12px);">
   <div style="width:520px;max-width:96vw;">
 
-    <!-- PERIOD SELECTOR -->
-    <div id="share-period-selector" style="display:flex;background:rgba(255,255,255,0.06);padding:4px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);margin-bottom:16px;backdrop-filter:blur(10px);">
-      <button onclick="openShareModal('today')" id="share-period-today" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">Today</button>
-      <button onclick="openShareModal('week')" id="share-period-week" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">Week</button>
-      <button onclick="openShareModal('month')" id="share-period-month" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">Month</button>
-      <button onclick="openShareModal('all')" id="share-period-all" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">All Time</button>
-    </div>
-
     <!-- ═══════════════════════════════════════════════════ -->
     <!-- SHARE CARD — canvas capture target                  -->
     <!-- ═══════════════════════════════════════════════════ -->
@@ -4778,8 +4770,7 @@ async function loadAllFromSupabase() {
         dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
         pnl: r.pnl, commission: r.commission, swap: r.swap || 0, netPnl: r.net_pnl, r: r.r,
         result: r.result, emotion: r.emotion, confidence: r.confidence,
-        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || [],
-        packId: r.pack_id, packName: r.pack_name
+        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
     }
@@ -4873,8 +4864,7 @@ async function saveTradeToSupabase(t) {
     exit: t.exit, sl: t.sl, tp: t.tp, pnl: t.pnl, commission: t.commission,
     swap: t.swap || 0, net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
     confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
-    strategies: t.strategies || [],
-    pack_id: t.packId || null, pack_name: t.packName || null
+    strategies: t.strategies || []
   };
   const { error } = await sb.from('trades').upsert(row);
   if (error) { console.error('TradeLog: upsert error', error); throw error; }
@@ -5662,29 +5652,12 @@ function saveTradePhoto(file, id) {
   r.onload = async e => {
     const idx = trades.findIndex(t => t.id === id);
     if (idx === -1) return;
-    
-    const screenshotData = e.target.result;
-    trades[idx].screenshot = screenshotData;
-    
-    // Auto-save locally
+    trades[idx].screenshot = e.target.result;
     save();
-    
-    // Refresh UI
     showTradeDetail(id);
-    if (document.getElementById('trade-detail-overlay').style.display === 'flex') {
-      openDetailOverlay();
-    }
-    
-    toast('Photo saved & syncing...', 'success');
-    
-    // Reliable auto-save to Supabase
-    try { 
-      await guaranteedSaveToSupabase(trades[idx]);
-      toast('✓ Photo synced', 'success');
-    } catch(err) { 
-      console.error('TradeLog: photo sync failed', err);
-      toast('⚠️ Saved locally - sync failed', 'error');
-    }
+    if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
+    toast('Photo saved', 'success');
+    try { await guaranteedSaveToSupabase(trades[idx]); } catch(err) { console.error('TradeLog: photo sync failed', err); }
   };
   r.readAsDataURL(file);
 }
@@ -5751,16 +5724,6 @@ async function saveTrade() {
   const swap = parseFloat((document.getElementById('f-swap') || {}).value) || 0;
   const netPnl = pnl - commission + swap;
   const editId = document.getElementById('edit-id').value;
-  let existingPackId = null;
-  let existingPackName = null;
-  if (editId) {
-    const old = trades.find(t => t.id === editId);
-    if (old) {
-      existingPackId = old.packId;
-      existingPackName = old.packName;
-    }
-  }
-
   const trade = {
     id: editId || uid(),
     symbol: sym,
@@ -5780,8 +5743,6 @@ async function saveTrade() {
     confidence: parseInt(document.getElementById('f-confidence').value) || 0,
     notes: document.getElementById('f-notes').value.trim(),
     screenshot: editingScreenshot || null,
-    packId: existingPackId,
-    packName: existingPackName
   };
   trade.result = netPnl === 0 ? 'be' : (selectedResult ? selectedResult : (netPnl > 0 ? 'win' : 'loss'));
   if (editId) {
@@ -10149,27 +10110,22 @@ document.addEventListener('keydown', e => {
 
 // Global paste → attach photo to selected trade
 document.addEventListener('paste', e => {
-  // Allow normal paste in text inputs/textareas unless it's an image
-  const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+  // Allow normal paste in text inputs/textareas
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   const items = e.clipboardData && e.clipboardData.items;
   if (!items) return;
-
   // Find image item
   let imgItem = null;
   for (const item of items) {
     if (item.type.startsWith('image/')) { imgItem = item; break; }
   }
-
-  // If we have an image, handle it even in inputs (traders often paste screenshots while typing notes)
-  if (imgItem) {
-    // Determine target trade id: check photo zone data-id, then selectedId
-    const photoZone = e.target.closest('[data-photo-id]');
-    const targetId = (photoZone && photoZone.dataset.photoId) || selectedId;
-    if (targetId) {
-      e.preventDefault();
-      saveTradePhoto(imgItem.getAsFile(), targetId);
-    }
-  }
+  if (!imgItem) return;
+  // Determine target trade id: check photo zone data-id, then selectedId
+  const photoZone = e.target.closest('[data-photo-id]');
+  const targetId = (photoZone && photoZone.dataset.photoId) || selectedId;
+  if (!targetId) return;
+  e.preventDefault();
+  saveTradePhoto(imgItem.getAsFile(), targetId);
 });
 
 // ── EMPTY STATE ───────────────────────────────────────────────────────────────
@@ -11048,55 +11004,12 @@ function jumpToDateTrades(dateStr) {
 }
 
 // ── SHARE ─────────────────────────────────────────────────────────────────────
-function openShareModal(period = 'today') {
+function openShareModal() {
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   const sym = getCurrencySymbol();
-
-  let todayTrades = [];
-  let periodTitle = "TODAY";
-  let periodSub = "";
-
-  if (period === 'today') {
-    todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
-    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    periodSub = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-    periodTitle = "TODAY";
-  } else if (period === 'week') {
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay()); 
-    startOfWeek.setHours(0,0,0,0);
-    todayTrades = trades.filter(t => new Date(t.date) >= startOfWeek);
-    periodTitle = "THIS WEEK";
-    periodSub = "Weekly Performance";
-  } else if (period === 'month') {
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    todayTrades = trades.filter(t => new Date(t.date) >= startOfMonth);
-    const monthsList = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    periodTitle = "THIS MONTH";
-    periodSub = `${monthsList[now.getMonth()]} ${now.getFullYear()}`;
-  } else if (period === 'all') {
-    todayTrades = [...trades];
-    periodTitle = "ALL TIME";
-    periodSub = "Lifetime Overview";
-  }
-
-  // Update Selector UI
-  ['today','week','month','all'].forEach(p => {
-    const btn = document.getElementById('share-period-' + p);
-    if (btn) {
-      if (p === period) {
-        btn.style.background = 'rgba(255,255,255,0.12)';
-        btn.style.color = '#fff';
-      } else {
-        btn.style.background = 'transparent';
-        btn.style.color = 'rgba(255,255,255,0.4)';
-      }
-    }
-  });
-
+  const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
   const pnl    = todayTrades.reduce((s,t) => s + getPnl(t), 0);
   const wins   = todayTrades.filter(t => getResult(t) === 'win').length;
   const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
@@ -11212,13 +11125,15 @@ function openShareModal(period = 'today') {
   document.getElementById('share-footer-dot').style.boxShadow = `0 0 6px ${pnlColor}`;
 
   // ── HEADER ────────────────────────────────────────────────────────
-  document.getElementById('share-date-label').textContent = periodSub;
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateLabel = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  document.getElementById('share-date-label').textContent = dateLabel;
   document.getElementById('share-date-label').style.color = p.subText;
   document.getElementById('share-trades-label').textContent = `${todayTrades.length} trade${todayTrades.length!==1?'s':''} · ${wins}W / ${losses}L`;
   document.getElementById('share-trades-label').style.color = p.subText;
 
   // ── P&L HERO ──────────────────────────────────────────────────────
-  document.getElementById('share-pnl-label').textContent = periodTitle + "'S P&L";
   document.getElementById('share-pnl-label').style.color = p.subText;
   const pnlEl = document.getElementById('share-pnl');
   pnlEl.textContent = (isPos ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
@@ -11282,7 +11197,7 @@ function openShareModal(period = 'today') {
   // ── TRADE LIST ────────────────────────────────────────────────────
   const listEl = document.getElementById('share-trade-list');
   if (todayTrades.length === 0) {
-    listEl.innerHTML = `<div style="text-align:center;padding:18px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">No trades found for this period</div>`;
+    listEl.innerHTML = `<div style="text-align:center;padding:18px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">No trades yet today</div>`;
   } else {
     listEl.innerHTML = todayTrades.slice(0,5).map((t,i) => {
       const tp   = getPnl(t);
@@ -12914,27 +12829,6 @@ async function confirmCreatePack() {
     document.getElementById('pack-name-input').focus();
     return;
   }
-
-  // ── RENAME MODE ──
-  if (window._packRenameId) {
-    const pid = window._packRenameId;
-    const updated = [];
-    trades.forEach(t => {
-      if (t.packId === pid) {
-        t.packName = name;
-        updated.push(t);
-      }
-    });
-    window._packRenameId = null;
-    save();
-    invalidateStatCache();
-    closePackNameModal();
-    renderTrades();
-    toast(`✓ Pack renamed to "${name}"`, 'success');
-    try { await Promise.all(updated.map(t => guaranteedSaveToSupabase(t))); } catch(e) {}
-    return;
-  }
-
   const packId = uid();
   // If coming from "Save Pack" on an auto-pack, use those ids; otherwise use manual selection
   const ids = (window._pendingAutoPackIds && window._pendingAutoPackIds.length)
