@@ -540,8 +540,16 @@
     white-space:pre-wrap; word-break:break-word;
   }
 
-  /* ── BUTTONS ── */
-  .btn {
+  .share-tf-btn {
+    flex: 1; padding: 8px 6px; border-radius: 10px; border: none;
+    background: none; color: rgba(255,255,255,0.4); font-size: 11px;
+    font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif;
+    cursor: pointer; transition: all .15s; letter-spacing: .3px;
+  }
+  .share-tf-btn:hover { color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.06); }
+  .share-tf-btn.share-tf-active { background: rgba(99,102,241,0.25); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.4); }
+
+
     padding: 10px 22px;
     border-radius: var(--r-sm);
     font-size: 12px;
@@ -3861,12 +3869,12 @@ window.switchPage = function(name) {
 <div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(12px);">
   <div style="width:520px;max-width:96vw;">
 
-    <!-- PERIOD SELECTOR -->
-    <div id="share-period-selector" style="display:flex;background:rgba(255,255,255,0.06);padding:4px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);margin-bottom:16px;backdrop-filter:blur(10px);">
-      <button onclick="openShareModal('today')" id="share-period-today" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">Today</button>
-      <button onclick="openShareModal('week')" id="share-period-week" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">Week</button>
-      <button onclick="openShareModal('month')" id="share-period-month" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">Month</button>
-      <button onclick="openShareModal('all')" id="share-period-all" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">All Time</button>
+    <!-- TIMEFRAME SWITCHER -->
+    <div style="display:flex;gap:5px;margin-bottom:11px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:13px;padding:4px;">
+      <button onclick="switchShareTf('today')"  id="share-tf-today"  style="flex:1;padding:8px 6px;border-radius:9px;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.3px;transition:all .15s;background:rgba(99,102,241,0.9);color:#fff;">Today</button>
+      <button onclick="switchShareTf('week')"   id="share-tf-week"   style="flex:1;padding:8px 6px;border-radius:9px;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.3px;transition:all .15s;background:transparent;color:rgba(255,255,255,0.45);">This Week</button>
+      <button onclick="switchShareTf('month')"  id="share-tf-month"  style="flex:1;padding:8px 6px;border-radius:9px;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.3px;transition:all .15s;background:transparent;color:rgba(255,255,255,0.45);">This Month</button>
+      <button onclick="switchShareTf('all')"    id="share-tf-all"    style="flex:1;padding:8px 6px;border-radius:9px;border:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.3px;transition:all .15s;background:transparent;color:rgba(255,255,255,0.45);">All Time</button>
     </div>
 
     <!-- ═══════════════════════════════════════════════════ -->
@@ -5639,8 +5647,10 @@ function previewScreenshot(ev) {
   const file = ev.target.files[0];
   if (!file) return;
   const r = new FileReader();
-  r.onload = e => {
-    editingScreenshot = e.target.result;
+  r.onload = async e => {
+    let dataUrl = e.target.result;
+    try { dataUrl = await compressImage(dataUrl, 1280, 1280, 0.82); } catch(ce) {}
+    editingScreenshot = dataUrl;
     document.getElementById('screenshot-preview').src = editingScreenshot;
     document.getElementById('screenshot-preview').style.display = 'block';
     document.getElementById('screenshot-placeholder').style.display = 'none';
@@ -5654,13 +5664,37 @@ function uploadTradePhoto(ev, id) {
   saveTradePhoto(file, id);
 }
 
+function compressImage(dataUrl, maxWidth, maxHeight, quality) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxWidth || h > maxHeight) {
+        const ratio = Math.min(maxWidth / w, maxHeight / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
 function saveTradePhoto(file, id) {
   if (!file || !file.type.startsWith('image/')) return;
   const r = new FileReader();
   r.onload = async e => {
     const idx = trades.findIndex(t => t.id === id);
     if (idx === -1) return;
-    trades[idx].screenshot = e.target.result;
+    // Compress to max 1280×1280 at 82% JPEG quality — keeps file size ~150–300 KB
+    // so the base64 string stays well under Supabase's row/column size limits.
+    let dataUrl = e.target.result;
+    try { dataUrl = await compressImage(dataUrl, 1280, 1280, 0.82); } catch(ce) { console.warn('TradeLog: compression failed, using original', ce); }
+    trades[idx].screenshot = dataUrl;
     save();
     showTradeDetail(id);
     if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
@@ -7319,23 +7353,25 @@ function showTradeDetail(id) {
           </div>
         </div>
         <input type="file" id="detail-photo-input" accept="image/*" style="display:none;" onchange="uploadTradePhoto(event,'${t.id}')">
-        ${t.screenshot
-          ? `<div style="cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPhotoLightbox('${t.id}')">
-               <img src="${t.screenshot}" alt="chart" style="width:100%;display:block;border-radius:10px;">
-               <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
-             </div>`
-          : `<div tabindex="0" data-photo-id="${t.id}"
-               onclick="document.getElementById('detail-photo-input').click()"
-               onpaste="handlePhotoZonePaste(event,'${t.id}')"
-               ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-               ondragleave="this.style.borderColor='var(--border2)'"
-               ondrop="handlePhotoZoneDrop(event,'${t.id}')"
-               style="border:2px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;outline:none;"
-               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
-               <div style="font-size:24px;margin-bottom:6px;">📸</div>
-               <div style="font-size:12px;color:var(--muted);">Click, drag & drop, or paste a screenshot</div>
-             </div>`
-        }
+        <div tabindex="0" data-photo-id="${t.id}"
+             onpaste="handlePhotoZonePaste(event,'${t.id}')"
+             ondragover="event.preventDefault();this.style.outline='2px dashed var(--accent)'"
+             ondragleave="this.style.outline=''"
+             ondrop="handlePhotoZoneDrop(event,'${t.id}');this.style.outline=''"
+             style="outline:none;border-radius:10px;position:relative;">
+          ${t.screenshot
+            ? `<div style="cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPhotoLightbox('${t.id}')">
+                 <img src="${t.screenshot}" alt="chart" style="width:100%;display:block;border-radius:10px;">
+                 <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand · Paste to replace</div>
+               </div>`
+            : `<div onclick="document.getElementById('detail-photo-input').click()"
+                    style="border:2px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;"
+                    onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
+                 <div style="font-size:24px;margin-bottom:6px;">📸</div>
+                 <div style="font-size:12px;color:var(--muted);">Click, drag &amp; drop, or paste a screenshot</div>
+               </div>`
+          }
+        </div>
       </div>
 
     </div>
@@ -7401,7 +7437,12 @@ function openDetailOverlay() {
     <div style="display:grid;grid-template-columns:1fr 380px;height:100%;overflow:hidden;">
 
       <!-- LEFT: Photo -->
-      <div style="background:var(--surface2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--border);">
+      <div tabindex="0" data-photo-id="${t.id}"
+           onpaste="handlePhotoZonePaste(event,'${t.id}')"
+           ondragover="event.preventDefault();this.style.outline='2px dashed var(--accent)'"
+           ondragleave="this.style.outline=''"
+           ondrop="handlePhotoZoneDrop(event,'${t.id}');this.style.outline=''"
+           style="background:var(--surface2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--border);outline:none;">
         ${t.screenshot
           ? `<img src="${t.screenshot}" alt="chart"
                style="width:100%;height:100%;object-fit:contain;display:block;cursor:zoom-in;"
@@ -7409,14 +7450,10 @@ function openDetailOverlay() {
              <div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;">
                <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px;backdrop-filter:blur(8px);background:rgba(0,0,0,.5);border-color:rgba(255,255,255,.2);color:#fff;" onclick="event.stopPropagation();document.getElementById('overlay-photo-input').click()">&#x21BA; Replace</button>
                <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px;backdrop-filter:blur(8px);background:rgba(0,0,0,.5);border-color:rgba(255,255,255,.2);color:#ff6b6b;" onclick="event.stopPropagation();removeTradePhoto('${t.id}')">&#x2715;</button>
-             </div>`
-          : `<div tabindex="0" data-photo-id="${t.id}"
-               onclick="document.getElementById('overlay-photo-input').click()"
-               onpaste="handlePhotoZonePaste(event,'${t.id}')"
-               ondragover="event.preventDefault();this.style.background='var(--surface3)'"
-               ondragleave="this.style.background='transparent'"
-               ondrop="handlePhotoZoneDrop(event,'${t.id}')"
-               style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;outline:none;gap:12px;">
+             </div>
+             <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.4);pointer-events:none;">Paste to replace</div>`
+          : `<div onclick="document.getElementById('overlay-photo-input').click()"
+               style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:12px;">
                <div style="font-size:44px;opacity:0.25;">&#128247;</div>
                <div style="font-size:13px;color:var(--muted);">Click, drag &amp; drop, or paste a screenshot</div>
              </div>`
@@ -11012,63 +11049,85 @@ function jumpToDateTrades(dateStr) {
 }
 
 // ── SHARE ─────────────────────────────────────────────────────────────────────
-function openShareModal(period = 'today') {
+let _shareTf = 'today'; // tracks current timeframe
+
+function switchShareTf(tf) {
+  _shareTf = tf;
+  // Update pill styles — buttons use inline styles
+  ['today','week','month','all'].forEach(k => {
+    const btn = document.getElementById('share-tf-' + k);
+    if (!btn) return;
+    const active = k === tf;
+    btn.style.background = active ? 'rgba(99,102,241,0.9)' : 'transparent';
+    btn.style.color      = active ? '#fff' : 'rgba(255,255,255,0.45)';
+  });
+  _invalidateShareCache();
+  _renderShareCard(tf);
+}
+
+function _getShareTrades(tf) {
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-  const sym = getCurrencySymbol();
 
-  let todayTrades = [];
-  let periodTitle = "TODAY";
-  let periodSub = "";
-
-  if (period === 'today') {
-    todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
-    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    periodSub = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-    periodTitle = "TODAY";
-  } else if (period === 'week') {
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay()); 
-    startOfWeek.setHours(0,0,0,0);
-    todayTrades = trades.filter(t => new Date(t.date) >= startOfWeek);
-    periodTitle = "THIS WEEK";
-    periodSub = "Weekly Performance";
-  } else if (period === 'month') {
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    todayTrades = trades.filter(t => new Date(t.date) >= startOfMonth);
-    const monthsList = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    periodTitle = "THIS MONTH";
-    periodSub = `${monthsList[now.getMonth()]} ${now.getFullYear()}`;
-  } else if (period === 'all') {
-    todayTrades = [...trades];
-    periodTitle = "ALL TIME";
-    periodSub = "Lifetime Overview";
+  if (tf === 'today') {
+    return trades.filter(t => (t.date||'').slice(0,10) === todayStr);
   }
+  if (tf === 'week') {
+    // Monday-based week
+    const dow = now.getDay() === 0 ? 6 : now.getDay() - 1;
+    const weekStart = new Date(now); weekStart.setDate(now.getDate() - dow); weekStart.setHours(0,0,0,0);
+    return trades.filter(t => { const d = new Date((t.date||'').slice(0,10)); return d >= weekStart; });
+  }
+  if (tf === 'month') {
+    const mStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+    return trades.filter(t => (t.date||'').slice(0,7) === mStr);
+  }
+  return [...trades]; // all
+}
 
-  // Update Selector UI
-  ['today','week','month','all'].forEach(p => {
-    const btn = document.getElementById('share-period-' + p);
-    if (btn) {
-      if (p === period) {
-        btn.style.background = 'rgba(255,255,255,0.12)';
-        btn.style.color = '#fff';
-      } else {
-        btn.style.background = 'transparent';
-        btn.style.color = 'rgba(255,255,255,0.4)';
-      }
-    }
+function _getShareLabel(tf) {
+  const now = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  if (tf === 'today')  return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  if (tf === 'week')   return `Week of ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  if (tf === 'month')  return `${months[now.getMonth()]} ${now.getFullYear()}`;
+  return 'All Time';
+}
+
+function _getPnlLabel(tf) {
+  if (tf === 'today')  return "TODAY'S P&L";
+  if (tf === 'week')   return "WEEK'S P&L";
+  if (tf === 'month')  return "MONTH'S P&L";
+  return 'ALL TIME P&L';
+}
+
+function openShareModal() {
+  _shareTf = 'today';
+  // Reset pill styles
+  ['today','week','month','all'].forEach(k => {
+    const btn = document.getElementById('share-tf-' + k);
+    if (!btn) return;
+    btn.style.background = k === 'today' ? 'rgba(99,102,241,0.9)' : 'transparent';
+    btn.style.color      = k === 'today' ? '#fff' : 'rgba(255,255,255,0.45)';
   });
+  _renderShareCard('today');
+  document.getElementById('share-modal').style.display = 'flex';
+}
 
-  const pnl    = todayTrades.reduce((s,t) => s + getPnl(t), 0);
-  const wins   = todayTrades.filter(t => getResult(t) === 'win').length;
-  const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
+function _renderShareCard(tf) {
+  const now = new Date();
+  const sym = getCurrencySymbol();
+  const tfTrades = _getShareTrades(tf);
+  const pnl    = tfTrades.reduce((s,t) => s + getPnl(t), 0);
+  const wins   = tfTrades.filter(t => getResult(t) === 'win').length;
+  const losses = tfTrades.filter(t => getResult(t) === 'loss').length;
   const decided = wins + losses;
   const wr     = decided ? Math.round(wins / decided * 100) : 0;
   const isPos  = pnl >= 0;
-  const bestTrade = todayTrades.length
-    ? todayTrades.reduce((b,t) => getPnl(t) > getPnl(b) ? t : b, todayTrades[0])
+  const bestTrade = tfTrades.length
+    ? tfTrades.reduce((b,t) => getPnl(t) > getPnl(b) ? t : b, tfTrades[0])
     : null;
   const best = bestTrade ? getPnl(bestTrade) : 0;
 
@@ -11176,13 +11235,13 @@ function openShareModal(period = 'today') {
   document.getElementById('share-footer-dot').style.boxShadow = `0 0 6px ${pnlColor}`;
 
   // ── HEADER ────────────────────────────────────────────────────────
-  document.getElementById('share-date-label').textContent = periodSub;
+  document.getElementById('share-date-label').textContent = _getShareLabel(tf);
   document.getElementById('share-date-label').style.color = p.subText;
-  document.getElementById('share-trades-label').textContent = `${todayTrades.length} trade${todayTrades.length!==1?'s':''} · ${wins}W / ${losses}L`;
+  document.getElementById('share-trades-label').textContent = `${tfTrades.length} trade${tfTrades.length!==1?'s':''} · ${wins}W / ${losses}L`;
   document.getElementById('share-trades-label').style.color = p.subText;
 
   // ── P&L HERO ──────────────────────────────────────────────────────
-  document.getElementById('share-pnl-label').textContent = periodTitle + "'S P&L";
+  document.getElementById('share-pnl-label').textContent = _getPnlLabel(tf);
   document.getElementById('share-pnl-label').style.color = p.subText;
   const pnlEl = document.getElementById('share-pnl');
   pnlEl.textContent = (isPos ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
@@ -11214,7 +11273,7 @@ function openShareModal(period = 'today') {
   });
 
   // Trades count
-  document.getElementById('share-wr').textContent = todayTrades.length || '0';
+  document.getElementById('share-wr').textContent = tfTrades.length || '0';
   document.getElementById('share-wr').style.color = p.text;
   document.getElementById('share-wl').textContent = `${wins}W · ${losses}L`;
   document.getElementById('share-wl').style.color = p.subText;
@@ -11245,10 +11304,11 @@ function openShareModal(period = 'today') {
 
   // ── TRADE LIST ────────────────────────────────────────────────────
   const listEl = document.getElementById('share-trade-list');
-  if (todayTrades.length === 0) {
-    listEl.innerHTML = `<div style="text-align:center;padding:18px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">No trades found for this period</div>`;
+  const noTradesMsg = tf === 'today' ? 'No trades yet today' : tf === 'week' ? 'No trades this week' : tf === 'month' ? 'No trades this month' : 'No trades recorded';
+  if (tfTrades.length === 0) {
+    listEl.innerHTML = `<div style="text-align:center;padding:18px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">${noTradesMsg}</div>`;
   } else {
-    listEl.innerHTML = todayTrades.slice(0,5).map((t,i) => {
+    listEl.innerHTML = tfTrades.slice(0,5).map((t,i) => {
       const tp   = getPnl(t);
       const col  = tp >= 0 ? p.pos : p.neg;
       const glow = tp >= 0 ? p.posGlow : p.negGlow;
@@ -11265,13 +11325,12 @@ function openShareModal(period = 'today') {
         <span style="font-size:14px;font-weight:900;color:${col};text-shadow:0 0 16px ${glow};letter-spacing:-0.5px;">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
       </div>`;
     }).join('');
-    if (todayTrades.length > 5) {
-      listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.subText};padding:6px 0;font-weight:700;letter-spacing:1px;">+ ${todayTrades.length - 5} MORE TRADES</div>`;
+    if (tfTrades.length > 5) {
+      listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.subText};padding:6px 0;font-weight:700;letter-spacing:1px;">+ ${tfTrades.length - 5} MORE TRADES</div>`;
     }
   }
 
   _invalidateShareCache();
-  document.getElementById('share-modal').style.display = 'flex';
 }
 
 function closeShareModal() {
@@ -11281,16 +11340,14 @@ function closeShareModal() {
 }
 
 function buildShareText() {
-  const now = new Date();
-  const pad = n => String(n).padStart(2,'0');
-  const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   const sym = getCurrencySymbol();
-  const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
-  const pnl    = todayTrades.reduce((s,t) => s + getPnl(t), 0);
-  const wins   = todayTrades.filter(t => getResult(t) === 'win').length;
-  const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
-  const wr     = todayTrades.length ? Math.round(wins/todayTrades.length*100) : 0;
-  return `📊 Today's Trading Summary\n\nP&L: ${(pnl>=0?'+':'-')+sym+Math.abs(pnl).toFixed(2)}\nWin Rate: ${wr}% (${wins}W / ${losses}L)\nTrades: ${todayTrades.length}\n\nTracked with TradeLog 📈`;
+  const tfTrades = _getShareTrades(_shareTf);
+  const pnl    = tfTrades.reduce((s,t) => s + getPnl(t), 0);
+  const wins   = tfTrades.filter(t => getResult(t) === 'win').length;
+  const losses = tfTrades.filter(t => getResult(t) === 'loss').length;
+  const wr     = tfTrades.length ? Math.round(wins/tfTrades.length*100) : 0;
+  const label  = _shareTf === 'today' ? "Today's" : _shareTf === 'week' ? "This Week's" : _shareTf === 'month' ? "This Month's" : 'All Time';
+  return `📊 ${label} Trading Summary\n\nP&L: ${(pnl>=0?'+':'-')+sym+Math.abs(pnl).toFixed(2)}\nWin Rate: ${wr}% (${wins}W / ${losses}L)\nTrades: ${tfTrades.length}\n\nTracked with TradeLog 📈`;
 }
 
 // ── Single shared capture function — caches result, runs off main thread via timeout ──
@@ -11332,7 +11389,7 @@ function shareCardDownload() {
   if (btn) btn.innerHTML = '⏳ Saving…';
   captureShareCard().then(({ canvas }) => {
     const a = document.createElement('a');
-    a.download = 'tradelog-' + new Date().toISOString().slice(0,10) + '.png';
+    a.download = 'tradelog-' + _shareTf + '-' + new Date().toISOString().slice(0,10) + '.png';
     a.href = canvas.toDataURL('image/png');
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     if (btn) { btn.innerHTML = '✓ Saved!'; setTimeout(() => btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save Image', 2000); }
@@ -11372,7 +11429,7 @@ function shareToApp(app) {
   captureShareCard().then(({ blob }) => {
     const file = new File([blob], 'tradelog-summary.png', { type: 'image/png' });
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: "TradeLog — Today's Summary" }).catch(() => {});
+      navigator.share({ files: [file], title: `TradeLog — ${_shareTf === 'today' ? "Today's" : _shareTf === 'week' ? "This Week's" : _shareTf === 'month' ? "This Month's" : 'All Time'} Summary` }).catch(() => {});
       return;
     }
     // Fallback: open the specific app with text
