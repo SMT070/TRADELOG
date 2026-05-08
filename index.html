@@ -831,9 +831,9 @@
   .cal-cell:not(.empty):hover { background: var(--surface2); }
   .cal-cell.selected-day { outline: 2px solid var(--accent) !important; outline-offset: -2px; border-radius: 10px; }
   .cal-cell.weekend-cell { /* opacity handled inline */ }
-  .cal-cell.today { outline: none; background: var(--accent) !important; border-radius: 10px; }
-  .cal-cell.today .cal-day-num { color: #fff; font-weight: 900; }
-  .cal-cell.today .cal-pnl, .cal-cell.today .cal-trades { color: rgba(255,255,255,0.85) !important; }
+  .cal-cell.today { outline: none; background: transparent; }
+  .cal-cell.today .cal-day-num { background: var(--accent); color: #fff; font-weight: 900; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin: 2px auto 0; }
+  .cal-cell.today .cal-pnl, .cal-cell.today .cal-trades { color: var(--muted) !important; }
   .cal-cell.has-win  { background: rgba(0,255,187,0.14); box-shadow: inset 0 2px 0 rgba(0,255,187,0.45); }
   .cal-cell.has-loss { background: rgba(255,59,92,0.14); box-shadow: inset 0 2px 0 rgba(255,59,92,0.45); }
   .cal-cell.has-win:hover  { background: rgba(0,255,187,0.22); }
@@ -5662,12 +5662,29 @@ function saveTradePhoto(file, id) {
   r.onload = async e => {
     const idx = trades.findIndex(t => t.id === id);
     if (idx === -1) return;
-    trades[idx].screenshot = e.target.result;
+    
+    const screenshotData = e.target.result;
+    trades[idx].screenshot = screenshotData;
+    
+    // Auto-save locally
     save();
+    
+    // Refresh UI
     showTradeDetail(id);
-    if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
-    toast('Photo saved', 'success');
-    try { await guaranteedSaveToSupabase(trades[idx]); } catch(err) { console.error('TradeLog: photo sync failed', err); }
+    if (document.getElementById('trade-detail-overlay').style.display === 'flex') {
+      openDetailOverlay();
+    }
+    
+    toast('Photo saved & syncing...', 'success');
+    
+    // Reliable auto-save to Supabase
+    try { 
+      await guaranteedSaveToSupabase(trades[idx]);
+      toast('✓ Photo synced', 'success');
+    } catch(err) { 
+      console.error('TradeLog: photo sync failed', err);
+      toast('⚠️ Saved locally - sync failed', 'error');
+    }
   };
   r.readAsDataURL(file);
 }
@@ -10132,22 +10149,27 @@ document.addEventListener('keydown', e => {
 
 // Global paste → attach photo to selected trade
 document.addEventListener('paste', e => {
-  // Allow normal paste in text inputs/textareas
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  // Allow normal paste in text inputs/textareas unless it's an image
+  const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
   const items = e.clipboardData && e.clipboardData.items;
   if (!items) return;
+
   // Find image item
   let imgItem = null;
   for (const item of items) {
     if (item.type.startsWith('image/')) { imgItem = item; break; }
   }
-  if (!imgItem) return;
-  // Determine target trade id: check photo zone data-id, then selectedId
-  const photoZone = e.target.closest('[data-photo-id]');
-  const targetId = (photoZone && photoZone.dataset.photoId) || selectedId;
-  if (!targetId) return;
-  e.preventDefault();
-  saveTradePhoto(imgItem.getAsFile(), targetId);
+
+  // If we have an image, handle it even in inputs (traders often paste screenshots while typing notes)
+  if (imgItem) {
+    // Determine target trade id: check photo zone data-id, then selectedId
+    const photoZone = e.target.closest('[data-photo-id]');
+    const targetId = (photoZone && photoZone.dataset.photoId) || selectedId;
+    if (targetId) {
+      e.preventDefault();
+      saveTradePhoto(imgItem.getAsFile(), targetId);
+    }
+  }
 });
 
 // ── EMPTY STATE ───────────────────────────────────────────────────────────────
