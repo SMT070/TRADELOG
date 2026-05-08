@@ -2195,7 +2195,7 @@
       </div>
 
       <!-- Row 2: Search + segmented timeframe + filters + add (all one bar) -->
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);">
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:visible;position:relative;z-index:10;">
 
         <!-- Search — grows to fill -->
         <div style="position:relative;flex:1;min-width:0;">
@@ -2288,7 +2288,7 @@
             Features
             <svg id="features-drop-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .2s;opacity:.5;"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div id="features-drop-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:6px;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,0.35);min-width:220px;">
+          <div id="features-drop-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:6px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.35);min-width:220px;">
 
             <!-- Auto BE -->
             <button id="feat-auto-be-btn" onclick="featToggleAutoBE()" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:left;transition:background .15s,color .15s;">
@@ -12955,17 +12955,6 @@ function renderPackRows(packId, packTrades, sym) {
   const wr         = decided ? Math.round(wins/decided*100) : 0;
   const totalLots  = packTrades.reduce((s,t) => s + (parseFloat(t.lots)||0), 0);
   const symbols    = [...new Set(packTrades.map(t=>t.symbol))].join(', ');
-  const packName   = packTrades[0]?.packName || 'Pack';
-  const isExpanded = packExpandedIds.has(packId);
-  const pnlColor   = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
-  const pnlStr     = (totalPnl>=0?'+'+sym:'-'+sym)+Math.abs(totalPnl).toFfunction renderPackRows(packId, packTrades, sym) {
-  const totalPnl   = packTrades.reduce((s,t) => s + getPnl(t), 0);
-  const wins       = packTrades.filter(t => getResult(t) === 'win').length;
-  const losses     = packTrades.filter(t => getResult(t) === 'loss').length;
-  const decided    = wins + losses;
-  const wr         = decided ? Math.round(wins/decided*100) : 0;
-  const totalLots  = packTrades.reduce((s,t) => s + (parseFloat(t.lots)||0), 0);
-  const symbols    = [...new Set(packTrades.map(t=>t.symbol))].join(', ');
   const dirs       = [...new Set(packTrades.map(t=>t.dir))];
   const dir        = dirs.length === 1 ? dirs[0] : 'MIXED';
   const packName   = packTrades[0]?.packName || 'Pack';
@@ -13010,29 +12999,7 @@ function renderPackRows(packId, packTrades, sym) {
   });
 
   return html;
-}rn;
-  }
-
-  // Create new pack
-  const packId = uid();
-  const ids = [...packSelectedIds];
-  const updated = [];
-  ids.forEach(id => {
-    const idx = trades.findIndex(t => t.id === id);
-    if (idx === -1) return;
-    trades[idx].packId = packId;
-    trades[idx].packName = name;
-    updated.push(trades[idx]);
-  });
-  save();
-  invalidateStatCache();
-  closePackNameModal();
-  exitPackSelectMode();
-  packExpandedIds.add(packId);
-  toast(`✓ Pack "${name}" created with ${ids.length} trades`, 'success');
-  renderTrades();
-  try { await Promise.all(updated.map(t => guaranteedSaveToSupabase(t))); } catch(e) { console.warn('Pack sync:', e); }
-};
+}
 
 // ── Override selectTrade to work correctly in select mode ─────────
 const _origSelectTrade = selectTrade;
