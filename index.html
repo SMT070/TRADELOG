@@ -6353,7 +6353,7 @@ function tradeRow(t) {
   const activeTag = document.getElementById('filter-tag').value;
   const tags = (t.strategies||[]).map(s => `<span class="trade-tag${s===activeTag?' active':''}" onclick="event.stopPropagation();setTagFilter('${s}','${s}')">${s}</span>`).join('');
   return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;" ${t.id===selectedId?'class="selected"':''}>
-    <td style="color:var(--text);white-space:nowrap;font-size:12px;font-weight:600;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,19)+'</span>' : '—'}</td>
+    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;"><div style="line-height:1.4;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,19)+'</span>' : '—'}</div></td>
     <td style="font-weight:700;">${t.symbol}</td>
     <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
     <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
@@ -6715,7 +6715,7 @@ function renderTrades(skipTagRebuild) {
       : `<span style="color:var(--red);font-size:10px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:4px;">LOSS</span>`;
     const isSelected = t.id===selectedId;
     return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;"${isSelected?' class="selected"':''}>
-      <td style="color:var(--text);font-size:12px;white-space:nowrap;font-weight:600;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,19)+'</span>' : '—'}</td>
+      <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;"><div style="line-height:1.4;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,19)+'</span>' : '—'}</div></td>
       <td style="font-weight:600;">${t.symbol}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
       <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
@@ -12379,17 +12379,16 @@ tr.pack-child-row td {
   border-left: 2px solid var(--border) !important;
 }
 /* ── Unified date column alignment: all rows get 36px left pad ── */
-/* Pack headers stay at 18px because chevron is absolute at left:18px */
 .trades-table td:first-child {
   position: relative;
   padding-left: 36px !important;
 }
 .trades-table tr.pack-header-row td:first-child {
-  padding-left: 18px !important;
+  padding-left: 46px !important;
 }
 .date-chevron {
   position: absolute;
-  left: 18px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -12945,7 +12944,7 @@ function _buildPackChildRow(t, sym, packId, isExpanded, isAutoChildRow) {
     : '—';
   return `<tr class="pack-child-row${isExpanded?'':' hidden'}${isSelected?' selected':''}" data-id="${t.id}" data-pack="${packId}"
     onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;">
-    <td style="color:var(--text);font-size:12px;white-space:nowrap;font-weight:600;">${dateHtml}</td>
+    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;"><div style="line-height:1.4;">${dateHtml}</div></td>
     <td style="font-weight:600;">${t.symbol}</td>
     <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
     <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
@@ -12998,7 +12997,7 @@ function renderPackRows(packId, packTrades, sym) {
   const actions = `<span onclick="renamePack('${packId}','${safePackName}',event)" title="Rename" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;color:var(--muted);cursor:pointer;transition:color .15s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--muted)'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span onclick="dissolvePack('${packId}',event)" title="Ungroup" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;color:var(--muted);cursor:pointer;transition:color .15s;" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--muted)'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></span>`;
 
   let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" onclick="togglePackExpand('${packId}',event)" style="cursor:pointer;">
-    <td style="color:var(--text);font-size:12px;white-space:nowrap;font-weight:600;"><div class="date-chevron">${chevron}</div>${dateHtml}</td>
+    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;"><div class="date-chevron">${chevron}</div><div style="line-height:1.4;">${dateHtml}</div></td>
     <td style="font-weight:600;">${symbols}</td>
     <td><div style="display:flex;align-items:center;">${dirBadge}${countPill}</div></td>
     <td style="color:var(--text);font-weight:500;">${totalLots.toFixed(2)}</td>
