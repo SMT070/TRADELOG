@@ -3861,6 +3861,14 @@ window.switchPage = function(name) {
 <div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(12px);">
   <div style="width:520px;max-width:96vw;">
 
+    <!-- PERIOD SELECTOR -->
+    <div id="share-period-selector" style="display:flex;background:rgba(255,255,255,0.06);padding:4px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);margin-bottom:16px;backdrop-filter:blur(10px);">
+      <button onclick="openShareModal('today')" id="share-period-today" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">Today</button>
+      <button onclick="openShareModal('week')" id="share-period-week" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">Week</button>
+      <button onclick="openShareModal('month')" id="share-period-month" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">Month</button>
+      <button onclick="openShareModal('all')" id="share-period-all" style="flex:1;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:var(--sans);">All Time</button>
+    </div>
+
     <!-- ═══════════════════════════════════════════════════ -->
     <!-- SHARE CARD — canvas capture target                  -->
     <!-- ═══════════════════════════════════════════════════ -->
@@ -11004,12 +11012,55 @@ function jumpToDateTrades(dateStr) {
 }
 
 // ── SHARE ─────────────────────────────────────────────────────────────────────
-function openShareModal() {
+function openShareModal(period = 'today') {
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   const sym = getCurrencySymbol();
-  const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
+
+  let todayTrades = [];
+  let periodTitle = "TODAY";
+  let periodSub = "";
+
+  if (period === 'today') {
+    todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    periodSub = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    periodTitle = "TODAY";
+  } else if (period === 'week') {
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay()); 
+    startOfWeek.setHours(0,0,0,0);
+    todayTrades = trades.filter(t => new Date(t.date) >= startOfWeek);
+    periodTitle = "THIS WEEK";
+    periodSub = "Weekly Performance";
+  } else if (period === 'month') {
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    todayTrades = trades.filter(t => new Date(t.date) >= startOfMonth);
+    const monthsList = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    periodTitle = "THIS MONTH";
+    periodSub = `${monthsList[now.getMonth()]} ${now.getFullYear()}`;
+  } else if (period === 'all') {
+    todayTrades = [...trades];
+    periodTitle = "ALL TIME";
+    periodSub = "Lifetime Overview";
+  }
+
+  // Update Selector UI
+  ['today','week','month','all'].forEach(p => {
+    const btn = document.getElementById('share-period-' + p);
+    if (btn) {
+      if (p === period) {
+        btn.style.background = 'rgba(255,255,255,0.12)';
+        btn.style.color = '#fff';
+      } else {
+        btn.style.background = 'transparent';
+        btn.style.color = 'rgba(255,255,255,0.4)';
+      }
+    }
+  });
+
   const pnl    = todayTrades.reduce((s,t) => s + getPnl(t), 0);
   const wins   = todayTrades.filter(t => getResult(t) === 'win').length;
   const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
@@ -11125,15 +11176,13 @@ function openShareModal() {
   document.getElementById('share-footer-dot').style.boxShadow = `0 0 6px ${pnlColor}`;
 
   // ── HEADER ────────────────────────────────────────────────────────
-  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dateLabel = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-  document.getElementById('share-date-label').textContent = dateLabel;
+  document.getElementById('share-date-label').textContent = periodSub;
   document.getElementById('share-date-label').style.color = p.subText;
   document.getElementById('share-trades-label').textContent = `${todayTrades.length} trade${todayTrades.length!==1?'s':''} · ${wins}W / ${losses}L`;
   document.getElementById('share-trades-label').style.color = p.subText;
 
   // ── P&L HERO ──────────────────────────────────────────────────────
+  document.getElementById('share-pnl-label').textContent = periodTitle + "'S P&L";
   document.getElementById('share-pnl-label').style.color = p.subText;
   const pnlEl = document.getElementById('share-pnl');
   pnlEl.textContent = (isPos ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
@@ -11197,7 +11246,7 @@ function openShareModal() {
   // ── TRADE LIST ────────────────────────────────────────────────────
   const listEl = document.getElementById('share-trade-list');
   if (todayTrades.length === 0) {
-    listEl.innerHTML = `<div style="text-align:center;padding:18px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">No trades yet today</div>`;
+    listEl.innerHTML = `<div style="text-align:center;padding:18px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">No trades found for this period</div>`;
   } else {
     listEl.innerHTML = todayTrades.slice(0,5).map((t,i) => {
       const tp   = getPnl(t);
