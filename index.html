@@ -831,9 +831,21 @@
   .cal-cell:not(.empty):hover { background: var(--surface2); }
   .cal-cell.selected-day { outline: 2px solid var(--accent) !important; outline-offset: -2px; border-radius: 10px; }
   .cal-cell.weekend-cell { /* opacity handled inline */ }
-  .cal-cell.today { outline: none; background: var(--accent) !important; border-radius: 10px; }
-  .cal-cell.today .cal-day-num { color: #fff; font-weight: 900; }
-  .cal-cell.today .cal-pnl, .cal-cell.today .cal-trades { color: rgba(255,255,255,0.85) !important; }
+  .cal-cell.today { outline: none; background: var(--surface) !important; border-radius: 10px; }
+  .cal-cell.today .cal-day-num {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 900;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+  }
+  .cal-cell.today .cal-pnl, .cal-cell.today .cal-trades { color: var(--text) !important; }
   .cal-cell.has-win  { background: rgba(0,255,187,0.14); box-shadow: inset 0 2px 0 rgba(0,255,187,0.45); }
   .cal-cell.has-loss { background: rgba(255,59,92,0.14); box-shadow: inset 0 2px 0 rgba(255,59,92,0.45); }
   .cal-cell.has-win:hover  { background: rgba(0,255,187,0.22); }
@@ -868,9 +880,11 @@
     font-size: 12px; font-weight: 700; letter-spacing: -0.3px;
     color: var(--muted); line-height: 1;
   }
-  .cal-cell.today .cal-cell-bar { opacity: 0.5; }
+  .cal-cell.today .cal-cell-bar { opacity: 0.7; }
   .cal-cell.has-win  .cal-day-num { color: var(--text); font-weight: 800; }
   .cal-cell.has-loss .cal-day-num { color: var(--text); font-weight: 800; }
+  .cal-cell.today.has-win  .cal-day-num,
+  .cal-cell.today.has-loss .cal-day-num { color: #fff; }
 
   .cal-pnl {
     font-size: 15px; font-weight: 900;
@@ -3939,6 +3953,14 @@ window.switchPage = function(name) {
       </div><!-- /inner content -->
     </div><!-- /share-card -->
 
+    <!-- TIMEFRAME SWITCHER -->
+    <div style="display:flex;gap:5px;background:rgba(0,0,0,0.3);border-radius:12px;padding:4px;border:1px solid rgba(255,255,255,0.08);margin-top:14px;">
+      <button onclick="setShareTimeframe('today')"  id="share-tf-today"  style="flex:1;padding:8px 4px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:rgba(99,102,241,1);color:#fff;transition:all .2s;">Today</button>
+      <button onclick="setShareTimeframe('week')"   id="share-tf-week"   style="flex:1;padding:8px 4px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:transparent;color:rgba(255,255,255,0.4);transition:all .2s;">Week</button>
+      <button onclick="setShareTimeframe('month')"  id="share-tf-month"  style="flex:1;padding:8px 4px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:transparent;color:rgba(255,255,255,0.4);transition:all .2s;">Month</button>
+      <button onclick="setShareTimeframe('alltime')" id="share-tf-alltime" style="flex:1;padding:8px 4px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:transparent;color:rgba(255,255,255,0.4);transition:all .2s;">All Time</button>
+    </div>
+
     <!-- ACTION BUTTONS -->
     <div style="display:flex;flex-direction:column;gap:7px;margin-top:14px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
@@ -5630,14 +5652,66 @@ function addDetailTag(tid) {
 function previewScreenshot(ev) {
   const file = ev.target.files[0];
   if (!file) return;
-  const r = new FileReader();
-  r.onload = e => {
-    editingScreenshot = e.target.result;
-    document.getElementById('screenshot-preview').src = editingScreenshot;
+  _processImageHighQuality(file, dataUrl => {
+    editingScreenshot = dataUrl;
+    document.getElementById('screenshot-preview').src = dataUrl;
     document.getElementById('screenshot-preview').style.display = 'block';
     document.getElementById('screenshot-placeholder').style.display = 'none';
+  });
+}
+
+// ── Paste on Add Trade form: Ctrl+V anywhere on the page when add trade is open ──
+function _pasteScreenshotToAddForm(imgItem) {
+  _processImageHighQuality(imgItem.getAsFile(), dataUrl => {
+    editingScreenshot = dataUrl;
+    const prev = document.getElementById('screenshot-preview');
+    const ph   = document.getElementById('screenshot-placeholder');
+    if (prev) { prev.src = dataUrl; prev.style.display = 'block'; }
+    if (ph)   ph.style.display = 'none';
+    toast('📸 Screenshot attached', 'success');
+  });
+}
+
+// ── High-quality image processor ──
+// Preserves original resolution up to 2560px on the longest side.
+// Uses PNG for lossless chart screenshots; JPEG only as fallback.
+function _processImageHighQuality(file, callback) {
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img  = new Image();
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    const MAX = 2560; // max dimension — preserves 4K monitor screenshots
+    let w = img.naturalWidth  || img.width;
+    let h = img.naturalHeight || img.height;
+    // Only scale DOWN if the image is huge; never upscale
+    if (w > MAX || h > MAX) {
+      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+      else       { w = Math.round(w * MAX / h); h = MAX; }
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width  = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    // High-quality scaling
+    ctx.imageSmoothingEnabled  = true;
+    ctx.imageSmoothingQuality  = 'high';
+    ctx.drawImage(img, 0, 0, w, h);
+    // Use PNG for charts (lossless, sharp lines) unless file is already JPEG
+    const isJpeg = file.type === 'image/jpeg' || file.type === 'image/jpg';
+    const dataUrl = isJpeg
+      ? canvas.toDataURL('image/jpeg', 0.96) // 96% quality JPEG
+      : canvas.toDataURL('image/png');        // lossless PNG
+    callback(dataUrl);
   };
-  r.readAsDataURL(file);
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    // Fallback: read as-is
+    const r = new FileReader();
+    r.onload = e => callback(e.target.result);
+    r.readAsDataURL(file);
+  };
+  img.src = url;
 }
 
 function uploadTradePhoto(ev, id) {
@@ -5648,18 +5722,16 @@ function uploadTradePhoto(ev, id) {
 
 function saveTradePhoto(file, id) {
   if (!file || !file.type.startsWith('image/')) return;
-  const r = new FileReader();
-  r.onload = async e => {
+  _processImageHighQuality(file, async dataUrl => {
     const idx = trades.findIndex(t => t.id === id);
     if (idx === -1) return;
-    trades[idx].screenshot = e.target.result;
+    trades[idx].screenshot = dataUrl;
     save();
     showTradeDetail(id);
     if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
-    toast('Photo saved', 'success');
+    toast('📸 Photo saved', 'success');
     try { await guaranteedSaveToSupabase(trades[idx]); } catch(err) { console.error('TradeLog: photo sync failed', err); }
-  };
-  r.readAsDataURL(file);
+  });
 }
 
 function handlePhotoZonePaste(ev, id) {
@@ -5673,6 +5745,7 @@ function handlePhotoZonePaste(ev, id) {
       return;
     }
   }
+  // Also check for plain text that might be a URL — ignore silently
 }
 
 function handlePhotoZoneDrop(ev, id) {
@@ -5742,7 +5815,7 @@ async function saveTrade() {
     emotion: selectedEmotion,
     confidence: parseInt(document.getElementById('f-confidence').value) || 0,
     notes: document.getElementById('f-notes').value.trim(),
-    screenshot: editingScreenshot || null,
+    screenshot: editingScreenshot || (editId ? (trades.find(t => t.id === editId)?.screenshot || null) : null),
   };
   trade.result = netPnl === 0 ? 'be' : (selectedResult ? selectedResult : (netPnl > 0 ? 'win' : 'loss'));
   if (editId) {
@@ -10120,12 +10193,28 @@ document.addEventListener('paste', e => {
     if (item.type.startsWith('image/')) { imgItem = item; break; }
   }
   if (!imgItem) return;
-  // Determine target trade id: check photo zone data-id, then selectedId
+
+  // Determine target: explicit photo zone data-id first
   const photoZone = e.target.closest('[data-photo-id]');
-  const targetId = (photoZone && photoZone.dataset.photoId) || selectedId;
-  if (!targetId) return;
-  e.preventDefault();
-  saveTradePhoto(imgItem.getAsFile(), targetId);
+  if (photoZone && photoZone.dataset.photoId) {
+    e.preventDefault();
+    saveTradePhoto(imgItem.getAsFile(), photoZone.dataset.photoId);
+    return;
+  }
+
+  // If Add Trade page is active → attach to form screenshot
+  const addPage = document.getElementById('page-add');
+  if (addPage && addPage.classList.contains('active')) {
+    e.preventDefault();
+    _pasteScreenshotToAddForm(imgItem);
+    return;
+  }
+
+  // Otherwise attach to selected trade in trades page
+  if (selectedId) {
+    e.preventDefault();
+    saveTradePhoto(imgItem.getAsFile(), selectedId);
+  }
 });
 
 // ── EMPTY STATE ───────────────────────────────────────────────────────────────
@@ -11004,20 +11093,80 @@ function jumpToDateTrades(dateStr) {
 }
 
 // ── SHARE ─────────────────────────────────────────────────────────────────────
-function openShareModal() {
+window._shareTimeframe = 'today';
+
+function setShareTimeframe(tf) {
+  window._shareTimeframe = tf;
+  // Update switcher button styles
+  ['today','week','month','alltime'].forEach(t => {
+    const btn = document.getElementById('share-tf-' + t);
+    if (!btn) return;
+    btn.style.background = t === tf ? 'rgba(99,102,241,1)' : 'transparent';
+    btn.style.color      = t === tf ? '#fff' : 'rgba(255,255,255,0.4)';
+  });
+  _invalidateShareCache();
+  _renderShareCard(tf);
+}
+
+// Get trades for a given timeframe
+function _getShareTrades(tf) {
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
   const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-  const sym = getCurrencySymbol();
-  const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
-  const pnl    = todayTrades.reduce((s,t) => s + getPnl(t), 0);
-  const wins   = todayTrades.filter(t => getResult(t) === 'win').length;
-  const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
-  const decided = wins + losses;
-  const wr     = decided ? Math.round(wins / decided * 100) : 0;
-  const isPos  = pnl >= 0;
-  const bestTrade = todayTrades.length
-    ? todayTrades.reduce((b,t) => getPnl(t) > getPnl(b) ? t : b, todayTrades[0])
+
+  if (tf === 'today') {
+    return trades.filter(t => (t.date||'').slice(0,10) === todayStr);
+  }
+  if (tf === 'week') {
+    const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7)); mon.setHours(0,0,0,0);
+    const monStr = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
+    return trades.filter(t => (t.date||'').slice(0,10) >= monStr && (t.date||'').slice(0,10) <= todayStr);
+  }
+  if (tf === 'month') {
+    const mStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+    return trades.filter(t => (t.date||'').startsWith(mStr));
+  }
+  // alltime
+  return [...trades];
+}
+
+function _getShareLabel(tf) {
+  const now = new Date();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const pad    = n => String(n).padStart(2,'0');
+  if (tf === 'today') {
+    return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  }
+  if (tf === 'week') {
+    const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7));
+    const fri = new Date(mon); fri.setDate(mon.getDate() + 4);
+    return `Week of ${mon.getDate()} ${months[mon.getMonth()]}`;
+  }
+  if (tf === 'month') {
+    return `${months[now.getMonth()]} ${now.getFullYear()}`;
+  }
+  return 'All Time';
+}
+
+function _getPnlLabel(tf) {
+  if (tf === 'today')   return "TODAY'S P&L";
+  if (tf === 'week')    return "THIS WEEK'S P&L";
+  if (tf === 'month')   return "THIS MONTH'S P&L";
+  return "ALL TIME P&L";
+}
+
+function _renderShareCard(tf) {
+  const sym          = getCurrencySymbol();
+  const tfTrades     = _getShareTrades(tf);
+  const pnl          = tfTrades.reduce((s,t) => s + getPnl(t), 0);
+  const wins         = tfTrades.filter(t => getResult(t) === 'win').length;
+  const losses       = tfTrades.filter(t => getResult(t) === 'loss').length;
+  const decided      = wins + losses;
+  const wr           = decided ? Math.round(wins / decided * 100) : 0;
+  const isPos        = pnl >= 0;
+  const bestTrade    = tfTrades.length
+    ? tfTrades.reduce((b,t) => getPnl(t) > getPnl(b) ? t : b, tfTrades[0])
     : null;
   const best = bestTrade ? getPnl(bestTrade) : 0;
 
@@ -11125,16 +11274,15 @@ function openShareModal() {
   document.getElementById('share-footer-dot').style.boxShadow = `0 0 6px ${pnlColor}`;
 
   // ── HEADER ────────────────────────────────────────────────────────
-  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dateLabel = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  const dateLabel = _getShareLabel(tf);
   document.getElementById('share-date-label').textContent = dateLabel;
   document.getElementById('share-date-label').style.color = p.subText;
-  document.getElementById('share-trades-label').textContent = `${todayTrades.length} trade${todayTrades.length!==1?'s':''} · ${wins}W / ${losses}L`;
+  document.getElementById('share-trades-label').textContent = `${tfTrades.length} trade${tfTrades.length!==1?'s':''} · ${wins}W / ${losses}L`;
   document.getElementById('share-trades-label').style.color = p.subText;
 
   // ── P&L HERO ──────────────────────────────────────────────────────
-  document.getElementById('share-pnl-label').style.color = p.subText;
+  const pnlLabelEl = document.getElementById('share-pnl-label');
+  if (pnlLabelEl) { pnlLabelEl.textContent = _getPnlLabel(tf); pnlLabelEl.style.color = p.subText; }
   const pnlEl = document.getElementById('share-pnl');
   pnlEl.textContent = (isPos ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
   pnlEl.style.color = pnlColor;
@@ -11165,7 +11313,7 @@ function openShareModal() {
   });
 
   // Trades count
-  document.getElementById('share-wr').textContent = todayTrades.length || '0';
+  document.getElementById('share-wr').textContent = tfTrades.length || '0';
   document.getElementById('share-wr').style.color = p.text;
   document.getElementById('share-wl').textContent = `${wins}W · ${losses}L`;
   document.getElementById('share-wl').style.color = p.subText;
@@ -11196,10 +11344,15 @@ function openShareModal() {
 
   // ── TRADE LIST ────────────────────────────────────────────────────
   const listEl = document.getElementById('share-trade-list');
-  if (todayTrades.length === 0) {
-    listEl.innerHTML = `<div style="text-align:center;padding:18px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">No trades yet today</div>`;
+  if (tfTrades.length === 0) {
+    listEl.innerHTML = `<div style="text-align:center;padding:18px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">No trades for this period</div>`;
   } else {
-    listEl.innerHTML = todayTrades.slice(0,5).map((t,i) => {
+    // For week/month/alltime show top 5 by P&L
+    const displayTrades = tf === 'today'
+      ? tfTrades.slice(0, 5)
+      : [...tfTrades].sort((a,b) => Math.abs(getPnl(b)) - Math.abs(getPnl(a))).slice(0, 5);
+
+    listEl.innerHTML = displayTrades.map((t,i) => {
       const tp   = getPnl(t);
       const col  = tp >= 0 ? p.pos : p.neg;
       const glow = tp >= 0 ? p.posGlow : p.negGlow;
@@ -11216,11 +11369,22 @@ function openShareModal() {
         <span style="font-size:14px;font-weight:900;color:${col};text-shadow:0 0 16px ${glow};letter-spacing:-0.5px;">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
       </div>`;
     }).join('');
-    if (todayTrades.length > 5) {
-      listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.subText};padding:6px 0;font-weight:700;letter-spacing:1px;">+ ${todayTrades.length - 5} MORE TRADES</div>`;
+    if (tfTrades.length > 5) {
+      listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.subText};padding:6px 0;font-weight:700;letter-spacing:1px;">+ ${tfTrades.length - 5} MORE TRADES</div>`;
     }
   }
+}
 
+function openShareModal() {
+  window._shareTimeframe = window._shareTimeframe || 'today';
+  // Sync switcher buttons
+  ['today','week','month','alltime'].forEach(t => {
+    const btn = document.getElementById('share-tf-' + t);
+    if (!btn) return;
+    btn.style.background = t === window._shareTimeframe ? 'rgba(99,102,241,1)' : 'transparent';
+    btn.style.color      = t === window._shareTimeframe ? '#fff' : 'rgba(255,255,255,0.4)';
+  });
+  _renderShareCard(window._shareTimeframe);
   _invalidateShareCache();
   document.getElementById('share-modal').style.display = 'flex';
 }
@@ -11232,16 +11396,15 @@ function closeShareModal() {
 }
 
 function buildShareText() {
-  const now = new Date();
-  const pad = n => String(n).padStart(2,'0');
-  const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  const tf = window._shareTimeframe || 'today';
   const sym = getCurrencySymbol();
-  const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === todayStr);
-  const pnl    = todayTrades.reduce((s,t) => s + getPnl(t), 0);
-  const wins   = todayTrades.filter(t => getResult(t) === 'win').length;
-  const losses = todayTrades.filter(t => getResult(t) === 'loss').length;
-  const wr     = todayTrades.length ? Math.round(wins/todayTrades.length*100) : 0;
-  return `📊 Today's Trading Summary\n\nP&L: ${(pnl>=0?'+':'-')+sym+Math.abs(pnl).toFixed(2)}\nWin Rate: ${wr}% (${wins}W / ${losses}L)\nTrades: ${todayTrades.length}\n\nTracked with TradeLog 📈`;
+  const tfTrades = _getShareTrades(tf);
+  const pnl    = tfTrades.reduce((s,t) => s + getPnl(t), 0);
+  const wins   = tfTrades.filter(t => getResult(t) === 'win').length;
+  const losses = tfTrades.filter(t => getResult(t) === 'loss').length;
+  const wr     = tfTrades.length ? Math.round(wins/tfTrades.length*100) : 0;
+  const label  = _getShareLabel(tf);
+  return `📊 TradeLog — ${label}\n\nP&L: ${(pnl>=0?'+':'-')+sym+Math.abs(pnl).toFixed(2)}\nWin Rate: ${wr}% (${wins}W / ${losses}L)\nTrades: ${tfTrades.length}\n\nTracked with TradeLog 📈`;
 }
 
 // ── Single shared capture function — caches result, runs off main thread via timeout ──
