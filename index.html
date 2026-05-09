@@ -4408,7 +4408,8 @@ function toggleAutoTheme() {
     const t = localStorage.getItem(THEME_KEY) || 'dark';
     document.documentElement.setAttribute('data-theme', t);
     updateThemeButtons(t);
-} else {
+  } else {
+    // Turn on
     localStorage.setItem(AUTO_THEME_KEY, 'true');
     _applyAutoTheme();
     // Check every 60 seconds if hour changed
@@ -4768,22 +4769,24 @@ async function loadAllFromSupabase() {
   try {
     const { data, error } = await sb.from('profiles').select('*').eq('id', uid).single();
     if (!error && data) {
-      if (data.name)     localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: data.name, avatar: data.avatar || null }));
-      if (data.currency) localStorage.setItem(CUR_KEY, data.currency);
-      if (data.balance)  localStorage.setItem(BAL_KEY, String(data.balance));
+      // Use != null checks so empty string / 0 still get stored
+      if (data.name != null)    localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: data.name || '', avatar: data.avatar || null }));
+      if (data.currency != null) localStorage.setItem(CUR_KEY, data.currency);
+      if (data.balance != null)  localStorage.setItem(BAL_KEY, String(data.balance));
       if (data.settings) {
         try {
           const s = typeof data.settings === 'string' ? JSON.parse(data.settings) : data.settings;
           if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); }
           if (typeof s.autoTheme !== 'undefined') { localStorage.setItem(AUTO_THEME_KEY, String(s.autoTheme)); }
           if (s.goals) localStorage.setItem(GOALS_KEY, typeof s.goals === 'string' ? s.goals : JSON.stringify(s.goals));
-          loadTheme();
         } catch(e) {}
       }
-      loadProfile();
-      updateCurrencyButtons();
     }
-  } catch(e) { console.warn('TradeLog: loadProfile failed', e); }
+    // Always call these regardless — even if no profile row exists yet
+    loadTheme();
+    loadProfile();
+    updateCurrencyButtons();
+  } catch(e) { console.warn('TradeLog: loadProfile failed', e); loadTheme(); loadProfile(); updateCurrencyButtons(); }
 
   // 2. Trades
   try {
