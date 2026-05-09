@@ -85,9 +85,9 @@
   }
   [data-theme="black"] body::before { display:none; }
 
-  * { margin:0; padding:0; box-sizing:border-box; cursor: default; }
-  input, textarea, [contenteditable] { cursor: text; }
-  button, select, label[for], [onclick], [role="button"] { cursor: pointer; }
+  * { margin:0; padding:0; box-sizing:border-box; cursor: default; user-select: none; }
+  input, textarea, [contenteditable] { cursor: text; user-select: text; }
+  button, select, label[for], [role="button"] { cursor: pointer; }
   a { cursor: pointer; }
 
   /* ── GLOBAL SCALE UP ── */
@@ -538,6 +538,7 @@
     font-size:12px; line-height:1.7; color:var(--text2);
     box-shadow:0 8px 32px rgba(0,0,0,.4);
     white-space:pre-wrap; word-break:break-word;
+    user-select: text; cursor: text;
   }
 
   /* ── BUTTONS ── */
@@ -1222,6 +1223,7 @@
     border:1px solid var(--border); border-top:none; border-radius:0;
     color:var(--text2); font-family:var(--sans); font-size:13.5px;
     line-height:1.8; padding:16px 18px; overflow-y:auto; box-sizing:border-box;
+    user-select: text; cursor: text;
   }
   .nb-preview h1,.nb-preview h2,.nb-preview h3 { color:var(--text); font-weight:800; margin:16px 0 8px; }
   .nb-preview h1 { font-size:20px; } .nb-preview h2 { font-size:16px; } .nb-preview h3 { font-size:14px; }
@@ -1322,11 +1324,15 @@
     .panel-header { padding: 10px 14px !important; }
     .panel-title { font-size: 10px !important; }
 
-    /* ── JOURNAL: smaller textareas ── */
+    /* ── GOALS/JOURNAL/RULES: auto height on mobile ── */
+    #dashboard-content > div:first-child {
+      height: auto !important;
+    }
+
+    /* ── JOURNAL: scrollable textareas on mobile ── */
     #journal-plan, #journal-review {
       font-size: 12px !important;
-      rows: 2 !important;
-      min-height: 60px !important;
+      min-height: 0 !important;
     }
 
     /* ── RECENT TRADES TABLE: minimal columns ── */
@@ -2000,18 +2006,18 @@
 
     <!-- ── GOALS + DAILY JOURNAL + TRADING RULES ROW ── -->
     <div id="dashboard-content">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;align-items:start;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;align-items:stretch;height:320px;">
 
       <!-- Goals / Targets -->
-      <div class="panel">
-        <div class="panel-header">
+      <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
+        <div class="panel-header" style="flex-shrink:0;">
           <div class="panel-header-left">
             <div class="panel-title">Daily Goals</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Goals','P&L targets. Green = on track, red = behind.')" onmouseleave="hideInfo()">i</button>
           </div>
           <button class="btn btn-ghost" style="font-size:10px;padding:5px 12px;" onclick="openGoalsModal()">Edit Goals</button>
         </div>
-        <div style="padding:16px var(--page-px);display:flex;flex-direction:column;gap:14px;">
+        <div style="padding:16px var(--page-px);display:flex;flex-direction:column;gap:14px;flex:1;overflow-y:auto;">
           <!-- Daily P&L Goal -->
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -2049,23 +2055,23 @@
       </div>
 
       <!-- Daily Journal -->
-      <div class="panel" style="display:flex;flex-direction:column;">
-        <div class="panel-header">
+      <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
+        <div class="panel-header" style="flex-shrink:0;">
           <div class="panel-header-left"><div class="panel-title">Today's Journal</div></div>
           <span style="font-size:10px;color:var(--muted);" id="journal-date-label"></span>
         </div>
-        <div style="padding:16px var(--page-px);flex:1;display:flex;flex-direction:column;gap:10px;">
-          <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;"></textarea>
-          <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;"></textarea>
-          <div style="display:flex;justify-content:flex-end;">
+        <div style="padding:16px var(--page-px) 14px;flex:1;display:flex;flex-direction:column;gap:10px;overflow:hidden;min-height:0;">
+          <textarea id="journal-plan" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="flex:1;resize:none;font-size:12px;line-height:1.6;border-radius:10px;min-height:0;overflow-y:auto;"></textarea>
+          <textarea id="journal-review" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="flex:1;resize:none;font-size:12px;line-height:1.6;border-radius:10px;min-height:0;overflow-y:auto;"></textarea>
+          <div style="display:flex;justify-content:flex-end;flex-shrink:0;">
             <button class="btn btn-primary" onclick="saveJournal()" style="font-size:11px;padding:7px 18px;">Save Journal</button>
           </div>
         </div>
       </div>
 
       <!-- ── TRADING RULES (inside 3-col grid) ── -->
-      <div class="panel" style="display:flex;flex-direction:column;">
-        <div class="panel-header">
+      <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
+        <div class="panel-header" style="flex-shrink:0;">
           <div class="panel-header-left">
             <div class="panel-title">Trading Rules</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Trading Rules','Your personal rules checklist. Check them off each day to stay disciplined.')" onmouseleave="hideInfo()">i</button>
@@ -2075,7 +2081,7 @@
             <button onclick="addDashboardRule()" class="btn btn-ghost" style="font-size:10px;padding:5px 12px;">+ Add Rule</button>
           </div>
         </div>
-        <div id="dash-rules-list" style="padding:6px 20px 14px;display:flex;flex-direction:column;gap:2px;min-height:48px;flex:1;overflow-y:auto;"></div>
+        <div id="dash-rules-list" style="padding:6px 20px 14px;display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto;min-height:0;"></div>
       </div>
 
     </div>
