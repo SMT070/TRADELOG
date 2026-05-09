@@ -1246,91 +1246,104 @@
   .nb-autosave-dot.unsaved { background:var(--yellow); animation:pulse-dot 1.2s infinite; }
   @keyframes modalIn { from{opacity:0;transform:scale(.96) translateY(8px)} to{opacity:1;transform:scale(1) translateY(0)} }
 
-  /* ── MOBILE ── */
+  /* ══════════════════════════════════════════════════════
+     MOBILE — max-width: 768px
+     Full audit: no overflow, no overlap, everything fits
+  ══════════════════════════════════════════════════════ */
   @media (max-width: 768px) {
-    /* ── GENERAL ── */
+
+    /* ── GLOBAL ── */
+    * { box-sizing: border-box; }
     .container { padding: 10px !important; }
-    #main-content { overflow-x: hidden; }
+    #main-content { overflow-x: hidden !important; overflow-y: auto !important; }
+    /* html font-size: reduce global scale on phone */
+    html { font-size: 100% !important; }
 
-    /* ── PAGE-LEVEL PADDING RESET (these use inline var(--page-px/py)) ── */
-    #page-trades    { padding: 10px !important; }
+    /* ── SIDEBAR: icon-only, fixed 52px ── */
+    #sidebar,
+    #sidebar.collapsed {
+      width: 52px !important;
+      min-width: 52px !important;
+      flex-shrink: 0 !important;
+    }
+    .sidebar-label,
+    .sidebar-logo-text,
+    .account-card-text,
+    #account-chevron { display: none !important; }
+    .sidebar-logo { justify-content: center !important; padding: 12px 0 !important; }
+    .sidebar-item { justify-content: center !important; padding: 12px 0 !important; }
+    #sidebar .account-card { justify-content: center !important; padding: 10px 0 !important; }
+    /* Hide collapse tab on mobile */
+    #sidebar-collapse-tab { display: none !important; }
 
-    #page-mindset   { padding: 10px 10px 0 !important; }
-    #page-add .container { padding: 10px !important; }
-    #page-import .container { padding: 10px !important; }
+    /* ── TOPBAR ── */
+    .topbar { padding: 0 10px !important; height: 46px !important; }
 
-    /* ── DASHBOARD NEWS GRID removed - now on Fundamentals page ── */
+    /* ══ DASHBOARD PAGE ══ */
+    .container { padding: 10px !important; }
+    .dash-header {
+      margin-bottom: 10px !important;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: flex-start !important;
+    }
+    .dash-title { font-size: 17px !important; }
+    .dash-subtitle { font-size: 10px !important; }
+    .dash-header > div:last-child button { font-size: 10px !important; padding: 6px 10px !important; }
 
-    /* ── DASHBOARD HEADER ── */
-    .dash-header { margin-bottom: 12px !important; flex-wrap: wrap; gap: 8px; }
-    .dash-title { font-size: 18px !important; }
-    .dash-subtitle { font-size: 11px !important; }
-
-    /* ── TOP 5 STAT CARDS: 2 cols, Net P&L is wide ── */
+    /* Stat cards: 2 cols, first card full width */
     .stats-row {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
       margin-bottom: 10px !important;
     }
-    /* Net P&L (first card) takes full width — the wide one */
-    .stats-row .stat-card:first-child {
-      grid-column: 1 / -1 !important;
-    }
-    /* Last card (Expectancy) normal size, NOT full width */
-    .stats-row .stat-card:last-child {
-      grid-column: unset !important;
-    }
-    .stat-card {
-      padding: 12px 12px !important;
-      min-height: unset !important;
-    }
-    .stat-value { font-size: 20px !important; letter-spacing: -0.5px !important; }
+    .stats-row .stat-card:first-child { grid-column: 1 / -1 !important; }
+    .stats-row .stat-card:last-child { grid-column: unset !important; }
+    .stat-card { padding: 11px 12px !important; min-height: unset !important; overflow: hidden !important; }
+    .stat-value { font-size: 19px !important; letter-spacing: -0.5px !important; }
     .stat-label { font-size: 8px !important; }
     .stat-sub { font-size: 10px !important; }
-    /* Show balance row inside Net P&L wide card */
-    .stat-card > div > div[style*="Current Balance"] { display: flex !important; }
-    /* Hide gauge SVGs on mobile to save space */
-    .stat-card svg.ring-like { display: none; }
+    /* Hide gauge SVGs inside stat cards (overflow) */
+    .stat-card svg { max-width: 60px !important; }
 
-    /* ── EQUITY CURVE: full width, good height on mobile ── */
-    .two-col {
-      grid-template-columns: 1fr !important;
-      gap: 8px !important;
-    }
-    /* Hide Performance panel on mobile — not needed */
-    .two-col .panel:last-child {
-      display: none !important;
-    }
-    /* Equity curve panel: nice tall chart */
-    .two-col .panel:first-child {
-      display: flex !important;
-      flex-direction: column !important;
-    }
-    #equity-chart-wrap,
-    .two-col .panel:first-child > div:last-child {
-      min-height: 220px !important;
-      max-height: 260px !important;
-    }
-
-    /* ── GOALS + JOURNAL + RULES: stack vertically on mobile ── */
+    /* Goals/Journal/Rules 3-col → 1 col */
     #dashboard-content > div:first-child {
       grid-template-columns: 1fr !important;
       gap: 8px !important;
     }
-
-    /* ── GOALS PANEL ── */
-    .panel-header { padding: 10px 14px !important; }
+    .panel-header { padding: 10px 12px !important; }
     .panel-title { font-size: 10px !important; }
-
-    /* ── JOURNAL: smaller textareas ── */
     #journal-plan, #journal-review {
       font-size: 12px !important;
-      rows: 2 !important;
-      min-height: 60px !important;
+      min-height: 52px !important;
     }
 
-    /* ── RECENT TRADES TABLE: minimal columns ── */
-    /* Hide less important columns */
+    /* Equity curve: full width, hide performance panel */
+    .two-col {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+    }
+    .two-col .panel:last-child { display: none !important; }
+    .two-col .panel:first-child {
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    #equity-chart-wrap {
+      min-height: 200px !important;
+      max-height: 230px !important;
+      padding: 10px 12px 12px !important;
+      flex: 1 !important;
+    }
+    #equity-chart {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 180px !important;
+      display: block !important;
+    }
+    /* Equity range buttons: smaller */
+    #equity-range-btns button { padding: 3px 7px !important; font-size: 9px !important; }
+
+    /* Recent trades: hide Lots/Entry/Exit */
     .trades-table th:nth-child(4),
     .trades-table td:nth-child(4),
     .trades-table th:nth-child(5),
@@ -1342,59 +1355,59 @@
 
     /* ══ ANALYTICS PAGE ══ */
     #page-analytics .container { padding: 10px !important; }
+    #page-analytics > div > div[style*="align-items:center;justify-content:space-between;margin-bottom:20px"] {
+      flex-wrap: wrap; gap: 8px;
+    }
 
-    /* ── ALL 10 STAT CARDS in one 2-col grid = 5 perfect pairs, zero empty space ── */
+    /* All 10 stat cards: 2-col */
     #an-stat-row-1 {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
       margin-bottom: 8px !important;
     }
     #an-stat-row-1 > div { grid-column: unset !important; }
-
-    /* ── STAT CARD sizing ── */
-    .an-stat-card { padding: 12px 12px !important; }
-    .an-stat-value { font-size: 20px !important; }
+    .an-stat-card { padding: 11px 11px !important; }
+    .an-stat-value { font-size: 19px !important; }
     .an-stat-label { font-size: 8px !important; }
-    .an-mini-val { font-size: 11px !important; }
+    .an-mini-val { font-size: 10px !important; }
     .an-mini-label { font-size: 8px !important; }
 
-    /* ── EQUITY CURVE range buttons ── */
-    #page-analytics .panel > div[style*="repeat(5"] {
-      grid-template-columns: 1fr 1fr !important;
+    /* Analytics equity curve */
+    #an-equity-chart-wrap {
+      height: 200px !important;
+      padding: 10px 12px !important;
     }
-    #page-analytics .panel > div[style*="repeat(5"] > div {
-      border-right: none !important;
-      border-bottom: 1px solid var(--border) !important;
-    }
+    #an-equity-chart { width: 100% !important; height: 100% !important; }
+    #analytics-equity-range-btns button { padding: 3px 7px !important; font-size: 9px !important; }
 
-    /* Charts grid: stack all */
+    /* Charts grids: stack */
     #page-analytics > div > div[style*="1fr 1fr 1fr"],
     #page-analytics > div > div[style*="1fr 1fr"] {
       grid-template-columns: 1fr !important;
       gap: 8px !important;
     }
+    #page-analytics .panel > div[style*="height:220px"] { height: 170px !important; }
+    #page-analytics .panel > div[style*="height:260px"] { height: 190px !important; }
 
-    /* Chart panels: fixed height */
-    #page-analytics .panel > div[style*="height:220px"] { height: 180px !important; }
-    #page-analytics .panel > div[style*="height:260px"] { height: 200px !important; }
+    /* Heatmap scrollable */
+    #heatmap-grid { overflow-x: auto !important; min-width: 0 !important; }
+    #page-analytics .panel > div[style*="overflow-x:auto"] { padding: 10px 10px 14px !important; }
 
-    /* Equity curve range buttons */
-    #analytics-equity-range-btns { gap: 2px !important; }
-
-    /* Heatmap: scrollable */
-    #heatmap-grid { overflow-x: auto !important; }
-
-    /* Distribution chart: stack */
-    #page-analytics .panel > div[style*="flex;align-items:center;justify-content:center"] {
+    /* Distribution chart */
+    #page-analytics .panel > div[style*="flex;align-items:center;justify-content:center;gap:28px"] {
       flex-direction: column !important;
       height: auto !important;
       padding: 12px !important;
+      gap: 14px !important;
     }
-    #dist-chart { max-width: 120px !important; max-height: 120px !important; }
-    #dist-legend { flex-direction: row !important; flex-wrap: wrap !important; gap: 8px !important; justify-content: center; }
+    #dist-chart { max-width: 110px !important; max-height: 110px !important; }
+    #dist-legend { flex-direction: row !important; flex-wrap: wrap !important; gap: 6px !important; justify-content: center; }
 
-    /* ── SHARE BUTTON ── */
-    .dash-header button { font-size: 11px !important; padding: 7px 12px !important; }
+    /* Analytics inner 2-col grids */
+    #page-analytics > div > div[style*="grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"] {
+      grid-template-columns: 1fr !important;
+    }
+    .analysis-grid { grid-template-columns: 1fr !important; }
 
     /* ══ CALENDAR PAGE ══ */
     #page-calendar.active {
@@ -1402,266 +1415,193 @@
       height: 100vh !important;
       display: flex !important;
       flex-direction: column !important;
-      gap: 8px !important;
+      gap: 6px !important;
+      overflow: hidden !important;
     }
-    /* Hide side panel on mobile */
     #cal-day-panel { display: none !important; }
-    /* Hide news overlay on mobile */
     #cal-news-overlay { display: none !important; }
-    /* Hide Events toggle on mobile */
     #cal-events-toggle { display: none !important; }
-    /* Body grid full width */
     #cal-body-grid {
       grid-template-columns: 1fr !important;
       flex: 1 !important;
       overflow: hidden !important;
+      min-height: 0 !important;
     }
-    /* Hide week column header + cells */
     #cal-dow-row > div:last-child { display: none !important; }
-    /* Cal grid: 7 cols only */
-    #cal-grid { grid-template-columns: repeat(7, 1fr) !important; }
-    /* Remove week totals (every 8th cell) */
-    #cal-grid > div:nth-child(8n) { display: none !important; }
-    /* Header nav: compact */
-    #page-calendar > div:first-child { padding: 10px 14px !important; border-radius: 10px !important; }
-    #cal-month-label { font-size: 16px !important; }
-    /* Hide year/alltime view buttons */
-    #cal-view-year, #cal-view-alltime { display: none !important; }
-    /* ── CALENDAR CELLS: perfectly uniform, no overflow ── */
     #cal-grid {
-      display: grid !important;
       grid-template-columns: repeat(7, 1fr) !important;
-      grid-auto-rows: 72px !important;
-      gap: 3px !important;
+      gap: 2px !important;
       background: transparent !important;
-      padding: 3px !important;
+      padding: 2px !important;
     }
-
-    /* Every cell: fixed size, position:relative for absolute children */
-    .cal-cell {
-      height: 72px !important;
-      min-height: 72px !important;
-      max-height: 72px !important;
-      width: 100% !important;
-      padding: 0 !important;
-      position: relative !important;
-      display: block !important;
-      border-radius: 8px !important;
-      overflow: hidden !important;
-      box-sizing: border-box !important;
-      background: var(--surface2) !important;
-    }
-    .cal-cell.empty {
-      background: transparent !important;
-      border: none !important;
-      pointer-events: none !important;
-    }
-    .cal-cell.has-win  { background: rgba(0,255,187,0.13) !important; box-shadow: inset 0 2px 0 rgba(0,255,187,0.5) !important; }
-    .cal-cell.has-loss { background: rgba(255,59,92,0.13) !important;  box-shadow: inset 0 2px 0 rgba(255,59,92,0.5) !important; }
-    .cal-cell.today    { outline: 2px solid var(--accent) !important; outline-offset: -2px !important; background: var(--surface2) !important; }
-    .cal-cell.today.has-win  { background: rgba(0,255,187,0.13) !important; }
-    .cal-cell.today.has-loss { background: rgba(255,59,92,0.13) !important; }
-    .cal-cell.selected-day   { outline: 2px solid var(--accent) !important; outline-offset: -2px !important; }
-
-    /* Day number — top-left, always same position */
-    .cal-day-num {
-      position: absolute !important;
-      top: 5px !important;
-      left: 0 !important;
-      right: 0 !important;
-      text-align: center !important;
-      font-size: 11px !important;
-      font-weight: 700 !important;
-      color: var(--muted) !important;
-      line-height: 1 !important;
-    }
-    .cal-cell.has-win  .cal-day-num,
-    .cal-cell.has-loss .cal-day-num { color: var(--text) !important; font-weight: 800 !important; }
-    .cal-cell.today .cal-day-num {
-      background: var(--accent) !important;
-      color: #fff !important;
-      width: 20px !important;
-      height: 20px !important;
-      border-radius: 50% !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      font-size: 10px !important;
-      font-weight: 900 !important;
-      left: 50% !important;
-      right: auto !important;
-      transform: translateX(-50%) !important;
-      top: 4px !important;
-    }
-
-    /* P&L — centred in cell */
-    .cal-pnl {
-      position: absolute !important;
-      top: 50% !important;
-      left: 0 !important;
-      right: 0 !important;
-      transform: translateY(-50%) !important;
-      margin-top: 6px !important;
-      font-size: 10px !important;
-      font-weight: 900 !important;
-      text-align: center !important;
-      letter-spacing: -0.3px !important;
-      line-height: 1 !important;
-    }
-
-    /* Trade count — bottom */
-    .cal-trades {
-      position: absolute !important;
-      bottom: 4px !important;
-      left: 0 !important;
-      right: 0 !important;
-      text-align: center !important;
-      font-size: 8px !important;
-      font-weight: 600 !important;
-      color: var(--muted) !important;
-    }
-
-    .cal-cell-bar { display: none !important; }
-
-    /* DOW header row */
+    #cal-grid > div:nth-child(8n) { display: none !important; }
     #cal-dow-row {
       grid-template-columns: repeat(7, 1fr) !important;
-      gap: 3px !important;
-      padding: 0 3px !important;
+      gap: 2px !important;
+      padding: 0 2px !important;
     }
-    .cal-dow {
-      padding: 7px 0 5px !important;
-      font-size: 9px !important;
-      font-weight: 800 !important;
-      letter-spacing: 0.8px !important;
+    .cal-dow { padding: 5px 0 4px !important; font-size: 9px !important; letter-spacing: 0 !important; }
+    /* Calendar nav */
+    #page-calendar > div:first-child {
+      padding: 8px 12px !important;
+      border-radius: 10px !important;
+      flex-wrap: nowrap !important;
+    }
+    #cal-month-label { font-size: 14px !important; min-width: 130px !important; }
+    #cal-view-year, #cal-view-alltime { display: none !important; }
+    #cal-view-month { padding: 5px 12px !important; font-size: 11px !important; }
+
+    /* Cal cells */
+    .cal-cell {
+      min-height: 60px !important;
+      padding: 4px 2px 3px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
       text-align: center !important;
+      border-radius: 8px !important;
+      border: 1px solid var(--border) !important;
     }
+    .cal-cell.empty { border: none !important; background: transparent !important; }
+    .cal-cell.has-win { border-color: rgba(0,255,187,0.4) !important; }
+    .cal-cell.has-loss { border-color: rgba(255,59,92,0.4) !important; }
+    .cal-day-num {
+      font-size: 10px !important;
+      font-weight: 800 !important;
+      top: 4px !important;
+      left: 4px !important;
+    }
+    .cal-pnl {
+      font-size: 10px !important;
+      font-weight: 900 !important;
+      letter-spacing: -0.3px !important;
+      margin-top: 12px !important;
+    }
+    .cal-trades { font-size: 7px !important; bottom: 3px !important; }
+    .cal-cell-bar { display: none !important; }
+    /* Cal summary cards */
+    .cal-summary-card { padding: 14px 14px !important; }
+    .cal-summary-value { font-size: 26px !important; }
 
     /* ══ MINDSET PAGE ══ */
     #page-mindset {
       height: 100vh !important;
       overflow: hidden !important;
+      padding: 0 !important;
     }
-    /* Sticky header: tighter on mobile */
     #page-mindset > div:first-child {
-      padding: 10px 14px 10px !important;
-      gap: 8px !important;
+      padding: 8px 12px !important;
+      gap: 6px !important;
+      flex-wrap: wrap !important;
     }
-    /* Scroll body fills remaining space, stacks on mobile */
     #mindset-scroll-body {
-      padding: 10px 10px 10px !important;
+      padding: 8px 8px 10px !important;
       overflow-y: auto !important;
       display: block !important;
+      -webkit-overflow-scrolling: touch !important;
     }
-    /* 3-col grid → single column */
     #mindset-main-grid {
       grid-template-columns: 1fr !important;
-      gap: 10px !important;
+      gap: 8px !important;
       display: grid !important;
       overflow: visible !important;
       min-height: unset !important;
       flex: unset !important;
     }
-    /* Textareas */
     #mindset-plan, #mindset-review {
-      min-height: 80px !important;
+      min-height: 70px !important;
       resize: vertical !important;
+      font-size: 13px !important;
     }
-    /* Confidence pills */
     #mindset-conf-pills {
       grid-template-columns: repeat(5, 1fr) !important;
-      gap: 5px !important;
+      gap: 4px !important;
     }
-    /* Past entries on mobile */
     #mindset-past-entries {
-      max-height: 400px !important;
+      max-height: 350px !important;
       overflow-y: auto !important;
     }
-    /* This week on mobile — no flex grow */
-    #page-mindset .panel[style*="flex:1"] {
-      flex: unset !important;
-    }
+    #page-mindset .panel[style*="flex:1"] { flex: unset !important; }
 
     /* ══ TRADES PAGE ══ */
-    #page-trades {
-      padding: 0 !important;
-      gap: 0 !important;
-    }
-
-    /* Hide detail panel completely on mobile - use overlay instead */
+    #page-trades { padding: 6px !important; }
     #trade-detail-panel { display: none !important; }
-
-    /* Trades grid: full width, no side panel */
     #trades-grid {
-      grid-template-columns: 1fr !important;
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+    }
+    #trades-grid > .panel {
       flex: 1 !important;
       min-height: 0 !important;
       overflow: hidden !important;
     }
 
-    /* ── TOP SUMMARY BAR ── */
-    #page-trades > div:first-child {
-      flex-shrink: 0;
-      margin-bottom: 0 !important;
-      gap: 0 !important;
-    }
+    /* Summary stats bar: clean 3-col */
     #page-trades > div:first-child > div:first-child {
-      padding: 12px 14px !important;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-around !important;
+      padding: 10px 12px !important;
       gap: 0 !important;
       flex-wrap: nowrap !important;
-      border-radius: 0 !important;
-      border-left: none !important;
-      border-right: none !important;
-      border-top: none !important;
     }
-    /* Show only count, P&L, win rate — spaced evenly */
-    #page-trades > div:first-child > div:first-child > div:nth-child(1) { flex: 1; }
-    #page-trades > div:first-child > div:first-child > div:nth-child(3) { flex: 1; text-align: center; }
-    #page-trades > div:first-child > div:first-child > div:nth-child(5) { flex: 1; text-align: right; }
-    /* Hide dividers and W/L/BE strip */
-    #page-trades > div:first-child > div:first-child > div[style*="width:1px"] { display: none !important; }
-    #page-trades > div:first-child > div:first-child > div:last-child { display: none !important; }
-    #page-trades > div:first-child > div:first-child > div[style*="flex:1"] { display: none !important; }
-
-    #tb-count { font-size: 22px !important; font-weight: 900 !important; }
-    #tb-pnl   { font-size: 22px !important; font-weight: 900 !important; }
-    #tb-wr    { font-size: 22px !important; font-weight: 900 !important; }
-    #tb-balance { font-size: 11px !important; }
-
-    /* ── FILTER BAR ── */
-    #page-trades > div:first-child > div:last-child {
-      flex-wrap: nowrap !important;
-      gap: 6px !important;
-      padding: 8px 10px !important;
-      border-radius: 0 !important;
-      border-left: none !important;
-      border-right: none !important;
-      overflow-x: auto !important;
-      -webkit-overflow-scrolling: touch !important;
+    /* Hide the vertical dividers in summary bar */
+    #page-trades > div:first-child > div:first-child > div[style*="width:1px;height:32px"] {
+      display: none !important;
     }
-    /* Search full-width on its own implied row — give it flex */
-    #page-trades > div:first-child > div:last-child > div:first-child {
-      min-width: 110px !important;
+    /* Stat column */
+    #page-trades > div:first-child > div:first-child > div[style*="flex-direction:column"] {
+      align-items: center !important;
+      text-align: center !important;
       flex: 1 !important;
     }
-    #search-input { font-size: 12px !important; padding: 6px 8px 6px 28px !important; }
-
-    /* Timeframe buttons: compact */
-    #page-trades > div:first-child > div:last-child > div[style*="display:flex;gap:2px"] {
-      flex-shrink: 0 !important;
+    /* flex:1 spacer — hide it */
+    #page-trades > div:first-child > div:first-child > div[style*="flex:1;"] {
+      display: none !important;
     }
-    .tb-range-btn { padding: 4px 8px !important; font-size: 10px !important; }
+    /* wins/losses/be block — hide on mobile */
+    #page-trades > div:first-child > div:first-child > div:last-child {
+      display: none !important;
+    }
+    #tb-count, #tb-pnl, #tb-wr {
+      font-size: 17px !important;
+      letter-spacing: -0.5px !important;
+    }
+    #tb-balance { font-size: 9px !important; }
 
-    /* Hide tags filter on mobile */
+    /* Filter / search bar */
+    #page-trades > div:first-child > div:last-child {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 5px !important;
+      padding: 7px 8px !important;
+    }
+    /* Search: full width first row */
+    #page-trades > div:first-child > div:last-child > div:first-child {
+      flex: 1 1 100% !important;
+      min-width: 0 !important;
+    }
+    #search-input { font-size: 13px !important; padding: 7px 10px 7px 28px !important; }
+    /* Dividers in filter bar */
+    #page-trades > div:first-child > div:last-child > div[style*="width:1px;height:24px"] {
+      display: none !important;
+    }
+    /* Hide tag filter */
     #drop-tag { display: none !important; }
-
-    /* Features & Add Trade buttons: compact */
+    /* Make filter buttons smaller */
+    .filter-drop-btn { height: 30px !important; padding: 0 9px !important; font-size: 11px !important; }
+    /* Features + Add buttons */
     #features-drop-btn { padding: 5px 10px !important; font-size: 11px !important; }
-    #page-trades .btn-primary { padding: 7px 14px !important; font-size: 12px !important; white-space: nowrap; }
-    #mobile-tap-hint { display: none !important; }
+    #page-trades .btn-primary { padding: 7px 14px !important; font-size: 11px !important; }
+    /* Mobile hint */
+    #mobile-tap-hint { display: inline !important; }
 
-    /* ── TRADES TABLE ── */
-    /* Hide: Lots(4), Entry(5), Exit(6), Commission(8), Tags(10) */
+    /* Table: hide Lots/Entry/Exit/Commission/Tags */
     #page-trades .trades-table th:nth-child(4),
     #page-trades .trades-table td:nth-child(4),
     #page-trades .trades-table th:nth-child(5),
@@ -1673,128 +1613,73 @@
     #page-trades .trades-table th:nth-child(10),
     #page-trades .trades-table td:nth-child(10) { display: none !important; }
 
-    #page-trades .trades-table { table-layout: fixed !important; width: 100% !important; }
-    #page-trades .panel { overflow: hidden !important; border-radius: 0 !important; border-left: none !important; border-right: none !important; }
-    #page-trades .panel > div { overflow-x: hidden !important; }
-
-    /* Header row */
-    #page-trades .trades-table th {
-      font-size: 9px !important;
-      font-weight: 800 !important;
-      letter-spacing: 1px !important;
-      padding: 10px 6px !important;
-      text-transform: uppercase !important;
-      color: var(--muted) !important;
-      background: var(--surface) !important;
+    /* Fixed table layout so columns don't push off-screen */
+    #page-trades .trades-table {
+      table-layout: fixed !important;
+      width: 100% !important;
     }
-
-    /* ── COLUMN WIDTHS ──
-       Col 1: Date     → 68px
-       Col 2: Symbol   → auto (flex)
-       Col 3: Type     → 46px (BUY/SELL badge)
-       Col 7: P&L      → 76px
-       Col 9: Result   → 44px
-    */
+    /* Column widths: Date | Symbol | Type | P&L | Result */
     #page-trades .trades-table th:nth-child(1),
     #page-trades .trades-table td:nth-child(1) {
-      width: 68px !important;
-      padding-left: 10px !important;
-      padding-right: 4px !important;
+      width: 72px !important;
+      font-size: 9px !important;
+      padding-left: 8px !important;
+      color: var(--muted) !important;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
     #page-trades .trades-table th:nth-child(2),
     #page-trades .trades-table td:nth-child(2) {
-      width: auto !important;
-      font-size: 15px !important;
+      font-size: 13px !important;
       font-weight: 800 !important;
+      padding-left: 4px !important;
       color: var(--text) !important;
-      padding-left: 6px !important;
-      padding-right: 4px !important;
-      letter-spacing: -0.3px !important;
+      overflow: hidden;
     }
     #page-trades .trades-table th:nth-child(3),
     #page-trades .trades-table td:nth-child(3) {
-      width: 46px !important;
+      width: 44px !important;
       text-align: center !important;
-      padding-left: 2px !important;
-      padding-right: 2px !important;
     }
     #page-trades .trades-table th:nth-child(7),
     #page-trades .trades-table td:nth-child(7) {
-      width: 78px !important;
+      width: 68px !important;
       text-align: right !important;
       padding-right: 6px !important;
-      font-size: 13px !important;
+      font-size: 12px !important;
       font-weight: 800 !important;
-      font-family: var(--mono) !important;
     }
     #page-trades .trades-table th:nth-child(9),
     #page-trades .trades-table td:nth-child(9) {
       width: 46px !important;
       text-align: center !important;
-      padding-right: 10px !important;
+      padding-right: 6px !important;
     }
-
-    /* ── ROW CELLS ── clean, airy, bold */
     #page-trades .trades-table td {
-      padding: 14px 4px !important;
+      padding: 11px 3px !important;
       vertical-align: middle !important;
-      font-size: 12px !important;
-      border-bottom: 1px solid var(--border) !important;
+      font-size: 11px !important;
     }
-    /* Date cell — two-line, date bold / time muted */
-    #page-trades .trades-table td:nth-child(1) {
-      font-size: 10px !important;
-      font-weight: 700 !important;
-      color: var(--text2) !important;
-      line-height: 1.5 !important;
-      white-space: nowrap !important;
+    #page-trades .trades-table th {
+      font-size: 8px !important;
+      padding: 8px 3px !important;
+      letter-spacing: 0.3px;
     }
-    /* Badge sizing */
-    #page-trades .trades-table .badge {
-      padding: 4px 7px !important;
-      font-size: 9px !important;
-      font-weight: 800 !important;
-      letter-spacing: 0.3px !important;
-    }
-    /* Bigger result badge */
-    #page-trades .trades-table td:nth-child(9) > span {
-      padding: 4px 8px !important;
-      font-size: 9px !important;
-      font-weight: 800 !important;
-      border-radius: 6px !important;
-    }
-    /* Row hover / selected */
-    #page-trades .trades-table tbody tr { background: var(--surface) !important; }
-    #page-trades .trades-table tbody tr:nth-child(even) { background: var(--surface2) !important; }
-    #page-trades .trades-table tbody tr.selected { background: rgba(99,102,241,.12) !important; }
+    #page-trades .panel { overflow: hidden !important; }
+    #page-trades .trades-table .badge { padding: 2px 6px !important; font-size: 8px !important; }
+    #page-trades .trades-table tbody tr { border-bottom: 1px solid var(--border) !important; }
 
-    /* Pack count pill (2×, 3×) — visible but small */
-    #page-trades .trades-table .pack-chevron { display: none !important; }
+    /* Pack rows on mobile */
+    #page-trades .trades-table tr.pack-header-row td:first-child { padding-left: 8px !important; }
+    .date-chevron { left: -6px !important; }
+    .pack-stat-block { min-width: 36px !important; }
+    .pack-stat-label { font-size: 7px !important; }
+    .pack-stat-value { font-size: 10px !important; }
+    /* Hide pack photo thumb on mobile to save row space */
+    .pack-photo-thumb, .pack-photo-add { display: none !important; }
 
-    /* ── EQUITY CURVE fix — fills container ── */
-    .two-col .panel:first-child canvas,
-    #equity-chart {
-      width: 100% !important;
-      height: 100% !important;
-      display: block !important;
-    }
-    .two-col .panel:first-child > div:last-child {
-      min-height: 200px !important;
-      max-height: 240px !important;
-      padding: 8px 10px 10px !important;
-      position: relative !important;
-    }
-    /* Analytics equity curve */
-    #page-analytics .panel > div[style*="height:260px"] {
-      height: 210px !important;
-      padding: 8px 10px 10px !important;
-    }
-    #an-equity-chart {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    /* Trade detail overlay: full screen bottom sheet */
+    /* Trade detail overlay: bottom sheet */
     #trade-detail-overlay {
       padding: 0 !important;
       align-items: flex-end !important;
@@ -1804,27 +1689,35 @@
       max-width: 100% !important;
       height: 90vh !important;
       border-radius: 20px 20px 0 0 !important;
-      transform: translateY(0) !important;
-      opacity: 1 !important;
-    }
-    /* In overlay: hide all info, show only photo */
-    #trade-detail-overlay-body > div > div:first-child {
-      border-right: none !important;
-    }
-    #trade-detail-overlay-body > div > div:last-child {
-      display: none !important;
     }
     #trade-detail-overlay-body > div {
       grid-template-columns: 1fr !important;
     }
+    #trade-detail-overlay-body > div > div:first-child {
+      border-right: none !important;
+      min-height: 240px !important;
+      max-height: 40vh !important;
+    }
+    #trade-detail-overlay-body > div > div:last-child {
+      overflow-y: auto !important;
+    }
 
-    /* Settings popup becomes a fixed bottom sheet on mobile */
+    /* Pack select bar */
+    #pack-select-bar { flex-wrap: wrap !important; gap: 6px !important; padding: 6px 10px !important; }
+
+    /* ══ ADD TRADE PAGE ══ */
+    #page-add .container { padding: 8px !important; }
+    .form-grid {
+      grid-template-columns: 1fr 1fr !important;
+      padding: 16px 14px !important;
+      gap: 12px !important;
+    }
+    .form-grid .full { grid-column: 1 / -1 !important; }
+
+    /* ══ SETTINGS POPUP ══ */
     #sidebar-settings-menu.settings-popup {
       position: fixed !important;
-      bottom: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      top: auto !important;
+      bottom: 0 !important; left: 0 !important; right: 0 !important; top: auto !important;
       width: 100% !important;
       max-height: 80vh !important;
       overflow-y: auto !important;
@@ -1834,45 +1727,39 @@
       z-index: 9999 !important;
       box-shadow: 0 -8px 40px rgba(0,0,0,.6) !important;
     }
-    /* Dark backdrop when settings open */
 
+    /* ══ NOTEBOOKS PAGE ══ */
+    #page-notebooks { padding: 10px !important; }
+    #notebooks-main { grid-template-columns: 1fr !important; }
+    #notebook-editor-panel { min-height: 280px !important; }
+    .nb-toolbar { flex-wrap: wrap; }
 
-
-    /* New pages mobile */
-    #page-notebooks { padding: 14px !important; }
-    /* Fundamentals mobile */
-    #page-fundamentals > div:first-child { padding: 10px 14px !important; flex-wrap: wrap; gap: 8px; }
+    /* ══ FUNDAMENTALS PAGE ══ */
+    #page-fundamentals > div:first-child {
+      padding: 8px 12px !important;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
     #fund-tab-all { grid-template-columns: 1fr !important; }
-    #fund-tab-all > div:first-child { border-right: none !important; border-bottom: 1px solid var(--border) !important; height: 50vh; }
-    #fund-tab-all > div:last-child { height: 50vh; }
-
-    .new-page-header { flex-wrap:wrap; gap:8px; margin-bottom:14px !important; }
-    .new-page-title { font-size:18px !important; }
-
-
-    #notebooks-main { grid-template-columns:1fr !important; }
-    #notebook-editor-panel { min-height:300px !important; }
-
-
-
-    
-    /* Sidebar stays icon-only, cannot be expanded */
-    #sidebar {
-      width: 56px !important;
-      min-width: 56px !important;
+    #fund-tab-all > div:first-child {
+      border-right: none !important;
+      border-bottom: 1px solid var(--border) !important;
+      height: 48vh !important;
     }
-    #sidebar.collapsed {
-      width: 56px !important;
-      min-width: 56px !important;
-    }
-    /* Hide all text labels */
-    .sidebar-label { display: none !important; }
-    .sidebar-logo-text { display: none !important; }
-    .account-card-text { display: none !important; }
-    #account-chevron { display: none !important; }
-    .sidebar-logo { justify-content: center; padding: 12px 0; }
-    .sidebar-item { justify-content: center; padding: 12px 0; }
-    #sidebar .account-card { justify-content: center; padding: 10px 0; }
+    #fund-tab-all > div:last-child { height: 48vh !important; }
+
+    /* ══ SHARED PAGE HEADERS ══ */
+    .new-page-header { flex-wrap: wrap; gap: 8px; margin-bottom: 12px !important; }
+    .new-page-title { font-size: 17px !important; }
+    .new-page-subtitle { font-size: 11px !important; }
+
+    /* ══ IMPORT PAGE ══ */
+    #page-import .container { padding: 10px !important; }
+    .import-zone { padding: 28px 20px !important; margin: 10px !important; }
+
+    /* ══ TOASTS ══ */
+    .toast { right: 10px !important; bottom: 16px !important; left: 10px !important; font-size: 12px !important; }
+
   }
 
   /* ── Feature info tooltips ── */
@@ -2299,8 +2186,8 @@
             <span id="equity-trend"></span>
           </div>
         </div>
-        <div style="padding:12px var(--page-px) 16px;flex:1;min-height:280px;max-height:420px;position:relative;">
-          <canvas id="equity-chart" style="width:100%!important;height:100%!important;"></canvas>
+        <div id="equity-chart-wrap" style="padding:12px var(--page-px) 16px;flex:1;min-height:280px;max-height:420px;position:relative;display:flex;flex-direction:column;">
+          <canvas id="equity-chart" style="width:100%!important;flex:1;min-height:0;"></canvas>
         </div>
       </div>
 
@@ -2788,8 +2675,8 @@
           </div>
         </div><!-- /flex row: badge + range btns -->
       </div><!-- /panel-header -->
-      <div style="padding:16px var(--page-px);height:260px;position:relative;">
-        <canvas id="an-equity-chart"></canvas>
+      <div id="an-equity-chart-wrap" style="padding:16px var(--page-px);height:260px;position:relative;display:flex;flex-direction:column;">
+        <canvas id="an-equity-chart" style="width:100%!important;flex:1;min-height:0;"></canvas>
       </div>
     </div>
 
@@ -13160,6 +13047,58 @@ tr.pack-child-row[data-pack^="_auto_"] td { border-left: 2px solid var(--border)
   border-color: var(--yellow);
   color: var(--yellow);
 }
+
+/* ── Pack stat blocks ── */
+.pack-stat-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+.pack-stat-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.pack-stat-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  font-family: var(--mono);
+}
+
+/* ── Pack group photo thumbnail in header ── */
+.pack-photo-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border2);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.pack-photo-thumb:hover { border-color: var(--accent); }
+.pack-photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pack-photo-add {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1.5px dashed var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px;
+  transition: border-color .15s, color .15s;
+}
+.pack-photo-add:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
@@ -14243,6 +14182,166 @@ function renderAutoPackRows(key, packTrades, sym) {
 })();
 
 console.log('TradeLog: Pack system loaded ✓');
+
+// ══════════════════════════════════════════════════════════════════
+//  PACK GROUP PHOTO SYSTEM
+//  One shared photo per pack (stored as t.packScreenshot on the
+//  representative/first trade in the pack).
+//  • getPackPhoto(packId)         → dataUrl or null
+//  • setPackPhoto(packId, data)   → saves & re-renders
+//  • removePackPhoto(packId)      → removes & re-renders
+//  • uploadPackPhoto(evt, packId) → file-input handler
+//  Safe with undo: packScreenshot is a separate field; it is never
+//  touched by the Auto-BE undo which only modifies `result`.
+// ══════════════════════════════════════════════════════════════════
+
+function _getPackRepTrade(packId) {
+  // representative = earliest trade in the pack
+  const members = trades.filter(t => t.packId === packId);
+  if (!members.length) return null;
+  return members.reduce((a, b) => (a.date || '') <= (b.date || '') ? a : b);
+}
+
+function getPackPhoto(packId) {
+  const rep = _getPackRepTrade(packId);
+  return rep ? (rep.packScreenshot || null) : null;
+}
+
+function setPackPhoto(packId, dataUrl) {
+  const rep = _getPackRepTrade(packId);
+  if (!rep) return;
+  const idx = trades.findIndex(t => t.id === rep.id);
+  if (idx === -1) return;
+  trades[idx].packScreenshot = dataUrl;
+  save();
+  renderTrades();
+  // If a trade from this pack is selected, refresh its detail panel
+  const selTrade = trades.find(t => t.id === selectedId);
+  if (selTrade && selTrade.packId === packId) showTradeDetail(selectedId);
+  try { guaranteedSaveToSupabase(trades[idx]); } catch(e) {}
+}
+
+function removePackPhoto(packId, e) {
+  if (e) e.stopPropagation();
+  setPackPhoto(packId, null);
+  toast('Group photo removed', '');
+}
+
+function uploadPackPhoto(evt, packId) {
+  const file = evt.target.files && evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    setPackPhoto(packId, e.target.result);
+    toast('✓ Group photo saved', 'success');
+  };
+  reader.readAsDataURL(file);
+  evt.target.value = '';
+}
+
+function openPackPhotoLightbox(packId, e) {
+  if (e) e.stopPropagation();
+  const photo = getPackPhoto(packId);
+  if (!photo) return;
+  const lb = document.createElement('div');
+  lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+  lb.onclick = () => lb.remove();
+  lb.innerHTML = `<img src="${photo}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:10px;box-shadow:0 0 80px rgba(0,0,0,.8);">`;
+  document.body.appendChild(lb);
+}
+
+// ── Inject pack photo thumbnail into pack header row ──────────────
+// Patches renderPackRows to show group photo thumb / add button
+(function patchRenderPackRowsForPhoto() {
+  const _origRenderPackRows = renderPackRows;
+  renderPackRows = function(packId, packTrades, sym) {
+    let html = _origRenderPackRows(packId, packTrades, sym);
+
+    // Inject photo thumb / add-photo button into the actions column
+    // We'll append a small photo section after the header row's actions div
+    // by inserting a new TD — but since the row is already built we use a
+    // post-process approach: we add a hidden file input + photo state in
+    // the tags column (last td) of the header row.
+    const photo = getPackPhoto(packId);
+    const photoHtml = photo
+      ? `<div class="pack-photo-thumb" title="Group photo — click to expand" onclick="openPackPhotoLightbox('${packId}',event)">
+           <img src="${photo}" alt="group chart">
+         </div>
+         <button class="pack-photo-add" title="Remove group photo" onclick="removePackPhoto('${packId}',event)" style="width:22px;height:22px;font-size:11px;border-color:rgba(255,59,92,.4);color:var(--red);">✕</button>`
+      : `<label class="pack-photo-add" title="Add one photo for the whole group" onclick="event.stopPropagation()" style="cursor:pointer;">
+           📷
+           <input type="file" accept="image/*" style="display:none;" onchange="uploadPackPhoto(event,'${packId}')">
+         </label>`;
+
+    // Inject into the last <td> of the pack header row
+    // The last TD in renderPackRows ends with closing </td></tr>
+    const injectHtml = `<div style="display:flex;align-items:center;gap:4px;margin-top:4px;">${photoHtml}</div>`;
+    html = html.replace(
+      /(<tr[^>]*class="pack-header-row[^"]*"[^>]*>[\s\S]*?<td data-col="tags"[^>]*>)([\s\S]*?)(<\/td><\/tr>)/,
+      (match, before, content, after) => `${before}${content}${injectHtml}${after}`
+    );
+
+    return html;
+  };
+})();
+
+// ── In trade detail side panel: show pack photo when trade has no individual screenshot ──
+// Patches showTradeDetail to inject pack photo section
+(function patchShowTradeDetailForPackPhoto() {
+  const _orig = showTradeDetail;
+  showTradeDetail = function(id) {
+    _orig(id);
+    // After the original fills the panel, check if this trade belongs to a pack
+    const t = trades.find(x => x.id === id);
+    if (!t || !t.packId) return;
+    const photo = getPackPhoto(t.packId);
+    if (!photo && t.screenshot) return; // has own photo, all good
+
+    // Find the "Chart Photo" section in the detail body
+    const body = document.getElementById('trade-detail-body');
+    if (!body) return;
+
+    if (photo && !t.screenshot) {
+      // Prepend a group photo banner above the individual photo section
+      // Find the section that has the Chart Photo label
+      const allDivs = body.querySelectorAll('div');
+      let insertBefore = null;
+      for (const div of allDivs) {
+        if (div.childNodes.length && div.textContent.includes('Chart Photo')) {
+          // Walk up to find the containing margin div
+          let el = div;
+          while (el && el.parentElement !== body.querySelector('div[style*="padding:20px"]')) {
+            el = el.parentElement;
+          }
+          insertBefore = el || div;
+          break;
+        }
+      }
+
+      const banner = document.createElement('div');
+      banner.style.cssText = 'margin-bottom:14px;';
+      banner.innerHTML = `
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          Group Photo <span style="font-size:9px;background:rgba(99,102,241,.12);color:var(--accent);padding:2px 7px;border-radius:20px;font-weight:800;letter-spacing:.3px;">SHARED</span>
+        </div>
+        <div style="cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid rgba(99,102,241,.3);" onclick="openPackPhotoLightbox('${t.packId}')">
+          <img src="${photo}" alt="group chart" style="width:100%;display:block;border-radius:10px;">
+          <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Shared group photo · Click to expand</div>
+        </div>
+        <div style="margin-top:6px;display:flex;gap:6px;">
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;flex:1;" onclick="removePackPhoto('${t.packId}')">Remove Group Photo</button>
+        </div>`;
+      if (insertBefore && insertBefore.parentNode) {
+        insertBefore.parentNode.insertBefore(banner, insertBefore);
+      } else {
+        // Fallback: append to detail body inner div
+        const inner = body.querySelector('div[style*="padding:20px"]') || body;
+        inner.appendChild(banner);
+      }
+    }
+  };
+  console.log('TradeLog: Pack photo system loaded ✓');
+})();
 
 // ── FEATURES DROPDOWN ────────────────────────────────────────────────────────
 function toggleFeaturesDrop() {
