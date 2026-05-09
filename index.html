@@ -1312,7 +1312,7 @@
       max-height: 260px !important;
     }
 
-    /* ── GOALS + JOURNAL: stack vertically ── */
+    /* ── GOALS + JOURNAL + RULES: stack vertically on mobile ── */
     #dashboard-content > div:first-child {
       grid-template-columns: 1fr !important;
       gap: 8px !important;
@@ -1998,9 +1998,9 @@
       </div>
     </div>
 
-    <!-- ── GOALS + DAILY JOURNAL ROW ── -->
+    <!-- ── GOALS + DAILY JOURNAL + TRADING RULES ROW ── -->
     <div id="dashboard-content">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;align-items:start;">
 
       <!-- Goals / Targets -->
       <div class="panel">
@@ -2063,21 +2063,21 @@
         </div>
       </div>
 
-    </div>
-
-    <!-- ── TRADING RULES (dashboard) ── -->
-    <div class="panel" style="margin-bottom:12px;">
-      <div class="panel-header">
-        <div class="panel-header-left">
-          <div class="panel-title">Trading Rules</div>
-          <button class="info-btn" onmouseenter="showInfo(this,'Trading Rules','Your personal rules checklist. Check them off each day to stay disciplined.')" onmouseleave="hideInfo()">i</button>
+      <!-- ── TRADING RULES (inside 3-col grid) ── -->
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <div class="panel-title">Trading Rules</div>
+            <button class="info-btn" onmouseenter="showInfo(this,'Trading Rules','Your personal rules checklist. Check them off each day to stay disciplined.')" onmouseleave="hideInfo()">i</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button onclick="switchPage('mindset')" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--sans);font-weight:700;padding:0;transition:color .15s;" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--muted)'">Manage in Mindset →</button>
+            <button onclick="addDashboardRule()" class="btn btn-ghost" style="font-size:10px;padding:5px 12px;">+ Add Rule</button>
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button onclick="switchPage('mindset')" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--sans);font-weight:700;padding:0;transition:color .15s;" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--muted)'">Manage in Mindset →</button>
-          <button onclick="addDashboardRule()" class="btn btn-ghost" style="font-size:10px;padding:5px 12px;">+ Add Rule</button>
-        </div>
+        <div id="dash-rules-list" style="padding:6px 20px 14px;display:flex;flex-direction:column;gap:2px;min-height:48px;flex:1;overflow-y:auto;"></div>
       </div>
-      <div id="dash-rules-list" style="padding:6px 20px 14px;display:flex;flex-direction:column;gap:2px;min-height:48px;"></div>
+
     </div>
 
     <div class="two-col" style="align-items:stretch;">
