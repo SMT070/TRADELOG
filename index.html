@@ -1312,7 +1312,7 @@
       max-height: 260px !important;
     }
 
-    /* ── GOALS + JOURNAL + RULES: stack vertically on mobile ── */
+    /* ── GOALS + JOURNAL: stack vertically ── */
     #dashboard-content > div:first-child {
       grid-template-columns: 1fr !important;
       gap: 8px !important;
@@ -1998,84 +1998,69 @@
       </div>
     </div>
 
-    <!-- ── GOALS + DAILY JOURNAL + TRADING RULES ROW ── -->
+    <!-- ── GOALS + DAILY JOURNAL ROW ── -->
     <div id="dashboard-content">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;align-items:start;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;align-items:stretch;">
 
       <!-- Goals / Targets -->
       <div class="panel">
-        <div class="panel-header" style="padding:10px 16px;">
+        <div class="panel-header">
           <div class="panel-header-left">
             <div class="panel-title">Daily Goals</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Goals','P&L targets. Green = on track, red = behind.')" onmouseleave="hideInfo()">i</button>
           </div>
-          <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="openGoalsModal()">Edit Goals</button>
+          <button class="btn btn-ghost" style="font-size:10px;padding:5px 12px;" onclick="openGoalsModal()">Edit Goals</button>
         </div>
-        <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:9px;">
+        <div style="padding:16px var(--page-px);display:flex;flex-direction:column;gap:14px;height:180px;overflow-y:auto;">
           <!-- Daily P&L Goal -->
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Daily P&L Target</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Daily P&L Target</span>
               <span style="font-size:12px;font-weight:700;" id="goal-daily-label">—</span>
             </div>
-            <div style="height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+            <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
               <div id="goal-daily-bar" style="height:100%;border-radius:3px;background:var(--green);width:0%;transition:width .6s ease;"></div>
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="goal-daily-sub"></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="goal-daily-sub"></div>
           </div>
           <!-- Weekly P&L Goal -->
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Weekly P&L Target</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Weekly P&L Target</span>
               <span style="font-size:12px;font-weight:700;" id="goal-weekly-label">—</span>
             </div>
-            <div style="height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+            <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
               <div id="goal-weekly-bar" style="height:100%;border-radius:3px;background:var(--accent);width:0%;transition:width .6s ease;"></div>
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="goal-weekly-sub"></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="goal-weekly-sub"></div>
           </div>
           <!-- Monthly P&L Goal -->
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Monthly P&L Target</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Monthly P&L Target</span>
               <span style="font-size:12px;font-weight:700;" id="goal-monthly-label">—</span>
             </div>
-            <div style="height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+            <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
               <div id="goal-monthly-bar" style="height:100%;border-radius:3px;background:var(--yellow);width:0%;transition:width .6s ease;"></div>
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="goal-monthly-sub"></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="goal-monthly-sub"></div>
           </div>
         </div>
       </div>
 
       <!-- Daily Journal -->
       <div class="panel" style="display:flex;flex-direction:column;">
-        <div class="panel-header" style="padding:10px 16px;">
+        <div class="panel-header">
           <div class="panel-header-left"><div class="panel-title">Today's Journal</div></div>
           <span style="font-size:10px;color:var(--muted);" id="journal-date-label"></span>
         </div>
-        <div style="padding:10px 16px 12px;flex:1;display:flex;flex-direction:column;gap:7px;">
-          <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;min-height:58px;"></textarea>
-          <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;min-height:58px;"></textarea>
+        <div style="padding:16px var(--page-px);display:flex;flex-direction:column;gap:10px;height:180px;overflow-y:auto;">
+          <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;"></textarea>
+          <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;"></textarea>
           <div style="display:flex;justify-content:flex-end;">
-            <button class="btn btn-primary" onclick="saveJournal()" style="font-size:11px;padding:6px 16px;">Save Journal</button>
+            <button class="btn btn-primary" onclick="saveJournal()" style="font-size:11px;padding:7px 18px;">Save Journal</button>
           </div>
         </div>
-      </div>
-
-      <!-- ── TRADING RULES (inside 3-col grid) ── -->
-      <div class="panel" style="display:flex;flex-direction:column;">
-        <div class="panel-header" style="padding:10px 16px;">
-          <div class="panel-header-left">
-            <div class="panel-title">Trading Rules</div>
-            <button class="info-btn" onmouseenter="showInfo(this,'Trading Rules','Your personal rules checklist. Check them off each day to stay disciplined.')" onmouseleave="hideInfo()">i</button>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button onclick="switchPage('mindset')" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--sans);font-weight:700;padding:0;transition:color .15s;" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--muted)'">Manage in Mindset →</button>
-            <button onclick="addDashboardRule()" class="btn btn-ghost" style="font-size:10px;padding:4px 10px;">+ Add Rule</button>
-          </div>
-        </div>
-        <div id="dash-rules-list" style="padding:4px 16px 12px;display:flex;flex-direction:column;gap:1px;min-height:40px;flex:1;overflow-y:auto;"></div>
       </div>
 
     </div>
@@ -6009,7 +5994,6 @@ function refreshDashboard() {
     renderRecentTable();
     try { updateEmptyState(); } catch(e) {}
     try { renderGoals(); } catch(e) {}
-    try { renderDashboardRules(); } catch(e) {}
     try { loadJournal(); } catch(e) {}
     try { updateGreeting(); } catch(e) {}
     return;
@@ -6510,7 +6494,6 @@ function refreshDashboard() {
   // New dashboard features
   try { updateEmptyState(); } catch(e) {}
   try { renderGoals(); } catch(e) {}
-  try { renderDashboardRules(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
   try { updateGreeting(); } catch(e) {}
 }
@@ -9970,18 +9953,12 @@ function renderCalendar() {
 
     if (ghost) {
       // Ghost cell — dim, no interaction, shows prev/next month day number
-      html += `<div class="cal-cell" style="opacity:0.28;cursor:default;pointer-events:none;background:transparent;">
+      html += `<div class="cal-cell" style="opacity:0.12;cursor:default;pointer-events:none;background:transparent;">
         <div class="cal-day-num" style="color:var(--muted);">${d}</div>
       </div>`;
     } else {
-      // Pre-compute balance events so dimStyle can check for them
-      const dayBEall      = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
-      const hasDeposit    = dayBEall.some(e => e.type === 'deposit');
-      const hasWithdrawal = dayBEall.some(e => e.type === 'withdrawal');
-      const hasBEevt      = dayBEall.length > 0;
-      // Dim empty past weekdays; weekend empty cells slightly more — never dim cells with data
-      const dimStyle = (!isToday && !data && !hasBEevt && isPast && !isWeekend) ? 'opacity:0.60;' :
-                       (!isToday && !data && !hasBEevt && isWeekend)            ? 'opacity:0.50;' : '';
+      // Dim past days with no trades
+      const dimStyle = (!isToday && !data && (isPast || isWeekend)) ? 'opacity:0.30;' : '';
       let cellClass = 'cal-cell';
       if (isToday)   cellClass += ' today';
       if (isWeekend && !isToday) cellClass += ' weekend-cell';
@@ -9990,12 +9967,16 @@ function renderCalendar() {
       const dayNumStyle = data ? 'color:var(--text);font-weight:800;' : (isToday ? '' : 'color:var(--muted);');
       let inner = `<div class="cal-day-num" style="${dayNumStyle}">${d}</div>`;
       // Balance event indicator — show 💰 and/or 💸 top-right
+      const dayBEall  = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
+      const hasDeposit    = dayBEall.some(e => e.type === 'deposit');
+      const hasWithdrawal = dayBEall.some(e => e.type === 'withdrawal');
       if (hasDeposit || hasWithdrawal) {
         inner += '<div style="position:absolute;top:5px;right:6px;display:flex;gap:1px;line-height:1;">'
           + (hasDeposit    ? '<span style="font-size:9px;opacity:0.9;">💰</span>' : '')
           + (hasWithdrawal ? '<span style="font-size:9px;opacity:0.9;">💸</span>' : '')
           + '</div>';
       }
+      const hasBEevt = dayBEall.length > 0;
       if (data) {
         const pnlClass = data.pnl >= 0 ? 'pos' : 'neg';
         const abs  = Math.abs(data.pnl);
@@ -10036,7 +10017,7 @@ function renderCalendar() {
         html += '<div style="font-size:9px;color:var(--muted);font-weight:600;">' + weekTradeDays + 'd</div>';
         html += '</div>';
       } else {
-        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:transparent;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;opacity:0.55;">';
+        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:transparent;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;opacity:0.35;">';
         html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Week ' + weekNum + '</div>';
         html += '<div style="font-size:11px;font-weight:700;color:var(--border2);">—</div>';
         html += '</div>';
@@ -10290,58 +10271,6 @@ function saveGoals() {
   toast('Goals saved!', 'success');
 }
 
-// ── DASHBOARD TRADING RULES ──────────────────────────────────────────────────
-function renderDashboardRules() {
-  const el = document.getElementById('dash-rules-list');
-  if (!el) return;
-  const data = getMindsetData();
-  const rules = data.rules || [];
-  if (!rules.length) {
-    el.innerHTML = `<div style="text-align:center;padding:18px 0;color:var(--muted);font-size:12px;">No rules yet — click <strong style="color:var(--text2);">+ Add Rule</strong> to create your first trading rule.</div>`;
-    return;
-  }
-  const done = rules.filter(r => r.checked).length;
-  const pct = rules.length ? Math.round(done / rules.length * 100) : 0;
-  const barColor = pct === 100 ? 'var(--green)' : pct >= 60 ? 'var(--accent)' : pct >= 30 ? 'var(--yellow)' : 'var(--red)';
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;padding:5px 0 7px;">
-      <div style="flex:1;height:3px;border-radius:4px;background:var(--surface3);overflow:hidden;">
-        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .4s;"></div>
-      </div>
-      <span style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap;">${done}/${rules.length} checked</span>
-    </div>
-    ${rules.map((r, i) => `
-    <div style="display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid var(--border);">
-      <div onclick="toggleDashboardRule(${i})" style="width:16px;height:16px;min-width:16px;border-radius:4px;border:2px solid ${r.checked?'var(--accent)':'var(--border2)'};background:${r.checked?'var(--accent)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;">
-        ${r.checked?'<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>':''}
-      </div>
-      <span style="flex:1;font-size:12px;color:${r.checked?'var(--muted)':'var(--text)'};text-decoration:${r.checked?'line-through':'none'};line-height:1.35;">${r.text.replace(/</g,'&lt;')}</span>
-    </div>`).join('')}`;
-}
-
-function toggleDashboardRule(i) {
-  const data = getMindsetData();
-  if (!data.rules || !data.rules[i]) return;
-  data.rules[i].checked = !data.rules[i].checked;
-  saveMindsetData(data);
-  renderDashboardRules();
-  // Also re-render mindset rules list if that page is active
-  if (document.getElementById('page-mindset')?.classList.contains('active')) {
-    renderMindsetRules(data.rules);
-  }
-}
-
-function addDashboardRule() {
-  openAddRuleModal();
-  // After saving, refresh dashboard rules too
-  const _origSaveRuleModal = window.saveRuleModal;
-  window.saveRuleModal = function(index) {
-    _origSaveRuleModal(index);
-    renderDashboardRules();
-    window.saveRuleModal = _origSaveRuleModal;
-  };
-}
-
 function renderGoals() {
   const g = getGoals();
   const sym = getCurrencySymbol();
@@ -10515,22 +10444,19 @@ function initMindsetPage() {
 }
 
 function mindsetNavDay(dir) {
-  const base = window._mindsetViewDate || getTodayKey();
-  // Build date manually to avoid any toISOString() timezone drift
-  const parts = base.split('-');
-  const cur = new Date(+parts[0], +parts[1]-1, +parts[2] + dir);
+  const cur = new Date((window._mindsetViewDate || getTodayKey()) + 'T12:00:00');
+  cur.setDate(cur.getDate() + dir);
   const today = new Date(); today.setHours(0,0,0,0);
   if (cur > today) return;
-  const newKey = cur.getFullYear() + '-' +
-    String(cur.getMonth()+1).padStart(2,'0') + '-' +
-    String(cur.getDate()).padStart(2,'0');
-  window._mindsetViewDate = newKey;
-  loadMindsetDay(newKey);
+  window._mindsetViewDate = cur.toISOString().slice(0,10);
+  loadMindsetDay(window._mindsetViewDate);
+  updateMindsetNavUI();
 }
 
 function mindsetGoToday() {
   window._mindsetViewDate = getTodayKey();
   loadMindsetDay(window._mindsetViewDate);
+  updateMindsetNavUI();
 }
 
 function updateMindsetNavUI() {
@@ -10777,7 +10703,6 @@ function toggleMindsetRule(i) {
   if (data.rules[i]) data.rules[i].checked = !data.rules[i].checked;
   saveMindsetData(data);
   renderMindsetRules(data.rules);
-  try { renderDashboardRules(); } catch(e) {}
 }
 function deleteMindsetRule(i) {
   const data = getMindsetData();
