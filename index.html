@@ -4654,6 +4654,7 @@ showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the c
     localStorage.removeItem(BAL_KEY);
     localStorage.removeItem(CUR_KEY);
     localStorage.removeItem('tradelog_sb_session');
+    localStorage.removeItem('tradelog_last_uid');
     if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
     showAuthScreen();
   }});
@@ -4772,25 +4773,24 @@ let currentUser = null;
 // Returns uid string or null. Always re-reads from storage (mobile-safe).
 async function getValidUid() {
   try {
-    // Use in-memory currentUser first — always valid within a session.
-    // Avoids getSession() round-trip which can fail on mobile after page resume.
     if (currentUser && currentUser.id) return currentUser.id;
-    // Not in memory — ask Supabase (first load, page refresh, etc.)
+    // Try stored session first (fastest, works offline)
     const { data: { session } } = await sb.auth.getSession();
     if (session && session.user) {
       currentUser = session.user;
       return currentUser.id;
     }
-    // Last resort: try a token refresh (recovers expired sessions on mobile)
-    const { data: refreshed } = await sb.auth.refreshSession();
-    if (refreshed && refreshed.session && refreshed.session.user) {
+    // Force token refresh (recovers expired/backgrounded sessions)
+    const { data: refreshed, error: rErr } = await sb.auth.refreshSession();
+    if (!rErr && refreshed && refreshed.session && refreshed.session.user) {
       currentUser = refreshed.session.user;
       return currentUser.id;
     }
     return null;
   } catch(e) {
     console.warn('TradeLog: getValidUid failed', e);
-    return null;
+    // Last resort: return cached user if we have one from before the error
+    return currentUser ? currentUser.id : null;
   }
 }
 
@@ -4853,20 +4853,22 @@ async function loadAllFromSupabase() {
   const uid = await getValidUid();
   if (!uid) return false;
 
-  // ── CRITICAL: Clear ALL local caches before loading from server.
-  // This guarantees that if a different user logs in on this device,
-  // they NEVER see stale data left behind by the previous session.
-  const themeToKeep = localStorage.getItem(THEME_KEY); // keep theme preference only
-  localStorage.removeItem(KEY);
-  localStorage.removeItem(MINDSET_KEY);
-  localStorage.removeItem(JOURNAL_KEY);
-  localStorage.removeItem(TAGS_KEY);
-  localStorage.removeItem(GOALS_KEY);
-  localStorage.removeItem(PROFILE_KEY);
-  localStorage.removeItem(BAL_KEY);
-  localStorage.removeItem(CUR_KEY);
-  if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
-
+// Only wipe stale data if we confirm this is a DIFFERENT user than last time.
+  // This prevents the app showing empty on mobile resume when Supabase is slow.
+  const lastUid = localStorage.getItem('tradelog_last_uid');
+  if (lastUid && lastUid !== uid) {
+    const themeToKeep = localStorage.getItem(THEME_KEY);
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(MINDSET_KEY);
+    localStorage.removeItem(JOURNAL_KEY);
+    localStorage.removeItem(TAGS_KEY);
+    localStorage.removeItem(GOALS_KEY);
+    localStorage.removeItem(PROFILE_KEY);
+    localStorage.removeItem(BAL_KEY);
+    localStorage.removeItem(CUR_KEY);
+    if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
+  }
+  localStorage.setItem('tradelog_last_uid', uid);
   // 1. Profile (name, avatar, currency, balance, theme, goals)
   try {
     const { data, error } = await sb.from('profiles').select('*').eq('id', uid).single();
@@ -5024,8 +5026,20 @@ async function initApp(user) {
   showApp();
   updateGreeting();
 
-  try { await loadAllFromSupabase(); } catch(e) { console.warn('TradeLog: loadAllFromSupabase failed, showing app anyway', e); }
+  // Show cached data IMMEDIATELY so the app feels instant on mobile
+  try {
+    load(); // load from localStorage cache
+    refreshDashboard();
+    renderTrades();
+    loadJournal();
+  } catch(e) {}
 
+  // Then sync from Supabase in background
+  try { await loadAllFromSupabase(); } catch(e) {
+    console.warn('TradeLog: loadAllFromSupabase failed, showing cached data', e);
+  }
+
+  // Re-render with fresh data
   try { refreshDashboard(); } catch(e) {}
   try { renderTrades(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
