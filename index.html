@@ -1316,7 +1316,6 @@
     #dashboard-content > div:first-child {
       grid-template-columns: 1fr !important;
       gap: 8px !important;
-      height: auto !important;
     }
 
     /* ── GOALS PANEL ── */
@@ -2001,10 +2000,10 @@
 
     <!-- ── GOALS + DAILY JOURNAL + TRADING RULES ROW ── -->
     <div id="dashboard-content">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;align-items:stretch;height:320px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;align-items:start;">
 
       <!-- Goals / Targets -->
-      <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
+      <div class="panel">
         <div class="panel-header" style="padding:10px 16px;">
           <div class="panel-header-left">
             <div class="panel-title">Daily Goals</div>
@@ -2012,7 +2011,7 @@
           </div>
           <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="openGoalsModal()">Edit Goals</button>
         </div>
-        <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:9px;flex:1;overflow-y:auto;min-height:0;">
+        <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:9px;">
           <!-- Daily P&L Goal -->
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
@@ -2055,7 +2054,7 @@
           <div class="panel-header-left"><div class="panel-title">Today's Journal</div></div>
           <span style="font-size:10px;color:var(--muted);" id="journal-date-label"></span>
         </div>
-        <div style="padding:10px 16px 12px;flex:1;display:flex;flex-direction:column;gap:7px;overflow-y:auto;min-height:0;">
+        <div style="padding:10px 16px 12px;flex:1;display:flex;flex-direction:column;gap:7px;">
           <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;min-height:58px;"></textarea>
           <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;min-height:58px;"></textarea>
           <div style="display:flex;justify-content:flex-end;">
@@ -2065,7 +2064,7 @@
       </div>
 
       <!-- ── TRADING RULES (inside 3-col grid) ── -->
-      <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
+      <div class="panel" style="display:flex;flex-direction:column;">
         <div class="panel-header" style="padding:10px 16px;">
           <div class="panel-header-left">
             <div class="panel-title">Trading Rules</div>
@@ -9970,8 +9969,8 @@ function renderCalendar() {
     const d         = parseInt(dateStr.slice(8));
 
     if (ghost) {
-      // Ghost cell — dim, no interaction, shows prev/next month day number
-      html += `<div class="cal-cell" style="opacity:0.28;cursor:default;pointer-events:none;background:transparent;">
+      // Ghost cell — prev/next month day number, subtle but readable
+      html += `<div class="cal-cell" style="opacity:0.45;cursor:default;pointer-events:none;background:transparent;">
         <div class="cal-day-num" style="color:var(--muted);">${d}</div>
       </div>`;
     } else {
@@ -9981,8 +9980,8 @@ function renderCalendar() {
       const hasWithdrawal = dayBEall.some(e => e.type === 'withdrawal');
       const hasBEevt      = dayBEall.length > 0;
       // Dim empty past weekdays; weekend empty cells slightly more — never dim cells with data
-      const dimStyle = (!isToday && !data && !hasBEevt && isPast && !isWeekend) ? 'opacity:0.60;' :
-                       (!isToday && !data && !hasBEevt && isWeekend)            ? 'opacity:0.50;' : '';
+      const dimStyle = (!isToday && !data && !hasBEevt && isPast && !isWeekend) ? 'opacity:0.82;' :
+                       (!isToday && !data && !hasBEevt && isWeekend)            ? 'opacity:0.70;' : '';
       let cellClass = 'cal-cell';
       if (isToday)   cellClass += ' today';
       if (isWeekend && !isToday) cellClass += ' weekend-cell';
@@ -10027,6 +10026,9 @@ function renderCalendar() {
       const weekPnl   = weekDates.reduce((s, ds) => s + (dayMap[ds] ? dayMap[ds].pnl : 0), 0);
       const weekTradeDays = weekDates.filter(ds => dayMap[ds]).length;
       const hasTrades = weekDates.some(ds => dayMap[ds]);
+      // Dim week column only if entire week is in the past and has no trades
+      const weekAllPast = weekDates.length > 0 && weekDates.every(ds => ds < todayStr);
+      const weekDimStyle = (!hasTrades && weekAllPast) ? 'opacity:0.70;' : '';
       const pnlColor  = weekPnl >= 0 ? 'var(--green)' : 'var(--red)';
       const bgColor   = weekPnl >= 0 ? 'rgba(0,255,187,0.06)' : 'rgba(255,59,92,0.06)';
       const bdrColor  = weekPnl >= 0 ? 'rgba(0,255,187,0.2)'  : 'rgba(255,59,92,0.2)';
@@ -10037,7 +10039,7 @@ function renderCalendar() {
         html += '<div style="font-size:9px;color:var(--muted);font-weight:600;">' + weekTradeDays + 'd</div>';
         html += '</div>';
       } else {
-        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:transparent;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;opacity:0.55;">';
+        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:transparent;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;' + weekDimStyle + '">';
         html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Week ' + weekNum + '</div>';
         html += '<div style="font-size:11px;font-weight:700;color:var(--border2);">—</div>';
         html += '</div>';
