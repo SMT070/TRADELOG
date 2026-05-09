@@ -4408,13 +4408,13 @@ function toggleAutoTheme() {
     const t = localStorage.getItem(THEME_KEY) || 'dark';
     document.documentElement.setAttribute('data-theme', t);
     updateThemeButtons(t);
-  } else {
-    // Turn on
+} else {
     localStorage.setItem(AUTO_THEME_KEY, 'true');
     _applyAutoTheme();
     // Check every 60 seconds if hour changed
     _autoThemeInterval = setInterval(_applyAutoTheme, 60000);
   }
+  saveProfileToSupabase();
 }
 
 function loadTheme() {
@@ -4774,8 +4774,10 @@ async function loadAllFromSupabase() {
       if (data.settings) {
         try {
           const s = typeof data.settings === 'string' ? JSON.parse(data.settings) : data.settings;
-          if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); setTheme(s.theme); }
+          if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); }
+          if (typeof s.autoTheme !== 'undefined') { localStorage.setItem(AUTO_THEME_KEY, String(s.autoTheme)); }
           if (s.goals) localStorage.setItem(GOALS_KEY, typeof s.goals === 'string' ? s.goals : JSON.stringify(s.goals));
+          loadTheme();
         } catch(e) {}
       }
       loadProfile();
@@ -4834,7 +4836,7 @@ async function saveProfileToSupabase() {
   try {
     const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
     const goals = JSON.parse(localStorage.getItem(GOALS_KEY) || '{}');
-    const settings = { theme: localStorage.getItem(THEME_KEY) || 'dark', goals };
+    const settings = { theme: localStorage.getItem(THEME_KEY) || 'dark', autoTheme: localStorage.getItem(AUTO_THEME_KEY) === 'true', goals };
     const { error } = await sb.from('profiles').upsert({
       id: uid,
       name: p.name || '',
