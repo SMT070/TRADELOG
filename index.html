@@ -1316,7 +1316,6 @@
     #dashboard-content > div:first-child {
       grid-template-columns: 1fr !important;
       gap: 8px !important;
-      height: auto !important;
     }
 
     /* ── GOALS PANEL ── */
@@ -2001,18 +2000,18 @@
 
     <!-- ── GOALS + DAILY JOURNAL + TRADING RULES ROW ── -->
     <div id="dashboard-content">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;align-items:stretch;height:230px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;align-items:start;">
 
       <!-- Goals / Targets -->
-      <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
-        <div class="panel-header" style="padding:10px 16px;flex-shrink:0;">
+      <div class="panel">
+        <div class="panel-header" style="padding:10px 16px;">
           <div class="panel-header-left">
             <div class="panel-title">Daily Goals</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Goals','P&L targets. Green = on track, red = behind.')" onmouseleave="hideInfo()">i</button>
           </div>
           <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="openGoalsModal()">Edit Goals</button>
         </div>
-        <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:9px;flex:1;overflow-y:auto;min-height:0;">
+        <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:9px;">
           <!-- Daily P&L Goal -->
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
@@ -2050,14 +2049,14 @@
       </div>
 
       <!-- Daily Journal -->
-      <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
-        <div class="panel-header" style="padding:10px 16px;flex-shrink:0;">
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div class="panel-header" style="padding:10px 16px;">
           <div class="panel-header-left"><div class="panel-title">Today's Journal</div></div>
           <span style="font-size:10px;color:var(--muted);" id="journal-date-label"></span>
         </div>
-        <div style="padding:10px 16px 12px;flex:1;display:flex;flex-direction:column;gap:7px;overflow-y:auto;min-height:0;">
-          <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;flex-shrink:0;"></textarea>
-          <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;flex-shrink:0;"></textarea>
+        <div style="padding:10px 16px 12px;flex:1;display:flex;flex-direction:column;gap:7px;">
+          <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;min-height:58px;"></textarea>
+          <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;min-height:58px;"></textarea>
           <div style="display:flex;justify-content:flex-end;">
             <button class="btn btn-primary" onclick="saveJournal()" style="font-size:11px;padding:6px 16px;">Save Journal</button>
           </div>
@@ -2065,8 +2064,8 @@
       </div>
 
       <!-- ── TRADING RULES (inside 3-col grid) ── -->
-      <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
-        <div class="panel-header" style="padding:10px 16px;flex-shrink:0;">
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div class="panel-header" style="padding:10px 16px;">
           <div class="panel-header-left">
             <div class="panel-title">Trading Rules</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Trading Rules','Your personal rules checklist. Check them off each day to stay disciplined.')" onmouseleave="hideInfo()">i</button>
@@ -13468,6 +13467,7 @@ function renderPackRows(packId, packTrades, sym) {
   const decided    = wins + losses;
   const wr         = decided ? Math.round(wins/decided*100) : 0;
   const totalLots  = packTrades.reduce((s,t) => s + (parseFloat(t.lots)||0), 0);
+  const totalComm  = packTrades.reduce((s,t) => s + (parseFloat(t.commission)||0), 0);
   const symbols    = [...new Set(packTrades.map(t=>t.symbol))].join(', ');
   const dirs       = [...new Set(packTrades.map(t=>t.dir))];
   const dir        = dirs.length === 1 ? dirs[0] : 'MIXED';
@@ -13482,6 +13482,15 @@ function renderPackRows(packId, packTrades, sym) {
   const resultLabel= packResult==='win'?'WIN':packResult==='loss'?'LOSS':'BE';
   const colspanVal = packSelectMode ? 11 : 10;
   const safePackName = packName.replace(/'/g,"\\'");
+
+  // Entry = first trade's entry (sorted by open date), Exit = last trade's exit
+  const sortedByDate = [...packTrades].sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  const firstTrade = sortedByDate[0];
+  const lastTrade  = sortedByDate[sortedByDate.length - 1];
+  const entryPrice = firstTrade?.entry ? (+firstTrade.entry).toFixed(firstTrade.entry % 1 === 0 ? 0 : 2) : '—';
+  const exitPrice  = lastTrade?.exit   ? (+lastTrade.exit).toFixed(lastTrade.exit % 1 === 0 ? 0 : 2)   : '—';
+  const commStr    = totalComm > 0 ? '-'+sym+totalComm.toFixed(2) : '—';
+  const commColor  = totalComm > 0 ? 'var(--red)' : 'var(--muted)';
 
   // ── HTML: looks like a normal trade row ──────────────────────────
   const chevron = `<svg class="pack-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;margin-right:7px;${isExpanded?'transform:rotate(90deg)':''}"><polyline points="9 18 15 12 9 6"/></svg>`;
@@ -13500,10 +13509,10 @@ function renderPackRows(packId, packTrades, sym) {
     <td style="font-weight:600;">${symbols}</td>
     <td><div style="display:flex;align-items:center;">${dirBadge}${countPill}</div></td>
     <td style="color:var(--text);font-weight:500;">${totalLots.toFixed(2)}</td>
-    <td style="color:var(--muted);">—</td>
-    <td style="color:var(--muted);">—</td>
+    <td style="color:var(--text2);font-weight:500;font-family:var(--mono);">${entryPrice}</td>
+    <td style="color:var(--text2);font-weight:500;font-family:var(--mono);">${exitPrice}</td>
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
-    <td style="color:var(--muted);">—</td>
+    <td style="color:${commColor};font-family:var(--mono);font-weight:600;">${commStr}</td>
     <td>${resultBadge}</td>
     <td data-col="tags" style="max-width:110px;" onclick="event.stopPropagation()"><div class="pack-row-actions" style="display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .15s;">${actions}</div></td>
   </tr>`;
