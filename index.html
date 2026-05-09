@@ -1427,70 +1427,114 @@
     #cal-month-label { font-size: 16px !important; }
     /* Hide year/alltime view buttons */
     #cal-view-year, #cal-view-alltime { display: none !important; }
-    /* Cal cells — taller, cleaner containers */
+    /* ── CALENDAR CELLS: perfectly uniform, no overflow ── */
+    #cal-grid {
+      display: grid !important;
+      grid-template-columns: repeat(7, 1fr) !important;
+      grid-auto-rows: 72px !important;
+      gap: 3px !important;
+      background: transparent !important;
+      padding: 3px !important;
+    }
+
+    /* Every cell: fixed size, position:relative for absolute children */
     .cal-cell {
-      min-height: 64px !important;
-      max-height: 80px !important;
-      padding: 5px 3px 18px !important;
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      justify-content: flex-start !important;
-      text-align: center !important;
-      border-radius: 10px !important;
-      border: 1px solid var(--border) !important;
-      background: var(--surface) !important;
+      height: 72px !important;
+      min-height: 72px !important;
+      max-height: 72px !important;
+      width: 100% !important;
+      padding: 0 !important;
+      position: relative !important;
+      display: block !important;
+      border-radius: 8px !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+      background: var(--surface2) !important;
     }
-    /* Win/loss cells keep their colour but also show border */
-    .cal-cell.has-win  { border-color: rgba(0,255,187,0.35) !important; }
-    .cal-cell.has-loss { border-color: rgba(255,59,92,0.35) !important; }
-    .cal-cell.today    { border-color: var(--accent) !important; border-width: 2px !important; }
-    .cal-cell.empty    { background: transparent !important; border: none !important; }
-    /* Day number — top-left, bold */
+    .cal-cell.empty {
+      background: transparent !important;
+      border: none !important;
+      pointer-events: none !important;
+    }
+    .cal-cell.has-win  { background: rgba(0,255,187,0.13) !important; box-shadow: inset 0 2px 0 rgba(0,255,187,0.5) !important; }
+    .cal-cell.has-loss { background: rgba(255,59,92,0.13) !important;  box-shadow: inset 0 2px 0 rgba(255,59,92,0.5) !important; }
+    .cal-cell.today    { outline: 2px solid var(--accent) !important; outline-offset: -2px !important; background: var(--surface2) !important; }
+    .cal-cell.today.has-win  { background: rgba(0,255,187,0.13) !important; }
+    .cal-cell.today.has-loss { background: rgba(255,59,92,0.13) !important; }
+    .cal-cell.selected-day   { outline: 2px solid var(--accent) !important; outline-offset: -2px !important; }
+
+    /* Day number — top-left, always same position */
     .cal-day-num {
-      position: static !important;
-      font-size: 12px !important;
-      font-weight: 800 !important;
-      margin-bottom: 3px !important;
-      line-height: 1 !important;
-      align-self: center !important;
-    }
-    /* P&L value — prominent */
-    .cal-pnl {
+      position: absolute !important;
+      top: 5px !important;
+      left: 0 !important;
+      right: 0 !important;
+      text-align: center !important;
       font-size: 11px !important;
+      font-weight: 700 !important;
+      color: var(--muted) !important;
+      line-height: 1 !important;
+    }
+    .cal-cell.has-win  .cal-day-num,
+    .cal-cell.has-loss .cal-day-num { color: var(--text) !important; font-weight: 800 !important; }
+    .cal-cell.today .cal-day-num {
+      background: var(--accent) !important;
+      color: #fff !important;
+      width: 20px !important;
+      height: 20px !important;
+      border-radius: 50% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 10px !important;
       font-weight: 900 !important;
+      left: 50% !important;
+      right: auto !important;
+      transform: translateX(-50%) !important;
+      top: 4px !important;
+    }
+
+    /* P&L — centred in cell */
+    .cal-pnl {
+      position: absolute !important;
+      top: 50% !important;
+      left: 0 !important;
+      right: 0 !important;
+      transform: translateY(-50%) !important;
+      margin-top: 6px !important;
+      font-size: 10px !important;
+      font-weight: 900 !important;
+      text-align: center !important;
       letter-spacing: -0.3px !important;
       line-height: 1 !important;
     }
-    /* Trade count — bottom of cell */
+
+    /* Trade count — bottom */
     .cal-trades {
       position: absolute !important;
       bottom: 4px !important;
       left: 0 !important;
       right: 0 !important;
+      text-align: center !important;
       font-size: 8px !important;
       font-weight: 600 !important;
       color: var(--muted) !important;
     }
+
     .cal-cell-bar { display: none !important; }
 
-    /* Grid — gap so rounded corners breathe */
-    #cal-grid {
-      gap: 4px !important;
-      background: transparent !important;
-      padding: 4px !important;
-      grid-template-columns: repeat(7, 1fr) !important;
-    }
+    /* DOW header row */
     #cal-dow-row {
       grid-template-columns: repeat(7, 1fr) !important;
-      gap: 4px !important;
-      padding: 0 4px !important;
+      gap: 3px !important;
+      padding: 0 3px !important;
     }
     .cal-dow {
-      padding: 8px 0 6px !important;
+      padding: 7px 0 5px !important;
       font-size: 9px !important;
       font-weight: 800 !important;
       letter-spacing: 0.8px !important;
+      text-align: center !important;
     }
 
     /* ══ MINDSET PAGE ══ */
