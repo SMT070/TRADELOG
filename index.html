@@ -85,9 +85,9 @@
   }
   [data-theme="black"] body::before { display:none; }
 
-  * { margin:0; padding:0; box-sizing:border-box; cursor: default; user-select: none; }
-  input, textarea, [contenteditable] { cursor: text; user-select: text; }
-  button, select, label[for], [role="button"] { cursor: pointer; }
+  * { margin:0; padding:0; box-sizing:border-box; cursor: default; }
+  input, textarea, [contenteditable] { cursor: text; }
+  button, select, label[for], [onclick], [role="button"] { cursor: pointer; }
   a { cursor: pointer; }
 
   /* ── GLOBAL SCALE UP ── */
@@ -538,7 +538,6 @@
     font-size:12px; line-height:1.7; color:var(--text2);
     box-shadow:0 8px 32px rgba(0,0,0,.4);
     white-space:pre-wrap; word-break:break-word;
-    user-select: text; cursor: text;
   }
 
   /* ── BUTTONS ── */
@@ -1223,7 +1222,6 @@
     border:1px solid var(--border); border-top:none; border-radius:0;
     color:var(--text2); font-family:var(--sans); font-size:13.5px;
     line-height:1.8; padding:16px 18px; overflow-y:auto; box-sizing:border-box;
-    user-select: text; cursor: text;
   }
   .nb-preview h1,.nb-preview h2,.nb-preview h3 { color:var(--text); font-weight:800; margin:16px 0 8px; }
   .nb-preview h1 { font-size:20px; } .nb-preview h2 { font-size:16px; } .nb-preview h3 { font-size:14px; }
@@ -1324,15 +1322,11 @@
     .panel-header { padding: 10px 14px !important; }
     .panel-title { font-size: 10px !important; }
 
-    /* ── GOALS/JOURNAL/RULES: auto height on mobile ── */
-    #dashboard-content > div:first-child {
-      height: auto !important;
-    }
-
-    /* ── JOURNAL: scrollable textareas on mobile ── */
+    /* ── JOURNAL: smaller textareas ── */
     #journal-plan, #journal-review {
       font-size: 12px !important;
-      min-height: 0 !important;
+      rows: 2 !important;
+      min-height: 60px !important;
     }
 
     /* ── RECENT TRADES TABLE: minimal columns ── */
@@ -2006,82 +2000,82 @@
 
     <!-- ── GOALS + DAILY JOURNAL + TRADING RULES ROW ── -->
     <div id="dashboard-content">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;align-items:stretch;height:320px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;align-items:start;">
 
       <!-- Goals / Targets -->
-      <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
-        <div class="panel-header" style="flex-shrink:0;">
+      <div class="panel">
+        <div class="panel-header" style="padding:10px 16px;">
           <div class="panel-header-left">
             <div class="panel-title">Daily Goals</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Goals','P&L targets. Green = on track, red = behind.')" onmouseleave="hideInfo()">i</button>
           </div>
-          <button class="btn btn-ghost" style="font-size:10px;padding:5px 12px;" onclick="openGoalsModal()">Edit Goals</button>
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="openGoalsModal()">Edit Goals</button>
         </div>
-        <div style="padding:16px var(--page-px);display:flex;flex-direction:column;gap:14px;flex:1;overflow-y:auto;">
+        <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:9px;">
           <!-- Daily P&L Goal -->
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-              <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Daily P&L Target</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Daily P&L Target</span>
               <span style="font-size:12px;font-weight:700;" id="goal-daily-label">—</span>
             </div>
-            <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+            <div style="height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;">
               <div id="goal-daily-bar" style="height:100%;border-radius:3px;background:var(--green);width:0%;transition:width .6s ease;"></div>
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="goal-daily-sub"></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="goal-daily-sub"></div>
           </div>
           <!-- Weekly P&L Goal -->
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-              <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Weekly P&L Target</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Weekly P&L Target</span>
               <span style="font-size:12px;font-weight:700;" id="goal-weekly-label">—</span>
             </div>
-            <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+            <div style="height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;">
               <div id="goal-weekly-bar" style="height:100%;border-radius:3px;background:var(--accent);width:0%;transition:width .6s ease;"></div>
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="goal-weekly-sub"></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="goal-weekly-sub"></div>
           </div>
           <!-- Monthly P&L Goal -->
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-              <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Monthly P&L Target</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Monthly P&L Target</span>
               <span style="font-size:12px;font-weight:700;" id="goal-monthly-label">—</span>
             </div>
-            <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+            <div style="height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;">
               <div id="goal-monthly-bar" style="height:100%;border-radius:3px;background:var(--yellow);width:0%;transition:width .6s ease;"></div>
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="goal-monthly-sub"></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="goal-monthly-sub"></div>
           </div>
         </div>
       </div>
 
       <!-- Daily Journal -->
-      <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
-        <div class="panel-header" style="flex-shrink:0;">
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div class="panel-header" style="padding:10px 16px;">
           <div class="panel-header-left"><div class="panel-title">Today's Journal</div></div>
           <span style="font-size:10px;color:var(--muted);" id="journal-date-label"></span>
         </div>
-        <div style="padding:16px var(--page-px) 14px;flex:1;display:flex;flex-direction:column;gap:10px;overflow:hidden;min-height:0;">
-          <textarea id="journal-plan" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="flex:1;resize:none;font-size:12px;line-height:1.6;border-radius:10px;min-height:0;overflow-y:auto;"></textarea>
-          <textarea id="journal-review" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="flex:1;resize:none;font-size:12px;line-height:1.6;border-radius:10px;min-height:0;overflow-y:auto;"></textarea>
-          <div style="display:flex;justify-content:flex-end;flex-shrink:0;">
-            <button class="btn btn-primary" onclick="saveJournal()" style="font-size:11px;padding:7px 18px;">Save Journal</button>
+        <div style="padding:10px 16px 12px;flex:1;display:flex;flex-direction:column;gap:7px;">
+          <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;min-height:58px;"></textarea>
+          <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;min-height:58px;"></textarea>
+          <div style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-primary" onclick="saveJournal()" style="font-size:11px;padding:6px 16px;">Save Journal</button>
           </div>
         </div>
       </div>
 
       <!-- ── TRADING RULES (inside 3-col grid) ── -->
-      <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;">
-        <div class="panel-header" style="flex-shrink:0;">
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div class="panel-header" style="padding:10px 16px;">
           <div class="panel-header-left">
             <div class="panel-title">Trading Rules</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Trading Rules','Your personal rules checklist. Check them off each day to stay disciplined.')" onmouseleave="hideInfo()">i</button>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <button onclick="switchPage('mindset')" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--sans);font-weight:700;padding:0;transition:color .15s;" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--muted)'">Manage in Mindset →</button>
-            <button onclick="addDashboardRule()" class="btn btn-ghost" style="font-size:10px;padding:5px 12px;">+ Add Rule</button>
+            <button onclick="addDashboardRule()" class="btn btn-ghost" style="font-size:10px;padding:4px 10px;">+ Add Rule</button>
           </div>
         </div>
-        <div id="dash-rules-list" style="padding:6px 20px 14px;display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto;min-height:0;"></div>
+        <div id="dash-rules-list" style="padding:4px 16px 12px;display:flex;flex-direction:column;gap:1px;min-height:40px;flex:1;overflow-y:auto;"></div>
       </div>
 
     </div>
@@ -10310,18 +10304,18 @@ function renderDashboardRules() {
   const pct = rules.length ? Math.round(done / rules.length * 100) : 0;
   const barColor = pct === 100 ? 'var(--green)' : pct >= 60 ? 'var(--accent)' : pct >= 30 ? 'var(--yellow)' : 'var(--red)';
   el.innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0 10px;">
-      <div style="flex:1;height:4px;border-radius:4px;background:var(--surface3);overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 0 7px;">
+      <div style="flex:1;height:3px;border-radius:4px;background:var(--surface3);overflow:hidden;">
         <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .4s;"></div>
       </div>
-      <span style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;">${done}/${rules.length} checked</span>
+      <span style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap;">${done}/${rules.length} checked</span>
     </div>
     ${rules.map((r, i) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
-      <div onclick="toggleDashboardRule(${i})" style="width:18px;height:18px;min-width:18px;border-radius:5px;border:2px solid ${r.checked?'var(--accent)':'var(--border2)'};background:${r.checked?'var(--accent)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;">
-        ${r.checked?'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>':''}
+    <div style="display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid var(--border);">
+      <div onclick="toggleDashboardRule(${i})" style="width:16px;height:16px;min-width:16px;border-radius:4px;border:2px solid ${r.checked?'var(--accent)':'var(--border2)'};background:${r.checked?'var(--accent)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;">
+        ${r.checked?'<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>':''}
       </div>
-      <span style="flex:1;font-size:12px;color:${r.checked?'var(--muted)':'var(--text)'};text-decoration:${r.checked?'line-through':'none'};line-height:1.4;">${r.text.replace(/</g,'&lt;')}</span>
+      <span style="flex:1;font-size:12px;color:${r.checked?'var(--muted)':'var(--text)'};text-decoration:${r.checked?'line-through':'none'};line-height:1.35;">${r.text.replace(/</g,'&lt;')}</span>
     </div>`).join('')}`;
 }
 
