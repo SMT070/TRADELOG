@@ -1246,168 +1246,155 @@
   .nb-autosave-dot.unsaved { background:var(--yellow); animation:pulse-dot 1.2s infinite; }
   @keyframes modalIn { from{opacity:0;transform:scale(.96) translateY(8px)} to{opacity:1;transform:scale(1) translateY(0)} }
 
-  /* ══════════════════════════════════════════════════════
-     MOBILE — max-width: 768px
-     Full audit: no overflow, no overlap, everything fits
-  ══════════════════════════════════════════════════════ */
+  /* ── MOBILE ── */
   @media (max-width: 768px) {
-
-    /* ── GLOBAL ── */
-    * { box-sizing: border-box; }
+    /* ── GENERAL ── */
     .container { padding: 10px !important; }
-    #main-content { overflow-x: hidden !important; overflow-y: auto !important; }
-    /* html font-size: reduce global scale on phone */
-    html { font-size: 100% !important; }
+    #main-content { overflow-x: hidden; }
 
-    /* ── SIDEBAR: icon-only, fixed 52px ── */
-    #sidebar,
-    #sidebar.collapsed {
-      width: 52px !important;
-      min-width: 52px !important;
-      flex-shrink: 0 !important;
-    }
-    .sidebar-label,
-    .sidebar-logo-text,
-    .account-card-text,
-    #account-chevron { display: none !important; }
-    .sidebar-logo { justify-content: center !important; padding: 12px 0 !important; }
-    .sidebar-item { justify-content: center !important; padding: 12px 0 !important; }
-    #sidebar .account-card { justify-content: center !important; padding: 10px 0 !important; }
-    /* Hide collapse tab on mobile */
-    #sidebar-collapse-tab { display: none !important; }
+    /* ── PAGE-LEVEL PADDING RESET (these use inline var(--page-px/py)) ── */
+    #page-trades    { padding: 10px !important; }
 
-    /* ── TOPBAR ── */
-    .topbar { padding: 0 10px !important; height: 46px !important; }
+    #page-mindset   { padding: 10px 10px 0 !important; }
+    #page-add .container { padding: 10px !important; }
+    #page-import .container { padding: 10px !important; }
 
-    /* ══ DASHBOARD PAGE ══ */
-    .container { padding: 10px !important; }
-    .dash-header {
-      margin-bottom: 10px !important;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: flex-start !important;
-    }
-    .dash-title { font-size: 17px !important; }
-    .dash-subtitle { font-size: 10px !important; }
-    .dash-header > div:last-child button { font-size: 10px !important; padding: 6px 10px !important; }
+    /* ── DASHBOARD NEWS GRID removed - now on Fundamentals page ── */
 
-    /* Stat cards: 2 cols, first card full width */
+    /* ── DASHBOARD HEADER ── */
+    .dash-header { margin-bottom: 12px !important; flex-wrap: wrap; gap: 8px; }
+    .dash-title { font-size: 18px !important; }
+    .dash-subtitle { font-size: 11px !important; }
+
+    /* ── TOP 5 STAT CARDS: 2 cols, Net P&L is wide ── */
     .stats-row {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
       margin-bottom: 10px !important;
     }
-    .stats-row .stat-card:first-child { grid-column: 1 / -1 !important; }
-    .stats-row .stat-card:last-child { grid-column: unset !important; }
-    .stat-card { padding: 11px 12px !important; min-height: unset !important; overflow: hidden !important; }
-    .stat-value { font-size: 19px !important; letter-spacing: -0.5px !important; }
+    /* Net P&L (first card) takes full width — the wide one */
+    .stats-row .stat-card:first-child {
+      grid-column: 1 / -1 !important;
+    }
+    /* Last card (Expectancy) normal size, NOT full width */
+    .stats-row .stat-card:last-child {
+      grid-column: unset !important;
+    }
+    .stat-card {
+      padding: 12px 12px !important;
+      min-height: unset !important;
+    }
+    .stat-value { font-size: 20px !important; letter-spacing: -0.5px !important; }
     .stat-label { font-size: 8px !important; }
     .stat-sub { font-size: 10px !important; }
-    /* Hide gauge SVGs inside stat cards (overflow) */
-    .stat-card svg { max-width: 60px !important; }
+    /* Show balance row inside Net P&L wide card */
+    .stat-card > div > div[style*="Current Balance"] { display: flex !important; }
+    /* Hide gauge SVGs on mobile to save space */
+    .stat-card svg.ring-like { display: none; }
 
-    /* Goals/Journal/Rules 3-col → 1 col */
-    #dashboard-content > div:first-child {
-      grid-template-columns: 1fr !important;
-      gap: 8px !important;
-    }
-    .panel-header { padding: 10px 12px !important; }
-    .panel-title { font-size: 10px !important; }
-    #journal-plan, #journal-review {
-      font-size: 12px !important;
-      min-height: 52px !important;
-    }
-
-    /* Equity curve: full width, hide performance panel */
+    /* ── EQUITY CURVE: full width, good height on mobile ── */
     .two-col {
       grid-template-columns: 1fr !important;
       gap: 8px !important;
     }
-    .two-col .panel:last-child { display: none !important; }
+    /* Hide Performance panel on mobile — not needed */
+    .two-col .panel:last-child {
+      display: none !important;
+    }
+    /* Equity curve panel: nice tall chart */
     .two-col .panel:first-child {
       display: flex !important;
       flex-direction: column !important;
     }
-    #equity-chart-wrap {
-      min-height: 200px !important;
-      max-height: 230px !important;
-      padding: 10px 12px 12px !important;
-      flex: 1 !important;
+    #equity-chart-wrap,
+    .two-col .panel:first-child > div:last-child {
+      min-height: 220px !important;
+      max-height: 260px !important;
     }
-    #equity-chart {
-      width: 100% !important;
-      height: 100% !important;
-      min-height: 180px !important;
-      display: block !important;
-    }
-    /* Equity range buttons: smaller */
-    #equity-range-btns button { padding: 3px 7px !important; font-size: 9px !important; }
 
-    /* Recent trades: hide Lots/Entry/Exit */
-    .trades-table th:nth-child(4),
-    .trades-table td:nth-child(4),
-    .trades-table th:nth-child(5),
-    .trades-table td:nth-child(5),
-    .trades-table th:nth-child(6),
-    .trades-table td:nth-child(6) { display: none !important; }
+    /* ── GOALS + JOURNAL: stack vertically ── */
+    #dashboard-content > div:first-child {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+    }
+
+    /* ── GOALS PANEL ── */
+    .panel-header { padding: 10px 14px !important; }
+    .panel-title { font-size: 10px !important; }
+
+    /* ── JOURNAL: smaller textareas ── */
+    #journal-plan, #journal-review {
+      font-size: 12px !important;
+      rows: 2 !important;
+      min-height: 60px !important;
+    }
+
+    /* ── RECENT TRADES TABLE on dashboard: minimal columns ── */
+    /* Only hide on the dashboard recent table, NOT on the full trades page */
+    #page-dashboard .trades-table th:nth-child(4),
+    #page-dashboard .trades-table td:nth-child(4),
+    #page-dashboard .trades-table th:nth-child(5),
+    #page-dashboard .trades-table td:nth-child(5),
+    #page-dashboard .trades-table th:nth-child(6),
+    #page-dashboard .trades-table td:nth-child(6) { display: none !important; }
 
     #mobile-tap-hint { display: inline !important; }
 
     /* ══ ANALYTICS PAGE ══ */
     #page-analytics .container { padding: 10px !important; }
-    #page-analytics > div > div[style*="align-items:center;justify-content:space-between;margin-bottom:20px"] {
-      flex-wrap: wrap; gap: 8px;
-    }
 
-    /* All 10 stat cards: 2-col */
+    /* ── ALL 10 STAT CARDS in one 2-col grid = 5 perfect pairs, zero empty space ── */
     #an-stat-row-1 {
       grid-template-columns: 1fr 1fr !important;
       gap: 8px !important;
       margin-bottom: 8px !important;
     }
     #an-stat-row-1 > div { grid-column: unset !important; }
-    .an-stat-card { padding: 11px 11px !important; }
-    .an-stat-value { font-size: 19px !important; }
+
+    /* ── STAT CARD sizing ── */
+    .an-stat-card { padding: 12px 12px !important; }
+    .an-stat-value { font-size: 20px !important; }
     .an-stat-label { font-size: 8px !important; }
-    .an-mini-val { font-size: 10px !important; }
+    .an-mini-val { font-size: 11px !important; }
     .an-mini-label { font-size: 8px !important; }
 
-    /* Analytics equity curve */
-    #an-equity-chart-wrap {
-      height: 200px !important;
-      padding: 10px 12px !important;
+    /* ── EQUITY CURVE range buttons ── */
+    #page-analytics .panel > div[style*="repeat(5"] {
+      grid-template-columns: 1fr 1fr !important;
     }
-    #an-equity-chart { width: 100% !important; height: 100% !important; }
-    #analytics-equity-range-btns button { padding: 3px 7px !important; font-size: 9px !important; }
+    #page-analytics .panel > div[style*="repeat(5"] > div {
+      border-right: none !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
 
-    /* Charts grids: stack */
+    /* Charts grid: stack all */
     #page-analytics > div > div[style*="1fr 1fr 1fr"],
     #page-analytics > div > div[style*="1fr 1fr"] {
       grid-template-columns: 1fr !important;
       gap: 8px !important;
     }
-    #page-analytics .panel > div[style*="height:220px"] { height: 170px !important; }
-    #page-analytics .panel > div[style*="height:260px"] { height: 190px !important; }
 
-    /* Heatmap scrollable */
-    #heatmap-grid { overflow-x: auto !important; min-width: 0 !important; }
-    #page-analytics .panel > div[style*="overflow-x:auto"] { padding: 10px 10px 14px !important; }
+    /* Chart panels: fixed height */
+    #page-analytics .panel > div[style*="height:220px"] { height: 180px !important; }
+    #page-analytics .panel > div[style*="height:260px"] { height: 200px !important; }
 
-    /* Distribution chart */
-    #page-analytics .panel > div[style*="flex;align-items:center;justify-content:center;gap:28px"] {
+    /* Equity curve range buttons */
+    #analytics-equity-range-btns { gap: 2px !important; }
+
+    /* Heatmap: scrollable */
+    #heatmap-grid { overflow-x: auto !important; }
+
+    /* Distribution chart: stack */
+    #page-analytics .panel > div[style*="flex;align-items:center;justify-content:center"] {
       flex-direction: column !important;
       height: auto !important;
       padding: 12px !important;
-      gap: 14px !important;
     }
-    #dist-chart { max-width: 110px !important; max-height: 110px !important; }
-    #dist-legend { flex-direction: row !important; flex-wrap: wrap !important; gap: 6px !important; justify-content: center; }
+    #dist-chart { max-width: 120px !important; max-height: 120px !important; }
+    #dist-legend { flex-direction: row !important; flex-wrap: wrap !important; gap: 8px !important; justify-content: center; }
 
-    /* Analytics inner 2-col grids */
-    #page-analytics > div > div[style*="grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"] {
-      grid-template-columns: 1fr !important;
-    }
-    .analysis-grid { grid-template-columns: 1fr !important; }
+    /* ── SHARE BUTTON ── */
+    .dash-header button { font-size: 11px !important; padding: 7px 12px !important; }
 
     /* ══ CALENDAR PAGE ══ */
     #page-calendar.active {
@@ -1415,271 +1402,306 @@
       height: 100vh !important;
       display: flex !important;
       flex-direction: column !important;
-      gap: 6px !important;
-      overflow: hidden !important;
+      gap: 8px !important;
     }
+    /* Hide side panel on mobile */
     #cal-day-panel { display: none !important; }
+    /* Hide news overlay on mobile */
     #cal-news-overlay { display: none !important; }
+    /* Hide Events toggle on mobile */
     #cal-events-toggle { display: none !important; }
+    /* Body grid full width */
     #cal-body-grid {
       grid-template-columns: 1fr !important;
       flex: 1 !important;
       overflow: hidden !important;
-      min-height: 0 !important;
     }
+    /* Hide week column header + cells */
     #cal-dow-row > div:last-child { display: none !important; }
-    #cal-grid {
-      grid-template-columns: repeat(7, 1fr) !important;
-      gap: 2px !important;
-      background: transparent !important;
-      padding: 2px !important;
-    }
+    /* Cal grid: 7 cols only */
+    #cal-grid { grid-template-columns: repeat(7, 1fr) !important; }
+    /* Remove week totals (every 8th cell) */
     #cal-grid > div:nth-child(8n) { display: none !important; }
-    #cal-dow-row {
-      grid-template-columns: repeat(7, 1fr) !important;
-      gap: 2px !important;
-      padding: 0 2px !important;
-    }
-    .cal-dow { padding: 5px 0 4px !important; font-size: 9px !important; letter-spacing: 0 !important; }
-    /* Calendar nav */
-    #page-calendar > div:first-child {
-      padding: 8px 12px !important;
-      border-radius: 10px !important;
-      flex-wrap: nowrap !important;
-    }
-    #cal-month-label { font-size: 14px !important; min-width: 130px !important; }
+    /* Header nav: compact */
+    #page-calendar > div:first-child { padding: 10px 14px !important; border-radius: 10px !important; }
+    #cal-month-label { font-size: 16px !important; }
+    /* Hide year/alltime view buttons */
     #cal-view-year, #cal-view-alltime { display: none !important; }
-    #cal-view-month { padding: 5px 12px !important; font-size: 11px !important; }
-
     /* Cal cells */
     .cal-cell {
-      min-height: 60px !important;
-      padding: 4px 2px 3px !important;
+      min-height: 72px !important;
+      padding: 6px 4px 4px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
       justify-content: center !important;
       text-align: center !important;
       border-radius: 8px !important;
-      border: 1px solid var(--border) !important;
     }
-    .cal-cell.empty { border: none !important; background: transparent !important; }
-    .cal-cell.has-win { border-color: rgba(0,255,187,0.4) !important; }
-    .cal-cell.has-loss { border-color: rgba(255,59,92,0.4) !important; }
-    .cal-day-num {
-      font-size: 10px !important;
-      font-weight: 800 !important;
-      top: 4px !important;
-      left: 4px !important;
-    }
-    .cal-pnl {
-      font-size: 10px !important;
-      font-weight: 900 !important;
-      letter-spacing: -0.3px !important;
-      margin-top: 12px !important;
-    }
-    .cal-trades { font-size: 7px !important; bottom: 3px !important; }
+    .cal-day-num { font-size: 11px !important; font-weight: 700 !important; top: 5px !important; left: 6px !important; }
+    .cal-pnl { font-size: 12px !important; letter-spacing: -0.4px !important; }
+    .cal-trades { font-size: 8px !important; bottom: 4px !important; }
     .cal-cell-bar { display: none !important; }
-    /* Cal summary cards */
-    .cal-summary-card { padding: 14px 14px !important; }
-    .cal-summary-value { font-size: 26px !important; }
+    /* Grid — transparent background, small gap so rounded corners show */
+    #cal-grid {
+      gap: 3px !important;
+      background: transparent !important;
+      padding: 3px !important;
+      grid-template-columns: repeat(7, 1fr) !important;
+    }
+    #cal-dow-row {
+      grid-template-columns: repeat(7, 1fr) !important;
+      gap: 3px !important;
+      padding: 0 3px !important;
+    }
+    .cal-dow { padding: 6px 0 5px !important; font-size: 10px !important; }
 
     /* ══ MINDSET PAGE ══ */
     #page-mindset {
       height: 100vh !important;
       overflow: hidden !important;
-      padding: 0 !important;
     }
+    /* Sticky header: tighter on mobile */
     #page-mindset > div:first-child {
-      padding: 8px 12px !important;
-      gap: 6px !important;
-      flex-wrap: wrap !important;
+      padding: 10px 14px 10px !important;
+      gap: 8px !important;
     }
+    /* Scroll body fills remaining space, stacks on mobile */
     #mindset-scroll-body {
-      padding: 8px 8px 10px !important;
+      padding: 10px 10px 10px !important;
       overflow-y: auto !important;
       display: block !important;
-      -webkit-overflow-scrolling: touch !important;
     }
+    /* 3-col grid → single column */
     #mindset-main-grid {
       grid-template-columns: 1fr !important;
-      gap: 8px !important;
+      gap: 10px !important;
       display: grid !important;
       overflow: visible !important;
       min-height: unset !important;
       flex: unset !important;
     }
+    /* Textareas */
     #mindset-plan, #mindset-review {
-      min-height: 70px !important;
+      min-height: 80px !important;
       resize: vertical !important;
-      font-size: 13px !important;
     }
+    /* Confidence pills */
     #mindset-conf-pills {
       grid-template-columns: repeat(5, 1fr) !important;
-      gap: 4px !important;
+      gap: 5px !important;
     }
+    /* Past entries on mobile */
     #mindset-past-entries {
-      max-height: 350px !important;
+      max-height: 400px !important;
       overflow-y: auto !important;
     }
-    #page-mindset .panel[style*="flex:1"] { flex: unset !important; }
+    /* This week on mobile — no flex grow */
+    #page-mindset .panel[style*="flex:1"] {
+      flex: unset !important;
+    }
 
-    /* ══ TRADES PAGE ══ */
-    #page-trades { padding: 6px !important; }
+    /* ══ TRADES PAGE — MOBILE REDESIGN ══ */
+    #page-trades {
+      padding: 6px 0 !important;
+    }
+
+    /* Show scroll hint on mobile */
+    #trades-scroll-hint { display: flex !important; }
+
+    /* Hide detail panel completely on mobile */
     #trade-detail-panel { display: none !important; }
+
+    /* Trades grid: full width, no side panel */
     #trades-grid {
-      display: flex !important;
-      flex-direction: column !important;
-      flex: 1 !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
-    }
-    #trades-grid > .panel {
-      flex: 1 !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
+      grid-template-columns: 1fr !important;
     }
 
-    /* Summary stats bar: clean 3-col */
+    /* ── Top summary bar: compact 2-row ── */
     #page-trades > div:first-child > div:first-child {
-      display: flex !important;
-      flex-direction: row !important;
-      align-items: center !important;
-      justify-content: space-around !important;
-      padding: 10px 12px !important;
+      padding: 8px 10px !important;
       gap: 0 !important;
-      flex-wrap: nowrap !important;
+      flex-wrap: wrap !important;
+      row-gap: 0 !important;
     }
-    /* Hide the vertical dividers in summary bar */
-    #page-trades > div:first-child > div:first-child > div[style*="width:1px;height:32px"] {
-      display: none !important;
+    #tb-count, #tb-pnl, #tb-wr {
+      font-size: 15px !important;
     }
-    /* Stat column */
-    #page-trades > div:first-child > div:first-child > div[style*="flex-direction:column"] {
-      align-items: center !important;
-      text-align: center !important;
-      flex: 1 !important;
-    }
-    /* flex:1 spacer — hide it */
-    #page-trades > div:first-child > div:first-child > div[style*="flex:1;"] {
-      display: none !important;
-    }
-    /* wins/losses/be block — hide on mobile */
+    /* Hide wins/losses/be strip on mobile — keeps bar compact */
     #page-trades > div:first-child > div:first-child > div:last-child {
       display: none !important;
     }
-    #tb-count, #tb-pnl, #tb-wr {
-      font-size: 17px !important;
-      letter-spacing: -0.5px !important;
-    }
-    #tb-balance { font-size: 9px !important; }
 
-    /* Filter / search bar */
+    /* ── Filter bar: search full-width, filters row below ── */
     #page-trades > div:first-child > div:last-child {
-      display: flex !important;
       flex-wrap: wrap !important;
       gap: 5px !important;
-      padding: 7px 8px !important;
+      padding: 6px 8px !important;
     }
-    /* Search: full width first row */
     #page-trades > div:first-child > div:last-child > div:first-child {
-      flex: 1 1 100% !important;
-      min-width: 0 !important;
-    }
-    #search-input { font-size: 13px !important; padding: 7px 10px 7px 28px !important; }
-    /* Dividers in filter bar */
-    #page-trades > div:first-child > div:last-child > div[style*="width:1px;height:24px"] {
-      display: none !important;
-    }
-    /* Hide tag filter */
-    #drop-tag { display: none !important; }
-    /* Make filter buttons smaller */
-    .filter-drop-btn { height: 30px !important; padding: 0 9px !important; font-size: 11px !important; }
-    /* Features + Add buttons */
-    #features-drop-btn { padding: 5px 10px !important; font-size: 11px !important; }
-    #page-trades .btn-primary { padding: 7px 14px !important; font-size: 11px !important; }
-    /* Mobile hint */
-    #mobile-tap-hint { display: inline !important; }
-
-    /* Table: hide Lots/Entry/Exit/Commission/Tags */
-    #page-trades .trades-table th:nth-child(4),
-    #page-trades .trades-table td:nth-child(4),
-    #page-trades .trades-table th:nth-child(5),
-    #page-trades .trades-table td:nth-child(5),
-    #page-trades .trades-table th:nth-child(6),
-    #page-trades .trades-table td:nth-child(6),
-    #page-trades .trades-table th:nth-child(8),
-    #page-trades .trades-table td:nth-child(8),
-    #page-trades .trades-table th:nth-child(10),
-    #page-trades .trades-table td:nth-child(10) { display: none !important; }
-
-    /* Fixed table layout so columns don't push off-screen */
-    #page-trades .trades-table {
-      table-layout: fixed !important;
+      /* search box */
       width: 100% !important;
+      flex: unset !important;
     }
-    /* Column widths: Date | Symbol | Type | P&L | Result */
-    #page-trades .trades-table th:nth-child(1),
-    #page-trades .trades-table td:nth-child(1) {
-      width: 72px !important;
+    #search-input { font-size: 13px !important; }
+
+    /* Hide less-used filters on mobile */
+    #drop-tag { display: none !important; }
+    #features-drop { display: none !important; }
+
+    /* ── TABLE PANEL: allow horizontal scroll ── */
+    #page-trades .panel {
+      overflow: visible !important;
+      border-radius: var(--r) !important;
+    }
+    #page-trades .panel > div {
+      overflow-x: auto !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* ── TABLE: natural column widths, horizontal scroll ── */
+    #page-trades .trades-table {
+      table-layout: auto !important;
+      width: auto !important;
+      min-width: 100% !important;
+      border-collapse: collapse !important;
+    }
+
+    /* Reset ALL column hiding from other media block */
+    #page-trades .trades-table th,
+    #page-trades .trades-table td {
+      display: table-cell !important;
+    }
+
+    /* Universal cell sizing */
+    #page-trades .trades-table th {
       font-size: 9px !important;
-      padding-left: 8px !important;
-      color: var(--muted) !important;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-    #page-trades .trades-table th:nth-child(2),
-    #page-trades .trades-table td:nth-child(2) {
-      font-size: 13px !important;
-      font-weight: 800 !important;
-      padding-left: 4px !important;
-      color: var(--text) !important;
-      overflow: hidden;
-    }
-    #page-trades .trades-table th:nth-child(3),
-    #page-trades .trades-table td:nth-child(3) {
-      width: 44px !important;
-      text-align: center !important;
-    }
-    #page-trades .trades-table th:nth-child(7),
-    #page-trades .trades-table td:nth-child(7) {
-      width: 68px !important;
-      text-align: right !important;
-      padding-right: 6px !important;
-      font-size: 12px !important;
-      font-weight: 800 !important;
-    }
-    #page-trades .trades-table th:nth-child(9),
-    #page-trades .trades-table td:nth-child(9) {
-      width: 46px !important;
-      text-align: center !important;
-      padding-right: 6px !important;
+      padding: 9px 8px !important;
+      white-space: nowrap !important;
+      letter-spacing: 0.8px !important;
+      position: sticky !important;
+      top: 0 !important;
     }
     #page-trades .trades-table td {
-      padding: 11px 3px !important;
-      vertical-align: middle !important;
       font-size: 11px !important;
+      padding: 11px 8px !important;
+      vertical-align: middle !important;
+      white-space: nowrap !important;
     }
-    #page-trades .trades-table th {
-      font-size: 8px !important;
-      padding: 8px 3px !important;
-      letter-spacing: 0.3px;
+
+    /* Col 1: Date — compact, two lines */
+    #page-trades .trades-table th:nth-child(1),
+    #page-trades .trades-table td:nth-child(1) {
+      min-width: 78px !important;
+      padding-left: 10px !important;
+      font-size: 10px !important;
+      white-space: normal !important;
+      line-height: 1.3 !important;
     }
-    #page-trades .panel { overflow: hidden !important; }
-    #page-trades .trades-table .badge { padding: 2px 6px !important; font-size: 8px !important; }
-    #page-trades .trades-table tbody tr { border-bottom: 1px solid var(--border) !important; }
+    /* Col 2: Symbol — bold, prominent */
+    #page-trades .trades-table th:nth-child(2),
+    #page-trades .trades-table td:nth-child(2) {
+      min-width: 64px !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+    }
+    /* Col 3: Type badge */
+    #page-trades .trades-table th:nth-child(3),
+    #page-trades .trades-table td:nth-child(3) {
+      min-width: 48px !important;
+      text-align: center !important;
+    }
+    /* Col 4: Lots */
+    #page-trades .trades-table th:nth-child(4),
+    #page-trades .trades-table td:nth-child(4) {
+      min-width: 46px !important;
+      text-align: right !important;
+    }
+    /* Col 5: Entry */
+    #page-trades .trades-table th:nth-child(5),
+    #page-trades .trades-table td:nth-child(5) {
+      min-width: 68px !important;
+      text-align: right !important;
+    }
+    /* Col 6: Exit */
+    #page-trades .trades-table th:nth-child(6),
+    #page-trades .trades-table td:nth-child(6) {
+      min-width: 68px !important;
+      text-align: right !important;
+    }
+    /* Col 7: P&L — highlighted */
+    #page-trades .trades-table th:nth-child(7),
+    #page-trades .trades-table td:nth-child(7) {
+      min-width: 78px !important;
+      text-align: right !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+    }
+    /* Col 8: Commission */
+    #page-trades .trades-table th:nth-child(8),
+    #page-trades .trades-table td:nth-child(8) {
+      min-width: 58px !important;
+      text-align: right !important;
+      font-size: 10px !important;
+    }
+    /* Col 9: Result badge */
+    #page-trades .trades-table th:nth-child(9),
+    #page-trades .trades-table td:nth-child(9) {
+      min-width: 52px !important;
+      text-align: center !important;
+      padding-right: 10px !important;
+    }
+    /* Col 10: Tags — rightmost, can be cut off */
+    #page-trades .trades-table th:nth-child(10),
+    #page-trades .trades-table td:nth-child(10) {
+      min-width: 80px !important;
+      padding-right: 12px !important;
+    }
 
-    /* Pack rows on mobile */
-    #page-trades .trades-table tr.pack-header-row td:first-child { padding-left: 8px !important; }
-    .date-chevron { left: -6px !important; }
-    .pack-stat-block { min-width: 36px !important; }
-    .pack-stat-label { font-size: 7px !important; }
-    .pack-stat-value { font-size: 10px !important; }
-    /* Hide pack photo thumb on mobile to save row space */
-    .pack-photo-thumb, .pack-photo-add { display: none !important; }
+    /* Badge sizing */
+    #page-trades .trades-table .badge {
+      padding: 2px 6px !important;
+      font-size: 9px !important;
+      white-space: nowrap !important;
+    }
 
-    /* Trade detail overlay: bottom sheet */
+    /* Row separators */
+    #page-trades .trades-table tbody tr {
+      border-bottom: 1px solid var(--border) !important;
+    }
+
+    /* Scroll hint shadow on right edge */
+    #page-trades .panel > div:after {
+      content: '';
+      position: sticky;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 24px;
+      background: linear-gradient(to right, transparent, var(--surface));
+      pointer-events: none;
+      flex-shrink: 0;
+    }
+
+    /* ── Pack rows on mobile: no text overflow, let table scroll ── */
+    #page-trades .trades-table tr.pack-header-row td,
+    #page-trades .trades-table tr.pack-child-row td {
+      white-space: nowrap !important;
+      overflow: visible !important;
+    }
+    /* Date col in pack rows: allow natural width */
+    #page-trades .trades-table tr.pack-header-row td:first-child,
+    #page-trades .trades-table tr.pack-child-row td:first-child {
+      min-width: 78px !important;
+    }
+    /* Pack count pill: no overlap */
+    #page-trades .trades-table .pack-count-pill {
+      display: inline-block !important;
+      white-space: nowrap !important;
+    }
+
+    /* Trade detail overlay: full screen bottom sheet */
     #trade-detail-overlay {
       padding: 0 !important;
       align-items: flex-end !important;
@@ -1689,35 +1711,27 @@
       max-width: 100% !important;
       height: 90vh !important;
       border-radius: 20px 20px 0 0 !important;
+      transform: translateY(0) !important;
+      opacity: 1 !important;
+    }
+    /* In overlay: hide all info, show only photo */
+    #trade-detail-overlay-body > div > div:first-child {
+      border-right: none !important;
+    }
+    #trade-detail-overlay-body > div > div:last-child {
+      display: none !important;
     }
     #trade-detail-overlay-body > div {
       grid-template-columns: 1fr !important;
     }
-    #trade-detail-overlay-body > div > div:first-child {
-      border-right: none !important;
-      min-height: 240px !important;
-      max-height: 40vh !important;
-    }
-    #trade-detail-overlay-body > div > div:last-child {
-      overflow-y: auto !important;
-    }
 
-    /* Pack select bar */
-    #pack-select-bar { flex-wrap: wrap !important; gap: 6px !important; padding: 6px 10px !important; }
-
-    /* ══ ADD TRADE PAGE ══ */
-    #page-add .container { padding: 8px !important; }
-    .form-grid {
-      grid-template-columns: 1fr 1fr !important;
-      padding: 16px 14px !important;
-      gap: 12px !important;
-    }
-    .form-grid .full { grid-column: 1 / -1 !important; }
-
-    /* ══ SETTINGS POPUP ══ */
+    /* Settings popup becomes a fixed bottom sheet on mobile */
     #sidebar-settings-menu.settings-popup {
       position: fixed !important;
-      bottom: 0 !important; left: 0 !important; right: 0 !important; top: auto !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      top: auto !important;
       width: 100% !important;
       max-height: 80vh !important;
       overflow-y: auto !important;
@@ -1727,39 +1741,45 @@
       z-index: 9999 !important;
       box-shadow: 0 -8px 40px rgba(0,0,0,.6) !important;
     }
+    /* Dark backdrop when settings open */
 
-    /* ══ NOTEBOOKS PAGE ══ */
-    #page-notebooks { padding: 10px !important; }
-    #notebooks-main { grid-template-columns: 1fr !important; }
-    #notebook-editor-panel { min-height: 280px !important; }
-    .nb-toolbar { flex-wrap: wrap; }
 
-    /* ══ FUNDAMENTALS PAGE ══ */
-    #page-fundamentals > div:first-child {
-      padding: 8px 12px !important;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
+
+    /* New pages mobile */
+    #page-notebooks { padding: 14px !important; }
+    /* Fundamentals mobile */
+    #page-fundamentals > div:first-child { padding: 10px 14px !important; flex-wrap: wrap; gap: 8px; }
     #fund-tab-all { grid-template-columns: 1fr !important; }
-    #fund-tab-all > div:first-child {
-      border-right: none !important;
-      border-bottom: 1px solid var(--border) !important;
-      height: 48vh !important;
+    #fund-tab-all > div:first-child { border-right: none !important; border-bottom: 1px solid var(--border) !important; height: 50vh; }
+    #fund-tab-all > div:last-child { height: 50vh; }
+
+    .new-page-header { flex-wrap:wrap; gap:8px; margin-bottom:14px !important; }
+    .new-page-title { font-size:18px !important; }
+
+
+    #notebooks-main { grid-template-columns:1fr !important; }
+    #notebook-editor-panel { min-height:300px !important; }
+
+
+
+    
+    /* Sidebar stays icon-only, cannot be expanded */
+    #sidebar {
+      width: 56px !important;
+      min-width: 56px !important;
     }
-    #fund-tab-all > div:last-child { height: 48vh !important; }
-
-    /* ══ SHARED PAGE HEADERS ══ */
-    .new-page-header { flex-wrap: wrap; gap: 8px; margin-bottom: 12px !important; }
-    .new-page-title { font-size: 17px !important; }
-    .new-page-subtitle { font-size: 11px !important; }
-
-    /* ══ IMPORT PAGE ══ */
-    #page-import .container { padding: 10px !important; }
-    .import-zone { padding: 28px 20px !important; margin: 10px !important; }
-
-    /* ══ TOASTS ══ */
-    .toast { right: 10px !important; bottom: 16px !important; left: 10px !important; font-size: 12px !important; }
-
+    #sidebar.collapsed {
+      width: 56px !important;
+      min-width: 56px !important;
+    }
+    /* Hide all text labels */
+    .sidebar-label { display: none !important; }
+    .sidebar-logo-text { display: none !important; }
+    .account-card-text { display: none !important; }
+    #account-chevron { display: none !important; }
+    .sidebar-logo { justify-content: center; padding: 12px 0; }
+    .sidebar-item { justify-content: center; padding: 12px 0; }
+    #sidebar .account-card { justify-content: center; padding: 10px 0; }
   }
 
   /* ── Feature info tooltips ── */
@@ -2085,84 +2105,69 @@
       </div>
     </div>
 
-    <!-- ── GOALS + DAILY JOURNAL + TRADING RULES ROW ── -->
+    <!-- ── GOALS + DAILY JOURNAL ROW ── -->
     <div id="dashboard-content">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;align-items:start;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
 
       <!-- Goals / Targets -->
       <div class="panel">
-        <div class="panel-header" style="padding:10px 16px;">
+        <div class="panel-header">
           <div class="panel-header-left">
             <div class="panel-title">Daily Goals</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Goals','P&L targets. Green = on track, red = behind.')" onmouseleave="hideInfo()">i</button>
           </div>
-          <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="openGoalsModal()">Edit Goals</button>
+          <button class="btn btn-ghost" style="font-size:10px;padding:5px 12px;" onclick="openGoalsModal()">Edit Goals</button>
         </div>
-        <div style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:9px;">
+        <div style="padding:16px var(--page-px);display:flex;flex-direction:column;gap:14px;">
           <!-- Daily P&L Goal -->
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Daily P&L Target</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Daily P&L Target</span>
               <span style="font-size:12px;font-weight:700;" id="goal-daily-label">—</span>
             </div>
-            <div style="height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+            <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
               <div id="goal-daily-bar" style="height:100%;border-radius:3px;background:var(--green);width:0%;transition:width .6s ease;"></div>
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="goal-daily-sub"></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="goal-daily-sub"></div>
           </div>
           <!-- Weekly P&L Goal -->
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Weekly P&L Target</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Weekly P&L Target</span>
               <span style="font-size:12px;font-weight:700;" id="goal-weekly-label">—</span>
             </div>
-            <div style="height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+            <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
               <div id="goal-weekly-bar" style="height:100%;border-radius:3px;background:var(--accent);width:0%;transition:width .6s ease;"></div>
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="goal-weekly-sub"></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="goal-weekly-sub"></div>
           </div>
           <!-- Monthly P&L Goal -->
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Monthly P&L Target</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Monthly P&L Target</span>
               <span style="font-size:12px;font-weight:700;" id="goal-monthly-label">—</span>
             </div>
-            <div style="height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+            <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
               <div id="goal-monthly-bar" style="height:100%;border-radius:3px;background:var(--yellow);width:0%;transition:width .6s ease;"></div>
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:3px;" id="goal-monthly-sub"></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="goal-monthly-sub"></div>
           </div>
         </div>
       </div>
 
       <!-- Daily Journal -->
       <div class="panel" style="display:flex;flex-direction:column;">
-        <div class="panel-header" style="padding:10px 16px;">
+        <div class="panel-header">
           <div class="panel-header-left"><div class="panel-title">Today's Journal</div></div>
           <span style="font-size:10px;color:var(--muted);" id="journal-date-label"></span>
         </div>
-        <div style="padding:10px 16px 12px;flex:1;display:flex;flex-direction:column;gap:7px;">
-          <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;min-height:58px;"></textarea>
-          <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.55;border-radius:8px;min-height:58px;"></textarea>
+        <div style="padding:16px var(--page-px);flex:1;display:flex;flex-direction:column;gap:10px;">
+          <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;"></textarea>
+          <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;"></textarea>
           <div style="display:flex;justify-content:flex-end;">
-            <button class="btn btn-primary" onclick="saveJournal()" style="font-size:11px;padding:6px 16px;">Save Journal</button>
+            <button class="btn btn-primary" onclick="saveJournal()" style="font-size:11px;padding:7px 18px;">Save Journal</button>
           </div>
         </div>
-      </div>
-
-      <!-- ── TRADING RULES (inside 3-col grid) ── -->
-      <div class="panel" style="display:flex;flex-direction:column;">
-        <div class="panel-header" style="padding:10px 16px;">
-          <div class="panel-header-left">
-            <div class="panel-title">Trading Rules</div>
-            <button class="info-btn" onmouseenter="showInfo(this,'Trading Rules','Your personal rules checklist. Check them off each day to stay disciplined.')" onmouseleave="hideInfo()">i</button>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button onclick="switchPage('mindset')" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--sans);font-weight:700;padding:0;transition:color .15s;" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--muted)'">Manage in Mindset →</button>
-            <button onclick="addDashboardRule()" class="btn btn-ghost" style="font-size:10px;padding:4px 10px;">+ Add Rule</button>
-          </div>
-        </div>
-        <div id="dash-rules-list" style="padding:4px 16px 12px;display:flex;flex-direction:column;gap:1px;min-height:40px;flex:1;overflow-y:auto;"></div>
       </div>
 
     </div>
@@ -2186,8 +2191,8 @@
             <span id="equity-trend"></span>
           </div>
         </div>
-        <div id="equity-chart-wrap" style="padding:12px var(--page-px) 16px;flex:1;min-height:280px;max-height:420px;position:relative;display:flex;flex-direction:column;">
-          <canvas id="equity-chart" style="width:100%!important;flex:1;min-height:0;"></canvas>
+        <div style="padding:12px var(--page-px) 16px;flex:1;min-height:280px;max-height:420px;position:relative;">
+          <canvas id="equity-chart" style="width:100%!important;height:100%!important;"></canvas>
         </div>
       </div>
 
@@ -2467,7 +2472,12 @@
     <!-- Table + Detail: fills all remaining height -->
     <div id="trades-grid" style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden;">
       <div class="panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;flex:1;min-width:0;">
-        <div style="flex:1;overflow-y:auto;overflow-x:auto;border-radius:var(--r);">
+        <!-- Mobile scroll hint — hidden on desktop via CSS -->
+        <div id="trades-scroll-hint" style="display:none;align-items:center;justify-content:center;gap:5px;padding:5px 12px;background:rgba(99,102,241,.07);border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);font-weight:600;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          Swipe left to see Entry, Exit, Commission &amp; more
+        </div>
+        <div style="flex:1;overflow-y:auto;overflow-x:auto;border-radius:var(--r);-webkit-overflow-scrolling:touch;">
           <table class="trades-table" style="width:100%;border-collapse:collapse;">
             <thead>
               <tr>
@@ -2675,8 +2685,8 @@
           </div>
         </div><!-- /flex row: badge + range btns -->
       </div><!-- /panel-header -->
-      <div id="an-equity-chart-wrap" style="padding:16px var(--page-px);height:260px;position:relative;display:flex;flex-direction:column;">
-        <canvas id="an-equity-chart" style="width:100%!important;flex:1;min-height:0;"></canvas>
+      <div style="padding:16px var(--page-px);height:260px;position:relative;">
+        <canvas id="an-equity-chart"></canvas>
       </div>
     </div>
 
@@ -4654,7 +4664,6 @@ showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the c
     localStorage.removeItem(BAL_KEY);
     localStorage.removeItem(CUR_KEY);
     localStorage.removeItem('tradelog_sb_session');
-    localStorage.removeItem('tradelog_last_uid');
     if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
     showAuthScreen();
   }});
@@ -4773,24 +4782,25 @@ let currentUser = null;
 // Returns uid string or null. Always re-reads from storage (mobile-safe).
 async function getValidUid() {
   try {
+    // Use in-memory currentUser first — always valid within a session.
+    // Avoids getSession() round-trip which can fail on mobile after page resume.
     if (currentUser && currentUser.id) return currentUser.id;
-    // Try stored session first (fastest, works offline)
+    // Not in memory — ask Supabase (first load, page refresh, etc.)
     const { data: { session } } = await sb.auth.getSession();
     if (session && session.user) {
       currentUser = session.user;
       return currentUser.id;
     }
-    // Force token refresh (recovers expired/backgrounded sessions)
-    const { data: refreshed, error: rErr } = await sb.auth.refreshSession();
-    if (!rErr && refreshed && refreshed.session && refreshed.session.user) {
+    // Last resort: try a token refresh (recovers expired sessions on mobile)
+    const { data: refreshed } = await sb.auth.refreshSession();
+    if (refreshed && refreshed.session && refreshed.session.user) {
       currentUser = refreshed.session.user;
       return currentUser.id;
     }
     return null;
   } catch(e) {
     console.warn('TradeLog: getValidUid failed', e);
-    // Last resort: return cached user if we have one from before the error
-    return currentUser ? currentUser.id : null;
+    return null;
   }
 }
 
@@ -4853,22 +4863,20 @@ async function loadAllFromSupabase() {
   const uid = await getValidUid();
   if (!uid) return false;
 
-// Only wipe stale data if we confirm this is a DIFFERENT user than last time.
-  // This prevents the app showing empty on mobile resume when Supabase is slow.
-  const lastUid = localStorage.getItem('tradelog_last_uid');
-  if (lastUid && lastUid !== uid) {
-    const themeToKeep = localStorage.getItem(THEME_KEY);
-    localStorage.removeItem(KEY);
-    localStorage.removeItem(MINDSET_KEY);
-    localStorage.removeItem(JOURNAL_KEY);
-    localStorage.removeItem(TAGS_KEY);
-    localStorage.removeItem(GOALS_KEY);
-    localStorage.removeItem(PROFILE_KEY);
-    localStorage.removeItem(BAL_KEY);
-    localStorage.removeItem(CUR_KEY);
-    if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
-  }
-  localStorage.setItem('tradelog_last_uid', uid);
+  // ── CRITICAL: Clear ALL local caches before loading from server.
+  // This guarantees that if a different user logs in on this device,
+  // they NEVER see stale data left behind by the previous session.
+  const themeToKeep = localStorage.getItem(THEME_KEY); // keep theme preference only
+  localStorage.removeItem(KEY);
+  localStorage.removeItem(MINDSET_KEY);
+  localStorage.removeItem(JOURNAL_KEY);
+  localStorage.removeItem(TAGS_KEY);
+  localStorage.removeItem(GOALS_KEY);
+  localStorage.removeItem(PROFILE_KEY);
+  localStorage.removeItem(BAL_KEY);
+  localStorage.removeItem(CUR_KEY);
+  if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
+
   // 1. Profile (name, avatar, currency, balance, theme, goals)
   try {
     const { data, error } = await sb.from('profiles').select('*').eq('id', uid).single();
@@ -5026,20 +5034,8 @@ async function initApp(user) {
   showApp();
   updateGreeting();
 
-  // Show cached data IMMEDIATELY so the app feels instant on mobile
-  try {
-    load(); // load from localStorage cache
-    refreshDashboard();
-    renderTrades();
-    loadJournal();
-  } catch(e) {}
+  try { await loadAllFromSupabase(); } catch(e) { console.warn('TradeLog: loadAllFromSupabase failed, showing app anyway', e); }
 
-  // Then sync from Supabase in background
-  try { await loadAllFromSupabase(); } catch(e) {
-    console.warn('TradeLog: loadAllFromSupabase failed, showing cached data', e);
-  }
-
-  // Re-render with fresh data
   try { refreshDashboard(); } catch(e) {}
   try { renderTrades(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
@@ -6110,7 +6106,6 @@ function refreshDashboard() {
     renderRecentTable();
     try { updateEmptyState(); } catch(e) {}
     try { renderGoals(); } catch(e) {}
-    try { renderDashboardRules(); } catch(e) {}
     try { loadJournal(); } catch(e) {}
     try { updateGreeting(); } catch(e) {}
     return;
@@ -6611,7 +6606,6 @@ function refreshDashboard() {
   // New dashboard features
   try { updateEmptyState(); } catch(e) {}
   try { renderGoals(); } catch(e) {}
-  try { renderDashboardRules(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
   try { updateGreeting(); } catch(e) {}
 }
@@ -10071,18 +10065,12 @@ function renderCalendar() {
 
     if (ghost) {
       // Ghost cell — dim, no interaction, shows prev/next month day number
-      html += `<div class="cal-cell" style="opacity:0.28;cursor:default;pointer-events:none;background:transparent;">
+      html += `<div class="cal-cell" style="opacity:0.12;cursor:default;pointer-events:none;background:transparent;">
         <div class="cal-day-num" style="color:var(--muted);">${d}</div>
       </div>`;
     } else {
-      // Pre-compute balance events so dimStyle can check for them
-      const dayBEall      = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
-      const hasDeposit    = dayBEall.some(e => e.type === 'deposit');
-      const hasWithdrawal = dayBEall.some(e => e.type === 'withdrawal');
-      const hasBEevt      = dayBEall.length > 0;
-      // Dim empty past weekdays; weekend empty cells slightly more — never dim cells with data
-      const dimStyle = (!isToday && !data && !hasBEevt && isPast && !isWeekend) ? 'opacity:0.60;' :
-                       (!isToday && !data && !hasBEevt && isWeekend)            ? 'opacity:0.50;' : '';
+      // Dim past days with no trades
+      const dimStyle = (!isToday && !data && (isPast || isWeekend)) ? 'opacity:0.30;' : '';
       let cellClass = 'cal-cell';
       if (isToday)   cellClass += ' today';
       if (isWeekend && !isToday) cellClass += ' weekend-cell';
@@ -10091,12 +10079,16 @@ function renderCalendar() {
       const dayNumStyle = data ? 'color:var(--text);font-weight:800;' : (isToday ? '' : 'color:var(--muted);');
       let inner = `<div class="cal-day-num" style="${dayNumStyle}">${d}</div>`;
       // Balance event indicator — show 💰 and/or 💸 top-right
+      const dayBEall  = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
+      const hasDeposit    = dayBEall.some(e => e.type === 'deposit');
+      const hasWithdrawal = dayBEall.some(e => e.type === 'withdrawal');
       if (hasDeposit || hasWithdrawal) {
         inner += '<div style="position:absolute;top:5px;right:6px;display:flex;gap:1px;line-height:1;">'
           + (hasDeposit    ? '<span style="font-size:9px;opacity:0.9;">💰</span>' : '')
           + (hasWithdrawal ? '<span style="font-size:9px;opacity:0.9;">💸</span>' : '')
           + '</div>';
       }
+      const hasBEevt = dayBEall.length > 0;
       if (data) {
         const pnlClass = data.pnl >= 0 ? 'pos' : 'neg';
         const abs  = Math.abs(data.pnl);
@@ -10137,7 +10129,7 @@ function renderCalendar() {
         html += '<div style="font-size:9px;color:var(--muted);font-weight:600;">' + weekTradeDays + 'd</div>';
         html += '</div>';
       } else {
-        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:transparent;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;opacity:0.55;">';
+        html += '<div style="margin:2px 0 2px 4px;border-radius:10px;background:transparent;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;opacity:0.35;">';
         html += '<div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">Week ' + weekNum + '</div>';
         html += '<div style="font-size:11px;font-weight:700;color:var(--border2);">—</div>';
         html += '</div>';
@@ -10391,58 +10383,6 @@ function saveGoals() {
   toast('Goals saved!', 'success');
 }
 
-// ── DASHBOARD TRADING RULES ──────────────────────────────────────────────────
-function renderDashboardRules() {
-  const el = document.getElementById('dash-rules-list');
-  if (!el) return;
-  const data = getMindsetData();
-  const rules = data.rules || [];
-  if (!rules.length) {
-    el.innerHTML = `<div style="text-align:center;padding:18px 0;color:var(--muted);font-size:12px;">No rules yet — click <strong style="color:var(--text2);">+ Add Rule</strong> to create your first trading rule.</div>`;
-    return;
-  }
-  const done = rules.filter(r => r.checked).length;
-  const pct = rules.length ? Math.round(done / rules.length * 100) : 0;
-  const barColor = pct === 100 ? 'var(--green)' : pct >= 60 ? 'var(--accent)' : pct >= 30 ? 'var(--yellow)' : 'var(--red)';
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;padding:5px 0 7px;">
-      <div style="flex:1;height:3px;border-radius:4px;background:var(--surface3);overflow:hidden;">
-        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .4s;"></div>
-      </div>
-      <span style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap;">${done}/${rules.length} checked</span>
-    </div>
-    ${rules.map((r, i) => `
-    <div style="display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid var(--border);">
-      <div onclick="toggleDashboardRule(${i})" style="width:16px;height:16px;min-width:16px;border-radius:4px;border:2px solid ${r.checked?'var(--accent)':'var(--border2)'};background:${r.checked?'var(--accent)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;">
-        ${r.checked?'<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>':''}
-      </div>
-      <span style="flex:1;font-size:12px;color:${r.checked?'var(--muted)':'var(--text)'};text-decoration:${r.checked?'line-through':'none'};line-height:1.35;">${r.text.replace(/</g,'&lt;')}</span>
-    </div>`).join('')}`;
-}
-
-function toggleDashboardRule(i) {
-  const data = getMindsetData();
-  if (!data.rules || !data.rules[i]) return;
-  data.rules[i].checked = !data.rules[i].checked;
-  saveMindsetData(data);
-  renderDashboardRules();
-  // Also re-render mindset rules list if that page is active
-  if (document.getElementById('page-mindset')?.classList.contains('active')) {
-    renderMindsetRules(data.rules);
-  }
-}
-
-function addDashboardRule() {
-  openAddRuleModal();
-  // After saving, refresh dashboard rules too
-  const _origSaveRuleModal = window.saveRuleModal;
-  window.saveRuleModal = function(index) {
-    _origSaveRuleModal(index);
-    renderDashboardRules();
-    window.saveRuleModal = _origSaveRuleModal;
-  };
-}
-
 function renderGoals() {
   const g = getGoals();
   const sym = getCurrencySymbol();
@@ -10616,22 +10556,19 @@ function initMindsetPage() {
 }
 
 function mindsetNavDay(dir) {
-  const base = window._mindsetViewDate || getTodayKey();
-  // Build date manually to avoid any toISOString() timezone drift
-  const parts = base.split('-');
-  const cur = new Date(+parts[0], +parts[1]-1, +parts[2] + dir);
+  const cur = new Date((window._mindsetViewDate || getTodayKey()) + 'T12:00:00');
+  cur.setDate(cur.getDate() + dir);
   const today = new Date(); today.setHours(0,0,0,0);
   if (cur > today) return;
-  const newKey = cur.getFullYear() + '-' +
-    String(cur.getMonth()+1).padStart(2,'0') + '-' +
-    String(cur.getDate()).padStart(2,'0');
-  window._mindsetViewDate = newKey;
-  loadMindsetDay(newKey);
+  window._mindsetViewDate = cur.toISOString().slice(0,10);
+  loadMindsetDay(window._mindsetViewDate);
+  updateMindsetNavUI();
 }
 
 function mindsetGoToday() {
   window._mindsetViewDate = getTodayKey();
   loadMindsetDay(window._mindsetViewDate);
+  updateMindsetNavUI();
 }
 
 function updateMindsetNavUI() {
@@ -10878,7 +10815,6 @@ function toggleMindsetRule(i) {
   if (data.rules[i]) data.rules[i].checked = !data.rules[i].checked;
   saveMindsetData(data);
   renderMindsetRules(data.rules);
-  try { renderDashboardRules(); } catch(e) {}
 }
 function deleteMindsetRule(i) {
   const data = getMindsetData();
@@ -13061,58 +12997,6 @@ tr.pack-child-row[data-pack^="_auto_"] td { border-left: 2px solid var(--border)
   border-color: var(--yellow);
   color: var(--yellow);
 }
-
-/* ── Pack stat blocks ── */
-.pack-stat-block {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-}
-.pack-stat-label {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-.pack-stat-value {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--text);
-  white-space: nowrap;
-  font-family: var(--mono);
-}
-
-/* ── Pack group photo thumbnail in header ── */
-.pack-photo-thumb {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid var(--border2);
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: border-color .15s;
-}
-.pack-photo-thumb:hover { border-color: var(--accent); }
-.pack-photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pack-photo-add {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  border: 1.5px dashed var(--border2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 16px;
-  transition: border-color .15s, color .15s;
-}
-.pack-photo-add:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
@@ -13620,7 +13504,6 @@ function renderPackRows(packId, packTrades, sym) {
   const decided    = wins + losses;
   const wr         = decided ? Math.round(wins/decided*100) : 0;
   const totalLots  = packTrades.reduce((s,t) => s + (parseFloat(t.lots)||0), 0);
-  const totalComm  = packTrades.reduce((s,t) => s + (parseFloat(t.commission)||0), 0);
   const symbols    = [...new Set(packTrades.map(t=>t.symbol))].join(', ');
   const dirs       = [...new Set(packTrades.map(t=>t.dir))];
   const dir        = dirs.length === 1 ? dirs[0] : 'MIXED';
@@ -13635,15 +13518,6 @@ function renderPackRows(packId, packTrades, sym) {
   const resultLabel= packResult==='win'?'WIN':packResult==='loss'?'LOSS':'BE';
   const colspanVal = packSelectMode ? 11 : 10;
   const safePackName = packName.replace(/'/g,"\\'");
-
-  // Entry = first trade's entry (sorted by open date), Exit = last trade's exit
-  const sortedByDate = [...packTrades].sort((a,b) => (a.date||'').localeCompare(b.date||''));
-  const firstTrade = sortedByDate[0];
-  const lastTrade  = sortedByDate[sortedByDate.length - 1];
-  const entryPrice = firstTrade?.entry ? (+firstTrade.entry).toFixed(firstTrade.entry % 1 === 0 ? 0 : 2) : '—';
-  const exitPrice  = lastTrade?.exit   ? (+lastTrade.exit).toFixed(lastTrade.exit % 1 === 0 ? 0 : 2)   : '—';
-  const commStr    = totalComm > 0 ? '-'+sym+totalComm.toFixed(2) : '—';
-  const commColor  = totalComm > 0 ? 'var(--red)' : 'var(--muted)';
 
   // ── HTML: looks like a normal trade row ──────────────────────────
   const chevron = `<svg class="pack-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;margin-right:7px;${isExpanded?'transform:rotate(90deg)':''}"><polyline points="9 18 15 12 9 6"/></svg>`;
@@ -13662,10 +13536,10 @@ function renderPackRows(packId, packTrades, sym) {
     <td style="font-weight:600;">${symbols}</td>
     <td><div style="display:flex;align-items:center;">${dirBadge}${countPill}</div></td>
     <td style="color:var(--text);font-weight:500;">${totalLots.toFixed(2)}</td>
-    <td style="color:var(--text2);font-weight:500;font-family:var(--mono);">${entryPrice}</td>
-    <td style="color:var(--text2);font-weight:500;font-family:var(--mono);">${exitPrice}</td>
+    <td style="color:var(--muted);">—</td>
+    <td style="color:var(--muted);">—</td>
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
-    <td style="color:${commColor};font-family:var(--mono);font-weight:600;">${commStr}</td>
+    <td style="color:var(--muted);">—</td>
     <td>${resultBadge}</td>
     <td data-col="tags" style="max-width:110px;" onclick="event.stopPropagation()"><div class="pack-row-actions" style="display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .15s;">${actions}</div></td>
   </tr>`;
@@ -14196,166 +14070,6 @@ function renderAutoPackRows(key, packTrades, sym) {
 })();
 
 console.log('TradeLog: Pack system loaded ✓');
-
-// ══════════════════════════════════════════════════════════════════
-//  PACK GROUP PHOTO SYSTEM
-//  One shared photo per pack (stored as t.packScreenshot on the
-//  representative/first trade in the pack).
-//  • getPackPhoto(packId)         → dataUrl or null
-//  • setPackPhoto(packId, data)   → saves & re-renders
-//  • removePackPhoto(packId)      → removes & re-renders
-//  • uploadPackPhoto(evt, packId) → file-input handler
-//  Safe with undo: packScreenshot is a separate field; it is never
-//  touched by the Auto-BE undo which only modifies `result`.
-// ══════════════════════════════════════════════════════════════════
-
-function _getPackRepTrade(packId) {
-  // representative = earliest trade in the pack
-  const members = trades.filter(t => t.packId === packId);
-  if (!members.length) return null;
-  return members.reduce((a, b) => (a.date || '') <= (b.date || '') ? a : b);
-}
-
-function getPackPhoto(packId) {
-  const rep = _getPackRepTrade(packId);
-  return rep ? (rep.packScreenshot || null) : null;
-}
-
-function setPackPhoto(packId, dataUrl) {
-  const rep = _getPackRepTrade(packId);
-  if (!rep) return;
-  const idx = trades.findIndex(t => t.id === rep.id);
-  if (idx === -1) return;
-  trades[idx].packScreenshot = dataUrl;
-  save();
-  renderTrades();
-  // If a trade from this pack is selected, refresh its detail panel
-  const selTrade = trades.find(t => t.id === selectedId);
-  if (selTrade && selTrade.packId === packId) showTradeDetail(selectedId);
-  try { guaranteedSaveToSupabase(trades[idx]); } catch(e) {}
-}
-
-function removePackPhoto(packId, e) {
-  if (e) e.stopPropagation();
-  setPackPhoto(packId, null);
-  toast('Group photo removed', '');
-}
-
-function uploadPackPhoto(evt, packId) {
-  const file = evt.target.files && evt.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    setPackPhoto(packId, e.target.result);
-    toast('✓ Group photo saved', 'success');
-  };
-  reader.readAsDataURL(file);
-  evt.target.value = '';
-}
-
-function openPackPhotoLightbox(packId, e) {
-  if (e) e.stopPropagation();
-  const photo = getPackPhoto(packId);
-  if (!photo) return;
-  const lb = document.createElement('div');
-  lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
-  lb.onclick = () => lb.remove();
-  lb.innerHTML = `<img src="${photo}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:10px;box-shadow:0 0 80px rgba(0,0,0,.8);">`;
-  document.body.appendChild(lb);
-}
-
-// ── Inject pack photo thumbnail into pack header row ──────────────
-// Patches renderPackRows to show group photo thumb / add button
-(function patchRenderPackRowsForPhoto() {
-  const _origRenderPackRows = renderPackRows;
-  renderPackRows = function(packId, packTrades, sym) {
-    let html = _origRenderPackRows(packId, packTrades, sym);
-
-    // Inject photo thumb / add-photo button into the actions column
-    // We'll append a small photo section after the header row's actions div
-    // by inserting a new TD — but since the row is already built we use a
-    // post-process approach: we add a hidden file input + photo state in
-    // the tags column (last td) of the header row.
-    const photo = getPackPhoto(packId);
-    const photoHtml = photo
-      ? `<div class="pack-photo-thumb" title="Group photo — click to expand" onclick="openPackPhotoLightbox('${packId}',event)">
-           <img src="${photo}" alt="group chart">
-         </div>
-         <button class="pack-photo-add" title="Remove group photo" onclick="removePackPhoto('${packId}',event)" style="width:22px;height:22px;font-size:11px;border-color:rgba(255,59,92,.4);color:var(--red);">✕</button>`
-      : `<label class="pack-photo-add" title="Add one photo for the whole group" onclick="event.stopPropagation()" style="cursor:pointer;">
-           📷
-           <input type="file" accept="image/*" style="display:none;" onchange="uploadPackPhoto(event,'${packId}')">
-         </label>`;
-
-    // Inject into the last <td> of the pack header row
-    // The last TD in renderPackRows ends with closing </td></tr>
-    const injectHtml = `<div style="display:flex;align-items:center;gap:4px;margin-top:4px;">${photoHtml}</div>`;
-    html = html.replace(
-      /(<tr[^>]*class="pack-header-row[^"]*"[^>]*>[\s\S]*?<td data-col="tags"[^>]*>)([\s\S]*?)(<\/td><\/tr>)/,
-      (match, before, content, after) => `${before}${content}${injectHtml}${after}`
-    );
-
-    return html;
-  };
-})();
-
-// ── In trade detail side panel: show pack photo when trade has no individual screenshot ──
-// Patches showTradeDetail to inject pack photo section
-(function patchShowTradeDetailForPackPhoto() {
-  const _orig = showTradeDetail;
-  showTradeDetail = function(id) {
-    _orig(id);
-    // After the original fills the panel, check if this trade belongs to a pack
-    const t = trades.find(x => x.id === id);
-    if (!t || !t.packId) return;
-    const photo = getPackPhoto(t.packId);
-    if (!photo && t.screenshot) return; // has own photo, all good
-
-    // Find the "Chart Photo" section in the detail body
-    const body = document.getElementById('trade-detail-body');
-    if (!body) return;
-
-    if (photo && !t.screenshot) {
-      // Prepend a group photo banner above the individual photo section
-      // Find the section that has the Chart Photo label
-      const allDivs = body.querySelectorAll('div');
-      let insertBefore = null;
-      for (const div of allDivs) {
-        if (div.childNodes.length && div.textContent.includes('Chart Photo')) {
-          // Walk up to find the containing margin div
-          let el = div;
-          while (el && el.parentElement !== body.querySelector('div[style*="padding:20px"]')) {
-            el = el.parentElement;
-          }
-          insertBefore = el || div;
-          break;
-        }
-      }
-
-      const banner = document.createElement('div');
-      banner.style.cssText = 'margin-bottom:14px;';
-      banner.innerHTML = `
-        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-          Group Photo <span style="font-size:9px;background:rgba(99,102,241,.12);color:var(--accent);padding:2px 7px;border-radius:20px;font-weight:800;letter-spacing:.3px;">SHARED</span>
-        </div>
-        <div style="cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid rgba(99,102,241,.3);" onclick="openPackPhotoLightbox('${t.packId}')">
-          <img src="${photo}" alt="group chart" style="width:100%;display:block;border-radius:10px;">
-          <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Shared group photo · Click to expand</div>
-        </div>
-        <div style="margin-top:6px;display:flex;gap:6px;">
-          <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;flex:1;" onclick="removePackPhoto('${t.packId}')">Remove Group Photo</button>
-        </div>`;
-      if (insertBefore && insertBefore.parentNode) {
-        insertBefore.parentNode.insertBefore(banner, insertBefore);
-      } else {
-        // Fallback: append to detail body inner div
-        const inner = body.querySelector('div[style*="padding:20px"]') || body;
-        inner.appendChild(banner);
-      }
-    }
-  };
-  console.log('TradeLog: Pack photo system loaded ✓');
-})();
 
 // ── FEATURES DROPDOWN ────────────────────────────────────────────────────────
 function toggleFeaturesDrop() {
