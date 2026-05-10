@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<style>html,body{touch-action:manipulation;}</style>
 <title>TradeLog — Your Trading Journal</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -4818,7 +4819,8 @@ async function backgroundSync() {
         dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
         pnl: r.pnl, commission: r.commission, swap: r.swap || 0, netPnl: r.net_pnl, r: r.r,
         result: r.result, emotion: r.emotion, confidence: r.confidence,
-        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || [],
+        packId: r.pack_id || undefined, packName: r.pack_name || undefined
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
       try {
@@ -5375,7 +5377,8 @@ async function loadAllFromSupabase() {
         dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
         pnl: r.pnl, commission: r.commission, swap: r.swap || 0, netPnl: r.net_pnl, r: r.r,
         result: r.result, emotion: r.emotion, confidence: r.confidence,
-        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || []
+        notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || [],
+        packId: r.pack_id || undefined, packName: r.pack_name || undefined
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
     }
@@ -5417,7 +5420,7 @@ async function saveProfileToSupabase() {
   try {
     const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
     const goals = JSON.parse(localStorage.getItem(GOALS_KEY) || '{}');
-    const settings = { theme: localStorage.getItem(THEME_KEY) || 'dark', autoTheme: localStorage.getItem(AUTO_THEME_KEY) === 'true', goals };
+    const settings = { theme: localStorage.getItem(THEME_KEY) || 'dark', autoTheme: localStorage.getItem(AUTO_THEME_KEY) === 'true', goals, autopack: localStorage.getItem('tradelog_autopack') === 'true' };
     const { error } = await sb.from('profiles').upsert({
       id: uid,
       name: p.name || '',
@@ -5469,7 +5472,8 @@ async function saveTradeToSupabase(t) {
     exit: t.exit, sl: t.sl, tp: t.tp, pnl: t.pnl, commission: t.commission,
     swap: t.swap || 0, net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
     confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
-    strategies: t.strategies || []
+    strategies: t.strategies || [],
+    pack_id: t.packId || null, pack_name: t.packName || null
   };
   const { error } = await sb.from('trades').upsert(row);
   if (error) { console.error('TradeLog: upsert error', error); throw error; }
@@ -13527,14 +13531,14 @@ tr.pack-child-row td {
 /* ── Unified date column alignment: ALL rows same left pad ── */
 .trades-table td:first-child {
   position: relative;
-  padding-left: 36px !important;
+  padding-left: 26px !important;
 }
 .trades-table tr.pack-header-row td:first-child {
-  padding-left: 36px !important;
+  padding-left: 26px !important;
 }
 .date-chevron {
   position: absolute;
-  left: 8px;
+  left: 4px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -13624,7 +13628,9 @@ tr.pack-child-row[data-pack^="_auto_"] td { border-left: 2px solid var(--border)
 
 let packSelectMode = false;
 let packSelectedIds = new Set();
-let packExpandedIds = new Set(); // which packs are currently expanded
+let packExpandedIds = new Set(
+  JSON.parse(localStorage.getItem('tradelog_pack_expanded') || '[]')
+); // which packs are currently expanded
 
 // ── Inject "Select" button into the trades filter bar ────────────
 (function injectPackSelectButton() {
@@ -13808,6 +13814,8 @@ function togglePackExpand(packId, e) {
   if (e) e.stopPropagation();
   if (packExpandedIds.has(packId)) packExpandedIds.delete(packId);
   else packExpandedIds.add(packId);
+  // Persist expanded state across sessions
+  try { localStorage.setItem('tradelog_pack_expanded', JSON.stringify([...packExpandedIds])); } catch(_){}
   // Toggle child rows visibility without full re-render
   const childRows = document.querySelectorAll(`tr.pack-child-row[data-pack="${packId}"]`);
   const isExpanded = packExpandedIds.has(packId);
@@ -14108,6 +14116,267 @@ function _packSeparator(colspan) {
   return `<tr class="pack-separator"><td colspan="${colspan}"><div></div></td></tr>`;
 }
 
+// ── PACK DETAIL ───────────────────────────────────────────────────────────────
+// Opens a full group detail view — desktop: fills side panel, mobile: bottom sheet
+function openPackDetail(packId, e) {
+  if (e) e.stopPropagation();
+  const packTrades = trades.filter(t => t.packId === packId);
+  if (!packTrades.length) return;
+
+  const sym       = getCurrencySymbol();
+  const packName  = packTrades[0].packName || 'Pack';
+  const totalPnl  = packTrades.reduce((s,t) => s + getPnl(t), 0);
+  const wins      = packTrades.filter(t => getResult(t) === 'win').length;
+  const losses    = packTrades.filter(t => getResult(t) === 'loss').length;
+  const decided   = wins + losses;
+  const wr        = decided ? Math.round(wins/decided*100) : 0;
+  const totalLots = packTrades.reduce((s,t) => s + (parseFloat(t.lots)||0), 0);
+  const pnlColor  = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const pnlStr    = (totalPnl >= 0 ? '+'+sym : '-'+sym) + Math.abs(totalPnl).toFixed(2);
+  const packResult= totalPnl > 0 ? 'WIN' : totalPnl < 0 ? 'LOSS' : 'BE';
+  const resultColor = totalPnl > 0 ? 'var(--green)' : totalPnl < 0 ? 'var(--red)' : 'var(--yellow)';
+  const resultBg    = totalPnl > 0 ? 'var(--green-bg)' : totalPnl < 0 ? 'var(--red-bg)' : 'rgba(245,158,11,.12)';
+
+  // Anchor trade holds shared pack data
+  const anchor = packTrades.find(t => t.packScreenshot) || packTrades[0];
+  const packPhoto    = packTrades.find(t => t.packScreenshot)?.packScreenshot || null;
+  const packNotes    = packTrades.find(t => t.packNotes)?.packNotes || '';
+  const packEmotion  = packTrades.find(t => t.packEmotion)?.packEmotion || '';
+  const packConfidence = packTrades.find(t => t.packConfidence)?.packConfidence || '';
+
+  const html = _buildPackDetailHTML(packId, packName, packTrades, sym, {
+    totalPnl, wins, losses, wr, totalLots, pnlStr, pnlColor,
+    packResult, resultColor, resultBg, packPhoto, packNotes, packEmotion, packConfidence
+  });
+
+  if (window.innerWidth <= 768) {
+    // Mobile: use bottom sheet
+    document.getElementById('mobile-sheet-title').innerHTML =
+      `<span style="font-size:13px;">📦</span> ${packName}`;
+    document.getElementById('mobile-sheet-body').innerHTML = html;
+    document.getElementById('mobile-trade-sheet').style.display = 'flex';
+    // Wire up tab switching
+    _initPackDetailTabs('mobile-sheet-body', packId);
+  } else {
+    // Desktop: fill side detail panel
+    document.querySelector('#trade-detail-panel .panel-title').textContent = packName;
+    document.getElementById('trade-detail-body').innerHTML = html;
+    _initPackDetailTabs('trade-detail-body', packId);
+    // Update header buttons
+    const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
+    if (headerBtns) headerBtns.innerHTML = `
+      <button onclick="openDetailOverlay()" title="Expand" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      </button>`;
+  }
+}
+
+function _buildPackDetailHTML(packId, packName, packTrades, sym, d) {
+  const safeId = packId.replace(/[^a-zA-Z0-9_-]/g,'_');
+
+  // Tab bar
+  const tabs = `
+    <div id="pack-tabs-${safeId}" style="display:flex;gap:2px;padding:12px 16px 0;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:2;">
+      ${['Overview','Positions','Notes','Photo','Mindset'].map((tab,i) => `
+        <button onclick="_switchPackTab('${safeId}','${tab}')" id="pack-tab-btn-${safeId}-${tab}"
+          style="padding:7px 10px;border-radius:8px 8px 0 0;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);
+          background:${i===0?'var(--surface2)':'none'};color:${i===0?'var(--text)':'var(--muted)'};transition:all .15s;border-bottom:${i===0?'2px solid var(--accent)':'2px solid transparent'};">
+          ${tab}
+        </button>`).join('')}
+    </div>`;
+
+  // ── OVERVIEW TAB ──
+  const overviewTab = `
+    <div id="pack-panel-${safeId}-Overview" style="padding:16px;">
+      <!-- Header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div style="font-size:18px;font-weight:900;letter-spacing:-0.5px;color:var(--text);">${packName}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px;font-weight:600;">${packTrades.length} positions · ${packTrades[0]?.date?.slice(0,10)||''}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:900;color:${d.pnlColor};letter-spacing:-1px;">${d.pnlStr}</div>
+          <span style="font-size:10px;font-weight:800;padding:2px 10px;border-radius:6px;background:${d.resultBg};color:${d.resultColor};">${d.packResult}</span>
+        </div>
+      </div>
+      <!-- Stats grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        ${[
+          ['Trades', packTrades.length],
+          ['Total Lots', d.totalLots.toFixed(2)],
+          ['Wins', d.wins],
+          ['Losses', d.losses],
+          ['Win Rate', d.decided ? d.wr+'%' : '—'],
+          ['Avg P&L', sym+(Math.abs(d.totalPnl)/packTrades.length).toFixed(2)],
+        ].map(([l,v]) => `<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;">
+          <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;">${l}</div>
+          <div style="font-size:15px;font-weight:800;color:var(--text);">${v}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+
+  // ── POSITIONS TAB ──
+  const positionsTab = `
+    <div id="pack-panel-${safeId}-Positions" style="display:none;padding:16px;">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${packTrades.map(t => {
+          const pnl = getPnl(t);
+          const res = getResult(t);
+          const pc  = res==='be'?'var(--yellow)':pnl>=0?'var(--green)':'var(--red)';
+          const ps  = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
+          const rb  = res==='win'?'var(--green-bg)':res==='loss'?'var(--red-bg)':'rgba(245,158,11,.12)';
+          const rc  = res==='win'?'var(--green)':res==='loss'?'var(--red)':'var(--yellow)';
+          return `<div onclick="selectTrade('${t.id}')" style="background:var(--surface2);border-radius:12px;padding:12px 14px;cursor:pointer;border:1px solid var(--border);transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--border2)'" onmouseleave="this.style.borderColor='var(--border)'">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+              <div>
+                <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:9px;">${t.dir}</span>
+                <span style="margin-left:6px;font-size:11px;color:var(--muted);font-weight:600;">${t.date?.slice(0,16).replace('T',' ')||'—'}</span>
+              </div>
+              <span style="font-size:14px;font-weight:800;color:${pc};">${ps}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+              ${[['Entry',t.entry||'—'],['Exit',t.exit||'—'],['Lots',t.lots||'—']].map(([l,v])=>`
+                <div><div style="font-size:9px;color:var(--muted);font-weight:600;">${l}</div><div style="font-size:12px;font-weight:700;color:var(--text);">${v}</div></div>`).join('')}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  // ── NOTES TAB ──
+  const notesTab = `
+    <div id="pack-panel-${safeId}-Notes" style="display:none;padding:16px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">Group Notes / Setup Idea</div>
+      <textarea id="pack-notes-${safeId}" placeholder="Describe your trade idea, setup, reasoning…"
+        style="width:100%;min-height:180px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
+        onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+        oninput="savePackField('${packId}','packNotes',this.value)">${d.packNotes}</textarea>
+    </div>`;
+
+  // ── PHOTO TAB ──
+  const photoTab = `
+    <div id="pack-panel-${safeId}-Photo" style="display:none;padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);">Setup Chart</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="document.getElementById('pack-photo-input-${safeId}').click()">
+            ${d.packPhoto ? '🔄 Replace' : '📸 Add Photo'}
+          </button>
+          ${d.packPhoto ? `<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);" onclick="savePackField('${packId}','packScreenshot',null);this.closest('[id^=pack-panel]').querySelector('img')?.remove();location.reload()">Remove</button>` : ''}
+        </div>
+      </div>
+      <input type="file" id="pack-photo-input-${safeId}" accept="image/*" style="display:none;" onchange="uploadPackPhoto(event,'${packId}','${safeId}')">
+      <div id="pack-photo-area-${safeId}">
+        ${d.packPhoto
+          ? `<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in;" onclick="openPackPhotoFullscreen('${packId}')">
+               <img src="${d.packPhoto}" style="width:100%;display:block;">
+               <div style="text-align:center;padding:6px;font-size:10px;color:var(--muted);">Tap to fullscreen</div>
+             </div>`
+          : `<div onclick="document.getElementById('pack-photo-input-${safeId}').click()"
+               ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+               ondragleave="this.style.borderColor='var(--border2)'"
+               ondrop="handlePackPhotoDrop(event,'${packId}','${safeId}')"
+               style="border:2px dashed var(--border2);border-radius:10px;padding:40px 16px;text-align:center;cursor:pointer;transition:border-color .15s;"
+               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
+               <div style="font-size:28px;margin-bottom:8px;">📸</div>
+               <div style="font-size:12px;color:var(--muted);">Click or drag & drop a chart screenshot</div>
+             </div>`}
+      </div>
+    </div>`;
+
+  // ── MINDSET TAB ──
+  const emotions = ['😤','😰','😊','😎','🤔','😴','😡','🥳','😬','🙏'];
+  const mindsetTab = `
+    <div id="pack-panel-${safeId}-Mindset" style="display:none;padding:16px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;">Overall Mood</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+        ${emotions.map(em => `<span onclick="savePackField('${packId}','packEmotion','${em}');document.querySelectorAll('.pack-emo-btn-${safeId}').forEach(b=>b.style.background='var(--surface2)');this.style.background='var(--surface3)';this.style.transform='scale(1.2)'" 
+          class="pack-emo-btn-${safeId}"
+          style="font-size:22px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;background:${d.packEmotion===em?'var(--surface3)':'var(--surface2)'};transition:all .15s;transform:${d.packEmotion===em?'scale(1.1)':'scale(1)'};">
+          ${em}</span>`).join('')}
+      </div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">Confidence <span style="font-weight:600;color:var(--accent);" id="pack-conf-label-${safeId}">${d.packConfidence||'—'}/10</span></div>
+      <input type="range" min="1" max="10" value="${d.packConfidence||5}"
+        style="width:100%;accent-color:var(--accent);margin-bottom:6px;"
+        oninput="document.getElementById('pack-conf-label-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',this.value)">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;">
+        <span>Low</span><span>High</span>
+      </div>
+    </div>`;
+
+  return tabs + overviewTab + positionsTab + notesTab + photoTab + mindsetTab;
+}
+
+function _initPackDetailTabs(containerId, packId) {
+  // already rendered — tabs work via onclick
+}
+
+function _switchPackTab(safeId, tabName) {
+  const tabs = ['Overview','Positions','Notes','Photo','Mindset'];
+  tabs.forEach(t => {
+    const panel = document.getElementById(`pack-panel-${safeId}-${t}`);
+    const btn   = document.getElementById(`pack-tab-btn-${safeId}-${t}`);
+    const active = t === tabName;
+    if (panel) panel.style.display = active ? 'block' : 'none';
+    if (btn) {
+      btn.style.background    = active ? 'var(--surface2)' : 'none';
+      btn.style.color         = active ? 'var(--text)'    : 'var(--muted)';
+      btn.style.borderBottom  = active ? '2px solid var(--accent)' : '2px solid transparent';
+    }
+  });
+}
+
+// Save a pack-level field to all trades in the pack (stored on anchor = first trade)
+async function savePackField(packId, field, value) {
+  const packTrades = trades.filter(t => t.packId === packId);
+  if (!packTrades.length) return;
+  // Clear field from all trades first, then set on first trade only
+  packTrades.forEach(t => { delete t[field]; });
+  if (value !== null && value !== undefined && value !== '') {
+    packTrades[0][field] = value;
+  }
+  save();
+  try { await guaranteedSaveToSupabase(packTrades[0]); } catch(e) {}
+}
+
+function uploadPackPhoto(event, packId, safeId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const dataUrl = e.target.result;
+    await savePackField(packId, 'packScreenshot', dataUrl);
+    // Update photo area in place
+    const area = document.getElementById(`pack-photo-area-${safeId}`);
+    if (area) area.innerHTML = `<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in;" onclick="openPackPhotoFullscreen('${packId}')">
+      <img src="${dataUrl}" style="width:100%;display:block;">
+      <div style="text-align:center;padding:6px;font-size:10px;color:var(--muted);">Tap to fullscreen</div>
+    </div>`;
+    toast('Photo saved', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function handlePackPhotoDrop(event, packId, safeId) {
+  event.preventDefault();
+  const file = event.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  const fakeEvt = { target: { files: [file] } };
+  uploadPackPhoto(fakeEvt, packId, safeId);
+}
+
+function openPackPhotoFullscreen(packId) {
+  const t = trades.find(x => x.packId === packId && x.packScreenshot);
+  if (!t) return;
+  const lb = document.createElement('div');
+  lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;';
+  lb.innerHTML = `<button style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;">×</button>
+    <img src="${t.packScreenshot}" style="max-width:100%;max-height:100vh;object-fit:contain;">`;
+  lb.querySelector('button').onclick = () => lb.remove();
+  lb.onclick = ev => { if (ev.target === lb) lb.remove(); };
+  document.body.appendChild(lb);
+}
+
 function renderPackRows(packId, packTrades, sym) {
   const totalPnl   = packTrades.reduce((s,t) => s + getPnl(t), 0);
   const wins       = packTrades.filter(t => getResult(t) === 'win').length;
@@ -14140,10 +14409,10 @@ function renderPackRows(packId, packTrades, sym) {
     : `<span class="badge ${dir==='BUY'?'buy':'sell'}">${dir}</span>`;
   const countPill = `<span style="margin-left:5px;font-size:9px;font-weight:800;color:var(--muted);opacity:.65;">${packTrades.length}x</span>`;
   const resultBadge = `<span style="color:${resultColor};font-size:10px;font-weight:700;background:${resultBg};padding:2px 8px;border-radius:4px;">${resultLabel}</span>`;
-  const actions = `<span onclick="renamePack('${packId}','${safePackName}',event)" title="Rename" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;color:var(--muted);cursor:pointer;transition:color .15s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--muted)'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span onclick="dissolvePack('${packId}',event)" title="Ungroup" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;color:var(--muted);cursor:pointer;transition:color .15s;" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--muted)'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></span>`;
+  const actions = `<span onclick="openPackDetail('${packId}',event)" title="Group Detail" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;color:var(--muted);cursor:pointer;transition:color .15s;" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--muted)'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span><span onclick="renamePack('${packId}','${safePackName}',event)" title="Rename" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;color:var(--muted);cursor:pointer;transition:color .15s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--muted)'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span onclick="dissolvePack('${packId}',event)" title="Ungroup" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;color:var(--muted);cursor:pointer;transition:color .15s;" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--muted)'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></span>`;
 
-  let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" onclick="togglePackExpand('${packId}',event)" style="cursor:pointer;">
-    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:top;position:relative;padding-top:10px;"><div class="date-chevron">${chevron}</div><div style="line-height:1.4;">${dateHtml}</div></td>
+  let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" onclick="togglePackExpand('${packId}',event);if(window.innerWidth>768)openPackDetail('${packId}',event)" style="cursor:pointer;">
+    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;position:relative;"><div class="date-chevron">${chevron}</div><div style="line-height:1.4;">${dateHtml}</div></td>
     <td style="font-weight:600;">${symbols}</td>
     <td><div style="display:flex;align-items:center;">${dirBadge}${countPill}</div></td>
     <td style="color:var(--text);font-weight:500;">${totalLots.toFixed(2)}</td>
@@ -14249,11 +14518,26 @@ function toggleSelectAll(e) {
 
 function toggleAutoPack() {
   const next = !(localStorage.getItem('tradelog_autopack') === 'true');
-  localStorage.setItem('tradelog_autopack', String(next));
-  if (!next) { /* notice bar removed */ }
-  if (next) toast('⚡ Auto-Pack ON — trades within 1 min on same symbol are grouped', 'success');
-  else       toast('Auto-Pack OFF', '');
-  renderTrades();
+  if (next) {
+    showConfirm({
+      icon: '⚡',
+      title: 'Enable Auto-Pack?',
+      message: 'Auto-Pack groups trades on the same symbol within 1 minute. Ungrouping later must be done manually one by one — only enable if you are sure.',
+      okText: 'Enable',
+      okColor: 'var(--yellow)',
+      onOk: () => {
+        localStorage.setItem('tradelog_autopack', 'true');
+        _syncFeatureDropStates();
+        toast('⚡ Auto-Pack ON — trades within 1 min on same symbol are grouped', 'success');
+        renderTrades();
+      }
+    });
+  } else {
+    localStorage.setItem('tradelog_autopack', 'false');
+    _syncFeatureDropStates();
+    toast('Auto-Pack OFF', '');
+    renderTrades();
+  }
 }
 
 function isAutoPack() {
@@ -14451,7 +14735,7 @@ function renderAutoPackRows(key, packTrades, sym) {
   const autoResultBadge = `<span style="color:${resultColor};font-size:10px;font-weight:700;background:${resultBg};padding:2px 8px;border-radius:4px;">${resultLabel}</span>`;
 
   let html = `<tr class="pack-header-row${isExpanded ? ' expanded' : ''}" data-pack="${key}" onclick="togglePackExpand('${key}',event)" style="cursor:pointer;">
-    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:top;position:relative;padding-top:10px;"><div class="date-chevron">${autoChevron}</div><div style="line-height:1.4;">${autoDateHtml}</div></td>
+    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;position:relative;"><div class="date-chevron">${autoChevron}</div><div style="line-height:1.4;">${autoDateHtml}</div></td>
     <td style="font-weight:600;">${symbols}</td>
     <td><div style="display:flex;align-items:center;">${autoDirBadge}${autoCountPill}</div></td>
     <td style="color:var(--text);font-weight:500;">${totalLots.toFixed(2)}</td>
