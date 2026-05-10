@@ -3,14 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<style>html,body{touch-action:manipulation;}</style>
+<style>
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    position: fixed;
+  }
+</style>
 <title>TradeLog — Your Trading Journal</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="TradeLog">
-    <link rel="apple-touch-icon" href="logo.png?v=1">
-    <meta name="theme-color" content="#0b0f1a">
-    <link rel="icon" type="image/png" href="logo.png">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TradeLog">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="TradeLog">
+  <link rel="apple-touch-icon" href="logo.png?v=1">
+  <link rel="icon" type="image/png" href="logo.png">
+  <meta name="theme-color" content="#05080f">
+<style>
+  /* Prevent white flash on iOS PWA launch */
+  html { background: #05080f; }
+</style>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
   // Apply theme instantly before any rendering to prevent flash
@@ -102,15 +118,8 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--sans);
-    min-height: 100dvh;
-    height: 100dvh;
-    overflow: hidden;
+    /* height/width/overflow/position set in early style above */
     -webkit-font-smoothing: antialiased;
-    /* iOS safe area support */
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
   }
 
   body::before {
@@ -129,6 +138,11 @@
     display: flex;
     height: 100%;
     overflow: hidden;
+    /* Safe area insets — app-root covers full screen so we handle them here */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   #sidebar {
@@ -2178,7 +2192,7 @@
     .sidebar-logo-text { display: none !important; }
     .account-card-text { display: none !important; }
     #account-chevron { display: none !important; }
-    .sidebar-logo { justify-content: center; padding: 12px 0; padding-top: max(12px, env(safe-area-inset-top)); }
+    .sidebar-logo { justify-content: center; padding: 12px 0; }
     .sidebar-item { justify-content: center; padding: 14px 0; min-height: 48px; }
     #sidebar .account-card { justify-content: center; padding: 10px 0; }
     /* Safe area bottom padding for sidebar so account icon isn't behind home indicator */
@@ -2202,11 +2216,12 @@
     &quot;description&quot;: &quot;Your Professional Trading Journal&quot;,
     &quot;start_url&quot;: &quot;.&quot;,
     &quot;display&quot;: &quot;standalone&quot;,
-    &quot;background_color&quot;: &quot;#0b0f1a&quot;,
-    &quot;theme_color&quot;: &quot;#0b0f1a&quot;,
+    &quot;display_override&quot;: [&quot;fullscreen&quot;, &quot;standalone&quot;, &quot;minimal-ui&quot;],
+    &quot;background_color&quot;: &quot;#05080f&quot;,
+    &quot;theme_color&quot;: &quot;#05080f&quot;,
     &quot;orientation&quot;: &quot;portrait-primary&quot;,
     &quot;icons&quot;: [{
-      &quot;src&quot;: &quot;data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'&gt;&lt;rect width='512' height='512' rx='80' fill='%230b0f1a'/&gt;&lt;text y='360' x='80' font-size='380' font-family='Arial'&gt;📈&lt;/text&gt;&lt;/svg&gt;&quot;,
+      &quot;src&quot;: &quot;data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'&gt;&lt;rect width='512' height='512' rx='80' fill='%2305080f'/&gt;&lt;text y='360' x='80' font-size='380' font-family='Arial'&gt;📈&lt;/text&gt;&lt;/svg&gt;&quot;,
       &quot;sizes&quot;: &quot;any&quot;,
       &quot;type&quot;: &quot;image/svg+xml&quot;,
       &quot;purpose&quot;: &quot;any maskable&quot;
@@ -4456,8 +4471,12 @@ window.switchPage = function(name) {
 
 
 <!-- SHARE MODAL -->
-<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(12px);">
-  <div style="width:520px;max-width:96vw;">
+<!-- ── SHARE MODAL ── -->
+<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:10000;align-items:flex-start;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);">
+  <!-- Theme-aware backdrop -->
+  <div id="share-modal-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.88);z-index:0;" onclick="closeShareModal()"></div>
+  <!-- Scrollable container — fills full height, scrolls on mobile -->
+  <div style="position:relative;z-index:1;width:100%;max-width:520px;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:100%;padding:env(safe-area-inset-top,20px) 10px max(env(safe-area-inset-bottom,20px),20px);box-sizing:border-box;">
 
     <!-- ═══════════════════════════════════════════════════ -->
     <!-- SHARE CARD — canvas capture target                  -->
@@ -4492,9 +4511,7 @@ window.switchPage = function(name) {
         <!-- HERO P&L SECTION -->
         <div style="margin-bottom:30px;">
           <div id="share-pnl-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;opacity:0.35;margin-bottom:12px;">TODAY'S P&L</div>
-          <!-- P&L number with glow text effect via text-shadow set by JS -->
           <div id="share-pnl" style="font-size:76px;font-weight:900;letter-spacing:-5px;line-height:0.95;font-variant-numeric:tabular-nums;">+$0.00</div>
-          <!-- Animated-looking progress bar -->
           <div style="margin-top:18px;display:flex;align-items:center;gap:12px;">
             <div id="share-wr-bar-wrap" style="flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,0.08);overflow:hidden;">
               <div id="share-wr-bar" style="height:100%;border-radius:4px;width:0%;transition:width 0s;"></div>
@@ -4538,45 +4555,46 @@ window.switchPage = function(name) {
     </div><!-- /share-card -->
 
     <!-- TIMEFRAME SWITCHER -->
-    <div style="display:flex;gap:5px;background:rgba(0,0,0,0.3);border-radius:12px;padding:4px;border:1px solid rgba(255,255,255,0.08);margin-top:14px;">
-      <button onclick="setShareTimeframe('today')"  id="share-tf-today"  style="flex:1;padding:8px 4px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:rgba(99,102,241,1);color:#fff;transition:all .2s;">Today</button>
-      <button onclick="setShareTimeframe('week')"   id="share-tf-week"   style="flex:1;padding:8px 4px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:transparent;color:rgba(255,255,255,0.4);transition:all .2s;">Week</button>
-      <button onclick="setShareTimeframe('month')"  id="share-tf-month"  style="flex:1;padding:8px 4px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:transparent;color:rgba(255,255,255,0.4);transition:all .2s;">Month</button>
-      <button onclick="setShareTimeframe('alltime')" id="share-tf-alltime" style="flex:1;padding:8px 4px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:transparent;color:rgba(255,255,255,0.4);transition:all .2s;">All Time</button>
+    <div id="share-tf-bar" style="display:flex;gap:5px;border-radius:12px;padding:4px;border:1px solid rgba(255,255,255,0.08);margin-top:14px;background:rgba(0,0,0,0.25);">
+      <button onclick="setShareTimeframe('today')"  id="share-tf-today"  style="flex:1;padding:9px 4px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:rgba(99,102,241,1);color:#fff;transition:all .2s;">Today</button>
+      <button onclick="setShareTimeframe('week')"   id="share-tf-week"   style="flex:1;padding:9px 4px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:transparent;color:rgba(255,255,255,0.45);transition:all .2s;">Week</button>
+      <button onclick="setShareTimeframe('month')"  id="share-tf-month"  style="flex:1;padding:9px 4px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:transparent;color:rgba(255,255,255,0.45);transition:all .2s;">Month</button>
+      <button onclick="setShareTimeframe('alltime')" id="share-tf-alltime" style="flex:1;padding:9px 4px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;background:transparent;color:rgba(255,255,255,0.45);transition:all .2s;">All Time</button>
     </div>
 
-    <!-- ACTION BUTTONS -->
-    <div style="display:flex;flex-direction:column;gap:7px;margin-top:14px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
-        <button onclick="shareCardCopy()" id="share-cp-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:14px;border-radius:14px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.12);color:#818cf8;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.25)';this.style.borderColor='rgba(99,102,241,0.6)'" onmouseleave="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(99,102,241,0.3)'">
+    <!-- ACTION BUTTONS — theme-aware via CSS vars set by JS on open -->
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <button onclick="shareCardCopy()" id="share-cp-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:15px;border-radius:14px;border:1px solid rgba(99,102,241,0.35);background:rgba(99,102,241,0.14);color:#818cf8;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           Copy Image
         </button>
-        <button onclick="shareCardDownload()" id="share-dl-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:14px;border-radius:14px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.12);color:#818cf8;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.background='rgba(99,102,241,0.25)';this.style.borderColor='rgba(99,102,241,0.6)'" onmouseleave="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(99,102,241,0.3)'">
+        <button onclick="shareCardDownload()" id="share-dl-btn" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:15px;border-radius:14px;border:1px solid rgba(99,102,241,0.35);background:rgba(99,102,241,0.14);color:#818cf8;font-size:13px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Save Image
         </button>
       </div>
-      <div id="share-app-btns" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;">
-        <button onclick="shareToApp('x')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:12px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#e2e8f0'" onmouseleave="this.style.borderColor='#1e293b'">
+      <div id="share-app-btns" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <button onclick="shareToApp('x')" id="share-btn-x" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:13px 8px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           Post to X
         </button>
-        <button onclick="shareToApp('whatsapp')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:12px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#25D366'" onmouseleave="this.style.borderColor='#1e293b'">
+        <button onclick="shareToApp('whatsapp')" id="share-btn-wa" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:13px 8px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           WhatsApp
         </button>
-        <button onclick="shareToApp('telegram')" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 8px;border-radius:12px;border:1px solid #1e293b;background:#080808;color:#f1f5f9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#29B6F6'" onmouseleave="this.style.borderColor='#1e293b'">
+        <button onclick="shareToApp('telegram')" id="share-btn-tg" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:13px 8px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="#29B6F6"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
           Telegram
         </button>
       </div>
-      <button onclick="closeShareModal()" style="padding:12px;border-radius:12px;border:1px solid #1e293b;background:none;color:#475569;font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;" onmouseenter="this.style.borderColor='#475569';this.style.color='#94a3b8'" onmouseleave="this.style.borderColor='#1e293b';this.style.color='#475569'">
+      <button onclick="closeShareModal()" id="share-close-btn" style="padding:14px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;width:100%;">
         Close
       </button>
     </div>
-  </div>
-</div>
+
+  </div><!-- /scrollable container -->
+</div><!-- /share-modal -->
 
 <!-- GOALS MODAL -->
 <div id="goals-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;">
@@ -7679,7 +7697,7 @@ function openMobilePhotoFullscreen(id) {
   const t = trades.find(x => x.id === id);
   if (!t || !t.screenshot) return;
   // Unlock pinch-to-zoom for the photo lightbox
-  document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=device-width, initial-scale=1.0');
+  document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
   const lb = document.createElement('div');
   lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;';
   lb.innerHTML = `
@@ -7688,7 +7706,7 @@ function openMobilePhotoFullscreen(id) {
   `;
   const closeLb = () => {
     // Re-lock zoom when photo is closed
-    document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
     lb.remove();
   };
   lb.querySelector('#lb-close-btn').onclick = closeLb;
@@ -11740,7 +11758,7 @@ function setShareTimeframe(tf) {
     const btn = document.getElementById('share-tf-' + t);
     if (!btn) return;
     btn.style.background = t === tf ? 'rgba(99,102,241,1)' : 'transparent';
-    btn.style.color      = t === tf ? '#fff' : 'rgba(255,255,255,0.4)';
+    btn.style.color      = t === tf ? '#fff' : 'rgba(255,255,255,0.45)';
   });
   _invalidateShareCache();
   _renderShareCard(tf);
@@ -12020,8 +12038,35 @@ function openShareModal() {
     const btn = document.getElementById('share-tf-' + t);
     if (!btn) return;
     btn.style.background = t === window._shareTimeframe ? 'rgba(99,102,241,1)' : 'transparent';
-    btn.style.color      = t === window._shareTimeframe ? '#fff' : 'rgba(255,255,255,0.4)';
+    btn.style.color      = t === window._shareTimeframe ? '#fff' : 'rgba(255,255,255,0.45)';
   });
+
+  // ── Apply theme to action buttons ──
+  const rawTheme = localStorage.getItem('tradelog_theme') || 'dark';
+  const isLight = rawTheme === 'light';
+  // Social buttons
+  const socialStyle = isLight
+    ? 'border:1px solid #e2e8f0;background:#f8fafc;color:#1e293b;'
+    : 'border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:#f1f5f9;';
+  ['share-btn-x','share-btn-wa','share-btn-tg'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.cssText += socialStyle;
+  });
+  // Close button
+  const closeBtn = document.getElementById('share-close-btn');
+  if (closeBtn) {
+    closeBtn.style.cssText += isLight
+      ? 'border:1px solid #e2e8f0;background:#f1f5f9;color:#475569;'
+      : 'border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:#64748b;';
+  }
+  // Timeframe bar background
+  const tfBar = document.getElementById('share-tf-bar');
+  if (tfBar) tfBar.style.background = isLight ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.25)';
+
+  // ── Hide sidebar behind modal ──
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.style.zIndex = '0';
+
   _invalidateShareCache();
   _renderShareCard(window._shareTimeframe);
   document.getElementById('share-modal').style.display = 'flex';
@@ -12029,6 +12074,9 @@ function openShareModal() {
 
 function closeShareModal() {
   document.getElementById('share-modal').style.display = 'none';
+  // Restore sidebar z-index
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.style.zIndex = '';
   // release any cached canvas to free memory
   window._shareCanvas = null;
 }
@@ -15184,20 +15232,19 @@ function pwaTriggerInstall() {
 // Register a minimal service worker so Chrome allows install
 if ('serviceWorker' in navigator) {
   const swCode = `
-    const CACHE = 'tradelog-v1';
-    self.addEventListener('install', e => {
-      self.skipWaiting();
-    });
-    self.addEventListener('activate', e => {
-      e.waitUntil(clients.claim());
-    });
+    const CACHE = 'tradelog-v2';
+    self.addEventListener('install', e => { self.skipWaiting(); });
+    self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
     self.addEventListener('fetch', e => {
+      if (e.request.method !== 'GET') return;
       e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
     });
   `;
-  const blob = new Blob([swCode], { type: 'application/javascript' });
-  const swUrl = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).catch(() => {});
+  // Use data: URL — works on Safari (blob: URLs are blocked for SW registration)
+  const swDataUrl = 'data:application/javascript;base64,' + btoa(swCode);
+  navigator.serviceWorker.register(swDataUrl, { scope: '/' }).catch(() => {
+    // data: URL may fail in some browsers — silently ignore
+  });
 }
 </script>
 </body>
