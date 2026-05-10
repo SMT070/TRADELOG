@@ -1887,8 +1887,11 @@
     #page-fundamentals {
       height: 100dvh !important;
       overflow: hidden !important;
-      display: flex !important;
+      display: none !important;
       flex-direction: column !important;
+    }
+    #page-fundamentals.active {
+      display: flex !important;
     }
     #page-fundamentals > div:first-child {
       padding: 10px 14px !important;
