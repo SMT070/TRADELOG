@@ -2195,8 +2195,11 @@
     .sidebar-logo { justify-content: center; padding: 12px 0; }
     .sidebar-item { justify-content: center; padding: 14px 0; min-height: 48px; }
     #sidebar .account-card { justify-content: center; padding: 10px 0; }
-    /* Safe area bottom padding for sidebar so account icon isn't behind home indicator */
-    .sidebar-bottom { padding-bottom: max(8px, env(safe-area-inset-bottom)) !important; }
+    /* Safari PWA: body is position:fixed so #app-shell env() padding doesn't correctly
+       shrink the layout. Zero out #app-shell bottom padding and handle it directly on
+       .sidebar-bottom so there's no double-stacking and no dead space. */
+    #app-shell { padding-bottom: 0 !important; }
+    .sidebar-bottom { padding-bottom: env(safe-area-inset-bottom, 8px) !important; }
   }
 
   /* Mobile back button for notebooks — hidden on desktop */
