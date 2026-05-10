@@ -1347,8 +1347,8 @@
     /* ── TOP 5 STAT CARDS: 2 cols, Net P&L is wide ── */
     .stats-row {
       grid-template-columns: 1fr 1fr !important;
-      gap: 8px !important;
-      margin-bottom: 10px !important;
+      gap: 6px !important;
+      margin-bottom: 8px !important;
     }
     /* Net P&L (first card) takes full width — the wide one */
     .stats-row .stat-card:first-child {
@@ -1358,17 +1358,33 @@
     .stats-row .stat-card:last-child {
       grid-column: unset !important;
     }
+    /* Stat cards: kill min-height and padding dead space */
     .stat-card {
-      padding: 12px 12px !important;
+      padding: 10px 11px !important;
       min-height: unset !important;
+      height: auto !important;
     }
-    .stat-value { font-size: 20px !important; letter-spacing: -0.5px !important; }
-    .stat-label { font-size: 8px !important; }
-    .stat-sub { font-size: 10px !important; }
+    /* Kill the flex:1 / justify-content:flex-end dead space inside cards */
+    .stat-card > div:last-child {
+      flex: unset !important;
+      justify-content: unset !important;
+    }
+    .stat-value { font-size: 19px !important; letter-spacing: -0.5px !important; }
+    .stat-label { font-size: 8px !important; letter-spacing: 1px !important; }
+    .stat-sub { font-size: 9px !important; margin-top: 2px !important; }
+    /* Top label row margin */
+    .stat-card > div:first-child { margin-bottom: 6px !important; }
     /* Show balance row inside Net P&L wide card */
-    .stat-card > div > div[style*="Current Balance"] { display: flex !important; }
-    /* Hide gauge SVGs on mobile to save space */
-    .stat-card svg.ring-like { display: none; }
+    .stat-card > div > div[style*="Current Balance"] { display: flex !important; margin-top: 6px !important; padding-top: 6px !important; }
+    /* Hide gauge containers (the div holding the SVG arc + -/+ labels) */
+    .stat-card > div:last-child > div[style*="flex-direction:column;align-items:center"],
+    .stat-card > div:last-child > div[style*="flex-direction: column; align-items: center"] { display: none !important; }
+    /* Keep win-loss bar and labels always visible */
+    .stat-card .win-loss-bar,
+    .stat-card .win-loss-labels { display: flex !important; }
+    /* Win/loss labels compact */
+    .win-loss-bar { margin-top: 5px !important; height: 4px !important; }
+    .win-loss-labels { margin-top: 3px !important; }
 
     /* ── EQUITY CURVE: full width, good height on mobile ── */
     .two-col {
@@ -1386,25 +1402,33 @@
     }
     #equity-chart-wrap,
     .two-col .panel:first-child > div:last-child {
-      min-height: 220px !important;
-      max-height: 260px !important;
+      min-height: 200px !important;
+      max-height: 240px !important;
     }
 
-    /* ── GOALS + JOURNAL: stack vertically ── */
+    /* ── GOALS + JOURNAL: stack vertically, compact ── */
     #dashboard-content > div:first-child {
       grid-template-columns: 1fr !important;
       gap: 8px !important;
     }
 
-    /* ── GOALS PANEL ── */
-    .panel-header { padding: 10px 14px !important; }
+    /* ── GOALS PANEL: tighter ── */
+    .panel-header { padding: 9px 12px !important; }
     .panel-title { font-size: 10px !important; }
+    /* Goals body: kill var(--page-px) dead horizontal space */
+    #dashboard-content .panel > div[style*="padding:16px var(--page-px)"] {
+      padding: 10px 12px !important;
+    }
+    /* Goals flex column gap */
+    #dashboard-content .panel > div[style*="gap:14px"] {
+      gap: 10px !important;
+    }
 
-    /* ── JOURNAL: smaller textareas ── */
+    /* ── JOURNAL: smaller textareas, tight body ── */
     #journal-plan, #journal-review {
       font-size: 12px !important;
-      rows: 2 !important;
-      min-height: 60px !important;
+      min-height: 52px !important;
+      max-height: 80px !important;
     }
 
     /* ── RECENT TRADES TABLE on dashboard: minimal columns ── */
@@ -11939,6 +11963,11 @@ function _renderShareCard(tf) {
 }
 
 function openShareModal() {
+  // On mobile: skip the modal — capture immediately and open native share sheet
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    _mobileShareDirect();
+    return;
+  }
   window._shareTimeframe = window._shareTimeframe || 'today';
   // Sync switcher buttons
   ['today','week','month','alltime'].forEach(t => {
@@ -11950,6 +11979,72 @@ function openShareModal() {
   _renderShareCard(window._shareTimeframe);
   _invalidateShareCache();
   document.getElementById('share-modal').style.display = 'flex';
+}
+
+// Mobile direct share — render card off-screen, capture, native share sheet, image only
+function _mobileShareDirect() {
+  // Show a brief loading toast
+  toast('Preparing image…', '');
+
+  // Make sure the share card is rendered with latest data
+  window._shareTimeframe = window._shareTimeframe || 'today';
+  _renderShareCard(window._shareTimeframe);
+  _invalidateShareCache();
+
+  // Temporarily mount share-card visibly off-screen so html2canvas can capture it
+  const card = document.getElementById('share-card');
+  const modal = document.getElementById('share-modal');
+  const prevModalDisplay = modal.style.display;
+  // Show modal invisibly so card renders properly
+  modal.style.display = 'flex';
+  modal.style.opacity = '0';
+  modal.style.pointerEvents = 'none';
+
+  const theme = localStorage.getItem('tradelog_theme') || 'dark';
+  const bg = theme === 'light' ? '#ffffff' : '#0b0f1a';
+
+  setTimeout(() => {
+    if (typeof html2canvas === 'undefined') {
+      modal.style.display = prevModalDisplay;
+      modal.style.opacity = '';
+      modal.style.pointerEvents = '';
+      toast('Share not supported', 'error');
+      return;
+    }
+    html2canvas(card, { backgroundColor: bg, scale: 3, useCORS: true, logging: false, imageTimeout: 0 })
+      .then(canvas => {
+        // Hide modal again
+        modal.style.display = 'none';
+        modal.style.opacity = '';
+        modal.style.pointerEvents = '';
+
+        canvas.toBlob(blob => {
+          if (!blob) { toast('Could not capture image', 'error'); return; }
+          const file = new File([blob], 'tradelog-' + new Date().toISOString().slice(0,10) + '.png', { type: 'image/png' });
+
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            // Native share sheet — image ONLY, no text
+            navigator.share({ files: [file] }).catch(err => {
+              // User cancelled — no error toast needed
+              if (err.name !== 'AbortError') toast('Share failed', 'error');
+            });
+          } else {
+            // Fallback: download the image
+            const a = document.createElement('a');
+            a.download = 'tradelog-' + new Date().toISOString().slice(0,10) + '.png';
+            a.href = canvas.toDataURL('image/png');
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            toast('Image saved!', 'success');
+          }
+        }, 'image/png');
+      })
+      .catch(() => {
+        modal.style.display = 'none';
+        modal.style.opacity = '';
+        modal.style.pointerEvents = '';
+        toast('Capture failed', 'error');
+      });
+  }, 100);
 }
 
 function closeShareModal() {
