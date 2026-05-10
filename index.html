@@ -1786,60 +1786,127 @@
 
 
     /* ── NOTEBOOKS MOBILE ── */
+    /* ── NOTEBOOKS MOBILE — full redesign ── */
     #page-notebooks {
       padding: 0 !important;
       height: 100dvh !important;
       overflow: hidden !important;
-    }
-    /* Header: compact, no overflow */
-    #page-notebooks > div:first-child {
-      padding: 14px 14px 0 !important;
-    }
-    #page-notebooks > div:first-child > div {
-      margin-bottom: 14px !important;
-      flex-wrap: wrap !important;
-      gap: 8px !important;
-      align-items: flex-start !important;
-    }
-    /* Make title+desc shrink, button stays full width */
-    #page-notebooks > div:first-child > div > div:first-child {
-      flex: 1 1 100% !important;
-    }
-    #page-notebooks > div:first-child > div > button {
-      width: 100% !important;
-      justify-content: center !important;
-    }
-    /* Main grid: single column, height fills remaining */
-    #notebooks-main {
-      grid-template-columns: 1fr !important;
-      grid-template-rows: auto 1fr !important;
-      overflow: hidden !important;
-      height: 100% !important;
-    }
-    /* LEFT (notebook list): fixed height, scrollable */
-    #notebooks-main > div:first-child {
-      border-right: none !important;
-      border-bottom: 1px solid var(--border) !important;
-      max-height: 42vh !important;
-      overflow: hidden !important;
       display: flex !important;
       flex-direction: column !important;
     }
+
+    /* Compact page header */
+    #page-notebooks > div:first-child {
+      padding: 14px 14px 10px !important;
+      border-bottom: 1px solid var(--border) !important;
+    }
+    #page-notebooks > div:first-child > div {
+      margin-bottom: 0 !important;
+      flex-wrap: nowrap !important;
+      gap: 10px !important;
+      align-items: center !important;
+    }
+    /* Title block shrinks naturally */
+    #page-notebooks > div:first-child > div > div:first-child {
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+    }
+    /* Hide subtitle on mobile to save space */
+    #page-notebooks > div:first-child > div > div:first-child > div:last-child {
+      display: none !important;
+    }
+    /* Title font smaller */
+    #page-notebooks > div:first-child > div > div:first-child > div:nth-child(2) {
+      font-size: 20px !important;
+    }
+    /* New Notebook button: compact, no full-width */
+    #page-notebooks > div:first-child > div > button {
+      width: auto !important;
+      padding: 8px 14px !important;
+      font-size: 12px !important;
+      flex-shrink: 0 !important;
+    }
+
+    /* Main grid: full-height single column, no grid gaps */
+    #notebooks-main {
+      grid-template-columns: 1fr !important;
+      grid-template-rows: 1fr !important;
+      overflow: hidden !important;
+      flex: 1 !important;
+      min-height: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+
+    /* LEFT panel (list): show full height when no notebook selected */
+    #notebooks-main > div:first-child {
+      border-right: none !important;
+      border-bottom: none !important;
+      max-height: none !important;
+      flex: 1 !important;
+      overflow: hidden !important;
+      display: flex !important;
+      flex-direction: column !important;
+      min-height: 0 !important;
+    }
+    /* When editor is open, hide list panel */
+    #notebooks-main.nb-editor-open > div:first-child {
+      display: none !important;
+    }
+    /* When editor is open, show editor panel full height */
+    #notebooks-main.nb-editor-open #notebook-editor-panel {
+      flex: 1 !important;
+    }
+
     #notebooks-list-wrap {
       overflow-y: auto !important;
       -webkit-overflow-scrolling: touch !important;
+      flex: 1 !important;
     }
-    /* RIGHT (editor panel): fills remaining space, fully scrollable */
+
+    /* RIGHT (editor panel): hidden until notebook selected */
     #notebook-editor-panel {
       min-height: 0 !important;
       overflow: hidden !important;
-      display: flex !important;
+      display: none !important;
       flex-direction: column !important;
+      flex: 1 !important;
     }
+    /* Show when editor open */
+    #notebooks-main.nb-editor-open #notebook-editor-panel {
+      display: flex !important;
+    }
+
+    /* Editor content header: compact on mobile */
+    #notebook-editor-content > div:first-child {
+      padding: 12px 14px 10px !important;
+    }
+    /* Icon smaller */
+    #nb-editor-icon {
+      width: 30px !important;
+      height: 30px !important;
+      font-size: 15px !important;
+    }
+    /* Title smaller */
+    #nb-editor-title {
+      font-size: 14px !important;
+    }
+    /* Action buttons row: compact */
+    #notebook-editor-content > div:first-child > div > div:last-child {
+      gap: 6px !important;
+    }
+
+    /* Back button shown on mobile (added via JS) */
+    #nb-mobile-back {
+      display: flex !important;
+    }
+
     #nb-entries-list {
       overflow-y: auto !important;
       -webkit-overflow-scrolling: touch !important;
+      padding: 12px 0 80px !important;
     }
+
     /* Notebook editor content */
     #notebook-editor-content {
       overflow: hidden !important;
@@ -1847,6 +1914,7 @@
       flex-direction: column !important;
       flex: 1 !important;
     }
+
     /* Entry modal full-screen on mobile */
     #note-entry-modal {
       align-items: stretch !important;
@@ -1871,11 +1939,6 @@
     .nb-toolbar {
       flex-wrap: wrap !important;
       gap: 2px !important;
-    }
-    /* Notebook header buttons: wrap */
-    #notebook-editor-content > div:first-child > div > div:last-child {
-      flex-wrap: wrap !important;
-      gap: 4px !important;
     }
     /* Make textarea fill well */
     .notebook-editor {
@@ -1974,6 +2037,12 @@
     .sidebar-logo { justify-content: center; padding: 12px 0; }
     .sidebar-item { justify-content: center; padding: 12px 0; }
     #sidebar .account-card { justify-content: center; padding: 10px 0; }
+  }
+
+  /* Mobile back button for notebooks — hidden on desktop */
+  #nb-mobile-back { display: none !important; }
+  @media (max-width: 768px) {
+    #nb-mobile-back { display: flex !important; }
   }
 
   /* ── Feature info tooltips ── */
@@ -12050,6 +12119,8 @@ function renderNotebooks() {
     document.getElementById('notebook-editor-empty').style.display = 'flex';
     document.getElementById('notebook-editor-content').style.display = 'none';
     activeNotebookId = null;
+    const main = document.getElementById('notebooks-main');
+    if (main) main.classList.remove('nb-editor-open');
     return;
   }
   if (emptyState) emptyState.style.display = 'none';
@@ -12088,6 +12159,29 @@ function selectNotebook(id) {
 
   document.getElementById('notebook-editor-empty').style.display   = 'none';
   document.getElementById('notebook-editor-content').style.display = 'flex';
+
+  // Mobile: switch to editor view
+  const main = document.getElementById('notebooks-main');
+  if (main && window.innerWidth <= 768) {
+    main.classList.add('nb-editor-open');
+    // Ensure back button exists
+    let backBtn = document.getElementById('nb-mobile-back');
+    if (!backBtn) {
+      backBtn = document.createElement('button');
+      backBtn.id = 'nb-mobile-back';
+      backBtn.title = 'Back to notebooks';
+      backBtn.onclick = function() {
+        main.classList.remove('nb-editor-open');
+        activeNotebookId = null;
+        renderNotebooks();
+      };
+      backBtn.style.cssText = 'display:none;align-items:center;gap:5px;height:32px;padding:0 10px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);flex-shrink:0;';
+      backBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg> Back';
+      const actionsDiv = document.querySelector('#notebook-editor-content > div:first-child > div > div:last-child');
+      if (actionsDiv) actionsDiv.prepend(backBtn);
+    }
+    backBtn.style.display = 'flex';
+  }
   // Update header
   document.getElementById('nb-editor-title').textContent = nb.name;
   const descEl = document.getElementById('nb-editor-desc');
