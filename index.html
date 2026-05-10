@@ -2473,7 +2473,7 @@
     <div id="trades-grid" style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden;">
       <div class="panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;flex:1;min-width:0;">
         <!-- Mobile scroll hint — hidden on desktop via CSS -->
-        <div id="trades-scroll-hint" style="display:none;align-items:center;justify-content:center;gap:5px;padding:5px 12px;background:rgba(99,102,241,.07);border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);font-weight:600;">
+        <div id="trades-scroll-hint" style="display:none;align-items:center;justify-content:center;gap:5px;padding:5px 12px;background:rgba(99,102,241,.07);border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);font-weight:600;transition:opacity .6s ease,max-height .6s ease,padding .6s ease;overflow:hidden;max-height:40px;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           Swipe left to see Entry, Exit, Commission &amp; more
         </div>
@@ -5087,7 +5087,7 @@ function switchPage(name) {
     btn.classList.toggle('active', activeLabel === btn.getAttribute('data-label'));
   });
   if (name === 'dashboard') refreshDashboard();
-  if (name === 'trades')    renderTrades();
+  if (name === 'trades')    { renderTrades(); _showTradesScrollHint(); }
   if (name === 'analytics') renderAnalytics();
   if (name === 'calendar')  renderCalendar();
   if (name === 'mindset')   initMindsetPage();
@@ -11627,6 +11627,25 @@ document.getElementById('share-modal').addEventListener('click', function(e) {
   if (row) row.style.display = isMob ? 'grid' : 'none';
 })();
 
+
+let _scrollHintTimer = null;
+function _showTradesScrollHint() {
+  if (window.innerWidth > 768) return; // desktop only no-op
+  const el = document.getElementById('trades-scroll-hint');
+  if (!el) return;
+  // Reset: show fully
+  el.style.opacity = '1';
+  el.style.maxHeight = '40px';
+  el.style.padding = '5px 12px';
+  // Clear any previous timer
+  clearTimeout(_scrollHintTimer);
+  // After 5 s, fade + collapse it
+  _scrollHintTimer = setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.maxHeight = '0';
+    el.style.padding = '0 12px';
+  }, 5000);
+}
 
 function updateGreeting() {
   const h = new Date().getHours();
