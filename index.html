@@ -1975,8 +1975,60 @@
   .feat-info-wrap:hover .feat-info-tip,
   .feat-info-wrap:focus-within .feat-info-tip { display: block !important; }
 </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-</head>
+  <link rel="manifest" href="data:application/json;charset=utf-8,{
+    &quot;name&quot;: &quot;TradeLog&quot;,
+    &quot;short_name&quot;: &quot;TradeLog&quot;,
+    &quot;description&quot;: &quot;Your Professional Trading Journal&quot;,
+    &quot;start_url&quot;: &quot;.&quot;,
+    &quot;display&quot;: &quot;standalone&quot;,
+    &quot;background_color&quot;: &quot;#0b0f1a&quot;,
+    &quot;theme_color&quot;: &quot;#0b0f1a&quot;,
+    &quot;orientation&quot;: &quot;portrait-primary&quot;,
+    &quot;icons&quot;: [{
+      &quot;src&quot;: &quot;data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'&gt;&lt;rect width='512' height='512' rx='80' fill='%230b0f1a'/&gt;&lt;text y='360' x='80' font-size='380' font-family='Arial'&gt;📈&lt;/text&gt;&lt;/svg&gt;&quot;,
+      &quot;sizes&quot;: &quot;any&quot;,
+      &quot;type&quot;: &quot;image/svg+xml&quot;,
+      &quot;purpose&quot;: &quot;any maskable&quot;
+    }]
+  }">
+  <style>
+    /* ── PWA INSTALL BUTTON ── */
+    #pwa-install-btn {
+      display: none;
+      width: calc(100% - 16px);
+      margin: 6px 8px 4px;
+      padding: 9px 12px;
+      background: linear-gradient(135deg, var(--accent), #818cf8);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      align-items: center;
+      gap: 8px;
+      transition: opacity .2s, transform .1s;
+      flex-shrink: 0;
+    }
+    #pwa-install-btn:hover { opacity: .9; }
+    #pwa-install-btn:active { transform: scale(.97); }
+    #pwa-install-btn.visible { display: flex; }
+    /* Collapsed sidebar: icon only */
+    #sidebar.collapsed #pwa-install-btn {
+      width: 36px;
+      height: 36px;
+      margin: 6px auto 4px;
+      padding: 0;
+      justify-content: center;
+      border-radius: 10px;
+    }
+    #sidebar.collapsed #pwa-install-btn .pwa-label { display: none; }
+    /* Mobile: hide install button (can't install from mobile browser same way) */
+    @media (max-width: 768px) {
+      #pwa-install-btn { display: none !important; }
+    }
+  </style>
 <body>
 <div id="info-tooltip"></div>
 
@@ -2052,6 +2104,12 @@
   <!-- Bottom actions -->
   <div class="sidebar-bottom">
     <div style="position:relative;">
+
+      <!-- PWA Install Button -->
+      <button id="pwa-install-btn" onclick="pwaTriggerInstall()" title="Install TradeLog App">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span class="pwa-label">Install App</span>
+      </button>
 
       <!-- Account card -->
       <button class="account-card" onclick="toggleSidebarSettings(event)" id="settings-sidebar-btn" data-label="Account & Settings">
@@ -14510,6 +14568,56 @@ async function autoMarkBE() {
       } catch(e) { console.warn('Auto BE sync failed:', e); }
     }
   });
+}
+// ── PWA INSTALL ──────────────────────────────────────────────────────────────
+let _pwaPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _pwaPrompt = e;
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.classList.add('visible');
+});
+
+window.addEventListener('appinstalled', () => {
+  _pwaPrompt = null;
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.classList.remove('visible');
+});
+
+function pwaTriggerInstall() {
+  if (!_pwaPrompt) {
+    // Already installed or not supported — tell user
+    alert('TradeLog is already installed, or use Chrome/Edge on desktop to install it.\n\nLook for the install icon (⊕) in your browser\'s address bar.');
+    return;
+  }
+  _pwaPrompt.prompt();
+  _pwaPrompt.userChoice.then((choice) => {
+    if (choice.outcome === 'accepted') {
+      const btn = document.getElementById('pwa-install-btn');
+      if (btn) btn.classList.remove('visible');
+    }
+    _pwaPrompt = null;
+  });
+}
+
+// Register a minimal service worker so Chrome allows install
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'tradelog-v1';
+    self.addEventListener('install', e => {
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(clients.claim());
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    });
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
 }
 </script>
 </body>
