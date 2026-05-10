@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>TradeLog — Your Trading Journal</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -101,9 +101,13 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--sans);
-    min-height: 100vh;
-    overflow-x: hidden;
+    min-height: 100dvh;
+    overflow: hidden;
     -webkit-font-smoothing: antialiased;
+    /* iOS safe area support */
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   body::before {
@@ -120,14 +124,14 @@
 
   #app-shell {
     display: flex;
-    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
   }
 
   #sidebar {
     width: var(--sidebar-w);
     min-width: var(--sidebar-w);
-    height: 100vh;
+    height: 100dvh;
     background: var(--surface);
     border-right: 1px solid var(--border);
     display: flex;
@@ -151,7 +155,7 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    height: 100vh;
+    height: 100dvh;
   }
 
   .sidebar-logo {
@@ -654,9 +658,11 @@
   /* ── PAGE sections ── */
   .page { display:none !important; }
   .page.active { display:block !important; }
-  #page-trades.active { display:flex !important; flex-direction:column; height:100vh; overflow:hidden; }
-  #page-calendar.active { display:flex !important; flex-direction:column; gap:12px; overflow:hidden; height:100%; }
-  #page-mindset.active { display:flex !important; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+  #page-trades.active     { display:flex !important; flex-direction:column; height:100dvh; overflow:hidden; }
+  #page-calendar.active   { display:flex !important; flex-direction:column; gap:12px; overflow:hidden; height:100dvh; }
+  #page-mindset.active    { display:flex !important; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+  #page-notebooks.active  { display:flex !important; flex-direction:column; height:100dvh; overflow:hidden; }
+  #page-fundamentals.active { display:flex !important; flex-direction:column; height:100dvh; overflow:hidden; }
 
   .page.active {
     animation: pageFadeIn 0.15s ease forwards;
@@ -1252,6 +1258,40 @@
     .container { padding: 10px !important; }
     #main-content { overflow-x: hidden; }
 
+    /* ── SAFE AREA + 100dvh FIXES ── */
+    /* Use dvh everywhere so browser chrome doesn't clip */
+    #app-shell  { height: 100dvh !important; }
+    #sidebar    { height: 100dvh !important; }
+    #main-content { height: 100dvh !important; }
+
+    /* Pages that scroll: add bottom padding so content clears home indicator */
+    #page-dashboard,
+    #page-trades,
+    #page-analytics,
+    #page-add,
+    #page-import {
+      padding-bottom: max(80px, env(safe-area-inset-bottom, 80px)) !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Scrollable inner bodies: same treatment */
+    #mindset-scroll-body {
+      padding-bottom: max(80px, env(safe-area-inset-bottom, 80px)) !important;
+    }
+    #notebooks-list-wrap,
+    #nb-entries-list {
+      padding-bottom: max(60px, env(safe-area-inset-bottom, 60px)) !important;
+    }
+
+    /* Fixed-height pages (calendar, fundamentals, mindset, notebooks):
+       use 100dvh so they don't overflow past visible area */
+    #page-calendar,
+    #page-mindset,
+    #page-notebooks,
+    #page-fundamentals {
+      height: 100dvh !important;
+    }
+
     /* ── PAGE-LEVEL PADDING RESET (these use inline var(--page-px/py)) ── */
     #page-trades    { padding: 10px !important; }
 
@@ -1399,7 +1439,7 @@
     /* ══ CALENDAR PAGE ══ */
     #page-calendar.active {
       padding: 8px !important;
-      height: 100vh !important;
+      height: 100dvh !important;
       display: flex !important;
       flex-direction: column !important;
       gap: 8px !important;
@@ -1458,7 +1498,7 @@
 
     /* ══ MINDSET PAGE ══ */
     #page-mindset {
-      height: 100vh !important;
+      height: 100dvh !important;
       overflow: hidden !important;
     }
     /* Sticky header: tighter on mobile */
