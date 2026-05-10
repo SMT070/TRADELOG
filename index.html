@@ -103,10 +103,12 @@
     color: var(--text);
     font-family: var(--sans);
     min-height: 100dvh;
+    height: 100dvh;
     overflow: hidden;
     -webkit-font-smoothing: antialiased;
     /* iOS safe area support */
     padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
@@ -125,14 +127,14 @@
 
   #app-shell {
     display: flex;
-    height: 100dvh;
+    height: 100%;
     overflow: hidden;
   }
 
   #sidebar {
     width: var(--sidebar-w);
     min-width: var(--sidebar-w);
-    height: 100dvh;
+    height: 100%;
     background: var(--surface);
     border-right: 1px solid var(--border);
     display: flex;
@@ -156,7 +158,8 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    height: 100dvh;
+    height: 100%;
+    -webkit-overflow-scrolling: touch;
   }
 
   .sidebar-logo {
@@ -659,11 +662,11 @@
   /* ── PAGE sections ── */
   .page { display:none !important; }
   .page.active { display:block !important; }
-  #page-trades.active     { display:flex !important; flex-direction:column; height:100dvh; overflow:hidden; }
-  #page-calendar.active   { display:flex !important; flex-direction:column; gap:12px; overflow:hidden; height:100dvh; }
+  #page-trades.active     { display:flex !important; flex-direction:column; height:100%; overflow:hidden; }
+  #page-calendar.active   { display:flex !important; flex-direction:column; gap:12px; overflow:hidden; height:100%; }
   #page-mindset.active    { display:flex !important; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
-  #page-notebooks.active  { display:flex !important; flex-direction:column; height:100dvh; overflow:hidden; }
-  #page-fundamentals.active { display:flex !important; flex-direction:column; height:100dvh; overflow:hidden; }
+  #page-notebooks.active  { display:flex !important; flex-direction:column; height:100%; overflow:hidden; }
+  #page-fundamentals.active { display:flex !important; flex-direction:column; height:100%; overflow:hidden; }
 
   .page.active {
     animation: pageFadeIn 0.15s ease forwards;
@@ -1298,37 +1301,37 @@
     #main-content { overflow-x: hidden; }
 
     /* ── SAFE AREA + 100dvh FIXES ── */
-    /* Use dvh everywhere so browser chrome doesn't clip */
-    #app-shell  { height: 100dvh !important; }
-    #sidebar    { height: 100dvh !important; }
-    #main-content { height: 100dvh !important; }
+    /* Use 100% so body safe-area padding is respected */
+    #app-shell  { height: 100% !important; }
+    #sidebar    { height: 100% !important; }
+    #main-content { height: 100% !important; }
 
-    /* Pages that scroll: add bottom padding so content clears home indicator */
+    /* Pages that scroll: add bottom padding so content clears the last sidebar item */
     #page-dashboard,
     #page-trades,
     #page-analytics,
     #page-add,
     #page-import {
-      padding-bottom: max(80px, env(safe-area-inset-bottom, 80px)) !important;
+      padding-bottom: 80px !important;
       box-sizing: border-box !important;
     }
 
     /* Scrollable inner bodies: same treatment */
     #mindset-scroll-body {
-      padding-bottom: max(80px, env(safe-area-inset-bottom, 80px)) !important;
+      padding-bottom: 80px !important;
     }
     #notebooks-list-wrap,
     #nb-entries-list {
-      padding-bottom: max(60px, env(safe-area-inset-bottom, 60px)) !important;
+      padding-bottom: 60px !important;
     }
 
     /* Fixed-height pages (calendar, fundamentals, mindset, notebooks):
-       use 100dvh so they don't overflow past visible area */
+       use 100% so they stay within body safe-area bounds */
     #page-calendar,
     #page-mindset,
     #page-notebooks,
     #page-fundamentals {
-      height: 100dvh !important;
+      height: 100% !important;
     }
 
     /* ── PAGE-LEVEL PADDING RESET (these use inline var(--page-px/py)) ── */
@@ -1512,7 +1515,7 @@
     /* ══ CALENDAR PAGE ══ */
     #page-calendar.active {
       padding: 6px !important;
-      height: 100dvh !important;
+      height: 100% !important;
       display: flex !important;
       flex-direction: column !important;
       gap: 5px !important;
@@ -1606,7 +1609,7 @@
 
     /* ══ MINDSET PAGE ══ */
     #page-mindset {
-      height: 100dvh !important;
+      height: 100% !important;
       overflow: hidden !important;
     }
     /* Sticky header: tighter on mobile */
@@ -1915,6 +1918,7 @@
       border-radius: 20px 20px 0 0 !important;
       border-bottom: none !important;
       padding: 16px !important;
+      padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
       z-index: 9999 !important;
       box-shadow: 0 -8px 40px rgba(0,0,0,.6) !important;
     }
@@ -1926,7 +1930,7 @@
     /* ── NOTEBOOKS MOBILE — full redesign ── */
     #page-notebooks {
       padding: 0 !important;
-      height: 100dvh !important;
+      height: 100% !important;
       overflow: hidden !important;
       display: none !important;
       flex-direction: column !important;
@@ -2064,8 +2068,8 @@
     #note-entry-modal > div {
       width: 100% !important;
       max-width: 100% !important;
-      max-height: 100dvh !important;
-      height: 100dvh !important;
+      max-height: 100% !important;
+      height: 100% !important;
       border-radius: 0 !important;
       display: flex !important;
       flex-direction: column !important;
@@ -2088,7 +2092,7 @@
     /* Fundamentals mobile */
     /* ── FUNDAMENTALS MOBILE ── */
     #page-fundamentals {
-      height: 100dvh !important;
+      height: 100% !important;
       overflow: hidden !important;
       display: none !important;
       flex-direction: column !important;
@@ -2174,9 +2178,11 @@
     .sidebar-logo-text { display: none !important; }
     .account-card-text { display: none !important; }
     #account-chevron { display: none !important; }
-    .sidebar-logo { justify-content: center; padding: 12px 0; }
-    .sidebar-item { justify-content: center; padding: 12px 0; }
+    .sidebar-logo { justify-content: center; padding: 12px 0; padding-top: max(12px, env(safe-area-inset-top)); }
+    .sidebar-item { justify-content: center; padding: 14px 0; min-height: 48px; }
     #sidebar .account-card { justify-content: center; padding: 10px 0; }
+    /* Safe area bottom padding for sidebar so account icon isn't behind home indicator */
+    .sidebar-bottom { padding-bottom: max(8px, env(safe-area-inset-bottom)) !important; }
   }
 
   /* Mobile back button for notebooks — hidden on desktop */
@@ -13400,7 +13406,7 @@ window.addEventListener('resize', () => {
 
 <!-- ── MOBILE CALENDAR DAY SHEET ── -->
 <div id="cal-day-sheet" onclick="if(event.target===this)this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.5);align-items:flex-end;">
-  <div style="width:100%;max-height:70vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:0 0 30px;">
+  <div style="width:100%;max-height:70vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:0 0 max(30px, env(safe-area-inset-bottom));">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);">
       <div style="font-size:15px;font-weight:800;color:var(--text);" id="cal-day-sheet-title"></div>
       <button onclick="document.getElementById('cal-day-sheet').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>
@@ -13411,7 +13417,7 @@ window.addEventListener('resize', () => {
 
 <!-- ── MOBILE TRADE DETAIL SHEET ── -->
 <div id="mobile-trade-sheet" onclick="if(event.target===this)closeMobileTradeSheet()" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.5);align-items:flex-end;">
-  <div style="width:100%;max-height:90vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:0 0 40px;">
+  <div style="width:100%;max-height:90vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:0 0 max(40px, env(safe-area-inset-bottom));">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;">
       <div style="font-size:16px;font-weight:800;color:var(--text);" id="mobile-sheet-title">Trade</div>
       <div style="display:flex;gap:8px;">
