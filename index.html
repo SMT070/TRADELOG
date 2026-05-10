@@ -2590,20 +2590,20 @@
       </div>
     </div>
 
-    <!-- ── GOALS + DAILY JOURNAL ROW ── -->
+    <!-- ── GOALS + DAILY JOURNAL + TRADING RULES ROW ── -->
     <div id="dashboard-content">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;align-items:stretch;">
 
       <!-- Goals / Targets -->
-      <div class="panel">
-        <div class="panel-header">
+      <div class="panel" style="display:flex;flex-direction:column;min-height:220px;max-height:280px;">
+        <div class="panel-header" style="flex-shrink:0;">
           <div class="panel-header-left">
             <div class="panel-title">Daily Goals</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Goals','P&L targets. Green = on track, red = behind.')" onmouseleave="hideInfo()">i</button>
           </div>
           <button class="btn btn-ghost" style="font-size:10px;padding:5px 12px;" onclick="openGoalsModal()">Edit Goals</button>
         </div>
-        <div style="padding:16px var(--page-px);display:flex;flex-direction:column;gap:14px;">
+        <div style="padding:16px var(--page-px);flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;">
           <!-- Daily P&L Goal -->
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -2641,17 +2641,31 @@
       </div>
 
       <!-- Daily Journal -->
-      <div class="panel" style="display:flex;flex-direction:column;">
-        <div class="panel-header">
+      <div class="panel" style="display:flex;flex-direction:column;min-height:220px;max-height:280px;">
+        <div class="panel-header" style="flex-shrink:0;">
           <div class="panel-header-left"><div class="panel-title">Today's Journal</div></div>
           <span style="font-size:10px;color:var(--muted);" id="journal-date-label"></span>
         </div>
-        <div style="padding:16px var(--page-px);flex:1;display:flex;flex-direction:column;gap:10px;">
-          <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;"></textarea>
-          <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;"></textarea>
-          <div style="display:flex;justify-content:flex-end;">
+        <div style="padding:16px var(--page-px);flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
+          <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;flex-shrink:0;"></textarea>
+          <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;flex-shrink:0;"></textarea>
+          <div style="display:flex;justify-content:flex-end;flex-shrink:0;">
             <button class="btn btn-primary" onclick="saveJournal()" style="font-size:11px;padding:7px 18px;">Save Journal</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Trading Rules -->
+      <div class="panel" style="display:flex;flex-direction:column;min-height:220px;max-height:280px;">
+        <div class="panel-header" style="flex-shrink:0;">
+          <div class="panel-header-left">
+            <div class="panel-title">Trading Rules</div>
+            <button class="info-btn" onmouseenter="showInfo(this,'Trading Rules','Your personal rules. Manage them in the Mindset page.')" onmouseleave="hideInfo()">i</button>
+          </div>
+          <button class="btn btn-ghost" style="font-size:10px;padding:5px 12px;" onclick="switchPage('mindset')">Manage →</button>
+        </div>
+        <div id="dash-rules-list" style="padding:12px var(--page-px) 16px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+          <div style="text-align:center;color:var(--muted);font-size:12px;padding:20px 0;">Loading…</div>
         </div>
       </div>
 
@@ -5530,6 +5544,7 @@ function scheduleMidnightRefresh() {
   const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
   _midnightTimer = setTimeout(() => {
     try { renderGoals(); }    catch(e) {}
+    try { renderDashRules(); } catch(e) {}
     try { updateGreeting(); } catch(e) {}
     try { loadJournal(); }    catch(e) {}
     scheduleMidnightRefresh(); // re-arm for the next midnight
@@ -6622,6 +6637,7 @@ function refreshDashboard() {
     renderRecentTable();
     try { updateEmptyState(); } catch(e) {}
     try { renderGoals(); } catch(e) {}
+    try { renderDashRules(); } catch(e) {}
     try { loadJournal(); } catch(e) {}
     try { updateGreeting(); } catch(e) {}
     return;
@@ -7122,6 +7138,7 @@ function refreshDashboard() {
   // New dashboard features
   try { updateEmptyState(); } catch(e) {}
   try { renderGoals(); } catch(e) {}
+    try { renderDashRules(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
   try { updateGreeting(); } catch(e) {}
 }
@@ -11023,6 +11040,52 @@ function renderGoals() {
   setGoal('daily',   dailyPnl,   g.daily,   'var(--green)');
   setGoal('weekly',  weeklyPnl,  g.weekly,  'var(--accent)');
   setGoal('monthly', monthlyPnl, g.monthly, 'var(--yellow)');
+}
+
+// ── DASHBOARD TRADING RULES ───────────────────────────────────────────────────
+// Reads rules from Mindset data and renders a read-only checklist in the
+// dashboard Trading Rules panel. Click any rule to toggle it (saves to Mindset).
+function renderDashRules() {
+  const el = document.getElementById('dash-rules-list');
+  if (!el) return;
+  let data;
+  try { data = JSON.parse(localStorage.getItem('tradelog_mindset_v2')) || { rules: [] }; }
+  catch { data = { rules: [] }; }
+  const rules = data.rules || [];
+  if (!rules.length) {
+    el.innerHTML = `<div style="text-align:center;padding:24px 0;color:var(--muted);font-size:12px;">
+      No rules yet.<br>
+      <span onclick="switchPage('mindset')" style="color:var(--accent);cursor:pointer;font-weight:700;">Add rules in Mindset →</span>
+    </div>`;
+    return;
+  }
+  const done = rules.filter(r => r.checked).length;
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-shrink:0;">
+      <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;">${done}/${rules.length} followed today</span>
+      <div style="height:4px;flex:1;background:var(--surface3);border-radius:2px;margin-left:10px;overflow:hidden;">
+        <div style="height:100%;width:${rules.length ? Math.round(done/rules.length*100) : 0}%;background:var(--yellow);border-radius:2px;transition:width .4s ease;"></div>
+      </div>
+    </div>
+    ${rules.map((r, i) => `
+      <div onclick="toggleDashRule(${i})" style="display:flex;align-items:flex-start;gap:10px;padding:7px 10px;border-radius:8px;cursor:pointer;background:var(--surface2);border:1px solid var(--border);transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--border2)'" onmouseleave="this.style.borderColor='var(--border)'">
+        <div style="width:16px;height:16px;border-radius:5px;border:2px solid ${r.checked?'var(--yellow)':'var(--border2)'};background:${r.checked?'var(--yellow)':'transparent'};flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;">
+          ${r.checked ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+        </div>
+        <span style="font-size:12px;line-height:1.5;color:${r.checked?'var(--muted)':'var(--text2)'};text-decoration:${r.checked?'line-through':'none'};transition:all .15s;">${r.text}</span>
+      </div>`).join('')}`;
+}
+
+function toggleDashRule(index) {
+  let data;
+  try { data = JSON.parse(localStorage.getItem('tradelog_mindset_v2')) || { rules: [] }; }
+  catch { data = { rules: [] }; }
+  if (!data.rules || !data.rules[index]) return;
+  data.rules[index].checked = !data.rules[index].checked;
+  localStorage.setItem('tradelog_mindset_v2', JSON.stringify(data));
+  renderDashRules();
+  // Also refresh the mindset rules list if visible
+  try { renderMindsetRules(data.rules); } catch(e) {}
 }
 
 // ── DAILY JOURNAL ─────────────────────────────────────────────────────────────
