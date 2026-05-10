@@ -1844,65 +1844,58 @@
     /* New pages mobile */
     /* Fundamentals mobile */
     /* ── FUNDAMENTALS MOBILE ── */
-    /* Page itself: full screen, scrollable column */
     #page-fundamentals {
       height: 100dvh !important;
-      overflow-y: auto !important;
-      overflow-x: hidden !important;
-      -webkit-overflow-scrolling: touch !important;
-      flex-direction: column !important;
+      overflow: hidden !important;
       display: flex !important;
+      flex-direction: column !important;
     }
-    /* Compact header */
     #page-fundamentals > div:first-child {
-      padding: 10px 14px 10px !important;
+      padding: 10px 14px !important;
       flex-shrink: 0 !important;
     }
-    /* Hide ticker tape — too small on mobile */
     #fund-ticker-wrap { display: none !important; }
-    /* Show mobile tab bar */
     #fund-mobile-tabs { display: flex !important; flex-shrink: 0 !important; }
-    /* Main body: no padding, no overflow:hidden — let it flow naturally */
     #fund-main-body {
       padding: 0 !important;
       gap: 0 !important;
-      overflow: visible !important;
-      flex: unset !important;
-      min-height: unset !important;
+      flex: 1 !important;
+      min-height: 0 !important;
       display: flex !important;
       flex-direction: column !important;
+      overflow: hidden !important;
     }
-    /* Grid → single column, natural height */
     #fund-tab-all {
       display: flex !important;
       flex-direction: column !important;
-      gap: 0 !important;
-      overflow: visible !important;
-      flex: unset !important;
-      min-height: unset !important;
+      flex: 1 !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
     }
-    /* Each panel: hidden by default, shown when active, natural height */
+    /* All panels hidden by default */
     #fund-tab-all > div {
       display: none !important;
+      flex-direction: column !important;
+      flex: 1 !important;
+      min-height: 0 !important;
       border-radius: 0 !important;
       border-left: none !important;
       border-right: none !important;
-      overflow: visible !important;
-      flex: unset !important;
-      min-height: unset !important;
+      overflow: hidden !important;
     }
+    /* Active panel shown */
     #fund-tab-all > div.fund-mob-active {
       display: flex !important;
-      flex-direction: column !important;
     }
-    /* Widget wrappers: let height be set by JS, no clipping */
+    /* Widget wrap fills panel, iframe scrolls inside */
     #fund-cal-wrap-all,
     #fund-news-wrap-all {
-      overflow: visible !important;
-      position: static !important;
+      flex: 1 !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      position: relative !important;
       width: 100% !important;
     }
-    /* TradingView iframes inside: full width */
     #fund-cal-wrap-all iframe,
     #fund-news-wrap-all iframe {
       width: 100% !important;
@@ -12768,7 +12761,6 @@ let _fundLoaded = { ticker: false, all: false };
 function renderFundamentals() {
   const theme = localStorage.getItem('tradelog_theme') || 'dark';
   window._fundColorTheme = theme === 'light' ? 'light' : 'dark';
-
   const isMobile = window.innerWidth <= 768;
 
   if (!isMobile && !_fundLoaded.ticker) {
@@ -12776,17 +12768,16 @@ function renderFundamentals() {
     loadFundTicker();
   }
 
-  if (isMobile) {
-    // On mobile: activate cal tab first, then load widgets
-    requestAnimationFrame(() => {
-      fundMobTab('cal'); // shows cal panel, triggers loadFundAllWidgets if needed
-      if (!_fundLoaded.all) {
-        requestAnimationFrame(() => loadFundAllWidgets());
-      }
-    });
-  } else {
-    if (!_fundLoaded.all) {
-      requestAnimationFrame(() => requestAnimationFrame(() => loadFundAllWidgets()));
+  if (!_fundLoaded.all) {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      loadFundAllWidgets();
+      if (isMobile) fundMobTab('cal');
+    }));
+  } else if (isMobile) {
+    // Re-activate cal tab if switching back to page
+    const calPanel = document.getElementById('fund-panel-cal');
+    if (calPanel && !calPanel.classList.contains('fund-mob-active')) {
+      fundMobTab('cal');
     }
   }
 }
@@ -12846,19 +12837,18 @@ function loadFundAllWidgets() {
   const theme = window._fundColorTheme || 'dark';
   const isMobile = window.innerWidth <= 768;
 
-  // On mobile: widget height = full screen minus header (~58px) + tab bar (~44px)
-  // On desktop: measure available space
-  const h = isMobile
-    ? Math.max(500, window.innerHeight - 58 - 44)
-    : _fundAvailH();
+  let widgetH;
+  if (isMobile) {
+    // header ~58px + tab bar ~44px = 102px overhead
+    widgetH = Math.max(400, window.innerHeight - 102);
+  } else {
+    widgetH = _fundAvailH() - 45;
+  }
 
   const calEl  = document.getElementById('fund-cal-wrap-all');
   const newsEl = document.getElementById('fund-news-wrap-all');
-
-  // Set explicit height on wrapper so iframe has room
-  const widgetH = isMobile ? h : h - 45;
-  if (calEl)  { calEl.style.height = widgetH + 'px'; calEl.style.minHeight = widgetH + 'px'; }
-  if (newsEl) { newsEl.style.height = widgetH + 'px'; newsEl.style.minHeight = widgetH + 'px'; }
+  if (calEl)  { calEl.style.height = widgetH + 'px'; }
+  if (newsEl) { newsEl.style.height = widgetH + 'px'; }
 
   _injectTVWidget('fund-cal-wrap-all',
     'https://s3.tradingview.com/external-embedding/embed-widget-events.js',
@@ -12882,24 +12872,20 @@ function fundMobTab(tab) {
   const newsBtn   = document.getElementById('fund-mob-btn-news');
   if (!calPanel || !newsPanel) return;
 
-  const activatePanel = (active, inactive, activeBtn, inactiveBtn) => {
-    active.classList.add('fund-mob-active');
-    inactive.classList.remove('fund-mob-active');
-    activeBtn.style.color = 'var(--accent)';
-    activeBtn.style.borderBottomColor = 'var(--accent)';
-    inactiveBtn.style.color = 'var(--muted)';
-    inactiveBtn.style.borderBottomColor = 'transparent';
-  };
-
   if (tab === 'cal') {
-    activatePanel(calPanel, newsPanel, calBtn, newsBtn);
+    calPanel.classList.add('fund-mob-active');
+    newsPanel.classList.remove('fund-mob-active');
+    calBtn.style.color = 'var(--accent)';
+    calBtn.style.borderBottomColor = 'var(--accent)';
+    newsBtn.style.color = 'var(--muted)';
+    newsBtn.style.borderBottomColor = 'transparent';
   } else {
-    activatePanel(newsPanel, calPanel, newsBtn, calBtn);
-  }
-
-  // Load widgets if not yet loaded
-  if (!_fundLoaded.all) {
-    requestAnimationFrame(() => requestAnimationFrame(() => loadFundAllWidgets()));
+    newsPanel.classList.add('fund-mob-active');
+    calPanel.classList.remove('fund-mob-active');
+    newsBtn.style.color = 'var(--accent)';
+    newsBtn.style.borderBottomColor = 'var(--accent)';
+    calBtn.style.color = 'var(--muted)';
+    calBtn.style.borderBottomColor = 'transparent';
   }
 }
 
