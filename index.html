@@ -852,34 +852,72 @@
     padding: 0;
   }
   .cal-cell.today .cal-pnl, .cal-cell.today .cal-trades { color: var(--text) !important; }
-  .cal-cell.has-win  { background: rgba(0,255,187,0.14); box-shadow: inset 0 2px 0 rgba(0,255,187,0.45); }
-  .cal-cell.has-loss { background: rgba(255,59,92,0.14); box-shadow: inset 0 2px 0 rgba(255,59,92,0.45); }
-  .cal-cell.has-win:hover  { background: rgba(0,255,187,0.22); }
-  .cal-cell.has-loss:hover { background: rgba(255,59,92,0.22); }
+  .cal-cell.has-win  { background: rgba(0,255,187,0.18); box-shadow: inset 0 0 0 2px rgba(0,255,187,0.55), inset 0 3px 0 rgba(0,255,187,0.7); }
+  .cal-cell.has-loss { background: rgba(255,59,92,0.18); box-shadow: inset 0 0 0 2px rgba(255,59,92,0.55), inset 0 3px 0 rgba(255,59,92,0.7); }
+  .cal-cell.has-win:hover  { background: rgba(0,255,187,0.28); }
+  .cal-cell.has-loss:hover { background: rgba(255,59,92,0.28); }
 
   [data-theme="light"] .cal-cell { background: #fff; border-radius: 10px; }
   [data-theme="light"] .cal-cell.empty { background: transparent !important; }
   [data-theme="light"] .cal-cell:not(.empty):hover { background: #f8fafc; }
-  [data-theme="light"] .cal-cell.has-win  { background: rgba(5,150,105,0.13); box-shadow: inset 0 2px 0 rgba(5,150,105,0.4); }
-  [data-theme="light"] .cal-cell.has-loss { background: rgba(225,29,72,0.12); box-shadow: inset 0 2px 0 rgba(225,29,72,0.35); }
-  [data-theme="light"] .cal-cell.has-win:hover  { background: rgba(5,150,105,0.20); }
-  [data-theme="light"] .cal-cell.has-loss:hover { background: rgba(225,29,72,0.18); }
+  [data-theme="light"] .cal-cell.has-win  { background: rgba(5,150,105,0.16); box-shadow: inset 0 0 0 2px rgba(5,150,105,0.45), inset 0 3px 0 rgba(5,150,105,0.6); }
+  [data-theme="light"] .cal-cell.has-loss { background: rgba(225,29,72,0.15); box-shadow: inset 0 0 0 2px rgba(225,29,72,0.45), inset 0 3px 0 rgba(225,29,72,0.6); }
+  [data-theme="light"] .cal-cell.has-win:hover  { background: rgba(5,150,105,0.25); }
+  [data-theme="light"] .cal-cell.has-loss:hover { background: rgba(225,29,72,0.24); }
 
   [data-theme="gray"] .cal-cell { background: var(--surface); border-radius: 10px; }
   [data-theme="gray"] .cal-cell.empty { background: transparent !important; }
   [data-theme="gray"] .cal-cell:not(.empty):hover { background: var(--surface2); }
-  [data-theme="gray"] .cal-cell.has-win  { background: rgba(0,255,187,0.14); box-shadow: inset 0 2px 0 rgba(0,255,187,0.45); }
-  [data-theme="gray"] .cal-cell.has-loss { background: rgba(255,59,92,0.14); box-shadow: inset 0 2px 0 rgba(255,59,92,0.45); }
-  [data-theme="gray"] .cal-cell.has-win:hover  { background: rgba(0,255,187,0.22); }
-  [data-theme="gray"] .cal-cell.has-loss:hover { background: rgba(255,59,92,0.22); }
-
+  [data-theme="gray"] .cal-cell.has-win  { background: rgba(0,255,187,0.18); box-shadow: inset 0 0 0 2px rgba(0,255,187,0.55), inset 0 3px 0 rgba(0,255,187,0.7); }
+  [data-theme="gray"] .cal-cell.has-loss { background: rgba(255,59,92,0.18); box-shadow: inset 0 0 0 2px rgba(255,59,92,0.55), inset 0 3px 0 rgba(255,59,92,0.7); }
   [data-theme="black"] .cal-cell { background: #0d0d0d; border-radius: 10px; }
   [data-theme="black"] .cal-cell.empty { background: transparent !important; }
   [data-theme="black"] .cal-cell:not(.empty):hover { background: #161616; }
-  [data-theme="black"] .cal-cell.has-win  { background: rgba(0,255,187,0.14); box-shadow: inset 0 2px 0 rgba(0,255,187,0.45); }
-  [data-theme="black"] .cal-cell.has-loss { background: rgba(255,59,92,0.14); box-shadow: inset 0 2px 0 rgba(255,59,92,0.45); }
-  [data-theme="black"] .cal-cell.has-win:hover  { background: rgba(0,255,187,0.22); }
-  [data-theme="black"] .cal-cell.has-loss:hover { background: rgba(255,59,92,0.22); }
+
+  /* ── Monthly stats strip ── */
+  #cal-month-stats {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .cal-stat-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .cal-stat-chip .chip-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+  .cal-stat-chip .chip-val {
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: -0.3px;
+  }
+  .cal-stat-chip.pnl-pos { background: rgba(0,255,187,0.1); border-color: rgba(0,255,187,0.3); }
+  .cal-stat-chip.pnl-neg { background: rgba(255,59,92,0.1); border-color: rgba(255,59,92,0.3); }
+  .cal-stat-chip.win-chip { background: rgba(0,255,187,0.08); border-color: rgba(0,255,187,0.2); }
+  .cal-stat-chip.loss-chip { background: rgba(255,59,92,0.08); border-color: rgba(255,59,92,0.2); }
+  [data-theme="light"] .cal-stat-chip.pnl-pos { background: rgba(5,150,105,0.1); border-color: rgba(5,150,105,0.3); }
+  [data-theme="light"] .cal-stat-chip.pnl-neg { background: rgba(225,29,72,0.1); border-color: rgba(225,29,72,0.3); }
+  [data-theme="light"] .cal-stat-chip.win-chip { background: rgba(5,150,105,0.08); border-color: rgba(5,150,105,0.2); }
+  [data-theme="light"] .cal-stat-chip.loss-chip { background: rgba(225,29,72,0.08); border-color: rgba(225,29,72,0.2); }
 
   .cal-day-num {
     position: absolute; top: 8px; left: 10px;
@@ -1438,11 +1476,11 @@
 
     /* ══ CALENDAR PAGE ══ */
     #page-calendar.active {
-      padding: 8px !important;
+      padding: 6px !important;
       height: 100dvh !important;
       display: flex !important;
       flex-direction: column !important;
-      gap: 8px !important;
+      gap: 5px !important;
     }
     /* Hide side panel on mobile */
     #cal-day-panel { display: none !important; }
@@ -1455,46 +1493,81 @@
       grid-template-columns: 1fr !important;
       flex: 1 !important;
       overflow: hidden !important;
+      min-height: 0 !important;
     }
     /* Hide week column header + cells */
     #cal-dow-row > div:last-child { display: none !important; }
-    /* Cal grid: 7 cols only */
-    #cal-grid { grid-template-columns: repeat(7, 1fr) !important; }
+    /* Cal grid: 7 equal cols, fills remaining height */
+    #cal-grid {
+      grid-template-columns: repeat(7, 1fr) !important;
+      grid-auto-rows: 1fr !important;
+      gap: 3px !important;
+      background: transparent !important;
+      padding: 3px !important;
+      height: 100% !important;
+      overflow: hidden !important;
+    }
     /* Remove week totals (every 8th cell) */
     #cal-grid > div:nth-child(8n) { display: none !important; }
-    /* Header nav: compact */
-    #page-calendar > div:first-child { padding: 10px 14px !important; border-radius: 10px !important; }
-    #cal-month-label { font-size: 16px !important; }
-    /* Hide year/alltime view buttons */
+    /* Header nav: compact, no overflow */
+    #page-calendar > div:first-child {
+      padding: 8px 10px !important;
+      border-radius: 10px !important;
+      flex-shrink: 0 !important;
+      overflow: hidden !important;
+    }
+    /* Nav left group */
+    #page-calendar > div:first-child > div:first-child {
+      gap: 6px !important;
+    }
+    #cal-month-label { font-size: 14px !important; min-width: 0 !important; }
+    /* View buttons: compact */
+    #page-calendar > div:first-child > div:last-child > div {
+      padding: 2px !important;
+    }
+    #cal-view-month { padding: 5px 10px !important; font-size: 11px !important; }
     #cal-view-year, #cal-view-alltime { display: none !important; }
-    /* Cal cells */
+    /* Stats strip: compact on mobile */
+    #cal-month-stats {
+      padding: 5px 8px !important;
+      gap: 5px !important;
+      border-radius: 10px !important;
+      flex-shrink: 0 !important;
+    }
+    .cal-stat-chip {
+      padding: 4px 8px !important;
+      border-radius: 7px !important;
+      gap: 4px !important;
+    }
+    .cal-stat-chip .chip-label { font-size: 8px !important; }
+    .cal-stat-chip .chip-val { font-size: 11px !important; }
+    /* Cal cells — fill space equally, no min-height */
     .cal-cell {
-      min-height: 72px !important;
-      padding: 6px 4px 4px !important;
+      min-height: 0 !important;
+      padding: 4px 3px 3px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
       justify-content: center !important;
       text-align: center !important;
-      border-radius: 8px !important;
+      border-radius: 7px !important;
     }
-    .cal-day-num { font-size: 11px !important; font-weight: 700 !important; top: 5px !important; left: 6px !important; }
-    .cal-pnl { font-size: 12px !important; letter-spacing: -0.4px !important; }
-    .cal-trades { font-size: 8px !important; bottom: 4px !important; }
+    .cal-day-num {
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      top: 4px !important;
+      left: 4px !important;
+    }
+    .cal-pnl { font-size: 11px !important; letter-spacing: -0.4px !important; }
+    .cal-trades { font-size: 8px !important; bottom: 3px !important; }
     .cal-cell-bar { display: none !important; }
-    /* Grid — transparent background, small gap so rounded corners show */
-    #cal-grid {
-      gap: 3px !important;
-      background: transparent !important;
-      padding: 3px !important;
-      grid-template-columns: repeat(7, 1fr) !important;
-    }
+    /* DOW header: compact */
     #cal-dow-row {
       grid-template-columns: repeat(7, 1fr) !important;
       gap: 3px !important;
       padding: 0 3px !important;
     }
-    .cal-dow { padding: 6px 0 5px !important; font-size: 10px !important; }
+    .cal-dow { padding: 5px 0 4px !important; font-size: 9px !important; letter-spacing: 0.5px !important; }
 
     /* ══ MINDSET PAGE ══ */
     #page-mindset {
@@ -3213,6 +3286,11 @@
         <button id="cal-view-alltime" onclick="setCalView('alltime')" style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">All Time</button>
       </div>
     </div>
+  </div>
+
+  <!-- MONTHLY STATS STRIP -->
+  <div id="cal-month-stats" style="display:none;">
+    <!-- filled by renderCalendar -->
   </div>
 
   <!-- BODY ROW: calendar grid + side panel, both rounded -->
@@ -10129,8 +10207,10 @@ function setCalView(v) {
   // Show/hide right day panel (PC only)
   const dayPanel = document.getElementById('cal-day-panel');
   const bodyGrid = document.getElementById('cal-body-grid');
+  const statsStrip = document.getElementById('cal-month-stats');
   if (dayPanel) dayPanel.style.display = v === 'month' ? '' : 'none';
   if (bodyGrid) bodyGrid.style.gridTemplateColumns = v === 'month' ? '1fr 300px' : '1fr';
+  if (statsStrip && v !== 'month') statsStrip.style.display = 'none';
   // Grid layout
   const dowRow = document.getElementById('cal-dow-row');
   const grid   = document.getElementById('cal-grid');
@@ -10350,6 +10430,48 @@ function renderCalendar() {
   document.getElementById('cal-month-label').textContent = monthNames[calMonth] + ' ' + calYear;
   const isCurrentMonth = calYear === today.getFullYear() && calMonth === today.getMonth();
   if (fwdBtn) { fwdBtn.style.opacity = isCurrentMonth ? '0.3' : ''; fwdBtn.style.pointerEvents = isCurrentMonth ? 'none' : ''; }
+
+  // ── Build & show monthly stats strip ──
+  const monthPrefix = calYear + '-' + String(calMonth+1).padStart(2,'0');
+  const monthDays   = Object.keys(dayMap).filter(d => d.startsWith(monthPrefix));
+  const monthPnl    = monthDays.reduce((s,d) => s + dayMap[d].pnl, 0);
+  const winDays     = monthDays.filter(d => dayMap[d].pnl > 0).length;
+  const lossDays    = monthDays.filter(d => dayMap[d].pnl < 0).length;
+  const totalTrades = monthDays.reduce((s,d) => s + dayMap[d].count, 0);
+  const sym         = getCurrencySymbol();
+  const statsEl     = document.getElementById('cal-month-stats');
+  if (statsEl) {
+    const pnlSign  = monthPnl >= 0 ? '+' : '';
+    const pnlColor = monthPnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const pnlChipClass = monthPnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+    const wr = winDays + lossDays > 0 ? Math.round(winDays / (winDays + lossDays) * 100) : 0;
+    if (monthDays.length > 0) {
+      statsEl.style.display = 'flex';
+      statsEl.innerHTML = `
+        <div class="cal-stat-chip ${pnlChipClass}" style="flex:1;justify-content:space-between;">
+          <span class="chip-label">Month P&L</span>
+          <span class="chip-val" style="color:${pnlColor};">${pnlSign}${sym}${Math.abs(monthPnl).toFixed(2)}</span>
+        </div>
+        <div class="cal-stat-chip win-chip">
+          <span class="chip-label">Win</span>
+          <span class="chip-val" style="color:var(--green);">${winDays}d</span>
+        </div>
+        <div class="cal-stat-chip loss-chip">
+          <span class="chip-label">Loss</span>
+          <span class="chip-val" style="color:var(--red);">${lossDays}d</span>
+        </div>
+        <div class="cal-stat-chip">
+          <span class="chip-label">WR</span>
+          <span class="chip-val" style="color:${wr>=50?'var(--green)':'var(--red)'};">${wr}%</span>
+        </div>
+        <div class="cal-stat-chip">
+          <span class="chip-label">Trades</span>
+          <span class="chip-val" style="color:var(--text);">${totalTrades}</span>
+        </div>`;
+    } else {
+      statsEl.style.display = 'none';
+    }
+  }
   const firstDay = new Date(calYear, calMonth, 1);
   const lastDay  = new Date(calYear, calMonth + 1, 0);
   // Sunday=0 is column 0 — no offset needed
