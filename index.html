@@ -1791,8 +1791,11 @@
       padding: 0 !important;
       height: 100dvh !important;
       overflow: hidden !important;
-      display: flex !important;
+      display: none !important;
       flex-direction: column !important;
+    }
+    #page-notebooks.active {
+      display: flex !important;
     }
 
     /* Compact page header */
@@ -12649,7 +12652,7 @@ handleNotebooksMobile();
 <!-- ══════════════════════════════════════════ -->
 <!--  NOTEBOOKS PAGE                           -->
 <!-- ══════════════════════════════════════════ -->
-<div class="page" id="page-notebooks" style="display:flex;flex-direction:column;height:100vh;overflow:hidden;box-sizing:border-box;">
+<div class="page" id="page-notebooks" style="flex-direction:column;height:100vh;overflow:hidden;box-sizing:border-box;">
 
   <!-- ── Page header bar ── -->
   <div style="flex-shrink:0;padding:28px var(--page-px) 0;position:relative;z-index:1;">
