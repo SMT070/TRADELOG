@@ -4250,7 +4250,7 @@ void DoSync()
       if(IsBalanceEvent(tk)) continue;                                    // skip balance events
       if(HistoryDealGetInteger(tk,DEAL_ENTRY)!=DEAL_ENTRY_OUT) continue;
       datetime closeTime=(datetime)HistoryDealGetInteger(tk,DEAL_TIME);
-      if(!g_firstRun && closeTime<=g_lastSyncTime) continue;
+      if(!g_firstRun && closeTime<g_lastSyncTime) continue;  // strict < so same-second trades are never missed
       ulong dealTicket=tk; ulong posId=(ulong)HistoryDealGetInteger(tk,DEAL_POSITION_ID);
       string symbol=HistoryDealGetString(tk,DEAL_SYMBOL); double closePrice=HistoryDealGetDouble(tk,DEAL_PRICE);
       double volume=HistoryDealGetDouble(tk,DEAL_VOLUME); double profit=HistoryDealGetDouble(tk,DEAL_PROFIT);
@@ -4259,7 +4259,7 @@ void DoSync()
       string tradeDir=(dealType==DEAL_TYPE_SELL)?"BUY":"SELL";
       double openPrice=0.0; datetime openTime=0; string comment=""; double sl=0.0; double tp=0.0; double entryComm=0.0;
       for(int k=0;k<entryCount;k++) { if(entryPos[k]==posId) { openPrice=entryPrice[k]; openTime=entryTime[k]; comment=entryComment[k]; sl=entrySL[k]; tp=entryTP[k]; entryComm=entryCommission[k]; break; } }
-      double totalCommission=commission+entryComm;
+      double totalCommission=MathAbs(commission)+MathAbs(entryComm);  // always positive; netPnl = profit - commission
       if(closeTime>newestClose) newestClose=closeTime;
       if(!firstTrade) tradesJson+=",";
       tradesJson+="{";
@@ -4290,7 +4290,7 @@ void DoSync()
       ulong tk=HistoryDealGetTicket(i); if(tk<=0) continue;
       if(!IsBalanceEvent(tk)) continue;                                   // only balance events
       datetime evTime=(datetime)HistoryDealGetInteger(tk,DEAL_TIME);
-      if(!g_firstRun && evTime<=g_lastSyncTime) continue;
+      if(!g_firstRun && evTime<g_lastSyncTime) continue;  // strict <
       double amount=HistoryDealGetDouble(tk,DEAL_PROFIT);
       string comment=HistoryDealGetString(tk,DEAL_COMMENT);
       // Determine deposit vs withdrawal by comment keywords first, then sign of amount
@@ -4334,7 +4334,7 @@ void DoSync()
    if(httpCode==200)
    {
       Print("TradeLog: Sync OK — ",tradesSent," trade(s), ",balSent," balance event(s) sent.");
-      g_lastSyncTime=newestClose;
+      g_lastSyncTime=newestClose+1;  // +1s buffer: prevents re-sending but never skips same-second trades
       g_firstRun=false;
    }
    else if(httpCode==-1) Print("TradeLog: WebRequest blocked. Add URL in Tools > Options > Expert Advisors: ",EndpointUrl);
@@ -4903,10 +4903,10 @@ async function backgroundSync() {
     // Re-fetch trades and user data
     const { data, error } = await sb.from('trades').select('*').eq('user_id', uid).order('date', { ascending: false });
     if (!error && data) {
-      // Only refresh UI if data actually changed (compare trade count and last modified id)
-      const newIds = data.map(r => r.id).join(',');
-      const oldIds = trades.map(r => r.id).join(',');
-      const dataChanged = newIds !== oldIds || data.length !== trades.length;
+      // Detect changes: compare count + sorted IDs so order differences don't mask new trades
+      const newIds = [...data].map(r => r.id).sort().join(',');
+      const oldIds = [...trades].map(r => r.id).sort().join(',');
+      const dataChanged = newIds !== oldIds;
       trades = data.map(r => ({
         id: r.id, symbol: r.symbol, date: r.date, closeDate: r.close_date,
         dir: r.dir, lots: r.lots, entry: r.entry, exit: r.exit, sl: r.sl, tp: r.tp,
@@ -4981,7 +4981,12 @@ let selectedResult = '';
 let pendingImport = [];
 let editingScreenshot = null;
 
-function getPnl(t) { return (t.netPnl !== undefined && t.netPnl !== null) ? t.netPnl : (t.pnl || 0); }
+function getPnl(t) {
+  if (t.netPnl !== undefined && t.netPnl !== null) return t.netPnl;
+  // Fallback: pnl - |commission| + swap (commission stored as positive cost)
+  const comm = Math.abs(t.commission || 0);
+  return (t.pnl || 0) - comm + (t.swap || 0);
+}
 function getResult(t) {
   const pnl = getPnl(t);
   if (t.result) return t.result;
@@ -6500,7 +6505,7 @@ async function saveTrade() {
   }
   const commission = parseFloat(document.getElementById('f-commission').value) || 0;
   const swap = parseFloat((document.getElementById('f-swap') || {}).value) || 0;
-  const netPnl = pnl - commission + swap;
+  const netPnl = pnl - Math.abs(commission) + swap;
   const editId = document.getElementById('edit-id').value;
   const trade = {
     id: editId || uid(),
@@ -8773,7 +8778,7 @@ async function saveInlineEdit(id) {
   t.pnl        = parseFloat(document.getElementById('ie-pnl').value) || 0;
   t.commission = parseFloat(document.getElementById('ie-commission').value) || 0;
   t.swap       = t.swap || 0;  // preserve swap from MT5, not editable in UI
-  t.netPnl     = t.pnl - t.commission + t.swap;
+  t.netPnl     = t.pnl - Math.abs(t.commission || 0) + (t.swap || 0);
   t.notes      = document.getElementById('ie-notes').value;
   t.result     = window._ieResult || (t.netPnl === 0 ? 'be' : (t.netPnl > 0 ? 'win' : 'loss'));
   t.emotion    = window._ieEmotion || '';
@@ -9417,7 +9422,7 @@ function parseMT5HTML(arrayBuffer) {
     const swap = parseFloat(cells[11])||0;
     const pnl = parseFloat((cells[12]||'').replace(/\s/g,''))||0;
     if (!symbol || !openTime) continue;
-    const netPnl = pnl - commission + swap;
+    const netPnl = pnl - Math.abs(commission) + swap;
     const _dir1 = (dir==='BUY'||dir==='LONG')?'BUY':'SELL';
     let r = 0;
     if (sl && entry && exitPrice) {
@@ -9460,7 +9465,7 @@ function parseMT5HTML(arrayBuffer) {
       const swap = parseFloat(cells[base+7])||0;
       const pnl = parseFloat((cells[base+8]||'').replace(/\s/g,''))||0;
       if (!symbol || !openTime || !lots) continue;
-      const netPnl = pnl - commission + swap;
+      const netPnl = pnl - Math.abs(commission) + swap;
       const _dir2 = (dir==='BUY'||dir==='LONG')?'BUY':'SELL';
       let r = 0;
       if (sl && entry && exitPrice) {
@@ -9492,7 +9497,7 @@ function parseJSONFile(text) {
     const pnl  = parseFloat(t.pnl ?? t.profit ?? t.pl ?? t.realized_pnl ?? 0);
     const commission = Math.abs(parseFloat(t.commission ?? 0));
     const swap = parseFloat(t.swap ?? 0);
-    const netPnl = pnl - commission + swap;
+    const netPnl = pnl - Math.abs(commission) + swap;
     const entry = parseFloat(t.entry ?? t.open_price ?? t.entryPrice ?? t.price ?? 0);
     const exit  = parseFloat(t.exit ?? t.close_price ?? t.exitPrice ?? t.closePrice ?? 0);
     const sl    = parseFloat(t.sl ?? t.stop_loss ?? t.stopLoss ?? 0);
@@ -9706,7 +9711,7 @@ function parseGenericHeaderCSV(lines) {
     const pnl = getF('pnl');
     const commission = Math.abs(getF('commission'));
     const swap = getF('swap');
-    const netPnl = pnl - commission + swap;
+    const netPnl = pnl - Math.abs(commission) + swap;
     const entry = getF('entry');
     const exit  = getF('exit');
     const sl    = getF('sl');
@@ -9815,7 +9820,7 @@ function parseCTraderCSV(lines) {
     const pnl = parseFloat(obj.net_profit ?? obj.profit ?? obj.pnl ?? 0);
     const commission = Math.abs(parseFloat(obj.commission ?? obj.commissions ?? 0));
     const swap = parseFloat(obj.swap ?? 0);
-    const netPnl = pnl - commission + swap;
+    const netPnl = pnl - Math.abs(commission) + swap;
     const entry = parseFloat(obj.entry_price ?? obj.open_price ?? obj.price ?? 0);
     const exit  = parseFloat(obj.closing_price ?? obj.close_price ?? obj.exit_price ?? 0);
     const symbol= (obj.symbol ?? obj.instrument ?? '').toUpperCase();
@@ -9966,7 +9971,7 @@ function parseCSVText(text) {
     if (!symbol || (!entry && !pnl)) continue;
 
     const fixDate = d => d ? d.replace(/\./g, '-').slice(0, 16) : '';
-    const netPnl = pnl - commission + swap;
+    const netPnl = pnl - Math.abs(commission) + swap;
     const _dirCSV = dir === 'BUY' || dir === 'LONG' ? 'BUY' : 'SELL';
     let r = 0;
     if (sl && entry && exitPrice) {
