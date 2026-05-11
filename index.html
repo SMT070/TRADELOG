@@ -11026,6 +11026,10 @@ document.addEventListener('paste', e => {
   }
   if (!imgItem) return;
 
+  // If pack overlay is open, let _packOvPasteHandler handle it — don't interfere
+  const ov = document.getElementById('trade-detail-overlay');
+  if (ov && ov.style.display === 'flex' && window._currentPackId) return;
+
   // Determine target: explicit photo zone data-id first
   const photoZone = e.target.closest('[data-photo-id]');
   if (photoZone && photoZone.dataset.photoId) {
@@ -14824,13 +14828,18 @@ function _switchPackTab(safeId, tabName) {
 async function savePackField(packId, field, value) {
   const packTrades = trades.filter(t => t.packId === packId);
   if (!packTrades.length) return;
-  // Clear field from all trades first, then set on first trade only
+  // Clear field from all trades first
   packTrades.forEach(t => { delete t[field]; });
   if (value !== null && value !== undefined && value !== '') {
-    packTrades[0][field] = value;
+    // Anchor to the trade with the lowest index in the master trades array
+    // so the anchor is always stable regardless of render/filter order
+    const anchorIdx = Math.min(...packTrades.map(t => trades.indexOf(t)));
+    trades[anchorIdx][field] = value;
   }
   save();
-  try { await guaranteedSaveToSupabase(packTrades[0]); } catch(e) {}
+  // Sync the anchor trade to Supabase
+  const anchor = packTrades.reduce((a, t) => trades.indexOf(t) < trades.indexOf(a) ? t : a, packTrades[0]);
+  try { await guaranteedSaveToSupabase(anchor); } catch(e) {}
 }
 
 // ── Debounced save for pack notes (avoids hammering Supabase on every keystroke) ──
@@ -14842,8 +14851,12 @@ function savePackNoteDebounced(packId, value) {
 
 // ── Pack Expand Overlay ────────────────────────────────────────────────────────
 function openPackOverlay(packId) {
-  const packTrades = trades.filter(t => t.packId === packId)
-    || _lastRenderedPackMap[packId] || [];
+  let packTrades = trades.filter(t => t.packId === packId);
+  if (!packTrades.length) packTrades = _lastRenderedPackMap[packId] || [];
+  if (!packTrades.length) {
+    const { autoGroups } = buildAutoPackGroups(trades);
+    packTrades = autoGroups[packId] || [];
+  }
   if (!packTrades.length) return;
 
   const sym        = getCurrencySymbol();
