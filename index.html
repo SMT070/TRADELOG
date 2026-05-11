@@ -2263,7 +2263,7 @@
   }
   #tradelog-loader {
     position:fixed;inset:0;z-index:99999;
-    background:#05080f;
+    background:var(--bg);
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
     opacity:1;
     visibility:visible;
@@ -2293,9 +2293,9 @@
     </svg>
   </div>
   <!-- App name -->
-  <div style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.4px;color:#ffffff;text-shadow:0 1px 20px rgba(99,102,241,0.6);">TradeLog</div>
+  <div style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.4px;color:var(--text);text-shadow:0 1px 20px rgba(99,102,241,0.6);">TradeLog</div>
   <!-- Shimmer bar -->
-  <div style="width:100px;height:3px;background:rgba(255,255,255,0.12);border-radius:99px;overflow:hidden;position:relative;">
+  <div style="width:100px;height:3px;background:var(--border);border-radius:99px;overflow:hidden;position:relative;">
     <div style="
       position:absolute;inset-y:0;left:0;width:45%;
       background:linear-gradient(90deg,transparent,#6366f1,#a5b4fc,transparent);
