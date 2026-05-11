@@ -895,26 +895,29 @@
   /* ── Monthly stats strip ── */
   #cal-month-stats {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px 16px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
     flex-shrink: 0;
-    flex-wrap: wrap;
   }
   .cal-stat-chip {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
-    border-radius: 8px;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 16px;
+    border-radius: 10px;
     font-size: 12px;
     font-weight: 700;
     background: var(--surface2);
     border: 1px solid var(--border);
     white-space: nowrap;
+    flex: 1;
+    text-align: center;
   }
   .cal-stat-chip .chip-label {
     font-size: 9px;
@@ -924,9 +927,9 @@
     color: var(--muted);
   }
   .cal-stat-chip .chip-val {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 900;
-    letter-spacing: -0.3px;
+    letter-spacing: -0.5px;
   }
   .cal-stat-chip.pnl-pos { background: rgba(0,255,187,0.1); border-color: rgba(0,255,187,0.3); }
   .cal-stat-chip.pnl-neg { background: rgba(255,59,92,0.1); border-color: rgba(255,59,92,0.3); }
@@ -4861,10 +4864,7 @@ async function backgroundSync() {
         pnl: r.pnl, commission: r.commission, swap: r.swap || 0, netPnl: r.net_pnl, r: r.r,
         result: r.result, emotion: r.emotion, confidence: r.confidence,
         notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || [],
-        packId: r.pack_id || undefined, packName: r.pack_name || undefined,
-        packNotes: r.pack_notes || undefined, packEmotion: r.pack_emotion || undefined,
-        packConfidence: r.pack_confidence != null ? r.pack_confidence : undefined,
-        packScreenshot: r.pack_screenshot || undefined
+        packId: r.pack_id || undefined, packName: r.pack_name || undefined
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
       try {
@@ -5422,10 +5422,7 @@ async function loadAllFromSupabase() {
         pnl: r.pnl, commission: r.commission, swap: r.swap || 0, netPnl: r.net_pnl, r: r.r,
         result: r.result, emotion: r.emotion, confidence: r.confidence,
         notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || [],
-        packId: r.pack_id || undefined, packName: r.pack_name || undefined,
-        packNotes: r.pack_notes || undefined, packEmotion: r.pack_emotion || undefined,
-        packConfidence: r.pack_confidence != null ? r.pack_confidence : undefined,
-        packScreenshot: r.pack_screenshot || undefined
+        packId: r.pack_id || undefined, packName: r.pack_name || undefined
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
     }
@@ -5520,12 +5517,7 @@ async function saveTradeToSupabase(t) {
     swap: t.swap || 0, net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
     confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
     strategies: t.strategies || [],
-    pack_id: t.packId || null, pack_name: t.packName || null,
-    // Pack anchor fields — stored on anchor trade, null on children
-    pack_notes:      t.packNotes      || null,
-    pack_emotion:    t.packEmotion    || null,
-    pack_confidence: t.packConfidence != null ? Number(t.packConfidence) : null,
-    pack_screenshot: t.packScreenshot || null,
+    pack_id: t.packId || null, pack_name: t.packName || null
   };
   const { error } = await sb.from('trades').upsert(row);
   if (error) { console.error('TradeLog: upsert error', error); throw error; }
@@ -10590,7 +10582,7 @@ function renderCalendar() {
     if (monthDays.length > 0) {
       statsEl.style.display = 'flex';
       statsEl.innerHTML = `
-        <div class="cal-stat-chip ${pnlChipClass}" style="flex:1;justify-content:space-between;">
+        <div class="cal-stat-chip ${pnlChipClass}">
           <span class="chip-label">Month P&L</span>
           <span class="chip-val" style="color:${pnlColor};">${pnlSign}${sym}${Math.abs(monthPnl).toFixed(2)}</span>
         </div>
@@ -13877,28 +13869,10 @@ function closePackNameModal() {
 
 async function confirmCreatePack() {
   const name = (document.getElementById('pack-name-input').value || '').trim();
-  if (!name) { document.getElementById('pack-name-input').focus(); return; }
-
-  // ── RENAME existing pack ──────────────────────────────────────────
-  if (window._packRenameId) {
-    const renameId = window._packRenameId;
-    window._packRenameId = null;
-    const updated = [];
-    trades.forEach((t, idx) => {
-      if (t.packId === renameId) {
-        trades[idx].packName = name;
-        updated.push(trades[idx]);
-      }
-    });
-    save();
-    closePackNameModal();
-    renderTrades();
-    toast(`✓ Renamed to "${name}"`, 'success');
-    try { await Promise.all(updated.map(t => guaranteedSaveToSupabase(t))); } catch(e) {}
+  if (!name) {
+    document.getElementById('pack-name-input').focus();
     return;
   }
-
-  // ── CREATE new pack ───────────────────────────────────────────────
   const packId = uid();
   // If coming from "Save Pack" on an auto-pack, use those ids; otherwise use manual selection
   const ids = (window._pendingAutoPackIds && window._pendingAutoPackIds.length)
@@ -13906,11 +13880,12 @@ async function confirmCreatePack() {
     : [...packSelectedIds];
   window._pendingAutoPackIds = null;
 
+  // Assign packId + packName to each selected trade
   const updated = [];
   ids.forEach(id => {
     const idx = trades.findIndex(t => t.id === id);
     if (idx === -1) return;
-    trades[idx].packId   = packId;
+    trades[idx].packId = packId;
     trades[idx].packName = name;
     updated.push(trades[idx]);
   });
@@ -13921,11 +13896,16 @@ async function confirmCreatePack() {
   exitPackSelectMode();
   toast(`✓ Pack "${name}" created with ${ids.length} trades`, 'success');
 
+  // Auto-expand the new pack
   packExpandedIds.add(packId);
   renderTrades();
 
-  try { await Promise.all(updated.map(t => guaranteedSaveToSupabase(t))); }
-  catch(e) { console.warn('Pack sync failed:', e); }
+  // Sync to Supabase in background
+  try {
+    await Promise.all(updated.map(t => guaranteedSaveToSupabase(t)));
+  } catch(e) {
+    console.warn('Pack sync failed:', e);
+  }
 }
 
 // ── Dissolve a pack (ungroup its trades) ─────────────────────────
@@ -13946,11 +13926,6 @@ async function dissolvePack(packId, e) {
         if (idx === -1) return;
         delete trades[idx].packId;
         delete trades[idx].packName;
-        // Clear pack anchor fields so they don't linger
-        delete trades[idx].packNotes;
-        delete trades[idx].packEmotion;
-        delete trades[idx].packConfidence;
-        delete trades[idx].packScreenshot;
         updated.push(trades[idx]);
       });
       packExpandedIds.delete(packId);
@@ -13988,12 +13963,10 @@ function togglePackExpand(packId, e) {
   else packExpandedIds.add(packId);
   // Persist expanded state across sessions
   try { localStorage.setItem('tradelog_pack_expanded', JSON.stringify([...packExpandedIds])); } catch(_){}
-  // Toggle child rows + inline detail row visibility without full re-render
+  // Toggle child rows visibility without full re-render
   const childRows = document.querySelectorAll(`tr.pack-child-row[data-pack="${packId}"]`);
-  const detailRow = document.querySelector(`tr.pack-inline-detail-row[data-pack="${packId}"]`);
   const isExpanded = packExpandedIds.has(packId);
   childRows.forEach(r => r.classList.toggle('hidden', !isExpanded));
-  if (detailRow) detailRow.classList.toggle('hidden', !isExpanded);
   // Update chevron on header
   const chevron = document.querySelector(`tr.pack-header-row[data-pack="${packId}"] .pack-chevron`);
   if (chevron) chevron.style.transform = isExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
@@ -14449,7 +14422,7 @@ function openPackDetail(packId, e, _autoTrades) {
         <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
           <div class="detail-label" style="margin-bottom:6px;">Confidence <span style="color:var(--accent);font-weight:700;" id="pd-conf-lbl-${safeId}">${packConfidence||'—'}/10</span></div>
           <input type="range" min="1" max="10" value="${packConfidence||5}" style="width:100%;accent-color:var(--accent);"
-            oninput="document.getElementById('pd-conf-lbl-${safeId}').textContent=this.value+'/10'" onchange="savePackField('${packId}','packConfidence',this.value)">
+            oninput="document.getElementById('pd-conf-lbl-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',this.value)">
           <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;"><span>Low</span><span>High</span></div>
         </div>
       </div>
@@ -14461,7 +14434,7 @@ function openPackDetail(packId, e, _autoTrades) {
           placeholder="Setup idea, reasoning, confluences…"
           style="width:100%;min-height:100px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:12px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;${packNotes?'border-left:3px solid var(--accent);':''}"
           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-          oninput="clearTimeout(this._t);this._t=setTimeout(()=>savePackField('${packId}','packNotes',this.value),600)">${packNotes}</textarea>
+          oninput="savePackField('${packId}','packNotes',this.value)">${packNotes}</textarea>
       </div>
 
       <!-- Chart Photo -->
@@ -14628,7 +14601,7 @@ function _buildPackDetailHTML(packId, packName, packTrades, sym, d) {
       <textarea id="pack-notes-${safeId}" placeholder="Describe your trade idea, setup, reasoning…"
         style="width:100%;min-height:180px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
         onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-        oninput="clearTimeout(this._t);this._t=setTimeout(()=>savePackField('${packId}','packNotes',this.value),600)">${d.packNotes}</textarea>
+        oninput="savePackField('${packId}','packNotes',this.value)">${d.packNotes}</textarea>
     </div>`;
 
   // ── PHOTO TAB ──
@@ -14676,7 +14649,7 @@ function _buildPackDetailHTML(packId, packName, packTrades, sym, d) {
       <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">Confidence <span style="font-weight:600;color:var(--accent);" id="pack-conf-label-${safeId}">${d.packConfidence||'—'}/10</span></div>
       <input type="range" min="1" max="10" value="${d.packConfidence||5}"
         style="width:100%;accent-color:var(--accent);margin-bottom:6px;"
-        oninput="document.getElementById('pack-conf-label-${safeId}').textContent=this.value+'/10'" onchange="savePackField('${packId}','packConfidence',this.value)">
+        oninput="document.getElementById('pack-conf-label-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',this.value)">
       <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;">
         <span>Low</span><span>High</span>
       </div>
@@ -14706,60 +14679,13 @@ function _switchPackTab(safeId, tabName) {
 
 // Save a pack-level field to all trades in the pack (stored on anchor = first trade)
 async function savePackField(packId, field, value) {
-  // Resolve trades — works for both real packs and auto-packs
-  let packTrades = _lastRenderedPackMap[packId]
-    || trades.filter(t => t.packId === packId);
-  if (!packTrades || !packTrades.length) {
-    const { autoGroups } = buildAutoPackGroups(trades);
-    packTrades = autoGroups[packId] || [];
-  }
+  const packTrades = trades.filter(t => t.packId === packId);
   if (!packTrades.length) return;
-
-  const isEmpty = value === null || value === undefined || value === '';
-
-  // ── Photo: store on anchor trade only (pack-level, not synced to children) ──
-  if (field === 'packScreenshot') {
-    packTrades.forEach(t => { delete t.packScreenshot; });
-    if (!isEmpty) packTrades[0].packScreenshot = value;
-    save();
-    try { await guaranteedSaveToSupabase(packTrades[0]); } catch(e) {}
-    return;
-  }
-
-  // ── Notes: store as packNotes on anchor AND sync to t.notes on every child ──
-  if (field === 'packNotes') {
-    packTrades.forEach(t => { delete t.packNotes; });
-    if (!isEmpty) packTrades[0].packNotes = value;
-    // Sync to individual trade notes field so child detail panels show it
-    packTrades.forEach(t => { t.notes = isEmpty ? '' : value; });
-    save();
-    await Promise.all(packTrades.map(t => guaranteedSaveToSupabase(t).catch(() => {})));
-    return;
-  }
-
-  // ── Emotion: store as packEmotion on anchor AND sync to t.emotion on every child ──
-  if (field === 'packEmotion') {
-    packTrades.forEach(t => { delete t.packEmotion; });
-    if (!isEmpty) packTrades[0].packEmotion = value;
-    packTrades.forEach(t => { t.emotion = isEmpty ? '' : value; });
-    save();
-    await Promise.all(packTrades.map(t => guaranteedSaveToSupabase(t).catch(() => {})));
-    return;
-  }
-
-  // ── Confidence: store as packConfidence on anchor AND sync to t.confidence ──
-  if (field === 'packConfidence') {
-    packTrades.forEach(t => { delete t.packConfidence; });
-    if (!isEmpty) packTrades[0].packConfidence = value;
-    packTrades.forEach(t => { t.confidence = isEmpty ? 0 : Number(value); });
-    save();
-    await Promise.all(packTrades.map(t => guaranteedSaveToSupabase(t).catch(() => {})));
-    return;
-  }
-
-  // ── Generic pack field fallback ──
+  // Clear field from all trades first, then set on first trade only
   packTrades.forEach(t => { delete t[field]; });
-  if (!isEmpty) packTrades[0][field] = value;
+  if (value !== null && value !== undefined && value !== '') {
+    packTrades[0][field] = value;
+  }
   save();
   try { await guaranteedSaveToSupabase(packTrades[0]); } catch(e) {}
 }
@@ -14849,8 +14775,8 @@ function renderPackRows(packId, packTrades, sym) {
     <td data-col="tags" style="max-width:110px;" onclick="event.stopPropagation()"><div class="pack-row-actions" style="display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .15s;">${actions}</div></td>
   </tr>`;
 
-  // ── Inline pack detail row (Notes / Photo / Mindset shared for whole group) ──
-  html += _buildPackInlineDetailRow(packId, packTrades, isExpanded, colspanVal);
+  // ── Inline pack detail row (Notes / Photo / Mindset) is intentionally omitted here;
+  //    those fields are available via the Group Detail panel (ⓘ icon).
 
   packTrades.forEach(t => {
     html += _buildPackChildRow(t, sym, packId, isExpanded, false);
@@ -14893,7 +14819,7 @@ function _buildPackInlineDetailRow(packId, packTrades, isExpanded, colspan) {
             placeholder="Setup idea, reasoning, confluences…"
             style="width:100%;min-height:100px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:12px;padding:10px;resize:vertical;outline:none;line-height:1.6;transition:border-color .2s;box-sizing:border-box;"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-            oninput="clearTimeout(this._t);this._t=setTimeout(()=>savePackField('${packId}','packNotes',this.value),600)">${packNotes}</textarea>
+            oninput="savePackField('${packId}','packNotes',this.value)">${packNotes}</textarea>
         </div>
 
         <!-- PHOTO -->
@@ -14923,7 +14849,7 @@ function _buildPackInlineDetailRow(packId, packTrades, isExpanded, colspan) {
           <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Confidence <span style="color:var(--accent);font-weight:700;" id="pack-inline-conf-${safeId}">${packConf||'—'}/10</span></div>
           <input type="range" min="1" max="10" value="${packConf||5}"
             style="width:100%;accent-color:var(--accent);"
-            oninput="document.getElementById('pack-inline-conf-${safeId}').textContent=this.value+'/10'" onchange="savePackField('${packId}','packConfidence',this.value)">
+            oninput="document.getElementById('pack-inline-conf-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',this.value)">
           <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-top:2px;"><span>Low</span><span>High</span></div>
         </div>
 
@@ -15247,11 +15173,6 @@ function renderAutoPackRows(key, packTrades, sym) {
     : `<span class="badge ${autoDir==='BUY'?'buy':'sell'}">${autoDir}</span>`;
   const autoCountPill = `<span style="margin-left:5px;font-size:9px;font-weight:800;color:var(--muted);opacity:.65;">${packTrades.length}x</span>`;
   const autoResultBadge = `<span style="color:${resultColor};font-size:10px;font-weight:700;background:${resultBg};padding:2px 8px;border-radius:4px;">${resultLabel}</span>`;
-  const autoActions = `
-    <span onclick="convertAutoPackToReal('${key}',event)" title="Save as Pack" style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:4px;color:var(--muted);cursor:pointer;font-size:9px;font-weight:700;transition:color .15s;" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--muted)'">
-      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      SAVE
-    </span>`;
 
   let html = `<tr class="pack-header-row${isExpanded ? ' expanded' : ''}" data-pack="${key}" onclick="togglePackExpand('${key}',event)" style="cursor:pointer;">
     <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;position:relative;"><div class="date-chevron">${autoChevron}</div><div style="line-height:1.4;">${autoDateHtml}</div></td>
@@ -15263,11 +15184,8 @@ function renderAutoPackRows(key, packTrades, sym) {
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
     <td style="color:var(--muted);">—</td>
     <td>${autoResultBadge}</td>
-    <td style="max-width:110px;overflow:hidden;" onclick="event.stopPropagation()"><div class="pack-row-actions" style="display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .15s;">${autoActions}</div></td>
+    <td style="max-width:110px;overflow:hidden;"></td>
   </tr>`;
-
-  // ── Inline detail row (Notes / Photo / Mindset) ──
-  html += _buildPackInlineDetailRow(key, packTrades, isExpanded, colspanVal);
 
   packTrades.forEach(t => {
     const pnl      = getPnl(t);
@@ -15420,10 +15338,6 @@ function renderAutoPackRows(key, packTrades, sym) {
     Object.entries(packMap).forEach(([pid, arr]) => {
       if (arr.length < 2) { arr.forEach(t => standalone.push(t)); delete packMap[pid]; }
     });
-
-    // ── Update _lastRenderedPackMap so openPackDetail can resolve any pack ──
-    _lastRenderedPackMap = { ...packMap };
-    Object.entries(autoGroups).forEach(([key, arr]) => { _lastRenderedPackMap[key] = arr; });
 
     // ── Build render order ────────────────────────────────────────
     const addedPackIds   = new Set();
