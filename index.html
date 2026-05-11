@@ -13980,6 +13980,9 @@ function togglePackExpand(packId, e) {
 // ══════════════════════════════════════════════════════════════════
 //  OVERRIDE renderTrades to add pack support
 // ══════════════════════════════════════════════════════════════════
+// Store last-rendered pack trade map so openPackDetail can resolve auto-pack trades
+let _lastRenderedPackMap = {};
+
 const _origRenderTrades = renderTrades;
 
 renderTrades = function(skipTagRebuild) {
@@ -14090,6 +14093,15 @@ renderTrades = function(skipTagRebuild) {
       renderItems.push({ type: 'trade', trade: t });
     }
   });
+
+  // Build auto-pack groups and merge into render items
+  const { autoGroups, tradeKey } = buildAutoPackGroups(standalone.concat(
+    list.filter(t => !t.packId)
+  ));
+
+  // ── Persist pack map (real + auto) for openPackDetail lookups ──
+  _lastRenderedPackMap = { ...packMap };
+  Object.entries(autoGroups).forEach(([key, arr]) => { _lastRenderedPackMap[key] = arr; });
 
   // ── Render rows ───────────────────────────────────────────────
   let rowsHtml = '';
@@ -14268,9 +14280,19 @@ function _packSeparator(colspan) {
 
 // ── PACK DETAIL ───────────────────────────────────────────────────────────────
 // Opens a full group detail view — desktop: fills side panel, mobile: bottom sheet
-function openPackDetail(packId, e) {
+function openPackDetail(packId, e, _autoTrades) {
   if (e) e.stopPropagation();
-  const packTrades = trades.filter(t => t.packId === packId);
+
+  // Resolve pack trades — check last render map first (covers real + auto packs),
+  // then fall back to real-pack filter, then live auto-pack rebuild
+  let packTrades = _autoTrades
+    || _lastRenderedPackMap[packId]
+    || trades.filter(t => t.packId === packId);
+
+  if (!packTrades || !packTrades.length) {
+    const { autoGroups } = buildAutoPackGroups(trades);
+    packTrades = autoGroups[packId] || [];
+  }
   if (!packTrades.length) return;
 
   const sym        = getCurrencySymbol();
