@@ -8055,6 +8055,8 @@ function showTradeDetail(id) {
 
 // ── DETAIL OVERLAY ────────────────────────────────────────────────────────────
 function openDetailOverlay() {
+  // If a pack is selected in the right panel, show pack overlay instead
+  if (window._currentPackId) { openPackOverlay(window._currentPackId); return; }
   const t = trades.find(x => x.id === selectedId);
   if (!t) return;
   document.getElementById('overlay-detail-title').textContent = t.symbol + ' · ' + (t.dir||'');
@@ -14427,7 +14429,7 @@ function openPackDetail(packId, e, _autoTrades) {
           placeholder="Setup idea, reasoning, confluences…"
           style="width:100%;min-height:100px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:12px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;${packNotes?'border-left:3px solid var(--accent);':''}"
           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-          oninput="savePackField('${packId}','packNotes',this.value)">${packNotes}</textarea>
+          oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
       </div>
 
       <!-- Chart Photo -->
@@ -14453,10 +14455,11 @@ function openPackDetail(packId, e, _autoTrades) {
                ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
                ondragleave="this.style.borderColor='var(--border2)'"
                ondrop="handlePackDetailPhotoDrop(event,'${packId}')"
+               onpaste="_packDetailPastePhoto(event,'${packId}')"
                style="border:2px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;outline:none;"
                onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
                <div style="font-size:24px;margin-bottom:6px;">📸</div>
-               <div style="font-size:12px;color:var(--muted);">Click, drag & drop a chart screenshot</div>
+               <div style="font-size:12px;color:var(--muted);">Click, drag & drop, or Ctrl+V to paste a chart screenshot</div>
              </div>`
         }
       </div>
@@ -14513,6 +14516,14 @@ function handlePackDetailPhotoDrop(event, packId) {
   const file = event.dataTransfer.files[0];
   if (!file || !file.type.startsWith('image/')) return;
   uploadPackPhotoAndRefresh({ target: { files: [file] } }, packId);
+}
+
+function _packDetailPastePhoto(event, packId) {
+  const item = [...(event.clipboardData?.items||[])].find(i => i.type.startsWith('image/'));
+  if (!item) return;
+  event.preventDefault();
+  const file = item.getAsFile();
+  if (file) uploadPackPhotoAndRefresh({ target: { files: [file] } }, packId);
 }
 
 function _buildPackDetailHTML(packId, packName, packTrades, sym, d) {
@@ -14681,6 +14692,171 @@ async function savePackField(packId, field, value) {
   }
   save();
   try { await guaranteedSaveToSupabase(packTrades[0]); } catch(e) {}
+}
+
+// ── Debounced save for pack notes (avoids hammering Supabase on every keystroke) ──
+const _packNotesTimers = {};
+function savePackNoteDebounced(packId, value) {
+  clearTimeout(_packNotesTimers[packId]);
+  _packNotesTimers[packId] = setTimeout(() => savePackField(packId, 'packNotes', value), 600);
+}
+
+// ── Pack Expand Overlay ────────────────────────────────────────────────────────
+function openPackOverlay(packId) {
+  const packTrades = trades.filter(t => t.packId === packId)
+    || _lastRenderedPackMap[packId] || [];
+  if (!packTrades.length) return;
+
+  const sym        = getCurrencySymbol();
+  const packName   = packTrades[0].packName || 'Pack';
+  const totalPnl   = packTrades.reduce((s,t) => s + getPnl(t), 0);
+  const pnlColor   = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const pnlStr     = (totalPnl >= 0 ? '+'+sym : '-'+sym) + Math.abs(totalPnl).toFixed(2);
+  const packPhoto  = packTrades.find(t => t.packScreenshot)?.packScreenshot || null;
+  const packNotes  = packTrades.find(t => t.packNotes)?.packNotes || '';
+  const packEmotion   = packTrades.find(t => t.packEmotion)?.packEmotion || '';
+  const packConf   = packTrades.find(t => t.packConfidence)?.packConfidence || '';
+  const safeId     = packId.replace(/[^a-zA-Z0-9_-]/g,'_');
+  const emotions   = ['😤','😰','😊','😎','🤔','😴','😡','🥳','😬','🙏'];
+
+  const photoSection = packPhoto
+    ? `<img src="${packPhoto}" alt="chart" style="width:100%;height:100%;object-fit:contain;display:block;cursor:zoom-in;" onclick="openPackPhotoFullscreen('${packId}')" title="Click to fullscreen">
+       <div style="position:absolute;top:10px;right:10px;display:flex;gap:6px;">
+         <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px;backdrop-filter:blur(8px);background:rgba(0,0,0,.5);border-color:rgba(255,255,255,.2);color:#fff;" onclick="event.stopPropagation();document.getElementById('pack-ov-photo-input-${safeId}').click()">&#x21BA; Replace</button>
+         <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px;backdrop-filter:blur(8px);background:rgba(0,0,0,.5);border-color:rgba(255,255,255,.2);color:#ff6b6b;" onclick="event.stopPropagation();savePackField('${packId}','packScreenshot',null).then(()=>openPackOverlay('${packId}'))">&#x2715;</button>
+       </div>`
+    : `<div tabindex="0" id="pack-ov-dropzone-${safeId}"
+         onclick="document.getElementById('pack-ov-photo-input-${safeId}').click()"
+         ondragover="event.preventDefault();this.style.background='var(--surface3)'"
+         ondragleave="this.style.background='transparent'"
+         ondrop="_packOvHandleDrop(event,'${packId}','${safeId}')"
+         style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;outline:none;gap:12px;">
+         <div style="font-size:48px;opacity:.3;">📸</div>
+         <div style="font-size:14px;color:var(--muted);font-weight:600;">Click, drag & drop, or Ctrl+V to paste chart screenshot</div>
+       </div>`;
+
+  document.getElementById('overlay-detail-title').textContent = '📦 ' + packName + '  ·  ' + pnlStr;
+
+  document.getElementById('trade-detail-overlay-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 380px;height:100%;overflow:hidden;">
+
+      <!-- LEFT: Chart photo -->
+      <div style="background:var(--surface2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--border);">
+        ${photoSection}
+        <input type="file" id="pack-ov-photo-input-${safeId}" accept="image/*" style="display:none;"
+          onchange="_packOvUpload(event,'${packId}','${safeId}')">
+      </div>
+
+      <!-- RIGHT: Notes + Mindset -->
+      <div style="overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;">
+
+        <!-- Notes -->
+        <div>
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">📝 Group Notes</div>
+          <textarea id="pack-ov-notes-${safeId}"
+            placeholder="Setup idea, reasoning, confluences…"
+            style="width:100%;min-height:120px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
+        </div>
+
+        <!-- Mood -->
+        <div>
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">🧠 Mindset</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+            ${emotions.map(em => `<span
+              onclick="savePackField('${packId}','packEmotion','${em}');document.querySelectorAll('.pkov-emo-${safeId}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
+              class="pkov-emo-${safeId}"
+              style="font-size:22px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${packEmotion===em?'2px solid var(--accent)':'none'};transform:${packEmotion===em?'scale(1.12)':'scale(1)'};">${em}</span>`).join('')}
+          </div>
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">
+            Confidence <span style="color:var(--accent);font-weight:700;" id="pack-ov-conf-${safeId}">${packConf||'—'}/10</span>
+          </div>
+          <input type="range" min="1" max="10" value="${packConf||5}" style="width:100%;accent-color:var(--accent);"
+            oninput="document.getElementById('pack-ov-conf-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-top:2px;"><span>Low</span><span>High</span></div>
+        </div>
+
+        <!-- Positions list -->
+        <div>
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">Positions (${packTrades.length})</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            ${packTrades.map(t => {
+              const pnl = getPnl(t); const res = getResult(t);
+              const pc = res==='be'?'var(--yellow)':pnl>=0?'var(--green)':'var(--red)';
+              const ps = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
+              return `<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;border:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:9px;">${t.dir}</span>
+                    <span style="font-size:11px;color:var(--muted);">${t.lots||'—'} lots</span>
+                  </div>
+                  <span style="font-size:13px;font-weight:800;color:${pc};">${ps}</span>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+                  Entry <b style="color:var(--text);">${t.entry||'—'}</b> → Exit <b style="color:var(--text);">${t.exit||'—'}</b>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+
+      </div>
+    </div>`;
+
+  // Wire up Ctrl+V paste on the dropzone
+  _packOvSetupPaste(packId, safeId);
+
+  // Show the overlay
+  const ov   = document.getElementById('trade-detail-overlay');
+  const card = document.getElementById('trade-detail-overlay-card');
+  ov.style.display = 'flex';
+  requestAnimationFrame(() => {
+    ov.style.background = 'rgba(0,0,0,.6)';
+    ov.style.backdropFilter = 'blur(4px)';
+    card.style.transform = 'scale(1) translateY(0)';
+    card.style.opacity = '1';
+  });
+}
+
+function _packOvSetupPaste(packId, safeId) {
+  // Remove any previous listener to avoid duplicates
+  if (window._packOvPasteHandler) {
+    document.removeEventListener('paste', window._packOvPasteHandler);
+  }
+  window._packOvPasteHandler = function(e) {
+    // Only active while the overlay is open
+    const ov = document.getElementById('trade-detail-overlay');
+    if (!ov || ov.style.display !== 'flex') return;
+    const item = [...(e.clipboardData?.items||[])].find(i => i.type.startsWith('image/'));
+    if (!item) return;
+    e.preventDefault();
+    const file = item.getAsFile();
+    if (!file) return;
+    _packOvUpload({ target: { files: [file] } }, packId, safeId);
+  };
+  document.addEventListener('paste', window._packOvPasteHandler);
+}
+
+function _packOvHandleDrop(event, packId, safeId) {
+  event.preventDefault();
+  const file = event.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  _packOvUpload({ target: { files: [file] } }, packId, safeId);
+}
+
+function _packOvUpload(event, packId, safeId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(ev) {
+    await savePackField(packId, 'packScreenshot', ev.target.result);
+    // Also refresh the right-panel detail and re-open overlay
+    openPackDetail(packId);
+    openPackOverlay(packId);
+    toast('Photo saved ✓', 'success');
+  };
+  reader.readAsDataURL(file);
 }
 
 function uploadPackPhoto(event, packId, safeId) {
