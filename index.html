@@ -855,7 +855,9 @@
   .cal-cell:not(.empty):hover { background: var(--surface2); }
   .cal-cell.selected-day { outline: 2px solid var(--accent) !important; outline-offset: -2px; border-radius: 10px; }
   .cal-cell.weekend-cell { /* opacity handled inline */ }
-  .cal-cell.today { outline: none; background: var(--surface) !important; border-radius: 10px; }
+  .cal-cell.today { outline: none; border-radius: 10px; }
+  /* Today with no trades keeps surface bg */
+  .cal-cell.today:not(.has-win):not(.has-loss) { background: var(--surface); }
   .cal-cell.today .cal-day-num {
     background: var(--accent);
     color: #fff;
@@ -869,7 +871,8 @@
     line-height: 1;
     padding: 0;
   }
-  .cal-cell.today .cal-pnl, .cal-cell.today .cal-trades { color: var(--text) !important; }
+  .cal-cell.today.has-win .cal-pnl, .cal-cell.today.has-win .cal-trades { color: var(--green) !important; }
+  .cal-cell.today.has-loss .cal-pnl, .cal-cell.today.has-loss .cal-trades { color: var(--red) !important; }
   .cal-cell.has-win  { background: rgba(0,255,187,0.18); box-shadow: inset 0 0 0 2px rgba(0,255,187,0.55), inset 0 3px 0 rgba(0,255,187,0.7); }
   .cal-cell.has-loss { background: rgba(255,59,92,0.18); box-shadow: inset 0 0 0 2px rgba(255,59,92,0.55), inset 0 3px 0 rgba(255,59,92,0.7); }
   .cal-cell.has-win:hover  { background: rgba(0,255,187,0.28); }
@@ -894,25 +897,16 @@
 
   /* ── Monthly stats strip ── */
   #cal-month-stats {
-    display: flex;
-    align-items: stretch;
-    gap: 10px;
-    padding: 10px 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    flex-shrink: 0;
+    /* lives inside the nav bar — no bg/border/padding of its own */
   }
   .cal-stat-chip {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    padding: 8px 16px;
-    border-radius: 10px;
-    font-size: 12px;
-    font-weight: 700;
+    gap: 1px;
+    padding: 5px 14px;
+    border-radius: 8px;
     background: var(--surface2);
     border: 1px solid var(--border);
     white-space: nowrap;
@@ -920,16 +914,16 @@
     text-align: center;
   }
   .cal-stat-chip .chip-label {
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--muted);
   }
   .cal-stat-chip .chip-val {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 900;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
   }
   /* cal-stat-chip color variants removed — all chips use uniform surface style */
 
@@ -1575,20 +1569,8 @@
     }
     #cal-view-month { padding: 5px 10px !important; font-size: 11px !important; }
     #cal-view-year, #cal-view-alltime { display: none !important; }
-    /* Stats strip: compact on mobile */
-    #cal-month-stats {
-      padding: 5px 8px !important;
-      gap: 5px !important;
-      border-radius: 10px !important;
-      flex-shrink: 0 !important;
-    }
-    .cal-stat-chip {
-      padding: 4px 8px !important;
-      border-radius: 7px !important;
-      gap: 4px !important;
-    }
-    .cal-stat-chip .chip-label { font-size: 8px !important; }
-    .cal-stat-chip .chip-val { font-size: 11px !important; }
+    /* Stats strip hidden on mobile (nav bar is too narrow) */
+    #cal-month-stats { display: none !important; }
     /* Cal cells — fill space equally, no min-height */
     .cal-cell {
       min-height: 0 !important;
@@ -2269,6 +2251,82 @@
 
 <!-- APP SHELL -->
 <div id="app-root" style="display:none;width:100%;height:100%;position:fixed;inset:0;">
+<!-- ── LOADING SCREEN ──────────────────────────────────────────── -->
+<style>
+  @keyframes tl-pulse {
+    0%,100% { transform:scale(1);   box-shadow:0 0 30px rgba(99,102,241,0.35); }
+    50%      { transform:scale(1.08);box-shadow:0 0 55px rgba(99,102,241,0.6);  }
+  }
+  @keyframes tl-shimmer {
+    0%   { transform:translateX(-200%); }
+    100% { transform:translateX(400%);  }
+  }
+  #tradelog-loader {
+    position:fixed;inset:0;z-index:99999;
+    background:var(--bg);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+    /* start fully visible */
+    opacity:1;
+    visibility:visible;
+    pointer-events:all;
+    transition:opacity .4s ease, visibility .4s ease;
+  }
+  #tradelog-loader.tl-hidden {
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+</style>
+
+<div id="tradelog-loader">
+  <!-- Logo icon -->
+  <div style="
+    width:56px;height:56px;
+    background:linear-gradient(135deg,var(--accent),#818cf8);
+    border-radius:18px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 40px rgba(99,102,241,0.4);
+    animation:tl-pulse 1.8s ease-in-out infinite;
+    flex-shrink:0;
+  ">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    </svg>
+  </div>
+  <!-- App name -->
+  <div style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.4px;">TradeLog</div>
+  <!-- Shimmer bar -->
+  <div style="width:120px;height:3px;background:var(--surface2,#1a2235);border-radius:99px;overflow:hidden;position:relative;">
+    <div style="
+      position:absolute;inset-y:0;left:0;width:45%;
+      background:linear-gradient(90deg,transparent,var(--accent),#818cf8,transparent);
+      border-radius:99px;
+      animation:tl-shimmer 1.3s ease-in-out infinite;
+    "></div>
+  </div>
+</div>
+
+<script>
+  // ── Failsafe: force-hide loader after 8 s no matter what ──
+  window._tlLoaderTimer = setTimeout(function() {
+    var l = document.getElementById('tradelog-loader');
+    if (l) l.classList.add('tl-hidden');
+  }, 8000);
+
+  // ── Central hide function — call this from anywhere ──
+  window.hideTradelogLoader = function() {
+    clearTimeout(window._tlLoaderTimer);
+    var l = document.getElementById('tradelog-loader');
+    if (!l || l.classList.contains('tl-hidden')) return;
+    // Two rAFs: first lets the app paint, second lets the browser composite it
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        l.classList.add('tl-hidden');
+      });
+    });
+  };
+</script>
+
 <div id="app-shell">
 
 <!-- ── SIDEBAR ── -->
@@ -3366,29 +3424,26 @@
 
 <div class="page" id="page-calendar" style="padding:var(--page-py) var(--page-px);box-sizing:border-box;background:var(--bg);display:flex;flex-direction:column;gap:12px;overflow:hidden;height:100%;position:relative;">
 
-  <!-- TOP NAV BAR: separate rounded container -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;flex-shrink:0;">
-    <div style="display:flex;align-items:center;gap:12px;">
+  <!-- TOP NAV BAR with inline stats -->
+  <div style="display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;flex-shrink:0;">
+    <!-- Month nav -->
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
       <button id="cal-nav-prev" class="cal-nav-btn" onclick="calNav(-1)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--text);min-width:200px;text-align:center;" id="cal-month-label">March 2026</div>
+      <div style="font-size:18px;font-weight:800;letter-spacing:-0.5px;color:var(--text);min-width:140px;text-align:center;" id="cal-month-label">March 2026</div>
       <button id="cal-nav-next" class="cal-nav-btn" onclick="calNav(1)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div style="display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;border:1px solid var(--border);">
-        <button id="cal-view-month"   onclick="setCalView('month')"   style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;">Month</button>
-        <button id="cal-view-year"    onclick="setCalView('year')"    style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Year</button>
-        <button id="cal-view-alltime" onclick="setCalView('alltime')" style="padding:6px 18px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">All Time</button>
-      </div>
+    <!-- Stats inline — filled by renderCalendar -->
+    <div id="cal-month-stats" style="display:none;flex:1;align-items:center;gap:8px;"></div>
+    <!-- View switcher -->
+    <div style="flex-shrink:0;display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;border:1px solid var(--border);">
+      <button id="cal-view-month"   onclick="setCalView('month')"   style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;">Month</button>
+      <button id="cal-view-year"    onclick="setCalView('year')"    style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Year</button>
+      <button id="cal-view-alltime" onclick="setCalView('alltime')" style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">All Time</button>
     </div>
-  </div>
-
-  <!-- MONTHLY STATS STRIP -->
-  <div id="cal-month-stats" style="display:none;">
-    <!-- filled by renderCalendar -->
   </div>
 
   <!-- BODY ROW: calendar grid + side panel, both rounded -->
@@ -3776,6 +3831,7 @@ Examples of accepted formats:
         <div>
           <div style="font-size:17px;font-weight:900;color:var(--text);letter-spacing:-0.4px;margin-bottom:5px;">MT5 Live Auto-Sync</div>
           <div style="font-size:13px;color:var(--text2);line-height:1.6;">Install our Expert Advisor on your MT5 terminal and every closed trade syncs to TradeLog automatically — no manual exports, no copy-paste. Just trade and your journal updates itself.</div>
+          <div style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--yellow);">⏱ Trades may take up to 5 minutes to appear in your journal after closing in MT5.</div>
         </div>
       </div>
 
@@ -5361,6 +5417,8 @@ function showAuthScreen() {
   const app  = document.getElementById('app-root');
   if (auth) auth.style.display = 'flex';
   if (app)  app.style.display  = 'none';
+  // Hide loader when showing auth (no session)
+  window.hideTradelogLoader && window.hideTradelogLoader();
 }
 
 // ── LOAD ALL DATA FROM SUPABASE ───────────────────────────────────────────────
@@ -5566,6 +5624,9 @@ async function initApp(user) {
 
   // Start midnight auto-refresh — goals/greeting auto-reset at day boundary
   scheduleMidnightRefresh();
+
+  // Hide the loading screen now that everything is rendered
+  window.hideTradelogLoader();
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
@@ -10575,7 +10636,7 @@ function renderCalendar() {
     const pnlChipClass = monthPnl >= 0 ? 'pnl-pos' : 'pnl-neg';
     const wr = winDays + lossDays > 0 ? Math.round(winDays / (winDays + lossDays) * 100) : 0;
     if (monthDays.length > 0) {
-      statsEl.style.display = 'flex';
+      statsEl.style.display = 'flex'; statsEl.style.alignItems = 'center';
       statsEl.innerHTML = `
         <div class="cal-stat-chip ${pnlChipClass}">
           <span class="chip-label">Month P&L</span>
