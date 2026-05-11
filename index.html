@@ -4986,9 +4986,7 @@ async function backgroundSync() {
         pnl: r.pnl, commission: r.commission, swap: r.swap || 0, netPnl: r.net_pnl, r: r.r,
         result: r.result, emotion: r.emotion, confidence: r.confidence,
         notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || [],
-        packId: r.pack_id || undefined, packName: r.pack_name || undefined,
-        packNotes: r.pack_notes || undefined, packScreenshot: r.pack_screenshot || undefined,
-        packEmotion: r.pack_emotion || undefined, packConfidence: r.pack_confidence || undefined
+        packId: r.pack_id || undefined, packName: r.pack_name || undefined
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
       try {
@@ -5553,9 +5551,7 @@ async function loadAllFromSupabase() {
         pnl: r.pnl, commission: r.commission, swap: r.swap || 0, netPnl: r.net_pnl, r: r.r,
         result: r.result, emotion: r.emotion, confidence: r.confidence,
         notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || [],
-        packId: r.pack_id || undefined, packName: r.pack_name || undefined,
-        packNotes: r.pack_notes || undefined, packScreenshot: r.pack_screenshot || undefined,
-        packEmotion: r.pack_emotion || undefined, packConfidence: r.pack_confidence || undefined
+        packId: r.pack_id || undefined, packName: r.pack_name || undefined
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
     }
@@ -5650,9 +5646,7 @@ async function saveTradeToSupabase(t) {
     swap: t.swap || 0, net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
     confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
     strategies: t.strategies || [],
-    pack_id: t.packId || null, pack_name: t.packName || null,
-    pack_notes: t.packNotes || null, pack_screenshot: t.packScreenshot || null,
-    pack_emotion: t.packEmotion || null, pack_confidence: t.packConfidence || null
+    pack_id: t.packId || null, pack_name: t.packName || null
   };
   const { error } = await sb.from('trades').upsert(row);
   if (error) { console.error('TradeLog: upsert error', error); throw error; }
@@ -15070,9 +15064,7 @@ function renderPackRows(packId, packTrades, sym) {
   const pnlColor   = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
   const pnlStr     = (totalPnl>=0?'+'+sym:'-'+sym)+Math.abs(totalPnl).toFixed(2);
   const newestDate = packTrades.reduce((l,t) => t.date>l?t.date:l, packTrades[0]?.date||'');
-  // Use child trade results (respects Auto-BE overrides) — majority wins; all-BE → BE
-  const beCount    = packTrades.filter(t => getResult(t) === 'be').length;
-  const packResult = beCount === packTrades.length ? 'be' : totalPnl>0?'win':totalPnl<0?'loss':'be';
+  const packResult = totalPnl>0?'win':totalPnl<0?'loss':'be';
   const resultBg   = packResult==='win'?'var(--green-bg)':packResult==='loss'?'var(--red-bg)':'rgba(245,158,11,.12)';
   const resultColor= packResult==='win'?'var(--green)':packResult==='loss'?'var(--red)':'var(--yellow)';
   const resultLabel= packResult==='win'?'WIN':packResult==='loss'?'LOSS':'BE';
@@ -15148,7 +15140,7 @@ function _buildPackInlineDetailRow(packId, packTrades, isExpanded, colspan) {
             placeholder="Setup idea, reasoning, confluences…"
             style="width:100%;min-height:100px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:12px;padding:10px;resize:vertical;outline:none;line-height:1.6;transition:border-color .2s;box-sizing:border-box;"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-            oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
+            oninput="savePackField('${packId}','packNotes',this.value)">${packNotes}</textarea>
         </div>
 
         <!-- PHOTO -->
@@ -15485,12 +15477,9 @@ function renderAutoPackRows(key, packTrades, sym) {
   const pnlColor    = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
   const pnlStr      = (totalPnl >= 0 ? '+' + sym : '-' + sym) + Math.abs(totalPnl).toFixed(2);
   const packResult  = totalPnl > 0 ? 'win' : totalPnl < 0 ? 'loss' : 'be';
-  // Override: if all child trades are BE (e.g. Auto-BE applied), show BE
-  const autoBeCount = packTrades.filter(t => getResult(t) === 'be').length;
-  const packResultFinal = autoBeCount === packTrades.length ? 'be' : packResult;
-  const resultBg    = packResultFinal === 'win' ? 'var(--green-bg)' : packResultFinal === 'loss' ? 'var(--red-bg)' : 'rgba(245,158,11,.12)';
-  const resultColor = packResultFinal === 'win' ? 'var(--green)' : packResultFinal === 'loss' ? 'var(--red)' : 'var(--yellow)';
-  const resultLabel = packResultFinal === 'win' ? 'WIN' : packResultFinal === 'loss' ? 'LOSS' : 'BE';
+  const resultBg    = packResult === 'win' ? 'var(--green-bg)' : packResult === 'loss' ? 'var(--red-bg)' : 'rgba(245,158,11,.12)';
+  const resultColor = packResult === 'win' ? 'var(--green)' : packResult === 'loss' ? 'var(--red)' : 'var(--yellow)';
+  const resultLabel = packResult === 'win' ? 'WIN' : packResult === 'loss' ? 'LOSS' : 'BE';
   const colspanVal  = packSelectMode ? 11 : 10;
   const newestDate  = latest;
 
