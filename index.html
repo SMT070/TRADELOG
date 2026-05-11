@@ -2263,9 +2263,8 @@
   }
   #tradelog-loader {
     position:fixed;inset:0;z-index:99999;
-    background:var(--bg);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
-    /* start fully visible */
+    background:#05080f;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
     opacity:1;
     visibility:visible;
     pointer-events:all;
@@ -2281,25 +2280,25 @@
 <div id="tradelog-loader">
   <!-- Logo icon -->
   <div style="
-    width:56px;height:56px;
-    background:linear-gradient(135deg,var(--accent),#818cf8);
-    border-radius:18px;
+    width:64px;height:64px;
+    background:linear-gradient(135deg,#6366f1,#818cf8);
+    border-radius:20px;
     display:flex;align-items:center;justify-content:center;
-    box-shadow:0 0 40px rgba(99,102,241,0.4);
+    box-shadow:0 0 50px rgba(99,102,241,0.55), 0 8px 32px rgba(99,102,241,0.3);
     animation:tl-pulse 1.8s ease-in-out infinite;
     flex-shrink:0;
   ">
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
     </svg>
   </div>
   <!-- App name -->
-  <div style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.4px;">TradeLog</div>
+  <div style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.4px;color:#ffffff;text-shadow:0 1px 20px rgba(99,102,241,0.6);">TradeLog</div>
   <!-- Shimmer bar -->
-  <div style="width:120px;height:3px;background:var(--surface2,#1a2235);border-radius:99px;overflow:hidden;position:relative;">
+  <div style="width:100px;height:3px;background:rgba(255,255,255,0.12);border-radius:99px;overflow:hidden;position:relative;">
     <div style="
       position:absolute;inset-y:0;left:0;width:45%;
-      background:linear-gradient(90deg,transparent,var(--accent),#818cf8,transparent);
+      background:linear-gradient(90deg,transparent,#6366f1,#a5b4fc,transparent);
       border-radius:99px;
       animation:tl-shimmer 1.3s ease-in-out infinite;
     "></div>
