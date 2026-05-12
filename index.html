@@ -15115,7 +15115,6 @@ function uploadPackPhotoAndRefresh(event, packId) {
       const realPackId = await savePackField(packId, 'packScreenshot', dataUrl);
       renderTrades();
       const targetId = realPackId || packId;
-      // Always update _pePackId and _currentPackId to the real id after save
       if (inEditMode) {
         window._pePackId = targetId;
         window._currentPackId = targetId;
@@ -15622,7 +15621,7 @@ function renderPackRows(packId, packTrades, sym) {
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
     <td style="color:${totalCommission>0?'var(--red)':'var(--muted)'};font-family:var(--mono);font-weight:600;">${totalCommission>0?sym+totalCommission.toFixed(2):'—'}</td>
     <td>${resultBadge}</td>
-    <td data-col="tags" style="max-width:110px;" onclick="event.stopPropagation()"><div class="pack-row-actions" style="display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .15s;">${actions}</div></td>
+    <td data-col="tags" style="max-width:110px;"></td>
   </tr>`;
 
   packTrades.forEach(t => {
@@ -16088,7 +16087,7 @@ function renderAutoPackRows(key, packTrades, sym) {
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
     <td style="color:${totalCommission>0?'var(--red)':'var(--muted)'};font-family:var(--mono);font-weight:600;">${totalCommission>0?sym+totalCommission.toFixed(2):'—'}</td>
     <td>${resultBadge}</td>
-    <td data-col="tags" style="max-width:110px;" onclick="event.stopPropagation()"><div class="pack-row-actions" style="display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .15s;">${actions}</div></td>
+    <td data-col="tags" style="max-width:110px;"></td>
   </tr>`;
 
   // Child rows — use shared builder so styling is 100% consistent with real packs
