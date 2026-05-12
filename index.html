@@ -2263,7 +2263,7 @@
   }
   #tradelog-loader {
     position:fixed;inset:0;z-index:99999;
-    background:#05080f;
+    background:var(--bg);
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
     opacity:1;
     visibility:visible;
@@ -2293,9 +2293,9 @@
     </svg>
   </div>
   <!-- App name -->
-  <div style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.4px;color:#ffffff;text-shadow:0 1px 20px rgba(99,102,241,0.6);">TradeLog</div>
+  <div style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.4px;color:var(--text);text-shadow:0 1px 20px rgba(99,102,241,0.6);">TradeLog</div>
   <!-- Shimmer bar -->
-  <div style="width:100px;height:3px;background:rgba(255,255,255,0.12);border-radius:99px;overflow:hidden;position:relative;">
+  <div style="width:100px;height:3px;background:var(--border);border-radius:99px;overflow:hidden;position:relative;">
     <div style="
       position:absolute;inset-y:0;left:0;width:45%;
       background:linear-gradient(90deg,transparent,#6366f1,#a5b4fc,transparent);
@@ -8194,8 +8194,9 @@ function showTradeDetail(id) {
 
 // ── DETAIL OVERLAY ────────────────────────────────────────────────────────────
 function openDetailOverlay() {
-  // If a pack is selected in the right panel, show pack overlay instead
-  if (window._currentPackId) { openPackOverlay(window._currentPackId); return; }
+  // If a pack header is selected (no individual trade selected), show pack overlay
+  if (window._currentPackId && !selectedId) { openPackOverlay(window._currentPackId); return; }
+  // If a child trade is selected (even inside a pack), open full single-trade overlay
   const t = trades.find(x => x.id === selectedId);
   if (!t) return;
   document.getElementById('overlay-detail-title').textContent = t.symbol + ' · ' + (t.dir||'');
@@ -11038,6 +11039,14 @@ document.addEventListener('paste', e => {
     return;
   }
 
+  // Pack inline photo drop zone
+  const packPhotoZone = e.target.closest('[data-pack-id]');
+  if (packPhotoZone && packPhotoZone.dataset.packId) {
+    e.preventDefault();
+    _packInlinePastePhoto(e, packPhotoZone.dataset.packId);
+    return;
+  }
+
   // If Add Trade page is active → attach to form screenshot
   const addPage = document.getElementById('page-add');
   if (addPage && addPage.classList.contains('active')) {
@@ -11048,6 +11057,13 @@ document.addEventListener('paste', e => {
 
   // Otherwise attach to selected trade in trades page
   if (selectedId) {
+    // If the selected trade belongs to an expanded pack, paste to the pack photo
+    const selTrade = trades.find(x => x.id === selectedId);
+    if (selTrade && selTrade.packId) {
+      e.preventDefault();
+      uploadPackPhotoInline({ target: { files: [imgItem.getAsFile()] } }, selTrade.packId);
+      return;
+    }
     e.preventDefault();
     saveTradePhoto(imgItem.getAsFile(), selectedId);
   }
@@ -14628,15 +14644,21 @@ function openPackDetail(packId, e, _autoTrades) {
   }
 }
 
-// Restore panel header buttons when a normal trade is selected
+// Restore panel header buttons when a normal (non-pack-header) trade is selected
 const _origShowTradeDetail = showTradeDetail;
 showTradeDetail = function(id) {
-  window._currentPackId = null;
-  document.querySelector('#trade-detail-panel .panel-title').textContent = 'Trade Detail';
-  const editBtn   = document.getElementById('detail-edit-btn');
-  const deleteBtn = document.getElementById('detail-delete-btn');
-  if (editBtn)   editBtn.style.display = '';
-  if (deleteBtn) deleteBtn.style.display = '';
+  // If this trade belongs to a pack and the pack is expanded in the panel,
+  // keep _currentPackId so the expand button still opens the group overlay.
+  // Only clear it if the trade has no packId (standalone trade).
+  const t = trades.find(x => x.id === id);
+  if (!t || !t.packId) {
+    window._currentPackId = null;
+    document.querySelector('#trade-detail-panel .panel-title').textContent = 'Trade Detail';
+    const editBtn   = document.getElementById('detail-edit-btn');
+    const deleteBtn = document.getElementById('detail-delete-btn');
+    if (editBtn)   editBtn.style.display = '';
+    if (deleteBtn) deleteBtn.style.display = '';
+  }
   _origShowTradeDetail(id);
 };
 
@@ -14837,9 +14859,9 @@ async function savePackField(packId, field, value) {
     trades[anchorIdx][field] = value;
   }
   save();
-  // Sync the anchor trade to Supabase
+  // Sync anchor to Supabase — guaranteed save so fields survive a reload
   const anchor = packTrades.reduce((a, t) => trades.indexOf(t) < trades.indexOf(a) ? t : a, packTrades[0]);
-  try { await guaranteedSaveToSupabase(anchor); } catch(e) {}
+  try { await guaranteedSaveToSupabase(anchor); } catch(e) { console.warn('savePackField sync failed', e); }
 }
 
 // ── Debounced save for pack notes (avoids hammering Supabase on every keystroke) ──
@@ -15064,10 +15086,15 @@ function renderPackRows(packId, packTrades, sym) {
   const pnlColor   = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
   const pnlStr     = (totalPnl>=0?'+'+sym:'-'+sym)+Math.abs(totalPnl).toFixed(2);
   const newestDate = packTrades.reduce((l,t) => t.date>l?t.date:l, packTrades[0]?.date||'');
-  const packResult = totalPnl>0?'win':totalPnl<0?'loss':'be';
-  const resultBg   = packResult==='win'?'var(--green-bg)':packResult==='loss'?'var(--red-bg)':'rgba(245,158,11,.12)';
-  const resultColor= packResult==='win'?'var(--green)':packResult==='loss'?'var(--red)':'var(--yellow)';
-  const resultLabel= packResult==='win'?'WIN':packResult==='loss'?'LOSS':'BE';
+  // Derive result from children so stored 'be' result and BE-threshold are respected
+  const _childResults = packTrades.map(t => getResult(t));
+  const _allBe   = _childResults.every(r => r === 'be');
+  const _anyWin  = _childResults.some(r => r === 'win');
+  const _anyLoss = _childResults.some(r => r === 'loss');
+  const packResult  = _allBe ? 'be' : (_anyWin && !_anyLoss) ? 'win' : (_anyLoss && !_anyWin) ? 'loss' : totalPnl >= 0 ? 'win' : 'loss';
+  const resultBg    = packResult==='win'?'var(--green-bg)':packResult==='loss'?'var(--red-bg)':'rgba(245,158,11,.12)';
+  const resultColor = packResult==='win'?'var(--green)':packResult==='loss'?'var(--red)':'var(--yellow)';
+  const resultLabel = packResult==='win'?'WIN':packResult==='loss'?'LOSS':'BE';
   const colspanVal = packSelectMode ? 11 : 10;
   const safePackName = packName.replace(/'/g,"\\'");
 
@@ -15123,10 +15150,13 @@ function _buildPackInlineDetailRow(packId, packTrades, isExpanded, colspan) {
            ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
            ondragleave="this.style.borderColor='var(--border2)'"
            ondrop="handlePackPhotoDrop(event,'${packId}','${safeId}')"
-           style="border:2px dashed var(--border2);border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:border-color .15s;max-width:340px;"
+           onpaste="_packInlinePastePhoto(event,'${packId}')"
+           data-pack-id="${packId}"
+           tabindex="0"
+           style="border:2px dashed var(--border2);border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:border-color .15s;max-width:340px;outline:none;"
            onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
          <div style="font-size:24px;margin-bottom:6px;">📸</div>
-         <div style="font-size:11px;color:var(--muted);">Click or drag & drop a chart screenshot</div>
+         <div style="font-size:11px;color:var(--muted);">Click, drag & drop, or Ctrl+V to paste</div>
        </div>`;
 
   return `<tr class="pack-inline-detail-row${isExpanded?'':' hidden'}" data-pack="${packId}" onclick="event.stopPropagation()" style="background:var(--surface);">
@@ -15140,7 +15170,7 @@ function _buildPackInlineDetailRow(packId, packTrades, isExpanded, colspan) {
             placeholder="Setup idea, reasoning, confluences…"
             style="width:100%;min-height:100px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:12px;padding:10px;resize:vertical;outline:none;line-height:1.6;transition:border-color .2s;box-sizing:border-box;"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-            oninput="savePackField('${packId}','packNotes',this.value)">${packNotes}</textarea>
+            oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
         </div>
 
         <!-- PHOTO -->
@@ -15177,6 +15207,14 @@ function _buildPackInlineDetailRow(packId, packTrades, isExpanded, colspan) {
       </div>
     </td>
   </tr>`;
+}
+
+function _packInlinePastePhoto(event, packId) {
+  const item = [...(event.clipboardData?.items||[])].find(i => i.type.startsWith('image/'));
+  if (!item) return;
+  event.preventDefault();
+  const file = item.getAsFile();
+  if (file) uploadPackPhotoInline({ target: { files: [file] } }, packId);
 }
 
 // Upload photo from inline row — saves then re-renders so photo appears immediately
@@ -15476,7 +15514,11 @@ function renderAutoPackRows(key, packTrades, sym) {
   const isExpanded  = packExpandedIds.has(key);
   const pnlColor    = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
   const pnlStr      = (totalPnl >= 0 ? '+' + sym : '-' + sym) + Math.abs(totalPnl).toFixed(2);
-  const packResult  = totalPnl > 0 ? 'win' : totalPnl < 0 ? 'loss' : 'be';
+  const _autoChildResults = packTrades.map(t => getResult(t));
+  const _autoAllBe   = _autoChildResults.every(r => r === 'be');
+  const _autoAnyWin  = _autoChildResults.some(r => r === 'win');
+  const _autoAnyLoss = _autoChildResults.some(r => r === 'loss');
+  const packResult  = _autoAllBe ? 'be' : (_autoAnyWin && !_autoAnyLoss) ? 'win' : (_autoAnyLoss && !_autoAnyWin) ? 'loss' : totalPnl >= 0 ? 'win' : 'loss';
   const resultBg    = packResult === 'win' ? 'var(--green-bg)' : packResult === 'loss' ? 'var(--red-bg)' : 'rgba(245,158,11,.12)';
   const resultColor = packResult === 'win' ? 'var(--green)' : packResult === 'loss' ? 'var(--red)' : 'var(--yellow)';
   const resultLabel = packResult === 'win' ? 'WIN' : packResult === 'loss' ? 'LOSS' : 'BE';
