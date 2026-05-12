@@ -11226,7 +11226,7 @@ document.addEventListener('paste', e => {
   }
   if (!imgItem) return;
 
-  // If pack overlay is open, let _packOvPasteHandler handle it — don't interfere
+  // If pack OVERLAY (full-screen) is open, let _packOvPasteHandler handle it — don't interfere
   const ov = document.getElementById('trade-detail-overlay');
   if (ov && ov.style.display === 'flex' && window._currentPackId) return;
 
@@ -11246,9 +11246,28 @@ document.addEventListener('paste', e => {
     return;
   }
 
-  // Ctrl+V anywhere on trades page — if exactly one pack is expanded, paste into right panel
   const tradePage = document.getElementById('page-trades');
-  if (tradePage && tradePage.classList.contains('active') && packExpandedIds.size === 1) {
+  const onTrades = tradePage && tradePage.classList.contains('active');
+
+  // Pack header selected (side panel showing group detail, no individual trade selected)
+  // → paste saves to the pack's packScreenshot on Supabase
+  if (onTrades && window._currentPackId && !selectedId) {
+    e.preventDefault();
+    uploadPackPhotoAndRefresh({ target: { files: [imgItem.getAsFile()] } }, window._currentPackId);
+    return;
+  }
+
+  // A child trade (or any trade) is selected → paste saves to that trade's own screenshot
+  // This is identical to the single-trade behaviour — saves to Supabase via saveTradePhoto
+  if (onTrades && selectedId) {
+    e.preventDefault();
+    saveTradePhoto(imgItem.getAsFile(), selectedId);
+    return;
+  }
+
+  // Ctrl+V anywhere on trades page — if exactly one pack is expanded and nothing selected,
+  // paste into the pack's right panel photo
+  if (onTrades && packExpandedIds.size === 1 && !selectedId) {
     const expandedPackId = [...packExpandedIds][0];
     e.preventDefault();
     uploadPackPhotoAndRefresh({ target: { files: [imgItem.getAsFile()] } }, expandedPackId);
@@ -11263,21 +11282,8 @@ document.addEventListener('paste', e => {
     return;
   }
 
-  // Otherwise attach to selected trade in trades page
+  // Fallback: attach to selected trade anywhere
   if (selectedId) {
-    const selTrade = trades.find(x => x.id === selectedId);
-    // Find which pack this trade belongs to — real pack (packId) or auto-pack (lastRenderedPackMap)
-    let packIdForPaste = selTrade?.packId || null;
-    if (!packIdForPaste && _lastRenderedPackMap) {
-      for (const [pid, ptrades] of Object.entries(_lastRenderedPackMap)) {
-        if (ptrades.some(t => t.id === selectedId)) { packIdForPaste = pid; break; }
-      }
-    }
-    if (packIdForPaste) {
-      e.preventDefault();
-      uploadPackPhotoInline({ target: { files: [imgItem.getAsFile()] } }, packIdForPaste);
-      return;
-    }
     e.preventDefault();
     saveTradePhoto(imgItem.getAsFile(), selectedId);
   }
