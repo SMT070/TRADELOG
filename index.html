@@ -4616,7 +4616,7 @@ window.switchPage = function(name) {
 
 <!-- SHARE MODAL -->
 <!-- ── SHARE MODAL ── -->
-<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);">
+<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:10000;align-items:flex-start;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);">
   <!-- Theme-aware backdrop -->
   <div id="share-modal-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.88);z-index:0;" onclick="closeShareModal()"></div>
   <!-- Scrollable container — fills full height, scrolls on mobile -->
@@ -5561,11 +5561,8 @@ async function loadAllFromSupabase() {
         result: r.result, emotion: r.emotion, confidence: r.confidence,
         notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || [],
         packId: r.pack_id || undefined, packName: r.pack_name || undefined,
-        packNotes:      r.pack_notes      || undefined,
-        packEmotion:    r.pack_emotion    || undefined,
-        packConfidence: r.pack_confidence || undefined,
-        packScreenshot: r.pack_screenshot || undefined,
-        packTags:       r.pack_tags       || undefined,
+        // packNotes / packEmotion / packConfidence / packScreenshot / packTags
+        // are loaded separately from user_data.pack_meta below
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
     }
@@ -5593,6 +5590,22 @@ async function loadAllFromSupabase() {
       if (data.tags) {
         const t = typeof data.tags === 'string' ? JSON.parse(data.tags) : data.tags;
         localStorage.setItem(TAGS_KEY, JSON.stringify(t));
+      }
+      // Merge pack_meta back into trades (notes, photo, mindset, tags per pack)
+      if (data.pack_meta) {
+        const pm = typeof data.pack_meta === 'string' ? JSON.parse(data.pack_meta) : data.pack_meta;
+        Object.entries(pm).forEach(([packId, meta]) => {
+          // Find the anchor trade for this pack (first one by array order)
+          const anchorIdx = trades.findIndex(t => t.packId === packId);
+          if (anchorIdx === -1) return;
+          if (meta.packNotes)      trades[anchorIdx].packNotes      = meta.packNotes;
+          if (meta.packEmotion)    trades[anchorIdx].packEmotion    = meta.packEmotion;
+          if (meta.packConfidence) trades[anchorIdx].packConfidence = meta.packConfidence;
+          if (meta.packScreenshot) trades[anchorIdx].packScreenshot = meta.packScreenshot;
+          if (meta.packTags)       trades[anchorIdx].packTags       = meta.packTags;
+        });
+        // Re-save to localStorage with merged pack meta
+        localStorage.setItem(KEY, JSON.stringify(trades));
       }
     }
   } catch(e) { console.warn('TradeLog: loadUserData failed', e); }
@@ -5628,11 +5641,23 @@ async function saveUserDataToSupabase() {
   const uid = await getValidUid();
   if (!uid) { console.warn('TradeLog: saveUserData — no session'); return; }
   try {
+    // Build pack_meta: collect all pack-level fields from trades, keyed by packId
+    const packMeta = {};
+    trades.forEach(t => {
+      if (!t.packId) return;
+      if (!packMeta[t.packId]) packMeta[t.packId] = {};
+      if (t.packNotes)      packMeta[t.packId].packNotes      = t.packNotes;
+      if (t.packEmotion)    packMeta[t.packId].packEmotion    = t.packEmotion;
+      if (t.packConfidence) packMeta[t.packId].packConfidence = t.packConfidence;
+      if (t.packScreenshot) packMeta[t.packId].packScreenshot = t.packScreenshot;
+      if (t.packTags)       packMeta[t.packId].packTags       = t.packTags;
+    });
     const { error } = await sb.from('user_data').upsert({
       user_id: uid,
-      mindset: getMindsetDataLocal(),
-      journal: JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
-      tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]')
+      mindset:   getMindsetDataLocal(),
+      journal:   JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
+      tags:      JSON.parse(localStorage.getItem(TAGS_KEY) || '[]'),
+      pack_meta: packMeta,
     });
     if (error) console.warn('TradeLog: saveUserData error', error);
   } catch(e) { console.warn('TradeLog: saveUserData failed', e); }
@@ -5661,11 +5686,8 @@ async function saveTradeToSupabase(t) {
     confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
     strategies: t.strategies || [],
     pack_id: t.packId || null, pack_name: t.packName || null,
-    pack_notes:      t.packNotes      || null,
-    pack_emotion:    t.packEmotion    || null,
-    pack_confidence: t.packConfidence || null,
-    pack_screenshot: t.packScreenshot || null,
-    pack_tags:       t.packTags       || null,
+    // pack_notes / pack_emotion / pack_confidence / pack_screenshot / pack_tags
+    // are NOT columns in the trades table — they live in user_data.pack_meta
   };
   const { error } = await sb.from('trades').upsert(row);
   if (error) { console.error('TradeLog: upsert error', error); throw error; }
@@ -14793,21 +14815,24 @@ function openPackDetail(packId, e, _autoTrades) {
 
       <!-- Mood & Confidence — read-only display, same as single trade -->
       <div style="display:flex;gap:12px;margin-bottom:14px;">
-        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
+        <div onclick="openPackEditMode('${packId}')" title="Click to edit mood" style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;cursor:pointer;transition:border-color .15s;border:1px solid transparent;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='transparent'">
           <div class="detail-label" style="margin-bottom:6px;">Mood</div>
-          <div style="font-size:22px;">${packEmotion || '—'}</div>
+          <div style="font-size:22px;">${packEmotion || '<span style="font-size:13px;color:var(--muted);">— tap to set</span>'}</div>
         </div>
-        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
+        <div onclick="openPackEditMode('${packId}')" title="Click to edit confidence" style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;cursor:pointer;transition:border-color .15s;border:1px solid transparent;" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='transparent'">
           <div class="detail-label" style="margin-bottom:6px;">Confidence</div>
           <div style="font-size:18px;font-weight:800;color:${packConfidence?'var(--accent)':'var(--muted)'};">
-            ${packConfidence ? `${packConfidence}<span style="font-size:11px;color:var(--muted);font-weight:600;">/10</span>` : '—'}
+            ${packConfidence ? `${packConfidence}<span style="font-size:11px;color:var(--muted);font-weight:600;">/10</span>` : '<span style="font-size:13px;">— tap to set</span>'}
           </div>
         </div>
       </div>
 
       <!-- Notes — read-only display -->
       <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:6px;">Group Notes</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div class="detail-label">Group Notes</div>
+          <button onclick="openPackEditMode('${packId}')" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer;font-family:var(--sans);font-weight:600;transition:all .12s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">Edit</button>
+        </div>
         <div class="notes-hover-wrap">
           <div style="font-size:12px;line-height:1.7;color:${packNotes?'var(--text2)':'var(--muted)'};background:var(--surface2);padding:12px;border-radius:10px;${packNotes?'border-left:3px solid var(--accent);':'border-left:3px solid var(--border2);'}">
             <div class="notes-clamp">${packNotes || 'No notes added.'}</div>
@@ -14826,7 +14851,15 @@ function openPackDetail(packId, e, _autoTrades) {
                <img src="${packPhoto}" alt="chart" style="width:100%;display:block;border-radius:10px;">
                <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
              </div>`
-          : `<div style="border:2px dashed var(--border2);border-radius:10px;padding:24px 16px;text-align:center;color:var(--muted);font-size:12px;">No photo added.</div>`
+          : `<div onclick="openPackEditMode('${packId}')" title="Click to add a photo"
+               ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+               ondragleave="this.style.borderColor='var(--border2)'"
+               ondrop="event.preventDefault();uploadPackPhotoAndRefresh({target:{files:[event.dataTransfer.files[0]]}},'${packId}')"
+               style="border:2px dashed var(--border2);border-radius:10px;padding:24px 16px;text-align:center;color:var(--muted);font-size:12px;cursor:pointer;transition:border-color .15s;"
+               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
+               <div style="font-size:22px;margin-bottom:6px;">📸</div>
+               No photo — click or drag &amp; drop to add
+             </div>`
         }
       </div>
 
@@ -14867,7 +14900,8 @@ function openPackEditMode(packId) {
   const safeId         = packId.replace(/[^a-zA-Z0-9_-]/g,'_');
 
   // Store editing state
-  window._pePackId   = packId;
+  window._pePackId       = packId;
+  window._currentPackId  = packId;   // ← ensures Ctrl+V paste works in edit mode
   window._peTags     = [...packTags];
   window._peEmotion  = packEmotion;
   window._peConf     = packConfidence;
@@ -14954,10 +14988,13 @@ function openPackEditMode(packId) {
                </div>
              </div>`
           : `<div onclick="document.getElementById('pe-photo-input').click()"
+               ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+               ondragleave="this.style.borderColor='var(--border2)'"
+               ondrop="event.preventDefault();uploadPackPhotoAndRefresh({target:{files:[event.dataTransfer.files[0]]}},'${packId}')"
                style="border:2px dashed var(--border2);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .15s;"
                onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
                <div style="font-size:22px;margin-bottom:6px;">📸</div>
-               <div style="font-size:12px;color:var(--muted);">Click to add chart screenshot</div>
+               <div style="font-size:12px;color:var(--muted);">Click, drag & drop, or <b style="color:var(--text2);">Ctrl+V</b> to paste a chart screenshot</div>
              </div>`
         }
       </div>
@@ -15053,17 +15090,24 @@ async function savePackEdit(packId) {
 
     save();
 
-    // Sync ALL pack trades to Supabase in one batch so no stale rows remain
+    // Sync pack trades to Supabase (pack_id / pack_name only — meta lives in user_data)
     await Promise.all(packTrades.map(t => {
       const latest = trades.find(x => x.id === t.id);
       return latest ? guaranteedSaveToSupabase(latest) : Promise.resolve();
     }));
+
+    // Save pack metadata (notes, emotion, confidence, tags) to user_data.pack_meta
+    await saveUserDataToSupabase();
 
     toast('✓ Group saved', 'success');
   } catch(err) {
     console.error('savePackEdit failed', err);
     toast('❌ Save failed — check console', 'error');
   }
+
+  // Clear editing state
+  window._pePackId = null;
+  window._currentPackId = packId;
 
   // Restore header buttons and show view mode
   const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
@@ -15073,6 +15117,7 @@ async function savePackEdit(packId) {
 }
 
 function cancelPackEdit(packId) {
+  window._pePackId = null;
   const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
   if (headerBtns) headerBtns.innerHTML = _packDetailHeaderBtns();
   renderTrades();
@@ -15379,15 +15424,18 @@ async function savePackField(packId, field, value) {
     trades[anchorIdx][field] = value;
   }
   save();
-  // Sync ALL pack trades to Supabase so cleared fields are removed from every row.
-  // Syncing only the anchor left stale pack fields on other rows — on reload
-  // those rows would overwrite the anchor's data when the detail panel read them.
+  // Pack metadata (notes/emotion/confidence/screenshot/tags) lives in user_data.pack_meta,
+  // NOT in the trades table. Sync trades for pack_id/pack_name only, then save user_data.
   try {
     await Promise.all(packTrades.map(t => {
       const latest = trades.find(x => x.id === t.id);
       return latest ? guaranteedSaveToSupabase(latest) : Promise.resolve();
     }));
-  } catch(e) { console.warn('savePackField full-sync failed', e); throw e; }
+  } catch(e) { console.warn('savePackField trade sync failed', e); }
+  // Save pack metadata (notes, photo, mindset, tags) to user_data
+  try {
+    await saveUserDataToSupabase();
+  } catch(e) { console.warn('savePackField user_data sync failed', e); throw e; }
   // Return the (possibly converted) packId so callers can use the real id
   return packId;
 }
