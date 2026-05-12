@@ -6503,41 +6503,39 @@ function _pasteScreenshotToAddForm(imgItem) {
 // Uses PNG for lossless chart screenshots; JPEG only as fallback.
 function _processImageHighQuality(file, callback) {
   if (!file) return;
-  const url = URL.createObjectURL(file);
-  const img  = new Image();
-  img.onload = () => {
-    URL.revokeObjectURL(url);
-    const MAX = 2560; // max dimension — preserves 4K monitor screenshots
-    let w = img.naturalWidth  || img.width;
-    let h = img.naturalHeight || img.height;
-    // Only scale DOWN if the image is huge; never upscale
-    if (w > MAX || h > MAX) {
-      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-      else       { w = Math.round(w * MAX / h); h = MAX; }
-    }
-    const canvas = document.createElement('canvas');
-    canvas.width  = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    // High-quality scaling
-    ctx.imageSmoothingEnabled  = true;
-    ctx.imageSmoothingQuality  = 'high';
-    ctx.drawImage(img, 0, 0, w, h);
-    // Use PNG for charts (lossless, sharp lines) unless file is already JPEG
-    const isJpeg = file.type === 'image/jpeg' || file.type === 'image/jpg';
-    const dataUrl = isJpeg
-      ? canvas.toDataURL('image/jpeg', 0.96) // 96% quality JPEG
-      : canvas.toDataURL('image/png');        // lossless PNG
-    callback(dataUrl);
+  const MAX = 2560;
+  // Read the file directly first (fast — no canvas overhead for normal-sized images)
+  const r = new FileReader();
+  r.onload = e => {
+    const dataUrl = e.target.result;
+    // Check dimensions — only re-encode via canvas if image exceeds MAX
+    const img = new Image();
+    img.onload = () => {
+      const w = img.naturalWidth  || img.width;
+      const h = img.naturalHeight || img.height;
+      if (w <= MAX && h <= MAX) {
+        // Perfect size — use as-is, instant delivery
+        callback(dataUrl);
+        return;
+      }
+      // Oversized — scale down with canvas
+      let nw = w, nh = h;
+      if (w > h) { nh = Math.round(nh * MAX / nw); nw = MAX; }
+      else       { nw = Math.round(nw * MAX / nh); nh = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = nw; canvas.height = nh;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, nw, nh);
+      const isJpeg = file.type === 'image/jpeg' || file.type === 'image/jpg';
+      callback(isJpeg ? canvas.toDataURL('image/jpeg', 0.96) : canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => callback(dataUrl); // fallback: use as-is
+    img.src = dataUrl;
   };
-  img.onerror = () => {
-    URL.revokeObjectURL(url);
-    // Fallback: read as-is
-    const r = new FileReader();
-    r.onload = e => callback(e.target.result);
-    r.readAsDataURL(file);
-  };
-  img.src = url;
+  r.onerror = () => callback(null);
+  r.readAsDataURL(file);
 }
 
 function uploadTradePhoto(ev, id) {
@@ -15190,7 +15188,6 @@ showTradeDetail = function(id) {
 function uploadPackPhotoAndRefresh(event, packId) {
   const file = event.target?.files?.[0] || event;
   if (!file || !(file instanceof File)) return;
-  // Track if we're in edit mode before the async completes
   const inEditMode = (window._pePackId === packId);
   _processImageHighQuality(file, async dataUrl => {
     try {
@@ -15205,6 +15202,9 @@ function uploadPackPhotoAndRefresh(event, packId) {
         window._currentPackId = targetId;
         openPackDetail(targetId);
       }
+      // If the expand overlay is open, refresh it so photo appears there too
+      const ov = document.getElementById('trade-detail-overlay');
+      if (ov && ov.style.display === 'flex') openPackOverlay(targetId);
       toast('📸 Photo saved', 'success');
     } catch(err) {
       console.error('TradeLog: pack photo save failed', err);
@@ -15598,43 +15598,39 @@ function _packOvHandleDrop(event, packId, safeId) {
 function _packOvUpload(event, packId, safeId) {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async function(ev) {
+  _processImageHighQuality(file, async dataUrl => {
     try {
-      const realPackId = await savePackField(packId, 'packScreenshot', ev.target.result);
+      const realPackId = await savePackField(packId, 'packScreenshot', dataUrl);
+      const targetId = realPackId || packId;
       renderTrades();
-      openPackDetail(realPackId || packId);
-      openPackOverlay(realPackId || packId);
-      toast('Photo saved ✓', 'success');
+      openPackDetail(targetId);   // refresh right panel
+      openPackOverlay(targetId);  // refresh overlay
+      toast('📸 Photo saved', 'success');
     } catch(err) {
       console.error('TradeLog: pack photo save failed', err);
       toast('❌ Photo save failed — check console', 'error');
     }
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 function uploadPackPhoto(event, packId, safeId) {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    const dataUrl = e.target.result;
+  _processImageHighQuality(file, async dataUrl => {
     try {
       const realPackId = await savePackField(packId, 'packScreenshot', dataUrl);
-      const usedId = realPackId || packId;
-      const area = document.getElementById(`pack-photo-area-${safeId}`);
-      if (area) area.innerHTML = `<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in;" onclick="openPackPhotoFullscreen('${usedId}')">
-        <img src="${dataUrl}" style="width:100%;display:block;">
-        <div style="text-align:center;padding:6px;font-size:10px;color:var(--muted);">Tap to fullscreen</div>
-      </div>`;
-      toast('Photo saved', 'success');
+      const targetId = realPackId || packId;
+      renderTrades();
+      openPackDetail(targetId);   // refresh right panel with new photo
+      // If overlay is open, refresh it too
+      const ov = document.getElementById('trade-detail-overlay');
+      if (ov && ov.style.display === 'flex') openPackOverlay(targetId);
+      toast('📸 Photo saved', 'success');
     } catch(err) {
       console.error('TradeLog: pack photo save failed', err);
       toast('❌ Photo save failed — check console', 'error');
     }
-  };
-  reader.readAsDataURL(file);
+  });
 }
 
 function handlePackPhotoDrop(event, packId, safeId) {
