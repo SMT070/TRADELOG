@@ -11073,11 +11073,21 @@ document.addEventListener('paste', e => {
     return;
   }
 
-  // Pack inline photo drop zone
+  // Pack inline photo drop zone (user focused/clicked the zone then pasted)
   const packPhotoZone = e.target.closest('[data-pack-id]');
   if (packPhotoZone && packPhotoZone.dataset.packId) {
     e.preventDefault();
     _packInlinePastePhoto(e, packPhotoZone.dataset.packId);
+    return;
+  }
+
+  // Ctrl+V anywhere on trades page — if exactly one pack is expanded, paste into it
+  const tradePage = document.getElementById('page-trades');
+  if (tradePage && tradePage.classList.contains('active') && packExpandedIds.size === 1) {
+    const expandedPackId = [...packExpandedIds][0];
+    e.preventDefault();
+    uploadPackPhotoInline({ target: { files: [imgItem.getAsFile()] } }, expandedPackId);
+    toast('📸 Photo pasted to expanded group', 'success');
     return;
   }
 
@@ -14158,7 +14168,7 @@ function togglePackExpand(packId, e) {
   // Persist expanded state across sessions
   try { localStorage.setItem('tradelog_pack_expanded', JSON.stringify([...packExpandedIds])); } catch(_){}
   // Toggle child rows visibility without full re-render
-  const childRows = document.querySelectorAll(`tr.pack-child-row[data-pack="${packId}"]`);
+  const childRows = document.querySelectorAll(`tr.pack-child-row[data-pack="${packId}"], tr.pack-inline-detail-row[data-pack="${packId}"]`);
   const isExpanded = packExpandedIds.has(packId);
   childRows.forEach(r => r.classList.toggle('hidden', !isExpanded));
   // Update chevron on header
@@ -15190,8 +15200,8 @@ function renderPackRows(packId, packTrades, sym) {
     <td data-col="tags" style="max-width:110px;" onclick="event.stopPropagation()"><div class="pack-row-actions" style="display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .15s;">${actions}</div></td>
   </tr>`;
 
-  // ── Inline pack detail row (Notes / Photo / Mindset) is intentionally omitted here;
-  //    those fields are available via the Group Detail panel (ⓘ icon).
+  // ── Inline pack detail row (Notes / Photo / Mindset) ──
+  html += _buildPackInlineDetailRow(packId, packTrades, isExpanded, colspanVal);
 
   packTrades.forEach(t => {
     html += _buildPackChildRow(t, sym, packId, isExpanded, false);
@@ -15216,7 +15226,7 @@ function _buildPackInlineDetailRow(packId, packTrades, isExpanded, colspan) {
     : `<div onclick="document.getElementById('pack-inline-photo-input-${safeId}').click()"
            ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
            ondragleave="this.style.borderColor='var(--border2)'"
-           ondrop="handlePackPhotoDrop(event,'${packId}','${safeId}')"
+           ondrop="event.preventDefault();var _f=event.dataTransfer.files[0];if(_f&&_f.type.startsWith('image/'))uploadPackPhotoInline({target:{files:[_f]}},'${packId}')"
            onpaste="_packInlinePastePhoto(event,'${packId}')"
            data-pack-id="${packId}"
            tabindex="0"
