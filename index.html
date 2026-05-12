@@ -14900,9 +14900,9 @@ function uploadPackPhotoAndRefresh(event, packId) {
   if (!file || !(file instanceof File)) return;
   _processImageHighQuality(file, async dataUrl => {
     try {
-      await savePackField(packId, 'packScreenshot', dataUrl);
-      openPackDetail(packId);
+      const realPackId = await savePackField(packId, 'packScreenshot', dataUrl);
       renderTrades();
+      openPackDetail(realPackId || packId);
       toast('📸 Photo saved', 'success');
     } catch(err) {
       console.error('TradeLog: pack photo save failed', err);
@@ -15125,6 +15125,8 @@ async function savePackField(packId, field, value) {
   // Sync anchor to Supabase — guaranteed save so fields survive a reload
   const anchor = packTrades.reduce((a, t) => trades.indexOf(t) < trades.indexOf(a) ? t : a, packTrades[0]);
   await guaranteedSaveToSupabase(anchor);
+  // Return the (possibly converted) packId so callers can use the real id
+  return packId;
 }
 
 // ── Debounced save for pack notes (avoids hammering Supabase on every keystroke) ──
@@ -15288,9 +15290,10 @@ function _packOvUpload(event, packId, safeId) {
   const reader = new FileReader();
   reader.onload = async function(ev) {
     try {
-      await savePackField(packId, 'packScreenshot', ev.target.result);
-      openPackDetail(packId);
-      openPackOverlay(packId);
+      const realPackId = await savePackField(packId, 'packScreenshot', ev.target.result);
+      renderTrades();
+      openPackDetail(realPackId || packId);
+      openPackOverlay(realPackId || packId);
       toast('Photo saved ✓', 'success');
     } catch(err) {
       console.error('TradeLog: pack photo save failed', err);
@@ -15307,9 +15310,10 @@ function uploadPackPhoto(event, packId, safeId) {
   reader.onload = async function(e) {
     const dataUrl = e.target.result;
     try {
-      await savePackField(packId, 'packScreenshot', dataUrl);
+      const realPackId = await savePackField(packId, 'packScreenshot', dataUrl);
+      const usedId = realPackId || packId;
       const area = document.getElementById(`pack-photo-area-${safeId}`);
-      if (area) area.innerHTML = `<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in;" onclick="openPackPhotoFullscreen('${packId}')">
+      if (area) area.innerHTML = `<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in;" onclick="openPackPhotoFullscreen('${usedId}')">
         <img src="${dataUrl}" style="width:100%;display:block;">
         <div style="text-align:center;padding:6px;font-size:10px;color:var(--muted);">Tap to fullscreen</div>
       </div>`;
@@ -15506,6 +15510,8 @@ function uploadPackPhotoInline(event, packId) {
     }
   });
 }
+
+
 
 // ── Override selectTrade to work correctly in select mode ─────────
 const _origSelectTrade = selectTrade;
