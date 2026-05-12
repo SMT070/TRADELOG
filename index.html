@@ -15160,7 +15160,6 @@ function renderPackRows(packId, packTrades, sym) {
   const dir        = dirs.length === 1 ? dirs[0] : 'MIXED';
   const packName   = packTrades[0]?.packName || 'Pack';
   const isExpanded = packExpandedIds.has(packId);
-  const pnlColor   = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
   const pnlStr     = (totalPnl>=0?'+'+sym:'-'+sym)+Math.abs(totalPnl).toFixed(2);
   const newestDate = packTrades.reduce((l,t) => t.date>l?t.date:l, packTrades[0]?.date||'');
   // Derive result from children so stored 'be' result and BE-threshold are respected
@@ -15169,6 +15168,7 @@ function renderPackRows(packId, packTrades, sym) {
   const _anyWin  = _childResults.some(r => r === 'win');
   const _anyLoss = _childResults.some(r => r === 'loss');
   const packResult  = _allBe ? 'be' : (_anyWin && !_anyLoss) ? 'win' : (_anyLoss && !_anyWin) ? 'loss' : totalPnl >= 0 ? 'win' : 'loss';
+  const pnlColor    = packResult === 'be' ? 'var(--yellow)' : totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
   const resultBg    = packResult==='win'?'var(--green-bg)':packResult==='loss'?'var(--red-bg)':'rgba(245,158,11,.12)';
   const resultColor = packResult==='win'?'var(--green)':packResult==='loss'?'var(--red)':'var(--yellow)';
   const resultLabel = packResult==='win'?'WIN':packResult==='loss'?'LOSS':'BE';
@@ -15187,13 +15187,18 @@ function renderPackRows(packId, packTrades, sym) {
   const resultBadge = `<span style="color:${resultColor};font-size:10px;font-weight:700;background:${resultBg};padding:2px 8px;border-radius:4px;">${resultLabel}</span>`;
   const actions = `<span onclick="openPackDetail('${packId}',event)" title="Group Detail" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;color:var(--muted);cursor:pointer;transition:color .15s;" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--muted)'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span><span onclick="renamePack('${packId}','${safePackName}',event)" title="Rename" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;color:var(--muted);cursor:pointer;transition:color .15s;" onmouseenter="this.style.color='var(--text)'" onmouseleave="this.style.color='var(--muted)'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span><span onclick="dissolvePack('${packId}',event)" title="Ungroup" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;color:var(--muted);cursor:pointer;transition:color .15s;" onmouseenter="this.style.color='var(--red)'" onmouseleave="this.style.color='var(--muted)'"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></span>`;
 
+  // First trade opened (earliest date) — use its entry/exit for the header
+  const firstTrade   = packTrades.slice().sort((a,b) => (a.date||'') < (b.date||'') ? -1 : 1)[0];
+  const headerEntry  = firstTrade?.entry  != null && firstTrade.entry  !== '' ? firstTrade.entry  : '—';
+  const headerExit   = firstTrade?.exit   != null && firstTrade.exit   !== '' ? firstTrade.exit   : '—';
+
   let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" onclick="togglePackExpand('${packId}',event)" style="cursor:pointer;">
     <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;position:relative;"><div class="date-chevron">${chevron}</div><div style="line-height:1.4;">${dateHtml}</div></td>
     <td style="font-weight:600;">${symbols}</td>
     <td><div style="display:flex;align-items:center;">${dirBadge}${countPill}</div></td>
     <td style="color:var(--text);font-weight:500;">${totalLots.toFixed(2)}</td>
-    <td style="color:var(--muted);">—</td>
-    <td style="color:var(--muted);">—</td>
+    <td style="color:var(--text2);font-weight:500;">${headerEntry}</td>
+    <td style="color:var(--text2);font-weight:500;">${headerExit}</td>
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
     <td style="color:${totalCommission>0?'var(--red)':'var(--muted)'};font-family:var(--mono);font-weight:600;">${totalCommission>0?sym+totalCommission.toFixed(2):'—'}</td>
     <td>${resultBadge}</td>
