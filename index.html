@@ -24,37 +24,22 @@
   <link rel="icon" type="image/png" href="logo.png">
   <meta name="theme-color" content="#05080f">
 <style>
-  /* Prevent white flash on iOS PWA launch — uses CSS var so it matches every theme */
-  html { background: var(--bg, #05080f); }
+  /* Prevent white flash on iOS PWA launch */
+  html { background: #05080f; }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
   // Apply theme instantly before any rendering to prevent flash
   (function() {
     const autoOn = localStorage.getItem('tradelog_auto_theme') === 'true';
-    const h = new Date().getHours();
-    const t = autoOn
-      ? ((h >= 7 && h < 20) ? 'light' : 'black')
-      : (localStorage.getItem('tradelog_theme') || 'dark');
-
-    document.documentElement.setAttribute('data-theme', t);
-
-    // Map each theme to its --bg color so the loader + html bg match instantly
-    // (before CSS vars are computed by the browser)
-    const bgMap = {
-      dark:  '#05080f',
-      gray:  '#1c1e26',
-      black: '#000000',
-      light: '#f0f4f8'
-    };
-    const bg = bgMap[t] || '#05080f';
-
-    // Set html background inline so it matches from the very first pixel
-    document.documentElement.style.background = bg;
-
-    // Update PWA theme-color meta to match
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', bg);
+    if (autoOn) {
+      const h = new Date().getHours();
+      const t = (h >= 7 && h < 20) ? 'light' : 'black';
+      document.documentElement.setAttribute('data-theme', t);
+    } else {
+      const t = localStorage.getItem('tradelog_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    }
   })();
 </script>
 <style>
@@ -4631,7 +4616,7 @@ window.switchPage = function(name) {
 
 <!-- SHARE MODAL -->
 <!-- ── SHARE MODAL ── -->
-<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:10000;align-items:flex-start;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);">
+<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);">
   <!-- Theme-aware backdrop -->
   <div id="share-modal-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.88);z-index:0;" onclick="closeShareModal()"></div>
   <!-- Scrollable container — fills full height, scrolls on mobile -->
@@ -5117,7 +5102,7 @@ function setTheme(t) {
   localStorage.setItem(THEME_KEY, t);
   updateThemeButtons(t);
   saveProfileToSupabase();
-  if (typeof equityChartInst !== 'undefined' && equityChartInst) refreshDashboard();
+  if (equityChartInst) refreshDashboard();
 }
 
 function updateThemeButtons(t) {
@@ -5146,8 +5131,8 @@ function _getAutoThemeForHour() {
 function _applyAutoTheme() {
   const t = _getAutoThemeForHour();
   document.documentElement.setAttribute('data-theme', t);
-  // NOTE: deliberately do NOT write THEME_KEY here — that is the user's manual
-  // preference. Writing it would corrupt the saved choice when auto-mode is turned off.
+  localStorage.setItem(THEME_KEY, t);
+  // Update manual buttons to reflect current applied theme, keep auto highlighted
   THEMES.forEach(th => {
     const btn = document.getElementById('theme-btn-' + th);
     if (!btn) return;
@@ -5161,7 +5146,7 @@ function _applyAutoTheme() {
     autoBtn.style.color = '#fff';
     autoBtn.style.borderColor = 'var(--accent)';
   }
-  if (typeof equityChartInst !== 'undefined' && equityChartInst) refreshDashboard();
+  if (equityChartInst) refreshDashboard();
 }
 
 function _stopAutoTheme() {
@@ -5311,8 +5296,7 @@ showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the c
     // CRITICAL: Wipe ALL user-specific data from localStorage on logout.
     // This ensures the next person who logs in on this device NEVER sees
     // data from the previous session.
-    const themeToKeep     = localStorage.getItem(THEME_KEY);
-    const autoThemeToKeep = localStorage.getItem(AUTO_THEME_KEY);
+    const themeToKeep = localStorage.getItem(THEME_KEY);
     localStorage.removeItem(KEY);
     localStorage.removeItem(MINDSET_KEY);
     localStorage.removeItem(JOURNAL_KEY);
@@ -5322,8 +5306,7 @@ showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the c
     localStorage.removeItem(BAL_KEY);
     localStorage.removeItem(CUR_KEY);
     localStorage.removeItem('tradelog_sb_session');
-    if (themeToKeep)     localStorage.setItem(THEME_KEY,      themeToKeep);
-    if (autoThemeToKeep) localStorage.setItem(AUTO_THEME_KEY, autoThemeToKeep);
+    if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
     showAuthScreen();
   }});
 }
@@ -5532,8 +5515,7 @@ async function loadAllFromSupabase() {
   // ── CRITICAL: Clear ALL local caches before loading from server.
   // This guarantees that if a different user logs in on this device,
   // they NEVER see stale data left behind by the previous session.
-  const themeToKeep     = localStorage.getItem(THEME_KEY);      // manual theme preference
-  const autoThemeToKeep = localStorage.getItem(AUTO_THEME_KEY); // auto-theme on/off flag
+  const themeToKeep = localStorage.getItem(THEME_KEY); // keep theme preference only
   localStorage.removeItem(KEY);
   localStorage.removeItem(MINDSET_KEY);
   localStorage.removeItem(JOURNAL_KEY);
@@ -5542,9 +5524,7 @@ async function loadAllFromSupabase() {
   localStorage.removeItem(PROFILE_KEY);
   localStorage.removeItem(BAL_KEY);
   localStorage.removeItem(CUR_KEY);
-  // Restore theme prefs so the loader stays correct while Supabase responds
-  if (themeToKeep)     localStorage.setItem(THEME_KEY,      themeToKeep);
-  if (autoThemeToKeep) localStorage.setItem(AUTO_THEME_KEY, autoThemeToKeep);
+  if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
 
   // 1. Profile (name, avatar, currency, balance, theme, goals)
   try {
@@ -5765,8 +5745,7 @@ window.addEventListener('load', () => {
       trades = [];
       balanceEvents = [];
       // Wipe all user-specific localStorage so next user starts clean
-      const _t  = localStorage.getItem(THEME_KEY);
-      const _at = localStorage.getItem(AUTO_THEME_KEY);
+      const _t = localStorage.getItem(THEME_KEY);
       localStorage.removeItem(KEY);
       localStorage.removeItem(MINDSET_KEY);
       localStorage.removeItem(JOURNAL_KEY);
@@ -5775,8 +5754,7 @@ window.addEventListener('load', () => {
       localStorage.removeItem(PROFILE_KEY);
       localStorage.removeItem(BAL_KEY);
       localStorage.removeItem(CUR_KEY);
-      if (_t)  localStorage.setItem(THEME_KEY,      _t);
-      if (_at) localStorage.setItem(AUTO_THEME_KEY, _at);
+      if (_t) localStorage.setItem(THEME_KEY, _t);
       showAuthScreen();
     }
   });
