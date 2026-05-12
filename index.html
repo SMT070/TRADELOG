@@ -14878,7 +14878,35 @@ function _switchPackTab(safeId, tabName) {
 
 // Save a pack-level field to all trades in the pack (stored on anchor = first trade)
 async function savePackField(packId, field, value) {
-  const packTrades = trades.filter(t => t.packId === packId);
+  let packTrades = trades.filter(t => t.packId === packId);
+
+  // ── Auto-pack: no real packId yet — silently convert to a real pack first ──
+  if (!packTrades.length && packId.startsWith('_auto_')) {
+    const { autoGroups } = buildAutoPackGroups(trades);
+    const autoTrades = autoGroups[packId];
+    if (!autoTrades || !autoTrades.length) return;
+    const realPackId = uid();
+    const sym = autoTrades[0].symbol;
+    const dir = autoTrades[0].dir;
+    autoTrades.forEach(t => {
+      const idx = trades.findIndex(x => x.id === t.id);
+      if (idx !== -1) { trades[idx].packId = realPackId; trades[idx].packName = sym + ' ' + dir; }
+    });
+    save();
+    // Sync all converted trades to Supabase
+    try {
+      await Promise.all(autoTrades.map(t => {
+        const updated = trades.find(x => x.id === t.id);
+        return updated ? guaranteedSaveToSupabase(updated) : Promise.resolve();
+      }));
+    } catch(e) { console.warn('savePackField auto-convert sync failed', e); }
+    packTrades = trades.filter(t => t.packId === realPackId);
+    // Re-render so the row now shows as a real pack
+    renderTrades();
+    // Update packId reference for the rest of this call
+    packId = realPackId;
+  }
+
   if (!packTrades.length) return;
   // Clear field from all trades first
   packTrades.forEach(t => { delete t[field]; });
