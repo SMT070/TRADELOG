@@ -5538,6 +5538,7 @@ async function loadAllFromSupabase() {
           if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); }
           if (typeof s.autoTheme !== 'undefined') { localStorage.setItem(AUTO_THEME_KEY, String(s.autoTheme)); }
           if (s.goals) localStorage.setItem(GOALS_KEY, typeof s.goals === 'string' ? s.goals : JSON.stringify(s.goals));
+          if (typeof s.autopack !== 'undefined') { localStorage.setItem('tradelog_autopack', s.autopack ? 'true' : 'false'); }
         } catch(e) {}
       }
     }
@@ -8405,6 +8406,7 @@ function openDetailOverlay() {
   });
 }
 
+let _overlayNotesTimer = null;
 function saveOverlayNotes(id, val) {
   const t = trades.find(x => x.id === id);
   if (!t) return;
@@ -8416,6 +8418,14 @@ function saveOverlayNotes(id, val) {
   // Sync if edit panel is open
   const ieNotes = document.getElementById('ie-notes');
   if (ieNotes) ieNotes.value = val;
+  // Debounced Supabase sync (600ms after last keystroke)
+  clearTimeout(_overlayNotesTimer);
+  _overlayNotesTimer = setTimeout(async () => {
+    const latest = trades.find(x => x.id === id);
+    if (latest) {
+      try { await guaranteedSaveToSupabase(latest); } catch(e) { console.warn('TradeLog: notes sync failed', e); }
+    }
+  }, 600);
 }
 
 function closeDetailOverlay() {
@@ -15345,6 +15355,7 @@ function toggleAutoPack() {
       okColor: 'var(--yellow)',
       onOk: () => {
         localStorage.setItem('tradelog_autopack', 'true');
+        saveProfileToSupabase(); // persist setting to Supabase
         _syncFeatureDropStates();
         toast('⚡ Auto-Pack ON — trades within 1 min on same symbol are grouped', 'success');
         renderTrades();
@@ -15352,6 +15363,7 @@ function toggleAutoPack() {
     });
   } else {
     localStorage.setItem('tradelog_autopack', 'false');
+    saveProfileToSupabase(); // persist setting to Supabase
     _syncFeatureDropStates();
     toast('Auto-Pack OFF', '');
     renderTrades();
@@ -15835,8 +15847,15 @@ function _setFeatPill(pillId, btnId, on, onBg, onColor) {
 }
 
 function _syncFeatureDropStates() {
-  // Auto BE
-  _setFeatPill('feat-be-pill',     'feat-auto-be-btn',  _autoBEActive,                              'rgba(245,158,11,0.25)', 'var(--yellow)');
+  // Auto BE: pill is ON when no qualifying trades remain (rule fully applied)
+  const _beApplied = (() => {
+    const bal = getBalance();
+    if (bal <= 0) return _autoBEActive;
+    const threshold = bal * 0.0002;
+    const remaining = trades.filter(t => Math.abs(getPnl(t)) <= threshold && getResult(t) !== 'be');
+    return remaining.length === 0 && _autoBEActive;
+  })();
+  _setFeatPill('feat-be-pill',     'feat-auto-be-btn',  _beApplied,                              'rgba(245,158,11,0.25)', 'var(--yellow)');
   const beLabel = document.getElementById('feat-be-label');
   if (beLabel) beLabel.textContent = 'Auto BE';
 
@@ -15851,8 +15870,7 @@ function _syncFeatureDropStates() {
 // ── Feature action wrappers (keep dropdown open while toggling) ───────────────
 function featToggleAutoBE() {
   autoMarkBE();
-  // State sync happens after confirm resolves — pill stays in sync via _syncFeatureDropStates
-  setTimeout(_syncFeatureDropStates, 50);
+  setTimeout(_syncFeatureDropStates, 100);
 }
 
 function featToggleAutoPack() {
@@ -15886,12 +15904,6 @@ function _persistAutoBEState() {
 }
 
 async function autoMarkBE() {
-  // Already applied — just inform, don't allow re-run
-  if (_autoBEActive) {
-    toast('Auto BE already applied to your trades', '');
-    return;
-  }
-
   const bal = getBalance();
   if (bal <= 0) {
     toast('Set your account balance first (Settings → Set Balance)', 'error');
@@ -15906,7 +15918,7 @@ async function autoMarkBE() {
   });
 
   if (!candidates.length) {
-    toast(`No trades within ±${getCurrencySymbol()}${threshold.toFixed(2)} (0.02% of ${getCurrencySymbol()}${bal.toLocaleString()})`, '');
+    toast(`No trades within ±${getCurrencySymbol()}${threshold.toFixed(2)} (0.02% of ${getCurrencySymbol()}${bal.toLocaleString()}) — all qualifying trades already marked BE`, '');
     return;
   }
 
