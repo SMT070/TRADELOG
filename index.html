@@ -5565,6 +5565,7 @@ async function loadAllFromSupabase() {
         packEmotion:    r.pack_emotion    || undefined,
         packConfidence: r.pack_confidence || undefined,
         packScreenshot: r.pack_screenshot || undefined,
+        packTags:       r.pack_tags       || undefined,
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
     }
@@ -5664,6 +5665,7 @@ async function saveTradeToSupabase(t) {
     pack_emotion:    t.packEmotion    || null,
     pack_confidence: t.packConfidence || null,
     pack_screenshot: t.packScreenshot || null,
+    pack_tags:       t.packTags       || null,
   };
   const { error } = await sb.from('trades').upsert(row);
   if (error) { console.error('TradeLog: upsert error', error); throw error; }
@@ -14666,16 +14668,14 @@ function _packSeparator(colspan) {
 }
 
 // ── PACK DETAIL ───────────────────────────────────────────────────────────────
-// Opens a full group detail view — desktop: fills side panel, mobile: bottom sheet
+// Opens a full group detail view — mirrors single trade panel exactly
 function openPackDetail(packId, e, _autoTrades) {
   if (e) e.stopPropagation();
 
-  // Resolve pack trades — check last render map first (covers real + auto packs),
-  // then fall back to real-pack filter, then live auto-pack rebuild
+  // Resolve pack trades
   let packTrades = _autoTrades
     || _lastRenderedPackMap[packId]
     || trades.filter(t => t.packId === packId);
-
   if (!packTrades || !packTrades.length) {
     const { autoGroups } = buildAutoPackGroups(trades);
     packTrades = autoGroups[packId] || [];
@@ -14683,7 +14683,7 @@ function openPackDetail(packId, e, _autoTrades) {
   if (!packTrades.length) return;
 
   const sym        = getCurrencySymbol();
-  const packName   = packTrades[0].packName || 'Pack';
+  const packName   = packTrades[0].packName || 'Group';
   const totalPnl   = packTrades.reduce((s,t) => s + getPnl(t), 0);
   const wins       = packTrades.filter(t => getResult(t) === 'win').length;
   const losses     = packTrades.filter(t => getResult(t) === 'loss').length;
@@ -14701,8 +14701,6 @@ function openPackDetail(packId, e, _autoTrades) {
   const dir        = dirs.length === 1 ? dirs[0] : 'MIXED';
   const firstDate  = packTrades.reduce((a,t) => (t.date||'') < a ? (t.date||'') : a, packTrades[0]?.date||'');
   const lastClose  = packTrades.reduce((a,t) => (t.closeDate||'') > a ? (t.closeDate||'') : a, '');
-
-  // Duration across whole group
   let durationStr = '—';
   if (firstDate && lastClose) {
     const ms = new Date(lastClose) - new Date(firstDate);
@@ -14712,26 +14710,52 @@ function openPackDetail(packId, e, _autoTrades) {
     }
   }
 
-  // Pack-level shared fields (stored on anchor = first trade with the field)
   const packPhoto      = packTrades.find(t => t.packScreenshot)?.packScreenshot || null;
   const packNotes      = packTrades.find(t => t.packNotes)?.packNotes || '';
   const packEmotion    = packTrades.find(t => t.packEmotion)?.packEmotion || '';
   const packConfidence = packTrades.find(t => t.packConfidence)?.packConfidence || '';
   const safeId         = packId.replace(/[^a-zA-Z0-9_-]/g,'_');
-  const emotions       = ['😤','😰','😊','😎','🤔','😴','😡','🥳','😬','🙏'];
 
   const resultBadge = `<span style="display:inline-block;padding:4px 14px;border-radius:8px;background:${resultBg};color:${resultColor};font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;border:1px solid ${resultBorderColor};">${packResult}</span>`;
   const dirBadge    = dir === 'MIXED'
     ? `<span class="badge" style="background:var(--surface3);color:var(--muted);">MIXED</span>`
     : `<span class="badge ${dir==='BUY'?'buy':'sell'}">${dir}</span>`;
 
+  // Positions list — always shown (read-only cards)
+  const positionsHtml = packTrades.map(t => {
+    const pnl = getPnl(t);
+    const res = getResult(t);
+    const pc  = res==='be'?'var(--yellow)':pnl>=0?'var(--green)':'var(--red)';
+    const ps  = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
+    const rb  = res==='win'?'var(--green-bg)':res==='loss'?'var(--red-bg)':'rgba(245,158,11,.12)';
+    const rc  = res==='win'?'var(--green)':res==='loss'?'var(--red)':'var(--yellow)';
+    const rl  = res==='win'?'WIN':res==='loss'?'LOSS':'BE';
+    return `<div onclick="selectTrade('${t.id}')" style="background:var(--surface2);border-radius:10px;padding:10px 12px;cursor:pointer;border:1px solid var(--border);transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--border2)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:9px;">${t.dir}</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:600;">${t.lots||'—'} lots</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:${rb};color:${rc};">${rl}</span>
+          <span style="font-size:13px;font-weight:800;color:${pc};">${ps}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;font-size:11px;color:var(--muted);">
+        <span>Entry <b style="color:var(--text);">${t.entry||'—'}</b></span>
+        <span>Exit <b style="color:var(--text);">${t.exit||'—'}</b></span>
+        <span style="margin-left:auto;font-size:10px;">${(t.date||'').slice(0,10)}</span>
+      </div>
+    </div>`;
+  }).join('');
+
   const html = `
     <div style="padding:20px;display:flex;flex-direction:column;gap:0;">
 
-      <!-- Header: Pack name + total P&L -->
+      <!-- Header: name + P&L — identical to single trade -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
         <div>
-          <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--text);">📦 ${packName}</div>
+          <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">${packName}</div>
           <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             ${dirBadge}
             ${resultBadge}
@@ -14743,115 +14767,66 @@ function openPackDetail(packId, e, _autoTrades) {
         </div>
       </div>
 
-      <!-- Stats grid -->
+      <!-- Stats grid — mirrors single trade info block -->
       <div style="background:var(--surface2);border-radius:10px;overflow:hidden;margin-bottom:14px;">
         ${[
-          ['Symbol',     symbols,                ''],
-          ['Positions',  packTrades.length,       ''],
-          ['Total Lots', totalLots.toFixed(2),    ''],
-          ['Win Rate',   decided ? wr+'%' : '—',  decided ? (wr>=50?'color:var(--green);':'color:var(--red);') : 'color:var(--muted);'],
-          ['Wins / Losses', `${wins}W · ${losses}L`, ''],
-          ['Avg P&L',    sym+(Math.abs(totalPnl)/packTrades.length).toFixed(2), totalPnl>=0?'color:var(--green);':'color:var(--red);'],
-          ['Duration',   durationStr,             ''],
-          ['Opened',     firstDate ? firstDate.slice(0,16).replace('T',' ') : '—', ''],
+          ['Symbol',        symbols,                                   ''],
+          ['Positions',     packTrades.length,                         ''],
+          ['Total Lots',    totalLots.toFixed(2),                      ''],
+          ['Win Rate',      decided ? wr+'%' : '—',                   decided?(wr>=50?'color:var(--green);':'color:var(--red);'):'color:var(--muted);'],
+          ['Wins / Losses', `${wins}W · ${losses}L`,                   ''],
+          ['Avg P&L',       sym+(Math.abs(totalPnl)/packTrades.length).toFixed(2), totalPnl>=0?'color:var(--green);':'color:var(--red);'],
+          ['Duration',      durationStr,                               ''],
+          ['Opened',        firstDate ? firstDate.slice(0,16).replace('T',' ') : '—', ''],
         ].map(([label, val, valStyle], i, arr) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 14px;${i<arr.length-1?'border-bottom:1px solid rgba(30,41,59,.5);':''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;${i<arr.length-1?'border-bottom:1px solid var(--border);':''}">
             <span style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">${label}</span>
             <span style="font-size:13px;font-weight:700;${valStyle}">${val}</span>
           </div>`).join('')}
       </div>
 
-      <!-- Individual positions list -->
+      <!-- Positions — always visible, read-only -->
       <div style="margin-bottom:14px;">
-        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">Positions</div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          ${packTrades.map(t => {
-            const pnl = getPnl(t);
-            const res = getResult(t);
-            const pc  = res==='be'?'var(--yellow)':pnl>=0?'var(--green)':'var(--red)';
-            const ps  = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
-            const rb  = res==='win'?'var(--green-bg)':res==='loss'?'var(--red-bg)':'rgba(245,158,11,.12)';
-            const rc  = res==='win'?'var(--green)':res==='loss'?'var(--red)':'var(--yellow)';
-            const rl  = res==='win'?'WIN':res==='loss'?'LOSS':'BE';
-            return `<div onclick="selectTrade('${t.id}')" style="background:var(--surface2);border-radius:10px;padding:10px 12px;cursor:pointer;border:1px solid var(--border);transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--border2)'" onmouseleave="this.style.borderColor='var(--border)'">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:9px;">${t.dir}</span>
-                  <span style="font-size:11px;color:var(--muted);font-weight:600;">${t.lots||'—'} lots</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:${rb};color:${rc};">${rl}</span>
-                  <span style="font-size:13px;font-weight:800;color:${pc};">${ps}</span>
-                </div>
-              </div>
-              <div style="display:flex;gap:10px;font-size:11px;color:var(--muted);">
-                <span>Entry <b style="color:var(--text);">${t.entry||'—'}</b></span>
-                <span>Exit <b style="color:var(--text);">${t.exit||'—'}</b></span>
-                <span style="margin-left:auto;font-size:10px;">${(t.date||'').slice(0,10)}</span>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
+        <div class="detail-label" style="margin-bottom:8px;">Positions</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">${positionsHtml}</div>
       </div>
 
-      <!-- Mood & Confidence -->
+      <!-- Mood & Confidence — read-only display, same as single trade -->
       <div style="display:flex;gap:12px;margin-bottom:14px;">
         <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
           <div class="detail-label" style="margin-bottom:6px;">Mood</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;">
-            ${emotions.map(em => `<span
-              onclick="savePackField('${packId}','packEmotion','${em}');document.querySelectorAll('.pd-emo-${safeId}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.15)'"
-              class="pd-emo-${safeId}"
-              style="font-size:18px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${packEmotion===em?'2px solid var(--accent)':'none'};transform:${packEmotion===em?'scale(1.1)':'scale(1)'};">${em}</span>`).join('')}
-          </div>
+          <div style="font-size:22px;">${packEmotion || '—'}</div>
         </div>
         <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
-          <div class="detail-label" style="margin-bottom:6px;">Confidence <span style="color:var(--accent);font-weight:700;" id="pd-conf-lbl-${safeId}">${packConfidence||'—'}/10</span></div>
-          <input type="range" min="1" max="10" value="${packConfidence||5}" style="width:100%;accent-color:var(--accent);"
-            oninput="document.getElementById('pd-conf-lbl-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;"><span>Low</span><span>High</span></div>
-        </div>
-      </div>
-
-      <!-- Notes -->
-      <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:6px;">Group Notes</div>
-        <textarea id="pd-notes-${safeId}"
-          placeholder="Setup idea, reasoning, confluences…"
-          style="width:100%;min-height:100px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:12px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;${packNotes?'border-left:3px solid var(--accent);':''}"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-          oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
-      </div>
-
-      <!-- Chart Photo -->
-      <div style="margin-bottom:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <div class="detail-label">Setup Chart</div>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="document.getElementById('pd-photo-input-${safeId}').click()">
-              ${packPhoto ? '🔄 Replace' : '📸 Add Photo'}
-            </button>
-            ${packPhoto ? `<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);" onclick="savePackField('${packId}','packScreenshot',null).then(()=>openPackDetail('${packId}'))">Remove</button>` : ''}
+          <div class="detail-label" style="margin-bottom:6px;">Confidence</div>
+          <div style="font-size:18px;font-weight:800;color:${packConfidence?'var(--accent)':'var(--muted)'};">
+            ${packConfidence ? `${packConfidence}<span style="font-size:11px;color:var(--muted);font-weight:600;">/10</span>` : '—'}
           </div>
         </div>
-        <input type="file" id="pd-photo-input-${safeId}" accept="image/*" style="display:none;"
-          onchange="uploadPackPhotoAndRefresh(event,'${packId}')">
+      </div>
+
+      <!-- Notes — read-only display -->
+      <div style="margin-bottom:14px;">
+        <div class="detail-label" style="margin-bottom:6px;">Group Notes</div>
+        <div class="notes-hover-wrap">
+          <div style="font-size:12px;line-height:1.7;color:${packNotes?'var(--text2)':'var(--muted)'};background:var(--surface2);padding:12px;border-radius:10px;${packNotes?'border-left:3px solid var(--accent);':'border-left:3px solid var(--border2);'}">
+            <div class="notes-clamp">${packNotes || 'No notes added.'}</div>
+          </div>
+          ${packNotes ? `<div class="notes-popup">${packNotes.replace(/</g,'&lt;')}</div>` : ''}
+        </div>
+      </div>
+
+      <!-- Chart Photo — same as single trade -->
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="detail-label">Chart Photo</div>
+        </div>
         ${packPhoto
           ? `<div style="cursor:zoom-in;border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPackPhotoFullscreen('${packId}')">
                <img src="${packPhoto}" alt="chart" style="width:100%;display:block;border-radius:10px;">
                <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
              </div>`
-          : `<div tabindex="0"
-               onclick="document.getElementById('pd-photo-input-${safeId}').click()"
-               ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-               ondragleave="this.style.borderColor='var(--border2)'"
-               ondrop="handlePackDetailPhotoDrop(event,'${packId}')"
-               onpaste="_packDetailPastePhoto(event,'${packId}')"
-               style="border:2px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;outline:none;"
-               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
-               <div style="font-size:24px;margin-bottom:6px;">📸</div>
-               <div style="font-size:12px;color:var(--muted);">Click, drag & drop, or Ctrl+V to paste a chart screenshot</div>
-             </div>`
+          : `<div style="border:2px dashed var(--border2);border-radius:10px;padding:24px 16px;text-align:center;color:var(--muted);font-size:12px;">No photo added.</div>`
         }
       </div>
 
@@ -14863,34 +14838,268 @@ function openPackDetail(packId, e, _autoTrades) {
     document.getElementById('mobile-sheet-body').innerHTML = html;
     document.getElementById('mobile-trade-sheet').style.display = 'flex';
   } else {
-    // Update panel title
     document.querySelector('#trade-detail-panel .panel-title').textContent = '📦 ' + packName;
-    // Swap header buttons: hide Edit/Delete, keep Expand
+    // Show all 3 buttons — edit triggers pack edit mode, delete deletes the group
     const editBtn   = document.getElementById('detail-edit-btn');
     const deleteBtn = document.getElementById('detail-delete-btn');
-    if (editBtn)   editBtn.style.display   = 'none';
-    if (deleteBtn) deleteBtn.style.display = 'none';
+    if (editBtn)   { editBtn.style.display = ''; editBtn.onclick = () => openPackEditMode(packId); }
+    if (deleteBtn) { deleteBtn.style.display = ''; deleteBtn.onclick = () => deletePackGroup(packId); }
     document.getElementById('trade-detail-body').innerHTML = html;
-    // Store current pack so expand overlay can show it
     window._currentPackId = packId;
   }
+}
+
+// ── PACK EDIT MODE — mirrors single trade inline edit exactly ──────────────
+function openPackEditMode(packId) {
+  let packTrades = _lastRenderedPackMap[packId] || trades.filter(t => t.packId === packId);
+  if (!packTrades || !packTrades.length) {
+    const { autoGroups } = buildAutoPackGroups(trades);
+    packTrades = autoGroups[packId] || [];
+  }
+  if (!packTrades.length) return;
+
+  const packName      = packTrades[0].packName || 'Group';
+  const packNotes      = packTrades.find(t => t.packNotes)?.packNotes || '';
+  const packEmotion    = packTrades.find(t => t.packEmotion)?.packEmotion || '';
+  const packConfidence = parseInt(packTrades.find(t => t.packConfidence)?.packConfidence || 0);
+  const packPhoto      = packTrades.find(t => t.packScreenshot)?.packScreenshot || null;
+  const packTags       = packTrades.find(t => t.packTags)?.packTags || [];
+  const safeId         = packId.replace(/[^a-zA-Z0-9_-]/g,'_');
+
+  // Store editing state
+  window._pePackId   = packId;
+  window._peTags     = [...packTags];
+  window._peEmotion  = packEmotion;
+  window._peConf     = packConfidence;
+
+  // Update panel title & header buttons
+  document.querySelector('#trade-detail-panel .panel-title').textContent = 'Edit Group';
+  const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
+  if (headerBtns) headerBtns.innerHTML = `
+    <button onclick="cancelPackEdit('${packId}')" style="padding:5px 12px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Cancel</button>
+    <button onclick="savePackEdit('${packId}')" style="padding:5px 14px;height:30px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>`;
+
+  // Confidence pills
+  const confPills = Array.from({length:10},(_,i)=>i+1).map(n => {
+    const active = n === packConfidence;
+    return `<button type="button" onclick="peSetConf(${n})" id="pe-conf-${n}"
+      style="width:28px;height:28px;border-radius:6px;border:1px solid ${active?'var(--accent)':'var(--border2)'};
+      background:${active?'var(--accent)':'var(--surface)'};color:${active?'#fff':'var(--muted)'};
+      font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:all .12s;">${n}</button>`;
+  }).join('');
+
+  // Mood emojis
+  const emotions = ['😤','😰','😊','😎','🤔','😴','😡','🥳','😬','🙏'];
+  const moodHtml = emotions.map(em => `<span onclick="peToggleEmotion('${em}')" id="pe-emo-${em}"
+    style="font-size:18px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${packEmotion===em?'2px solid var(--accent)':'none'};transform:${packEmotion===em?'scale(1.1)':'scale(1)'};">${em}</span>`).join('');
+
+  // Tags
+  const allTags = getAllKnownTags();
+  const tagsHtml = () => {
+    const active = window._peTags;
+    return allTags.map(tag => {
+      const on = active.includes(tag);
+      if (on) return `<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 8px 4px 10px;border-radius:16px;font-size:11px;font-weight:600;border:1px solid var(--accent);background:rgba(99,102,241,.15);color:var(--accent);">
+        ${tag}<span onclick="peRemoveTag('${tag}')" style="cursor:pointer;font-size:13px;line-height:1;color:var(--accent);opacity:.7;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.7'">&times;</span></span>`;
+      return `<span onclick="peToggleTag('${tag}')" style="padding:4px 10px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">${tag}</span>`;
+    }).join('');
+  };
+
+  document.getElementById('trade-detail-body').innerHTML = `
+    <div style="padding:18px 20px 24px;display:flex;flex-direction:column;gap:0;">
+
+      <!-- Tags -->
+      <div style="margin-bottom:14px;">
+        <div class="detail-label" style="margin-bottom:8px;">Tags</div>
+        <div id="pe-tags-wrap">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;" id="pe-tags-list">${tagsHtml()}</div>
+          <div style="display:flex;gap:6px;">
+            <input id="pe-new-tag" placeholder="New tag…" style="flex:1;padding:6px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;font-family:var(--sans);outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')peAddNewTag()">
+            <button onclick="peAddNewTag()" style="padding:6px 12px;border-radius:7px;border:1px solid var(--accent);background:rgba(99,102,241,.12);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">+ Add</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mood -->
+      <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+        <div class="detail-label" style="margin-bottom:8px;">Mood</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">${moodHtml}</div>
+      </div>
+
+      <!-- Confidence -->
+      <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+        <div class="detail-label" style="margin-bottom:8px;">Confidence</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">${confPills}</div>
+      </div>
+
+      <!-- Notes -->
+      <div style="margin-bottom:14px;">
+        <div class="detail-label" style="margin-bottom:6px;">Group Notes</div>
+        <textarea id="pe-notes" rows="5" placeholder="Setup idea, reasoning, confluences…"
+          style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;line-height:1.6;font-family:var(--sans);resize:vertical;box-sizing:border-box;outline:none;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">${packNotes}</textarea>
+      </div>
+
+      <!-- Chart Photo -->
+      <div style="margin-bottom:14px;">
+        <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
+        <input type="file" id="pe-photo-input" accept="image/*" style="display:none;" onchange="uploadPackPhotoAndRefresh(event,'${packId}');openPackEditMode('${packId}');">
+        ${packPhoto
+          ? `<div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPackPhotoFullscreen('${packId}')">
+               <img src="${packPhoto}" style="width:100%;display:block;border-radius:10px;">
+               <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
+                 <button onclick="event.stopPropagation();document.getElementById('pe-photo-input').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
+                 <button onclick="event.stopPropagation();savePackField('${packId}','packScreenshot',null).then(()=>openPackEditMode('${packId}'))" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
+               </div>
+             </div>`
+          : `<div onclick="document.getElementById('pe-photo-input').click()"
+               style="border:2px dashed var(--border2);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .15s;"
+               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
+               <div style="font-size:22px;margin-bottom:6px;">📸</div>
+               <div style="font-size:12px;color:var(--muted);">Click to add chart screenshot</div>
+             </div>`
+        }
+      </div>
+    </div>`;
+}
+
+// Pack edit mode helpers
+function peToggleEmotion(em) {
+  window._peEmotion = (window._peEmotion === em) ? '' : em;
+  document.querySelectorAll('[id^="pe-emo-"]').forEach(el => {
+    const isActive = el.id === 'pe-emo-' + em && window._peEmotion === em;
+    el.style.outline   = isActive ? '2px solid var(--accent)' : 'none';
+    el.style.transform = isActive ? 'scale(1.1)' : 'scale(1)';
+  });
+}
+function peSetConf(n) {
+  window._peConf = n;
+  for (let i=1;i<=10;i++) {
+    const btn = document.getElementById('pe-conf-'+i);
+    if (!btn) continue;
+    const active = i === n;
+    btn.style.background   = active ? 'var(--accent)' : 'var(--surface)';
+    btn.style.color        = active ? '#fff' : 'var(--muted)';
+    btn.style.borderColor  = active ? 'var(--accent)' : 'var(--border2)';
+  }
+}
+function peToggleTag(tag) {
+  if (!window._peTags.includes(tag)) window._peTags.push(tag);
+  _refreshPeTagsList();
+}
+function peRemoveTag(tag) {
+  window._peTags = window._peTags.filter(t => t !== tag);
+  _refreshPeTagsList();
+}
+function peAddNewTag() {
+  const inp = document.getElementById('pe-new-tag');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (val && !window._peTags.includes(val)) window._peTags.push(val);
+  inp.value = '';
+  _refreshPeTagsList();
+}
+function _refreshPeTagsList() {
+  const wrap = document.getElementById('pe-tags-list');
+  if (!wrap) return;
+  const allTags = getAllKnownTags();
+  const merged = [...new Set([...allTags, ...window._peTags])];
+  wrap.innerHTML = merged.map(tag => {
+    const on = window._peTags.includes(tag);
+    if (on) return `<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 8px 4px 10px;border-radius:16px;font-size:11px;font-weight:600;border:1px solid var(--accent);background:rgba(99,102,241,.15);color:var(--accent);">
+      ${tag}<span onclick="peRemoveTag('${tag}')" style="cursor:pointer;font-size:13px;line-height:1;color:var(--accent);opacity:.7;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.7'">&times;</span></span>`;
+    return `<span onclick="peToggleTag('${tag}')" style="padding:4px 10px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">${tag}</span>`;
+  }).join('');
+}
+
+async function savePackEdit(packId) {
+  const notes  = (document.getElementById('pe-notes')?.value || '').trim();
+  const emotion = window._peEmotion || '';
+  const conf    = window._peConf || '';
+  const tags    = window._peTags || [];
+  try {
+    await savePackField(packId, 'packNotes', notes);
+    await savePackField(packId, 'packEmotion', emotion);
+    await savePackField(packId, 'packConfidence', conf);
+    await savePackField(packId, 'packTags', tags.length ? tags : null);
+    toast('✓ Group saved', 'success');
+  } catch(err) {
+    console.error('savePackEdit failed', err);
+    toast('❌ Save failed — check console', 'error');
+  }
+  // Restore header buttons and show view mode
+  const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
+  if (headerBtns) headerBtns.innerHTML = _packDetailHeaderBtns();
+  renderTrades();
+  openPackDetail(packId);
+}
+
+function cancelPackEdit(packId) {
+  const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
+  if (headerBtns) headerBtns.innerHTML = _packDetailHeaderBtns();
+  renderTrades();
+  openPackDetail(packId);
+}
+
+function _packDetailHeaderBtns() {
+  return `
+    <button id="detail-expand-btn" onclick="openDetailOverlay()" title="Expand" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    </button>
+    <button id="detail-edit-btn" title="Edit" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </button>
+    <button id="detail-delete-btn" title="Delete Group" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor='var(--red)';this.style.color='var(--red)';this.style.background='rgba(255,59,92,.08)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--muted)';this.style.background='var(--surface2)'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+    </button>`;
+}
+
+// Delete the entire pack group (removes all child trades)
+function deletePackGroup(packId) {
+  const packTrades = _lastRenderedPackMap[packId] || trades.filter(t => t.packId === packId);
+  const count = packTrades.length;
+  showConfirm({
+    icon: '🗑️',
+    title: 'Delete Group',
+    message: `This will permanently delete the group and all ${count} position${count!==1?'s':''} inside it.`,
+    okText: 'Delete All',
+    okColor: 'var(--red)',
+    onOk: async () => {
+      const ids = packTrades.map(t => t.id);
+      trades = trades.filter(t => !ids.includes(t.id));
+      save();
+      invalidateStatCache();
+      window._currentPackId = null;
+      document.getElementById('trade-detail-body').innerHTML = '';
+      document.querySelector('#trade-detail-panel .panel-title').textContent = 'Trade Detail';
+      const editBtn   = document.getElementById('detail-edit-btn');
+      const deleteBtn = document.getElementById('detail-delete-btn');
+      if (editBtn)   { editBtn.style.display = ''; editBtn.onclick = openEditSelected; }
+      if (deleteBtn) { deleteBtn.style.display = ''; deleteBtn.onclick = () => { if(selectedId) instantDelete(selectedId); }; }
+      renderTrades();
+      refreshDashboard();
+      toast('⏳ Deleting group...', '');
+      try {
+        await Promise.all(ids.map(id => guaranteedDeleteFromSupabase(id)));
+        toast(`Group deleted (${count} trade${count!==1?'s':''})`, 'success');
+      } catch(e) {
+        toast('⚠️ Deleted locally — sync failed', 'error');
+      }
+    }
+  });
 }
 
 // Restore panel header buttons when a normal (non-pack-header) trade is selected
 const _origShowTradeDetail = showTradeDetail;
 showTradeDetail = function(id) {
-  // If this trade belongs to a pack and the pack is expanded in the panel,
-  // keep _currentPackId so the expand button still opens the group overlay.
-  // Only clear it if the trade has no packId (standalone trade).
   const t = trades.find(x => x.id === id);
-  if (!t || !t.packId) {
-    window._currentPackId = null;
-    document.querySelector('#trade-detail-panel .panel-title').textContent = 'Trade Detail';
-    const editBtn   = document.getElementById('detail-edit-btn');
-    const deleteBtn = document.getElementById('detail-delete-btn');
-    if (editBtn)   editBtn.style.display = '';
-    if (deleteBtn) deleteBtn.style.display = '';
-  }
+  // Restore title and wire up standard edit/delete for standalone trades
+  window._currentPackId = t?.packId || null;
+  document.querySelector('#trade-detail-panel .panel-title').textContent = 'Trade Detail';
+  const editBtn   = document.getElementById('detail-edit-btn');
+  const deleteBtn = document.getElementById('detail-delete-btn');
+  if (editBtn)   { editBtn.style.display = ''; editBtn.onclick = openEditSelected; }
+  if (deleteBtn) { deleteBtn.style.display = ''; deleteBtn.onclick = () => { if(selectedId) instantDelete(selectedId); }; }
   _origShowTradeDetail(id);
 };
 
@@ -14898,11 +15107,19 @@ showTradeDetail = function(id) {
 function uploadPackPhotoAndRefresh(event, packId) {
   const file = event.target?.files?.[0] || event;
   if (!file || !(file instanceof File)) return;
+  // Track if we're in edit mode before the async completes
+  const inEditMode = (window._pePackId === packId);
   _processImageHighQuality(file, async dataUrl => {
     try {
       const realPackId = await savePackField(packId, 'packScreenshot', dataUrl);
       renderTrades();
-      openPackDetail(realPackId || packId);
+      const targetId = realPackId || packId;
+      if (inEditMode) {
+        window._pePackId = targetId;
+        openPackEditMode(targetId);
+      } else {
+        openPackDetail(targetId);
+      }
       toast('📸 Photo saved', 'success');
     } catch(err) {
       console.error('TradeLog: pack photo save failed', err);
