@@ -2979,8 +2979,8 @@
               <div style="flex:1;min-width:0;">
                 <div id="feat-be-label" style="font-size:12px;font-weight:700;">Auto BE</div>
                 <div style="display:flex;align-items:center;gap:5px;">
-                  <span style="font-size:10px;color:var(--muted);font-weight:500;">Mark ±0.02% trades as BE</span>
-                  <span title="Marks any trade whose net P&L is within ±0.02% of your account balance as Break Even. Press again to undo." style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);color:var(--muted);font-size:9px;font-weight:800;cursor:help;flex-shrink:0;line-height:1;" onmouseenter="this.style.background='var(--surface2)';this.style.color='var(--text2)'" onmouseleave="this.style.background='var(--surface3)';this.style.color='var(--muted)'">i</span>
+                  <span style="font-size:10px;color:var(--muted);font-weight:500;">Mark ±0.02% trades as BE — no undo</span>
+                  <span title="Scans all trades whose net P&L is within ±0.02% of your account balance and marks them as Break Even. This is permanent — there is no undo. Each affected trade is instantly updated in Supabase." style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);color:var(--muted);font-size:9px;font-weight:800;cursor:help;flex-shrink:0;line-height:1;" onmouseenter="this.style.background='var(--surface2)';this.style.color='var(--text2)'" onmouseleave="this.style.background='var(--surface3)';this.style.color='var(--muted)'">i</span>
                 </div>
               </div>
               <div id="feat-be-pill" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.5px;background:var(--surface3);color:var(--muted);flex-shrink:0;">OFF</div>
@@ -2992,8 +2992,8 @@
               <div style="flex:1;min-width:0;">
                 <div id="feat-pack-label" style="font-size:12px;font-weight:700;">Auto-Pack</div>
                 <div style="display:flex;align-items:center;gap:5px;">
-                  <span style="font-size:10px;color:var(--muted);font-weight:500;">Group same-symbol trades</span>
-                  <span title="Groups trades on the same symbol and direction that open within 1 minute of each other. Uses open time only. Click + Add Trade on any group to add more trades manually." style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);color:var(--muted);font-size:9px;font-weight:800;cursor:help;flex-shrink:0;line-height:1;" onmouseenter="this.style.background='var(--surface2)';this.style.color='var(--text2)'" onmouseleave="this.style.background='var(--surface3)';this.style.color='var(--muted)'">i</span>
+                  <span style="font-size:10px;color:var(--muted);font-weight:500;">Group same-symbol trades — no undo</span>
+                  <span title="Groups trades on the same symbol &amp; direction that opened within 60 seconds of each other into real packs saved to Supabase. You can then add notes, photos and mindset to each group. No undo — ungrouping must be done manually one trade at a time." style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--surface3);border:1px solid var(--border2);color:var(--muted);font-size:9px;font-weight:800;cursor:help;flex-shrink:0;line-height:1;" onmouseenter="this.style.background='var(--surface2)';this.style.color='var(--text2)'" onmouseleave="this.style.background='var(--surface3)';this.style.color='var(--muted)'">i</span>
                 </div>
               </div>
               <div id="feat-pack-pill" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:.5px;background:var(--surface3);color:var(--muted);flex-shrink:0;">OFF</div>
@@ -15411,9 +15411,10 @@ function toggleAutoPack() {
   if (next) {
     showConfirm({
       icon: '⚡',
-      title: 'Enable Auto-Pack?',
-      message: 'Auto-Pack groups trades on the same symbol & direction within 1 minute. Groups are saved to Supabase immediately — notes, photos and mindset will persist across devices.',
-      okText: 'Enable',
+      title: 'Enable Auto-Pack — No Undo',
+      message: 'Auto-Pack automatically groups trades on the same symbol & direction that opened within 60 seconds of each other. All groups are immediately saved to Supabase as real packs — so you can add notes, photos and mindset to each group and they will persist across devices. Any new trade you add will also be auto-grouped and saved instantly.',
+      warn: '⚠️ No undo. Once trades are grouped into a pack, ungrouping must be done manually one trade at a time. Think carefully before enabling on a journal with many trades.',
+      okText: 'Enable Auto-Pack',
       okColor: 'var(--yellow)',
       onOk: async () => {
         localStorage.setItem('tradelog_autopack', 'true');
@@ -15959,7 +15960,7 @@ function featToggleSelect() {
 
 // ── AUTO BREAK-EVEN ───────────────────────────────────────────────────────────
 // Marks any trade whose |netPnl| is within ±0.02% of account balance as BE.
-// Press again to undo — restores original results.
+// Permanent — no undo. Updates Supabase immediately.
 const _AUTO_BE_KEY = 'tradelog_auto_be_active';
 let _autoBEActive = localStorage.getItem(_AUTO_BE_KEY) === 'true';
 
@@ -15988,9 +15989,9 @@ async function autoMarkBE() {
 
   showConfirm({
     icon: '⚖️',
-    title: 'Auto Break-Even',
-    message: `${candidates.length} trade${candidates.length !== 1 ? 's are' : ' is'} within ±${getCurrencySymbol()}${threshold.toFixed(2)} of zero (0.02% of your ${getCurrencySymbol()}${bal.toLocaleString()} balance). These will be marked as Break Even.`,
-    warn: '⚠️ This cannot be undone. Trades will be permanently updated in your journal and Supabase.',
+    title: 'Auto Break-Even — No Undo',
+    message: `Auto BE scans every trade where the net P&L is within ±0.02% of your account balance (±${getCurrencySymbol()}${threshold.toFixed(2)} on a ${getCurrencySymbol()}${bal.toLocaleString()} account). Any trade that small is treated as a scratch — commission ate the profit or the loss was negligible. Found ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} that qualify.`,
+    warn: '⚠️ No undo. Results will be permanently changed to BE in your journal and saved to Supabase. You cannot reverse this without manually editing each trade.',
     okText: 'Mark as BE',
     okColor: 'var(--yellow)',
     onOk: async () => {
