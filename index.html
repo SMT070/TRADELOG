@@ -6632,6 +6632,8 @@ async function saveTrade() {
   // Async Supabase write — does not block the UI
   try {
     await guaranteedSaveToSupabase(trade);
+    // If Auto-Pack is on, re-evaluate groups and commit any new groups to Supabase
+    if (isAutoPack()) await commitAllAutoPacksToSupabase();
   } catch(e) {
     toast('⚠️ Saved locally — sync failed, will retry', 'error');
     console.error('TradeLog: saveTrade sync failed', e);
@@ -10139,7 +10141,13 @@ async function confirmImport() {
   toast('⏳ Importing...', '');
   try {
     await Promise.all(pendingImport.map(t => guaranteedSaveToSupabase(t)));
-    toast('✓ Imported ' + pendingImport.length + ' trades', 'success');
+    // If Auto-Pack is on, group & save newly imported trades
+    if (isAutoPack()) {
+      const count = await commitAllAutoPacksToSupabase();
+      toast('✓ Imported ' + pendingImport.length + ' trades' + (count > 0 ? ' · ' + count + ' grouped into packs' : ''), 'success');
+    } else {
+      toast('✓ Imported ' + pendingImport.length + ' trades', 'success');
+    }
   } catch(e) {
     toast('⚠️ Saved locally — sync may be partial', 'error');
   }
@@ -15372,26 +15380,54 @@ function toggleSelectAll(e) {
 //  • Pack select mode is unaffected; auto-packs are ignored there.
 // ══════════════════════════════════════════════════════════════════
 
+// ── Convert all current auto-groups to real packs and save to Supabase ─────────
+async function commitAllAutoPacksToSupabase() {
+  const standalone = trades.filter(t => !t.packId);
+  const { autoGroups } = buildAutoPackGroups(standalone);
+  const entries = Object.entries(autoGroups);
+  if (!entries.length) return 0;
+  const toSync = [];
+  entries.forEach(([, grp]) => {
+    const realPackId = uid();
+    const sym = grp[0].symbol;
+    const dir = grp[0].dir;
+    grp.forEach(t => {
+      const idx = trades.findIndex(x => x.id === t.id);
+      if (idx !== -1) {
+        trades[idx].packId   = realPackId;
+        trades[idx].packName = sym + ' ' + dir;
+        toSync.push(trades[idx]);
+      }
+    });
+  });
+  save();
+  try { await Promise.all(toSync.map(t => guaranteedSaveToSupabase(t))); }
+  catch(e) { console.warn('commitAllAutoPacksToSupabase sync failed', e); }
+  return toSync.length;
+}
+
 function toggleAutoPack() {
   const next = !(localStorage.getItem('tradelog_autopack') === 'true');
   if (next) {
     showConfirm({
       icon: '⚡',
       title: 'Enable Auto-Pack?',
-      message: 'Auto-Pack groups trades on the same symbol within 1 minute. Ungrouping later must be done manually one by one — only enable if you are sure.',
+      message: 'Auto-Pack groups trades on the same symbol & direction within 1 minute. Groups are saved to Supabase immediately — notes, photos and mindset will persist across devices.',
       okText: 'Enable',
       okColor: 'var(--yellow)',
-      onOk: () => {
+      onOk: async () => {
         localStorage.setItem('tradelog_autopack', 'true');
-        saveProfileToSupabase(); // persist setting to Supabase
+        saveProfileToSupabase();
         _syncFeatureDropStates();
-        toast('⚡ Auto-Pack ON — trades within 1 min on same symbol are grouped', 'success');
+        toast('⚡ Auto-Pack ON — grouping & saving to Supabase…', 'success');
+        const count = await commitAllAutoPacksToSupabase();
         renderTrades();
+        if (count > 0) toast('✓ ' + count + ' trade' + (count !== 1 ? 's' : '') + ' grouped & saved to Supabase', 'success');
       }
     });
   } else {
     localStorage.setItem('tradelog_autopack', 'false');
-    saveProfileToSupabase(); // persist setting to Supabase
+    saveProfileToSupabase();
     _syncFeatureDropStates();
     toast('Auto-Pack OFF', '');
     renderTrades();
