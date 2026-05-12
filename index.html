@@ -3418,6 +3418,109 @@
 
     </div>
 
+    <!-- ══════════════════════════════════════════════════════════
+         GROUP / PACK ANALYTICS — data only from grouped trades
+         ═══════════════════════════════════════════════════════ -->
+    <div id="pack-analytics-section" style="margin-top:28px;">
+
+      <!-- Section divider -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+        <div style="flex:1;height:1px;background:var(--border2);"></div>
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 16px;border-radius:20px;background:var(--surface2);border:1px solid var(--border2);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2"><rect x="2" y="3" width="8" height="8" rx="2"/><rect x="14" y="3" width="8" height="8" rx="2"/><rect x="2" y="13" width="8" height="8" rx="2"/><rect x="14" y="13" width="8" height="8" rx="2"/></svg>
+          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--accent);">Grouped Trades Analytics</span>
+        </div>
+        <div style="flex:1;height:1px;background:var(--border2);"></div>
+      </div>
+
+      <div id="pack-analytics-empty" style="display:none;text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;">
+        No grouped trades found. Group trades on the Trades page to see stats here.
+      </div>
+
+      <div id="pack-analytics-body">
+
+        <!-- Stat cards -->
+        <div id="pa-stat-row" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">
+          <div class="an-stat-card" style="--ac:var(--green);">
+            <div class="an-stat-label">Groups Net P&amp;L</div>
+            <div class="an-stat-value" id="pa-net-pnl" style="color:var(--green);">—</div>
+          </div>
+          <div class="an-stat-card" style="--ac:var(--accent);">
+            <div class="an-stat-label">Group Win Rate</div>
+            <div class="an-stat-value" id="pa-wr" style="color:var(--accent);">—</div>
+          </div>
+          <div class="an-stat-card" style="--ac:var(--yellow);">
+            <div class="an-stat-label">Total Groups</div>
+            <div class="an-stat-value" id="pa-total" style="color:var(--yellow);">—</div>
+            <div class="an-stat-sub" id="pa-total-sub" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
+          </div>
+          <div class="an-stat-card" style="--ac:var(--green);">
+            <div class="an-stat-label">Avg Group P&amp;L</div>
+            <div class="an-stat-value" id="pa-avg-pnl">—</div>
+          </div>
+          <div class="an-stat-card" style="--ac:var(--red);">
+            <div class="an-stat-label">Avg Trades/Group</div>
+            <div class="an-stat-value" id="pa-avg-size" style="color:var(--text);">—</div>
+          </div>
+        </div>
+
+        <!-- Second row -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+          <div class="an-stat-card" style="--ac:var(--green);">
+            <div class="an-stat-label">Best Group</div>
+            <div class="an-stat-value" id="pa-best" style="color:var(--green);">—</div>
+            <div class="an-stat-sub" id="pa-best-name" style="font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+          </div>
+          <div class="an-stat-card" style="--ac:var(--red);">
+            <div class="an-stat-label">Worst Group</div>
+            <div class="an-stat-value" id="pa-worst" style="color:var(--red);">—</div>
+            <div class="an-stat-sub" id="pa-worst-name" style="font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+          </div>
+          <div class="an-stat-card" style="--ac:var(--accent);">
+            <div class="an-stat-label">Avg Win (Group)</div>
+            <div class="an-stat-value" id="pa-avg-win" style="color:var(--green);">—</div>
+          </div>
+          <div class="an-stat-card" style="--ac:var(--red);">
+            <div class="an-stat-label">Avg Loss (Group)</div>
+            <div class="an-stat-value" id="pa-avg-loss" style="color:var(--red);">—</div>
+          </div>
+        </div>
+
+        <!-- Charts row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+
+          <!-- Groups by result breakdown -->
+          <div class="panel" style="padding:18px;">
+            <div class="panel-header" style="padding:0 0 12px 0;border-bottom:1px solid var(--border);margin-bottom:14px;">
+              <div class="panel-header-left"><div class="panel-title">Groups by Result</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:20px;">
+              <canvas id="pa-result-chart" width="120" height="120" style="flex-shrink:0;"></canvas>
+              <div id="pa-result-legend" style="display:flex;flex-direction:column;gap:8px;flex:1;"></div>
+            </div>
+          </div>
+
+          <!-- Top groups leaderboard -->
+          <div class="panel" style="padding:18px;">
+            <div class="panel-header" style="padding:0 0 12px 0;border-bottom:1px solid var(--border);margin-bottom:14px;">
+              <div class="panel-header-left"><div class="panel-title">Top Groups by P&amp;L</div></div>
+            </div>
+            <div id="pa-top-groups" style="display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
+
+        </div>
+
+        <!-- Symbol breakdown for groups -->
+        <div class="panel" style="padding:18px;margin-bottom:16px;">
+          <div class="panel-header" style="padding:0 0 12px 0;border-bottom:1px solid var(--border);margin-bottom:14px;">
+            <div class="panel-header-left"><div class="panel-title">Group P&amp;L by Symbol</div></div>
+          </div>
+          <div id="pa-symbol-rows" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+
+      </div><!-- /pack-analytics-body -->
+    </div><!-- /pack-analytics-section -->
+
   </div>
 </div>
 
@@ -9211,8 +9314,165 @@ function renderAnalytics() {
   try { renderAnalyticsSymbols(); }      catch(e) { console.warn('renderAnalyticsSymbols', e); }
   try { renderAnalyticsHoldTime(); }     catch(e) { console.warn('renderAnalyticsHoldTime', e); }
   try { renderAnalyticsHealthScore(); }  catch(e) { console.warn('renderAnalyticsHealthScore', e); }
+  try { renderPackAnalytics(); }         catch(e) { console.warn('renderPackAnalytics', e); }
 
 }
+
+// ── PACK / GROUP ANALYTICS ────────────────────────────────────────────────────
+function renderPackAnalytics() {
+  const sym  = getCurrencySymbol();
+  const fmt  = v => (v >= 0 ? '+' + sym : '-' + sym) + Math.abs(v).toFixed(2);
+  const emptyEl = document.getElementById('pack-analytics-empty');
+  const bodyEl  = document.getElementById('pack-analytics-body');
+
+  // Collect all real packs (trades with a packId)
+  const packMap = {};
+  trades.forEach(t => {
+    if (!t.packId) return;
+    if (!packMap[t.packId]) packMap[t.packId] = [];
+    packMap[t.packId].push(t);
+  });
+
+  const packIds = Object.keys(packMap);
+
+  // Show empty state if no groups
+  if (!packIds.length) {
+    if (emptyEl) emptyEl.style.display = 'block';
+    if (bodyEl)  bodyEl.style.display  = 'none';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (bodyEl)  bodyEl.style.display  = 'block';
+
+  // Build group summaries
+  const groups = packIds.map(pid => {
+    const ts   = packMap[pid];
+    const pnl  = ts.reduce((s, t) => s + getPnl(t), 0);
+    const childResults = ts.map(t => getResult(t));
+    const allBe  = childResults.every(r => r === 'be');
+    const anyWin = childResults.some(r => r === 'win');
+    const anyLoss= childResults.some(r => r === 'loss');
+    const result = allBe ? 'be' : (anyWin && !anyLoss) ? 'win' : (anyLoss && !anyWin) ? 'loss' : pnl >= 0 ? 'win' : 'loss';
+    return { pid, name: ts[0].packName || 'Pack', pnl, count: ts.length, result, symbol: ts[0].symbol || '' };
+  });
+
+  // Aggregate stats
+  const totalPnl   = groups.reduce((s, g) => s + g.pnl, 0);
+  const wins       = groups.filter(g => g.result === 'win');
+  const losses     = groups.filter(g => g.result === 'loss');
+  const bes        = groups.filter(g => g.result === 'be');
+  const decided    = wins.length + losses.length;
+  const wr         = decided ? (wins.length / decided * 100) : 0;
+  const avgPnl     = totalPnl / groups.length;
+  const avgSize    = groups.reduce((s, g) => s + g.count, 0) / groups.length;
+  const avgWin     = wins.length  ? wins.reduce((s, g) => s + g.pnl, 0)  / wins.length  : null;
+  const avgLoss    = losses.length? losses.reduce((s, g) => s + g.pnl, 0) / losses.length: null;
+  const best       = groups.reduce((a, g) => g.pnl > a.pnl ? g : a, groups[0]);
+  const worst      = groups.reduce((a, g) => g.pnl < a.pnl ? g : a, groups[0]);
+
+  // Stat cards
+  const pnlColor = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const _set = (id, val, color) => { const el = document.getElementById(id); if (el) { el.textContent = val; if (color) el.style.color = color; } };
+  _set('pa-net-pnl', fmt(totalPnl), pnlColor);
+  _set('pa-wr',      wr.toFixed(1) + '%', 'var(--accent)');
+  _set('pa-total',   groups.length, 'var(--yellow)');
+  const sub = document.getElementById('pa-total-sub');
+  if (sub) sub.textContent = wins.length + 'W  ' + losses.length + 'L  ' + bes.length + 'BE';
+  _set('pa-avg-pnl',  fmt(avgPnl),  avgPnl >= 0 ? 'var(--green)' : 'var(--red)');
+  _set('pa-avg-size', avgSize.toFixed(1) + ' trades', 'var(--text)');
+  _set('pa-best',     fmt(best.pnl),  'var(--green)');
+  const bestName = document.getElementById('pa-best-name'); if (bestName) bestName.textContent = best.name;
+  _set('pa-worst',    fmt(worst.pnl), 'var(--red)');
+  const worstName = document.getElementById('pa-worst-name'); if (worstName) worstName.textContent = worst.name;
+  _set('pa-avg-win',  avgWin  !== null ? fmt(avgWin)  : '—', 'var(--green)');
+  _set('pa-avg-loss', avgLoss !== null ? fmt(Math.abs(avgLoss)) : '—', 'var(--red)');
+
+  // ── Donut chart: Win / Loss / BE breakdown ──
+  const resultCanvas = document.getElementById('pa-result-chart');
+  const legendEl     = document.getElementById('pa-result-legend');
+  if (resultCanvas) {
+    if (chartReg['pa-result-chart']) { chartReg['pa-result-chart'].destroy(); delete chartReg['pa-result-chart']; }
+    const getCss = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    chartReg['pa-result-chart'] = new Chart(resultCanvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Win', 'Loss', 'BE'],
+        datasets: [{ data: [wins.length, losses.length, bes.length],
+          backgroundColor: [getCss('--green') || '#00FFBB', getCss('--red') || '#FF3B5C', '#f59e0b'],
+          borderWidth: 0, hoverOffset: 4 }]
+      },
+      options: { cutout: '72%', plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => ' ' + ctx.label + ': ' + ctx.raw + ' group' + (ctx.raw !== 1 ? 's' : '')
+      }}}, animation: { duration: 400 } }
+    });
+    if (legendEl) {
+      const items = [
+        { label: 'Win',  count: wins.length,   color: 'var(--green)' },
+        { label: 'Loss', count: losses.length,  color: 'var(--red)' },
+        { label: 'BE',   count: bes.length,     color: 'var(--yellow)' },
+      ];
+      legendEl.innerHTML = items.map(it => `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <div style="width:10px;height:10px;border-radius:50%;background:${it.color};flex-shrink:0;"></div>
+            <span style="font-size:12px;color:var(--text2);">${it.label}</span>
+          </div>
+          <span style="font-size:12px;font-weight:700;color:var(--text);">${it.count}</span>
+        </div>`).join('');
+    }
+  }
+
+  // ── Top groups leaderboard ──
+  const topEl = document.getElementById('pa-top-groups');
+  if (topEl) {
+    const sorted = [...groups].sort((a, b) => b.pnl - a.pnl);
+    const maxAbs = Math.max(...groups.map(g => Math.abs(g.pnl)), 0.01);
+    topEl.innerHTML = sorted.slice(0, 8).map(g => {
+      const c = g.pnl >= 0 ? 'var(--green)' : 'var(--red)';
+      const bg = g.pnl >= 0 ? 'var(--green-bg)' : 'var(--red-bg)';
+      const pct = Math.round((Math.abs(g.pnl) / maxAbs) * 100);
+      return `<div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:11px;color:var(--text2);width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${g.name}</div>
+        <div style="flex:1;height:6px;border-radius:3px;background:var(--surface3);overflow:hidden;">
+          <div style="width:${pct}%;height:100%;border-radius:3px;background:${c};transition:width .4s;"></div>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:${c};width:64px;text-align:right;flex-shrink:0;">${fmt(g.pnl)}</div>
+        <div style="font-size:10px;color:var(--muted);width:24px;text-align:right;flex-shrink:0;">${g.count}x</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Symbol breakdown ──
+  const symMap = {};
+  groups.forEach(g => {
+    if (!symMap[g.symbol]) symMap[g.symbol] = { pnl: 0, wins: 0, losses: 0, bes: 0, count: 0 };
+    symMap[g.symbol].pnl   += g.pnl;
+    symMap[g.symbol].count += 1;
+    if (g.result === 'win')  symMap[g.symbol].wins++;
+    else if (g.result === 'loss') symMap[g.symbol].losses++;
+    else symMap[g.symbol].bes++;
+  });
+  const symRows = document.getElementById('pa-symbol-rows');
+  if (symRows) {
+    const symList = Object.entries(symMap).sort((a, b) => b[1].pnl - a[1].pnl);
+    const maxSymAbs = Math.max(...symList.map(([,v]) => Math.abs(v.pnl)), 0.01);
+    symRows.innerHTML = symList.map(([symbol, d]) => {
+      const c  = d.pnl >= 0 ? 'var(--green)' : 'var(--red)';
+      const pct = Math.round((Math.abs(d.pnl) / maxSymAbs) * 100);
+      const wr  = (d.wins + d.losses) ? Math.round(d.wins / (d.wins + d.losses) * 100) : 0;
+      return `<div style="display:grid;grid-template-columns:80px 1fr 60px 44px 80px;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:12px;font-weight:700;color:var(--text);">${symbol}</span>
+        <div style="height:6px;border-radius:3px;background:var(--surface3);overflow:hidden;">
+          <div style="width:${pct}%;height:100%;border-radius:3px;background:${c};transition:width .4s;"></div>
+        </div>
+        <span style="font-size:11px;font-weight:700;color:${c};text-align:right;">${fmt(d.pnl)}</span>
+        <span style="font-size:11px;color:var(--muted);text-align:center;">${wr}% WR</span>
+        <span style="font-size:10px;color:var(--muted);text-align:right;">${d.count} group${d.count!==1?'s':''}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
 
 // ── ANALYTICS: SESSIONS PANEL ────────────────────────────────────────────────
 function _anFmt12h(h) {
