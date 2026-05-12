@@ -4934,7 +4934,8 @@ window.switchPage = function(name) {
   <div style="background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:32px;width:360px;max-width:92vw;box-shadow:0 24px 60px rgba(0,0,0,.4);">
     <div style="font-size:28px;margin-bottom:14px;" id="confirm-icon">⚠️</div>
     <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:10px;letter-spacing:-0.3px;" id="confirm-title">Are you sure?</div>
-    <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:28px;" id="confirm-message"></div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px;" id="confirm-message"></div>
+    <div id="confirm-warn" style="display:none;font-size:12px;font-weight:700;color:var(--red);background:var(--red-bg);border:1px solid var(--red-glow);border-radius:8px;padding:8px 12px;margin-bottom:18px;line-height:1.5;"></div>
     <div style="display:flex;gap:10px;">
       <button id="confirm-cancel-btn" onclick="closeConfirmModal()" class="btn" style="flex:1;padding:15px;font-size:15px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);-webkit-tap-highlight-color:transparent;touch-action:manipulation;">Cancel</button>
       <button id="confirm-ok-btn" onclick="_confirmCallback&&_confirmCallback()" class="btn" style="flex:1;padding:15px;font-size:15px;-webkit-tap-highlight-color:transparent;touch-action:manipulation;"></button>
@@ -5335,10 +5336,15 @@ function openBalanceModal() {
 function closeBalanceModal() { document.getElementById('balance-modal').style.display = 'none'; }
 
 let _confirmCallback = null;
-function showConfirm({ icon='⚠️', title='Are you sure?', message='', okText='Confirm', okColor='var(--red)', onOk }) {
+function showConfirm({ icon='⚠️', title='Are you sure?', message='', warn='', okText='Confirm', okColor='var(--red)', onOk }) {
   document.getElementById('confirm-icon').textContent = icon;
   document.getElementById('confirm-title').textContent = title;
   document.getElementById('confirm-message').textContent = message;
+  const warnEl = document.getElementById('confirm-warn');
+  if (warnEl) {
+    warnEl.textContent = warn;
+    warnEl.style.display = warn ? 'block' : 'none';
+  }
   const okBtn = document.getElementById('confirm-ok-btn');
   okBtn.textContent = okText;
   okBtn.style.background = okColor;
@@ -5551,7 +5557,11 @@ async function loadAllFromSupabase() {
         pnl: r.pnl, commission: r.commission, swap: r.swap || 0, netPnl: r.net_pnl, r: r.r,
         result: r.result, emotion: r.emotion, confidence: r.confidence,
         notes: r.notes, screenshot: r.screenshot, strategies: r.strategies || [],
-        packId: r.pack_id || undefined, packName: r.pack_name || undefined
+        packId: r.pack_id || undefined, packName: r.pack_name || undefined,
+        packNotes:      r.pack_notes      || undefined,
+        packEmotion:    r.pack_emotion    || undefined,
+        packConfidence: r.pack_confidence || undefined,
+        packScreenshot: r.pack_screenshot || undefined,
       }));
       localStorage.setItem(KEY, JSON.stringify(trades));
     }
@@ -5646,7 +5656,11 @@ async function saveTradeToSupabase(t) {
     swap: t.swap || 0, net_pnl: t.netPnl, r: t.r, result: t.result, emotion: t.emotion,
     confidence: t.confidence, notes: t.notes, screenshot: t.screenshot,
     strategies: t.strategies || [],
-    pack_id: t.packId || null, pack_name: t.packName || null
+    pack_id: t.packId || null, pack_name: t.packName || null,
+    pack_notes:      t.packNotes      || null,
+    pack_emotion:    t.packEmotion    || null,
+    pack_confidence: t.packConfidence || null,
+    pack_screenshot: t.packScreenshot || null,
   };
   const { error } = await sb.from('trades').upsert(row);
   if (error) { console.error('TradeLog: upsert error', error); throw error; }
@@ -11059,11 +11073,17 @@ document.addEventListener('paste', e => {
 
   // Otherwise attach to selected trade in trades page
   if (selectedId) {
-    // If the selected trade belongs to an expanded pack, paste to the pack photo
     const selTrade = trades.find(x => x.id === selectedId);
-    if (selTrade && selTrade.packId) {
+    // Find which pack this trade belongs to — real pack (packId) or auto-pack (lastRenderedPackMap)
+    let packIdForPaste = selTrade?.packId || null;
+    if (!packIdForPaste && _lastRenderedPackMap) {
+      for (const [pid, ptrades] of Object.entries(_lastRenderedPackMap)) {
+        if (ptrades.some(t => t.id === selectedId)) { packIdForPaste = pid; break; }
+      }
+    }
+    if (packIdForPaste) {
       e.preventDefault();
-      uploadPackPhotoInline({ target: { files: [imgItem.getAsFile()] } }, selTrade.packId);
+      uploadPackPhotoInline({ target: { files: [imgItem.getAsFile()] } }, packIdForPaste);
       return;
     }
     e.preventDefault();
@@ -14666,16 +14686,14 @@ showTradeDetail = function(id) {
 
 // Upload photo from pack detail panel and refresh the panel
 function uploadPackPhotoAndRefresh(event, packId) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async function(ev) {
-    await savePackField(packId, 'packScreenshot', ev.target.result);
+  const file = event.target?.files?.[0] || event;
+  if (!file || !(file instanceof File)) return;
+  _processImageHighQuality(file, async dataUrl => {
+    await savePackField(packId, 'packScreenshot', dataUrl);
     openPackDetail(packId);
     renderTrades();
-    toast('Photo saved', 'success');
-  };
-  reader.readAsDataURL(file);
+    toast('📸 Photo saved', 'success');
+  });
 }
 
 function handlePackDetailPhotoDrop(event, packId) {
@@ -15079,7 +15097,8 @@ function renderPackRows(packId, packTrades, sym) {
   const losses     = packTrades.filter(t => getResult(t) === 'loss').length;
   const decided    = wins + losses;
   const wr         = decided ? Math.round(wins/decided*100) : 0;
-  const totalLots  = packTrades.reduce((s,t) => s + (parseFloat(t.lots)||0), 0);
+  const totalLots       = packTrades.reduce((s,t) => s + (parseFloat(t.lots)||0), 0);
+  const totalCommission = packTrades.reduce((s,t) => s + (parseFloat(t.commission)||0), 0);
   const symbols    = [...new Set(packTrades.map(t=>t.symbol))].join(', ');
   const dirs       = [...new Set(packTrades.map(t=>t.dir))];
   const dir        = dirs.length === 1 ? dirs[0] : 'MIXED';
@@ -15120,7 +15139,7 @@ function renderPackRows(packId, packTrades, sym) {
     <td style="color:var(--muted);">—</td>
     <td style="color:var(--muted);">—</td>
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
-    <td style="color:var(--muted);">—</td>
+    <td style="color:${totalCommission>0?'var(--red)':'var(--muted)'};font-family:var(--mono);font-weight:600;">${totalCommission>0?sym+totalCommission.toFixed(2):'—'}</td>
     <td>${resultBadge}</td>
     <td data-col="tags" style="max-width:110px;" onclick="event.stopPropagation()"><div class="pack-row-actions" style="display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .15s;">${actions}</div></td>
   </tr>`;
@@ -15221,15 +15240,13 @@ function _packInlinePastePhoto(event, packId) {
 
 // Upload photo from inline row — saves then re-renders so photo appears immediately
 function uploadPackPhotoInline(event, packId) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    await savePackField(packId, 'packScreenshot', e.target.result);
+  const file = event.target?.files?.[0] || event;
+  if (!file || !(file instanceof File)) return;
+  _processImageHighQuality(file, async dataUrl => {
+    await savePackField(packId, 'packScreenshot', dataUrl);
     renderTrades();
-    toast('Photo saved', 'success');
-  };
-  reader.readAsDataURL(file);
+    toast('📸 Photo saved', 'success');
+  });
 }
 
 // ── Override selectTrade to work correctly in select mode ─────────
@@ -15505,6 +15522,7 @@ function renderAutoPackRows(key, packTrades, sym) {
   const decided   = wins + losses;
   const wr        = decided ? Math.round(wins / decided * 100) : 0;
   const totalLots = packTrades.reduce((s, t) => s + (parseFloat(t.lots) || 0), 0);
+  const totalCommission = packTrades.reduce((s, t) => s + (parseFloat(t.commission) || 0), 0);
   const symbols   = [...new Set(packTrades.map(t => t.symbol))].join(', ');
 
   // Label: symbol + time range
@@ -15547,7 +15565,7 @@ function renderAutoPackRows(key, packTrades, sym) {
     <td style="color:var(--muted);">—</td>
     <td style="color:var(--muted);">—</td>
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
-    <td style="color:var(--muted);">—</td>
+    <td style="color:${totalCommission>0?'var(--red)':'var(--muted)'};font-family:var(--mono);font-weight:600;">${totalCommission>0?sym+totalCommission.toFixed(2):'—'}</td>
     <td>${autoResultBadge}</td>
     <td style="max-width:110px;overflow:hidden;"></td>
   </tr>`;
@@ -15820,7 +15838,7 @@ function _syncFeatureDropStates() {
   // Auto BE
   _setFeatPill('feat-be-pill',     'feat-auto-be-btn',  _autoBEActive,                              'rgba(245,158,11,0.25)', 'var(--yellow)');
   const beLabel = document.getElementById('feat-be-label');
-  if (beLabel) beLabel.textContent = _autoBEActive ? '↩ Undo Auto BE' : 'Auto BE';
+  if (beLabel) beLabel.textContent = 'Auto BE';
 
   // Auto-Pack
   const apOn = localStorage.getItem('tradelog_autopack') === 'true';
@@ -15860,89 +15878,49 @@ function featToggleSelect() {
 // ── AUTO BREAK-EVEN ───────────────────────────────────────────────────────────
 // Marks any trade whose |netPnl| is within ±0.02% of account balance as BE.
 // Press again to undo — restores original results.
-const _AUTO_BE_KEY      = 'tradelog_auto_be_active';
-const _AUTO_BE_SNAP_KEY = 'tradelog_auto_be_snapshot';
-
-// Restore state from previous session
-let _autoBEActive   = localStorage.getItem(_AUTO_BE_KEY) === 'true';
-let _autoBESnapshot = (() => {
-  try { return JSON.parse(localStorage.getItem(_AUTO_BE_SNAP_KEY)) || []; } catch { return []; }
-})();
+const _AUTO_BE_KEY = 'tradelog_auto_be_active';
+let _autoBEActive = localStorage.getItem(_AUTO_BE_KEY) === 'true';
 
 function _persistAutoBEState() {
-  localStorage.setItem(_AUTO_BE_KEY,      _autoBEActive ? 'true' : 'false');
-  localStorage.setItem(_AUTO_BE_SNAP_KEY, JSON.stringify(_autoBESnapshot));
+  localStorage.setItem(_AUTO_BE_KEY, _autoBEActive ? 'true' : 'false');
 }
 
 async function autoMarkBE() {
-  const bal = getBalance();
-  const threshold = bal > 0
-    ? bal * 0.0002
-    : Math.abs(trades.reduce((s,t) => s + getPnl(t), 0)) * 0.0002;
+  // Already applied — just inform, don't allow re-run
+  if (_autoBEActive) {
+    toast('Auto BE already applied to your trades', '');
+    return;
+  }
 
-  if (threshold <= 0) {
+  const bal = getBalance();
+  if (bal <= 0) {
     toast('Set your account balance first (Settings → Set Balance)', 'error');
     return;
   }
 
-  // ── UNDO mode ──
-  if (_autoBEActive && _autoBESnapshot.length) {
-    showConfirm({
-      icon: '↩️',
-      title: 'Undo Auto BE',
-      message: `Restore original results for ${_autoBESnapshot.length} trade${_autoBESnapshot.length !== 1 ? 's' : ''}?`,
-      okText: 'Undo',
-      okColor: 'var(--accent)',
-      onOk: async () => {
-        const snap = [..._autoBESnapshot];
-        snap.forEach(({ id, result }) => {
-          const idx = trades.findIndex(x => x.id === id);
-          if (idx !== -1) trades[idx].result = result;
-        });
-        _autoBEActive = false;
-        _autoBESnapshot = [];
-        _persistAutoBEState();
-        save();
-        invalidateStatCache();
-        renderTrades();
-        refreshDashboard();
-        _syncFeatureDropStates();
-        toast('↩ Auto BE undone', '');
-        try {
-          await Promise.all(snap.map(({ id }) => {
-            const t = trades.find(x => x.id === id);
-            return t ? guaranteedSaveToSupabase(t) : Promise.resolve();
-          }));
-        } catch(e) { console.warn('Auto BE undo sync failed:', e); }
-      }
-    });
-    return;
-  }
+  const threshold = bal * 0.0002; // ±0.02% of balance
 
-  // ── DO mode ──
   const candidates = trades.filter(t => {
     const pnl = getPnl(t);
     return Math.abs(pnl) <= threshold && getResult(t) !== 'be';
   });
 
   if (!candidates.length) {
-    toast('No trades found within ±0.02% of balance', '');
+    toast(`No trades within ±${getCurrencySymbol()}${threshold.toFixed(2)} (0.02% of ${getCurrencySymbol()}${bal.toLocaleString()})`, '');
     return;
   }
 
   showConfirm({
-    icon: '⚖',
+    icon: '⚖️',
     title: 'Auto Break-Even',
-    message: `Mark ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} as BE? These trades are within ±${getCurrencySymbol()}${threshold.toFixed(2)} (0.02% of balance).`,
+    message: `${candidates.length} trade${candidates.length !== 1 ? 's are' : ' is'} within ±${getCurrencySymbol()}${threshold.toFixed(2)} of zero (0.02% of your ${getCurrencySymbol()}${bal.toLocaleString()} balance). These will be marked as Break Even.`,
+    warn: '⚠️ This cannot be undone. Trades will be permanently updated in your journal and Supabase.',
     okText: 'Mark as BE',
     okColor: 'var(--yellow)',
     onOk: async () => {
-      // Save snapshot for undo
-      _autoBESnapshot = candidates.map(t => ({ id: t.id, result: t.result || getResult(t) }));
       candidates.forEach(t => {
         const idx = trades.findIndex(x => x.id === t.id);
-        if (idx === -1) return;
-        trades[idx].result = 'be';
+        if (idx !== -1) trades[idx].result = 'be';
       });
       _autoBEActive = true;
       _persistAutoBEState();
@@ -15951,7 +15929,8 @@ async function autoMarkBE() {
       renderTrades();
       refreshDashboard();
       _syncFeatureDropStates();
-      toast(`✓ ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} marked as BE — press again to undo`, 'success');
+      toast(`✓ ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} marked as BE`, 'success');
+      // Save every affected trade to Supabase
       try {
         await Promise.all(candidates.map(t => {
           const updated = trades.find(x => x.id === t.id);
