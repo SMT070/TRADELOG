@@ -5699,6 +5699,8 @@ async function initApp(user) {
   try { refreshDashboard(); } catch(e) {}
   try { renderTrades(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
+  // Restore feature pill states (auto-BE, etc.) from persisted localStorage
+  try { _syncFeatureDropStates(); } catch(e) {}
 
   // Start midnight auto-refresh — goals/greeting auto-reset at day boundary
   scheduleMidnightRefresh();
@@ -15858,8 +15860,19 @@ function featToggleSelect() {
 // ── AUTO BREAK-EVEN ───────────────────────────────────────────────────────────
 // Marks any trade whose |netPnl| is within ±0.02% of account balance as BE.
 // Press again to undo — restores original results.
-let _autoBEActive = false;
-let _autoBESnapshot = []; // { id, result } before marking
+const _AUTO_BE_KEY      = 'tradelog_auto_be_active';
+const _AUTO_BE_SNAP_KEY = 'tradelog_auto_be_snapshot';
+
+// Restore state from previous session
+let _autoBEActive   = localStorage.getItem(_AUTO_BE_KEY) === 'true';
+let _autoBESnapshot = (() => {
+  try { return JSON.parse(localStorage.getItem(_AUTO_BE_SNAP_KEY)) || []; } catch { return []; }
+})();
+
+function _persistAutoBEState() {
+  localStorage.setItem(_AUTO_BE_KEY,      _autoBEActive ? 'true' : 'false');
+  localStorage.setItem(_AUTO_BE_SNAP_KEY, JSON.stringify(_autoBESnapshot));
+}
 
 async function autoMarkBE() {
   const bal = getBalance();
@@ -15888,6 +15901,7 @@ async function autoMarkBE() {
         });
         _autoBEActive = false;
         _autoBESnapshot = [];
+        _persistAutoBEState();
         save();
         invalidateStatCache();
         renderTrades();
@@ -15931,6 +15945,7 @@ async function autoMarkBE() {
         trades[idx].result = 'be';
       });
       _autoBEActive = true;
+      _persistAutoBEState();
       save();
       invalidateStatCache();
       renderTrades();
