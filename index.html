@@ -14055,28 +14055,28 @@ tr.pack-separator td > div {
   height: 0;
 }
 
-/* ── Pack header row — strong visual block ── */
+/* ── Pack header row — same bg as all rows, purple accent only ── */
 tr.pack-header-row td {
-  background: var(--surface2) !important;
-  border-top: 2px solid var(--border2) !important;
-  border-bottom: 1px solid var(--border2) !important;
+  background: var(--surface) !important;
+  border-top: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border) !important;
   cursor: pointer;
 }
 tr.pack-header-row td:first-child {
   border-left: 3px solid var(--accent) !important;
 }
-tr.pack-header-row:hover td { background: var(--surface3) !important; }
-tr.pack-header-row.expanded td { border-bottom: 1px solid var(--border2) !important; }
+tr.pack-header-row:hover td { background: var(--surface2) !important; }
+tr.pack-header-row.expanded td { border-bottom: 1px solid var(--border) !important; }
 tr.pack-header-row:hover .pack-row-actions { opacity: 1 !important; }
 
-/* ── Pack child rows — indented, subtle ── */
+/* ── Pack child rows — same bg, purple accent only ── */
 tr.pack-child-row td {
-  opacity: 0.78;
-  background: var(--bg) !important;
+  opacity: 1;
+  background: var(--surface) !important;
   border-left: 3px solid transparent !important;
 }
 tr.pack-child-row td:first-child {
-  border-left: 3px solid var(--border) !important;
+  border-left: 3px solid var(--accent) !important;
   padding-left: 30px !important;
 }
 /* ── Unified date column alignment: ALL rows same left pad ── */
@@ -14095,7 +14095,7 @@ tr.pack-child-row td:first-child {
   display: flex;
   align-items: center;
 }
-tr.pack-child-row:hover td { opacity: 0.95; background: var(--surface2) !important; }
+tr.pack-child-row:hover td { background: var(--surface2) !important; }
 tr.pack-child-row.hidden { display: none; }
 tr.pack-child-row[data-pack^="_auto_"] td:first-child { border-left: 3px solid var(--border) !important; }
 /* Bottom border on last child to close the group visually */
