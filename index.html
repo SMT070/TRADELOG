@@ -14108,33 +14108,41 @@ window.addEventListener('resize', () => {
 }
 #pack-select-bar.active { display: flex; }
 
-/* ── Pack separator row ── */
+/* ── Pack separator row — spacer between groups ── */
 tr.pack-separator td {
   padding: 0 !important;
-  height: 1px !important;
+  height: 10px !important;
   background: transparent !important;
   border: none !important;
   pointer-events: none;
 }
 tr.pack-separator td > div {
-  height: 1px;
-  background: linear-gradient(90deg, transparent 18px, var(--border) 18px, var(--border) calc(100% - 18px), transparent calc(100% - 18px));
-  opacity: .55;
+  height: 0;
 }
 
-/* ── Pack header row — seamless, normal trade row look ── */
+/* ── Pack header row — strong visual block ── */
 tr.pack-header-row td {
-  background: transparent !important;
+  background: var(--surface2) !important;
+  border-top: 2px solid var(--border2) !important;
+  border-bottom: 1px solid var(--border2) !important;
   cursor: pointer;
 }
-tr.pack-header-row:hover td { background: var(--surface2) !important; }
-tr.pack-header-row.expanded td { border-bottom: 1px solid var(--border) !important; }
+tr.pack-header-row td:first-child {
+  border-left: 3px solid var(--accent) !important;
+}
+tr.pack-header-row:hover td { background: var(--surface3) !important; }
+tr.pack-header-row.expanded td { border-bottom: 1px solid var(--border2) !important; }
 tr.pack-header-row:hover .pack-row-actions { opacity: 1 !important; }
 
-/* ── Pack child rows — same as normal rows, just slightly dimmed ── */
+/* ── Pack child rows — indented, subtle ── */
 tr.pack-child-row td {
-  opacity: 0.75;
-  border-left: 2px solid var(--border) !important;
+  opacity: 0.78;
+  background: var(--bg) !important;
+  border-left: 3px solid transparent !important;
+}
+tr.pack-child-row td:first-child {
+  border-left: 3px solid var(--border) !important;
+  padding-left: 30px !important;
 }
 /* ── Unified date column alignment: ALL rows same left pad ── */
 .trades-table td:first-child {
@@ -14152,9 +14160,13 @@ tr.pack-child-row td {
   display: flex;
   align-items: center;
 }
-tr.pack-child-row:hover td { opacity: 0.92; }
+tr.pack-child-row:hover td { opacity: 0.95; background: var(--surface2) !important; }
 tr.pack-child-row.hidden { display: none; }
-tr.pack-child-row[data-pack^="_auto_"] td { border-left: 2px solid var(--border) !important; }
+tr.pack-child-row[data-pack^="_auto_"] td:first-child { border-left: 3px solid var(--border) !important; }
+/* Bottom border on last child to close the group visually */
+tr.pack-separator + * , tr.pack-child-row:last-of-type td {
+  border-bottom: 2px solid var(--border2) !important;
+}
 tr.pack-inline-detail-row.hidden { display: none; }
 tr.pack-inline-detail-row td { padding: 0 !important; }
 
