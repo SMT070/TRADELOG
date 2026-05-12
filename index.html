@@ -14937,13 +14937,14 @@ function openPackEditMode(packId) {
         <div class="detail-label" style="margin-bottom:6px;">Group Notes</div>
         <textarea id="pe-notes" rows="5" placeholder="Setup idea, reasoning, confluences…"
           style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;line-height:1.6;font-family:var(--sans);resize:vertical;box-sizing:border-box;outline:none;"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">${packNotes}</textarea>
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+          oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
       </div>
 
       <!-- Chart Photo -->
       <div style="margin-bottom:14px;">
         <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
-        <input type="file" id="pe-photo-input" accept="image/*" style="display:none;" onchange="uploadPackPhotoAndRefresh(event,'${packId}');openPackEditMode('${packId}');">
+        <input type="file" id="pe-photo-input" accept="image/*" style="display:none;" onchange="uploadPackPhotoAndRefresh(event,'${packId}');">
         ${packPhoto
           ? `<div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPackPhotoFullscreen('${packId}')">
                <img src="${packPhoto}" style="width:100%;display:block;border-radius:10px;">
@@ -15114,10 +15115,13 @@ function uploadPackPhotoAndRefresh(event, packId) {
       const realPackId = await savePackField(packId, 'packScreenshot', dataUrl);
       renderTrades();
       const targetId = realPackId || packId;
+      // Always update _pePackId and _currentPackId to the real id after save
       if (inEditMode) {
         window._pePackId = targetId;
+        window._currentPackId = targetId;
         openPackEditMode(targetId);
       } else {
+        window._currentPackId = targetId;
         openPackDetail(targetId);
       }
       toast('📸 Photo saved', 'success');
@@ -15222,7 +15226,7 @@ function _buildPackDetailHTML(packId, packName, packTrades, sym, d) {
       <textarea id="pack-notes-${safeId}" placeholder="Describe your trade idea, setup, reasoning…"
         style="width:100%;min-height:180px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
         onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-        oninput="savePackField('${packId}','packNotes',this.value)">${d.packNotes}</textarea>
+        oninput="savePackNoteDebounced('${packId}',this.value)">${d.packNotes}</textarea>
     </div>`;
 
   // ── PHOTO TAB ──
@@ -15234,7 +15238,7 @@ function _buildPackDetailHTML(packId, packName, packTrades, sym, d) {
           <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="document.getElementById('pack-photo-input-${safeId}').click()">
             ${d.packPhoto ? '🔄 Replace' : '📸 Add Photo'}
           </button>
-          ${d.packPhoto ? `<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);" onclick="savePackField('${packId}','packScreenshot',null);this.closest('[id^=pack-panel]').querySelector('img')?.remove();location.reload()">Remove</button>` : ''}
+          ${d.packPhoto ? `<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);" onclick="savePackField('${packId}','packScreenshot',null).then(()=>{renderTrades();openPackDetail('${packId}');})">Remove</button>` : ''}
         </div>
       </div>
       <input type="file" id="pack-photo-input-${safeId}" accept="image/*" style="display:none;" onchange="uploadPackPhoto(event,'${packId}','${safeId}')">
