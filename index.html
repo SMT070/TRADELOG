@@ -14899,10 +14899,15 @@ function uploadPackPhotoAndRefresh(event, packId) {
   const file = event.target?.files?.[0] || event;
   if (!file || !(file instanceof File)) return;
   _processImageHighQuality(file, async dataUrl => {
-    await savePackField(packId, 'packScreenshot', dataUrl);
-    openPackDetail(packId);
-    renderTrades();
-    toast('📸 Photo saved', 'success');
+    try {
+      await savePackField(packId, 'packScreenshot', dataUrl);
+      openPackDetail(packId);
+      renderTrades();
+      toast('📸 Photo saved', 'success');
+    } catch(err) {
+      console.error('TradeLog: pack photo save failed', err);
+      toast('❌ Photo save failed — check console', 'error');
+    }
   });
 }
 
@@ -15119,7 +15124,7 @@ async function savePackField(packId, field, value) {
   save();
   // Sync anchor to Supabase — guaranteed save so fields survive a reload
   const anchor = packTrades.reduce((a, t) => trades.indexOf(t) < trades.indexOf(a) ? t : a, packTrades[0]);
-  try { await guaranteedSaveToSupabase(anchor); } catch(e) { console.warn('savePackField sync failed', e); }
+  await guaranteedSaveToSupabase(anchor);
 }
 
 // ── Debounced save for pack notes (avoids hammering Supabase on every keystroke) ──
@@ -15282,11 +15287,15 @@ function _packOvUpload(event, packId, safeId) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = async function(ev) {
-    await savePackField(packId, 'packScreenshot', ev.target.result);
-    // Also refresh the right-panel detail and re-open overlay
-    openPackDetail(packId);
-    openPackOverlay(packId);
-    toast('Photo saved ✓', 'success');
+    try {
+      await savePackField(packId, 'packScreenshot', ev.target.result);
+      openPackDetail(packId);
+      openPackOverlay(packId);
+      toast('Photo saved ✓', 'success');
+    } catch(err) {
+      console.error('TradeLog: pack photo save failed', err);
+      toast('❌ Photo save failed — check console', 'error');
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -15297,14 +15306,18 @@ function uploadPackPhoto(event, packId, safeId) {
   const reader = new FileReader();
   reader.onload = async function(e) {
     const dataUrl = e.target.result;
-    await savePackField(packId, 'packScreenshot', dataUrl);
-    // Update photo area in place
-    const area = document.getElementById(`pack-photo-area-${safeId}`);
-    if (area) area.innerHTML = `<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in;" onclick="openPackPhotoFullscreen('${packId}')">
-      <img src="${dataUrl}" style="width:100%;display:block;">
-      <div style="text-align:center;padding:6px;font-size:10px;color:var(--muted);">Tap to fullscreen</div>
-    </div>`;
-    toast('Photo saved', 'success');
+    try {
+      await savePackField(packId, 'packScreenshot', dataUrl);
+      const area = document.getElementById(`pack-photo-area-${safeId}`);
+      if (area) area.innerHTML = `<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in;" onclick="openPackPhotoFullscreen('${packId}')">
+        <img src="${dataUrl}" style="width:100%;display:block;">
+        <div style="text-align:center;padding:6px;font-size:10px;color:var(--muted);">Tap to fullscreen</div>
+      </div>`;
+      toast('Photo saved', 'success');
+    } catch(err) {
+      console.error('TradeLog: pack photo save failed', err);
+      toast('❌ Photo save failed — check console', 'error');
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -15483,9 +15496,14 @@ function uploadPackPhotoInline(event, packId) {
   const file = event.target?.files?.[0] || event;
   if (!file || !(file instanceof File)) return;
   _processImageHighQuality(file, async dataUrl => {
-    await savePackField(packId, 'packScreenshot', dataUrl);
-    renderTrades();
-    toast('📸 Photo saved', 'success');
+    try {
+      await savePackField(packId, 'packScreenshot', dataUrl);
+      renderTrades();
+      toast('📸 Photo saved', 'success');
+    } catch(err) {
+      console.error('TradeLog: pack photo save failed', err);
+      toast('❌ Photo save failed — check console', 'error');
+    }
   });
 }
 
