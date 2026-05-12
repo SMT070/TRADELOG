@@ -14232,7 +14232,8 @@ tr.pack-child-row[data-pack^="_auto_"] td:first-child { border-left: 3px solid v
 tr.pack-separator + * , tr.pack-child-row:last-of-type td {
   border-bottom: 2px solid var(--border2) !important;
 }
-tr.pack-inline-detail-row.hidden { display: none; }
+/* pack-inline-detail-row removed — group notes/mindset live in the right panel only */
+tr.pack-inline-detail-row { display: none !important; }
 tr.pack-inline-detail-row td { padding: 0 !important; }
 
 /* ── Pack badge on individual trade rows ── */
@@ -15844,82 +15845,6 @@ function renderPackRows(packId, packTrades, sym) {
   });
 
   return html;
-}
-
-function _buildPackInlineDetailRow(packId, packTrades, isExpanded, colspan) {
-  const safeId       = packId.replace(/[^a-zA-Z0-9_-]/g,'_');
-  const packNotes    = packTrades.find(t => t.packNotes)?.packNotes    || '';
-  const packPhoto    = packTrades.find(t => t.packScreenshot)?.packScreenshot || null;
-  const packEmotion  = packTrades.find(t => t.packEmotion)?.packEmotion  || '';
-  const packConf     = packTrades.find(t => t.packConfidence)?.packConfidence || '';
-  const emotions     = ['😤','😰','😊','😎','🤔','😴','😡','🥳','😬','🙏'];
-
-  const photoHtml = packPhoto
-    ? `<div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in;max-width:340px;" onclick="openPackPhotoFullscreen('${packId}')">
-         <img src="${packPhoto}" style="width:100%;display:block;max-height:220px;object-fit:cover;">
-         <div style="text-align:center;padding:5px;font-size:10px;color:var(--muted);">Click to fullscreen</div>
-       </div>`
-    : `<div onclick="document.getElementById('pack-inline-photo-input-${safeId}').click()"
-           ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-           ondragleave="this.style.borderColor='var(--border2)'"
-           ondrop="event.preventDefault();var _f=event.dataTransfer.files[0];if(_f&&_f.type.startsWith('image/'))uploadPackPhotoInline({target:{files:[_f]}},'${packId}')"
-           onpaste="_packInlinePastePhoto(event,'${packId}')"
-           data-pack-id="${packId}"
-           tabindex="0"
-           style="border:2px dashed var(--border2);border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:border-color .15s;max-width:340px;outline:none;"
-           onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
-         <div style="font-size:24px;margin-bottom:6px;">📸</div>
-         <div style="font-size:11px;color:var(--muted);">Click, drag & drop, or Ctrl+V to paste</div>
-       </div>`;
-
-  return `<tr class="pack-inline-detail-row${isExpanded?'':' hidden'}" data-pack="${packId}" onclick="event.stopPropagation()" style="background:var(--surface);">
-    <td colspan="${colspan}" style="padding:0;border-bottom:1px solid var(--border);">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:1px solid var(--border2);">
-
-        <!-- NOTES -->
-        <div style="padding:14px 16px;border-right:1px solid var(--border2);">
-          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">📝 Group Notes</div>
-          <textarea id="pack-inline-notes-${safeId}"
-            placeholder="Setup idea, reasoning, confluences…"
-            style="width:100%;min-height:100px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:12px;padding:10px;resize:vertical;outline:none;line-height:1.6;transition:border-color .2s;box-sizing:border-box;"
-            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-            oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
-        </div>
-
-        <!-- PHOTO -->
-        <div style="padding:14px 16px;border-right:1px solid var(--border2);">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);">📸 Setup Chart</div>
-            <div style="display:flex;gap:4px;">
-              <button onclick="document.getElementById('pack-inline-photo-input-${safeId}').click()" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:var(--sans);">${packPhoto?'Replace':'Add'}</button>
-              ${packPhoto ? `<button onclick="savePackField('${packId}','packScreenshot',null).then(()=>renderTrades())" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--red);cursor:pointer;font-family:var(--sans);">Remove</button>` : ''}
-            </div>
-          </div>
-          <input type="file" id="pack-inline-photo-input-${safeId}" accept="image/*" style="display:none;"
-            onchange="uploadPackPhotoInline(event,'${packId}')">
-          ${photoHtml}
-        </div>
-
-        <!-- MINDSET -->
-        <div style="padding:14px 16px;">
-          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">🧠 Mindset</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
-            ${emotions.map(em => `<span
-              onclick="savePackField('${packId}','packEmotion','${em}');this.closest('td').querySelectorAll('.pk-emo-${safeId}').forEach(b=>{b.style.background='var(--surface2)';b.style.transform='scale(1)'});this.style.background='var(--surface3)';this.style.transform='scale(1.18)'"
-              class="pk-emo-${safeId}"
-              title="${em}"
-              style="font-size:18px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;background:${packEmotion===em?'var(--surface3)':'var(--surface2)'};transition:all .15s;transform:${packEmotion===em?'scale(1.12)':'scale(1)'};">${em}</span>`).join('')}
-          </div>
-          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Confidence <span style="color:var(--accent);font-weight:700;" id="pack-inline-conf-${safeId}">${packConf||'—'}/10</span></div>
-          <input type="range" min="1" max="10" value="${packConf||5}"
-            style="width:100%;accent-color:var(--accent);"
-            oninput="document.getElementById('pack-inline-conf-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-top:2px;"><span>Low</span><span>High</span></div>
-        </div>
-
-      </div>
-    </td>
-  </tr>`;
 }
 
 function _packInlinePastePhoto(event, packId) {
