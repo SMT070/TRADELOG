@@ -5131,7 +5131,7 @@ function _getAutoThemeForHour() {
 function _applyAutoTheme() {
   const t = _getAutoThemeForHour();
   document.documentElement.setAttribute('data-theme', t);
-  localStorage.setItem(THEME_KEY, t);
+  // NOTE: do NOT write to THEME_KEY here — that would corrupt the user's manual theme choice
   // Update manual buttons to reflect current applied theme, keep auto highlighted
   THEMES.forEach(th => {
     const btn = document.getElementById('theme-btn-' + th);
@@ -5176,6 +5176,8 @@ function loadTheme() {
   const autoOn = localStorage.getItem(AUTO_THEME_KEY) === 'true';
   if (autoOn) {
     _applyAutoTheme();
+    // Check every minute if the hour has crossed the day/night boundary
+    if (_autoThemeInterval) clearInterval(_autoThemeInterval);
     _autoThemeInterval = setInterval(_applyAutoTheme, 60000);
   } else {
     const t = localStorage.getItem(THEME_KEY) || 'dark';
@@ -5537,7 +5539,7 @@ async function loadAllFromSupabase() {
       if (data.settings) {
         try {
           const s = typeof data.settings === 'string' ? JSON.parse(data.settings) : data.settings;
-          if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); }
+          if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); } // manual theme — auto theme ignores this at runtime
           if (typeof s.autoTheme !== 'undefined') { localStorage.setItem(AUTO_THEME_KEY, String(s.autoTheme)); }
           if (s.goals) localStorage.setItem(GOALS_KEY, typeof s.goals === 'string' ? s.goals : JSON.stringify(s.goals));
           if (typeof s.autopack !== 'undefined') { localStorage.setItem('tradelog_autopack', s.autopack ? 'true' : 'false'); }
