@@ -14261,14 +14261,35 @@ async function confirmCreatePack() {
     document.getElementById('pack-name-input').focus();
     return;
   }
+
+  // RENAME branch — renamePack() sets window._packRenameId before opening the modal
+  if (window._packRenameId) {
+    const renameId = window._packRenameId;
+    window._packRenameId = null;
+    const packTrades = trades.filter(t => t.packId === renameId);
+    packTrades.forEach(t => { t.packName = name; });
+    save();
+    invalidateStatCache();
+    closePackNameModal();
+    renderTrades();
+    if (window._currentPackId === renameId) openPackDetail(renameId);
+    toast('Pack renamed to "' + name + '"', 'success');
+    try {
+      await Promise.all(packTrades.map(t => guaranteedSaveToSupabase(t)));
+    } catch(e) {
+      console.warn('Pack rename sync failed:', e);
+      toast('Renamed locally — sync failed', 'error');
+    }
+    return;
+  }
+
+  // CREATE branch
   const packId = uid();
-  // If coming from "Save Pack" on an auto-pack, use those ids; otherwise use manual selection
   const ids = (window._pendingAutoPackIds && window._pendingAutoPackIds.length)
     ? [...window._pendingAutoPackIds]
     : [...packSelectedIds];
   window._pendingAutoPackIds = null;
 
-  // Assign packId + packName to each selected trade
   const updated = [];
   ids.forEach(id => {
     const idx = trades.findIndex(t => t.id === id);
@@ -14282,17 +14303,16 @@ async function confirmCreatePack() {
   invalidateStatCache();
   closePackNameModal();
   exitPackSelectMode();
-  toast(`✓ Pack "${name}" created with ${ids.length} trades`, 'success');
+  toast('Pack "' + name + '" created with ' + ids.length + ' trades', 'success');
 
-  // Auto-expand the new pack
   packExpandedIds.add(packId);
   renderTrades();
 
-  // Sync to Supabase in background
   try {
     await Promise.all(updated.map(t => guaranteedSaveToSupabase(t)));
   } catch(e) {
-    console.warn('Pack sync failed:', e);
+    console.warn('Pack create sync failed:', e);
+    toast('Pack saved locally — sync failed', 'error');
   }
 }
 
@@ -15720,7 +15740,7 @@ function _buildPackInlineDetailRow(packId, packTrades, isExpanded, colspan) {
             <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);">📸 Setup Chart</div>
             <div style="display:flex;gap:4px;">
               <button onclick="document.getElementById('pack-inline-photo-input-${safeId}').click()" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:var(--sans);">${packPhoto?'Replace':'Add'}</button>
-              ${packPhoto ? `<button onclick="savePackField('${packId}','packScreenshot',null);renderTrades()" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--red);cursor:pointer;font-family:var(--sans);">Remove</button>` : ''}
+              ${packPhoto ? `<button onclick="savePackField('${packId}','packScreenshot',null).then(()=>renderTrades())" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--red);cursor:pointer;font-family:var(--sans);">Remove</button>` : ''}
             </div>
           </div>
           <input type="file" id="pack-inline-photo-input-${safeId}" accept="image/*" style="display:none;"
@@ -16330,252 +16350,6 @@ function renderAutoPackRows(key, packTrades, sym) {
 })();
 
 console.log('TradeLog: Pack system loaded ✓');
-
-// ════════════════════════════════════════════════════════════════
-//  PACK-AWARE renderTrades OVERRIDE
-//  Replaces the flat row builder so that grouped trades (those with
-//  a packId) are rendered as collapsible group-header rows instead
-//  of individual flat rows.  All actions (edit, delete, screenshot,
-//  mindset, notes) still save to Supabase via existing helpers.
-// ════════════════════════════════════════════════════════════════
-(function patchRenderTrades() {
-  // Keep a reference to the original so we can reuse its filter logic
-  const _origRenderTrades = window.renderTrades;
-
-  window.renderTrades = function renderTrades(skipTagRebuild) {
-    if (!skipTagRebuild) rebuildTagDropdown();
-
-    const q   = (document.getElementById('search-input')?.value || '').toLowerCase();
-    const dir = document.getElementById('filter-dir')?.value || '';
-    const res = document.getElementById('filter-result')?.value || '';
-    const tag = document.getElementById('filter-tag')?.value || '';
-
-    // ── Date range ──────────────────────────────────────────────
-    const now = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-    let fromStr = '', toStr = '';
-    if (tradesRange === 'today')  { fromStr = todayStr; toStr = todayStr; }
-    else if (tradesRange === 'week') {
-      const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-      fromStr = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`; toStr = todayStr;
-    } else if (tradesRange === 'month') {
-      fromStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-01`; toStr = todayStr;
-    } else if (tradesRange === 'custom') {
-      fromStr = customFrom; toStr = customTo;
-    }
-
-    let list = trades.filter(t => {
-      const d = (t.date || '').slice(0, 10);
-      if (fromStr && d < fromStr) return false;
-      if (toStr   && d > toStr)   return false;
-      if (q && !t.symbol.toLowerCase().includes(q) && !(t.notes||'').toLowerCase().includes(q) && !(t.date||'').includes(q) && !(t.strategies||[]).some(s => s.toLowerCase().includes(q))) return false;
-      if (dir && t.dir !== dir) return false;
-      if (res) { const r = getResult(t); if (r !== res) return false; }
-      if (tag && !(t.strategies||[]).includes(tag)) return false;
-      return true;
-    });
-
-    // ── Summary bar ─────────────────────────────────────────────
-    const totalPnl = list.reduce((s,t) => s+getPnl(t), 0);
-    const wins  = list.filter(t => getResult(t) === 'win');
-    const losses = list.filter(t => getResult(t) === 'loss');
-    const bes    = list.filter(t => getResult(t) === 'be');
-    const decided = wins.length + losses.length;
-    const wr = decided ? Math.round(wins.length/decided*100) : 0;
-    const sym = getCurrencySymbol();
-
-    const tbCount = document.getElementById('tb-count');
-    const tbPnl   = document.getElementById('tb-pnl');
-    const tbWr    = document.getElementById('tb-wr');
-    if (tbCount) tbCount.textContent = list.length;
-    if (tbPnl)   { tbPnl.textContent = (totalPnl>=0?'+'+sym:'-'+sym)+Math.abs(totalPnl).toFixed(2); tbPnl.style.color = totalPnl>=0?'var(--green)':'var(--red)'; }
-    if (tbWr)    { tbWr.textContent = wr+'%'; tbWr.style.color = wr>=50?'var(--green)':'var(--red)'; }
-    const tbBal = document.getElementById('tb-balance');
-    if (tbBal) { const bal = getBalance(); const acct = bal > 0 ? bal + totalPnl : null; tbBal.textContent = acct !== null ? 'Balance: '+sym+acct.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) : 'Balance: —'; }
-    const tbWins   = document.getElementById('tb-wins');
-    const tbLosses = document.getElementById('tb-losses');
-    const tbBes    = document.getElementById('tb-bes');
-    if (tbWins)   tbWins.textContent   = wins.length;
-    if (tbLosses) tbLosses.textContent = losses.length;
-    if (tbBes)    tbBes.textContent    = bes.length;
-
-    // ── Sort ─────────────────────────────────────────────────────
-    list.sort((a, b) => {
-      let av, bv;
-      switch (sortCol) {
-        case 'date':   av = new Date(a.date||0); bv = new Date(b.date||0); break;
-        case 'symbol': av = a.symbol||''; bv = b.symbol||''; break;
-        case 'dir':    av = a.dir||''; bv = b.dir||''; break;
-        case 'lots':   av = parseFloat(a.lots)||0; bv = parseFloat(b.lots)||0; break;
-        case 'entry':  av = parseFloat(a.entry)||0; bv = parseFloat(b.entry)||0; break;
-        case 'exit':   av = parseFloat(a.exit)||0; bv = parseFloat(b.exit)||0; break;
-        case 'pnl':        av = getPnl(a); bv = getPnl(b); break;
-        case 'commission': av = parseFloat(a.commission)||0; bv = parseFloat(b.commission)||0; break;
-        case 'result':     av = a.result||''; bv = b.result||''; break;
-        default: av = 0; bv = 0;
-      }
-      if (av < bv) return -1 * sortDir;
-      if (av > bv) return  1 * sortDir;
-      return 0;
-    });
-
-    updateSortIndicators();
-
-    const tbody = document.getElementById('all-tbody');
-    if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><h3>No trades found</h3></div></td></tr>';
-      return;
-    }
-
-    // ── Build pack map from auto-pack groups ─────────────────────
-    // _lastRenderedPackMap is populated by renderPackRows — reset it here
-    window._lastRenderedPackMap = window._lastRenderedPackMap || {};
-
-    const standaloneTrades = list.filter(t => !t.packId);
-    const { autoGroups, tradeKey } = (typeof buildAutoPackGroups === 'function')
-      ? buildAutoPackGroups(standaloneTrades)
-      : { autoGroups: {}, tradeKey: {} };
-
-    // Group the filtered list
-    const packGroups   = {};   // packId → trades[] (real packs only)
-    const packOrder    = [];   // insertion order of packIds
-    const seenPackIds  = new Set();
-    const autoInList   = new Set(); // trade ids already consumed by auto-groups
-
-    // 1. Real packs: group list items by packId
-    list.forEach(t => {
-      if (!t.packId) return;
-      if (!packGroups[t.packId]) { packGroups[t.packId] = []; packOrder.push(t.packId); }
-      packGroups[t.packId].push(t);
-    });
-
-    // 2. Auto-pack groups (only trades that passed filters)
-    const autoGroupsFiltered = {};
-    Object.entries(autoGroups).forEach(([key, grp]) => {
-      const inList = grp.filter(t => list.some(lt => lt.id === t.id));
-      if (inList.length >= 2) {
-        autoGroupsFiltered[key] = inList;
-        inList.forEach(t => autoInList.add(t.id));
-      }
-    });
-
-    // ── Generate rows ─────────────────────────────────────────────
-    let rowsHtml = '';
-
-    // Track which list items are rendered so we can handle leftovers
-    const renderedIds = new Set();
-
-    // Helper: build a flat (non-pack) trade row
-    function buildFlatRow(t) {
-      const pnl = getPnl(t);
-      const result = getResult(t);
-      const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
-      const pnlStr = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
-      const badge = result === 'be'
-        ? `<span style="color:var(--yellow);font-size:10px;font-weight:700;background:rgba(245,158,11,.15);padding:2px 8px;border-radius:4px;">BE</span>`
-        : result === 'win'
-        ? `<span style="color:var(--green);font-size:10px;font-weight:700;background:var(--green-bg);padding:2px 8px;border-radius:4px;">WIN</span>`
-        : `<span style="color:var(--red);font-size:10px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:4px;">LOSS</span>`;
-      const isSelected = t.id === selectedId;
-      const cbCol = packSelectMode
-        ? `<td style="width:32px;padding:4px 14px;"><div class="trade-checkbox${packSelectedIds.has(t.id)?' checked':''}" onclick="togglePackSelect('${t.id}',event)"></div></td>`
-        : '';
-      return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;"${isSelected?' class="selected"':''}>
-        ${cbCol}
-        <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;"><div style="line-height:1.4;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,19)+'</span>' : '—'}</div></td>
-        <td style="font-weight:600;">${t.symbol}</td>
-        <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
-        <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
-        <td style="color:var(--text);font-weight:500;">${t.entry||'—'}</td>
-        <td style="color:var(--text);font-weight:500;">${t.exit||'—'}</td>
-        <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
-        <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-family:var(--mono);font-weight:600;">${t.commission ? '-'+sym+Math.abs(parseFloat(t.commission)).toFixed(2) : '—'}</td>
-        <td>${badge}</td>
-        <td data-col="tags" style="max-width:110px;overflow:hidden;">${renderRowTagsHTML(t.strategies)}</td>
-      </tr>`;
-    }
-
-    // Iterate list in sorted order and render groups/singles in correct position
-    // We walk sorted list; when we hit the first trade of a group, emit the whole group block.
-    const emittedPackIds = new Set();
-    const emittedAutoKeys = new Set();
-
-    list.forEach(t => {
-      if (renderedIds.has(t.id)) return;
-
-      // ── Real pack ──
-      if (t.packId) {
-        const pid = t.packId;
-        if (emittedPackIds.has(pid)) { renderedIds.add(t.id); return; }
-        emittedPackIds.add(pid);
-        const grp = packGroups[pid] || [t];
-        grp.forEach(x => renderedIds.add(x.id));
-        // Update global map used by pack actions
-        window._lastRenderedPackMap[pid] = grp;
-        const colspan = packSelectMode ? 11 : 10;
-        rowsHtml += renderPackRows(pid, grp, sym);
-        rowsHtml += _buildPackInlineDetailRow(pid, grp, packExpandedIds.has(pid), colspan);
-        return;
-      }
-
-      // ── Auto-pack ──
-      const autoKey = tradeKey[t.id];
-      if (autoKey && autoGroupsFiltered[autoKey]) {
-        if (emittedAutoKeys.has(autoKey)) { renderedIds.add(t.id); return; }
-        emittedAutoKeys.add(autoKey);
-        const grp = autoGroupsFiltered[autoKey];
-        grp.forEach(x => renderedIds.add(x.id));
-        window._lastRenderedPackMap[autoKey] = grp;
-        const colspan = packSelectMode ? 11 : 10;
-        rowsHtml += renderPackRows(autoKey, grp, sym);
-        rowsHtml += _buildPackInlineDetailRow(autoKey, grp, packExpandedIds.has(autoKey), colspan);
-        return;
-      }
-
-      // ── Standalone trade ──
-      renderedIds.add(t.id);
-      rowsHtml += buildFlatRow(t);
-    });
-
-    // ── Account events ────────────────────────────────────────────
-    if (balanceEvents && balanceEvents.length) {
-      let beFiltered = balanceEvents;
-      if (fromStr || toStr) {
-        beFiltered = balanceEvents.filter(e => {
-          const d = (e.time || '').slice(0, 10);
-          if (fromStr && d < fromStr) return false;
-          if (toStr   && d > toStr)   return false;
-          return true;
-        });
-      }
-      if (beFiltered.length) {
-        rowsHtml += `<tr style="pointer-events:none;"><td colspan="10" style="padding:6px 18px 4px;"><span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);">⬇ Account Events — excluded from all statistics</span></td></tr>`;
-        rowsHtml += beFiltered.map(e => {
-          const isDeposit = e.type === 'deposit';
-          const amt = parseFloat(e.amount) || 0;
-          const amtColor  = isDeposit ? 'var(--green)' : 'var(--red)';
-          const amtStr    = (isDeposit ? '+' : '') + sym + Math.abs(amt).toFixed(2);
-          const typeLabel = isDeposit ? 'DEPOSIT' : 'WITHDRAWAL';
-          const typeBg    = isDeposit ? 'var(--green-bg)' : 'var(--red-bg)';
-          const timeStr   = e.time ? e.time.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+e.time.slice(11,19)+'</span>' : '—';
-          return `<tr style="opacity:0.8;cursor:default;">
-            <td style="color:var(--muted);font-size:12px;white-space:nowrap;font-weight:600;">${timeStr}</td>
-            <td style="color:var(--muted);font-weight:600;">—</td>
-            <td><span style="display:inline-block;padding:3px 8px;border-radius:6px;font-size:9px;font-weight:800;letter-spacing:.5px;background:${typeBg};color:${amtColor};">${typeLabel}</span></td>
-            <td style="color:var(--muted);">—</td><td style="color:var(--muted);">—</td><td style="color:var(--muted);">—</td>
-            <td style="color:${amtColor};font-weight:800;font-family:var(--mono);">${amtStr}</td>
-            <td style="color:var(--muted);">—</td>
-            <td><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;background:rgba(99,102,241,0.1);color:var(--accent);">EVENT</span></td>
-            <td style="color:var(--muted);font-size:11px;">${e.comment || ''}</td>
-          </tr>`;
-        }).join('');
-      }
-    }
-
-    tbody.innerHTML = rowsHtml;
-  };
-})();
 
 // ── FEATURES DROPDOWN ────────────────────────────────────────────────────────
 function toggleFeaturesDrop() {
