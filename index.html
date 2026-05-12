@@ -5539,8 +5539,16 @@ async function loadAllFromSupabase() {
       if (data.settings) {
         try {
           const s = typeof data.settings === 'string' ? JSON.parse(data.settings) : data.settings;
-          if (s.theme) { localStorage.setItem(THEME_KEY, s.theme); } // manual theme — auto theme ignores this at runtime
-          if (typeof s.autoTheme !== 'undefined') { localStorage.setItem(AUTO_THEME_KEY, String(s.autoTheme)); }
+          // Only apply Supabase theme if the user hasn't already set one locally.
+          // localStorage is written immediately on every theme button click,
+          // so it is always fresher than Supabase. Supabase is a fallback for first login only.
+          // localStorage is ground truth — only fall back to Supabase on a brand-new device
+          const _localTheme   = localStorage.getItem(THEME_KEY);
+          const _localAutoKey = localStorage.getItem(AUTO_THEME_KEY);
+          if (s.theme && !_localTheme) { localStorage.setItem(THEME_KEY, s.theme); }
+          if (typeof s.autoTheme !== 'undefined' && _localAutoKey === null) {
+            localStorage.setItem(AUTO_THEME_KEY, String(s.autoTheme));
+          }
           if (s.goals) localStorage.setItem(GOALS_KEY, typeof s.goals === 'string' ? s.goals : JSON.stringify(s.goals));
           if (typeof s.autopack !== 'undefined') { localStorage.setItem('tradelog_autopack', s.autopack ? 'true' : 'false'); }
         } catch(e) {}
