@@ -5594,6 +5594,10 @@ async function loadAllFromSupabase() {
         const t = typeof data.tags === 'string' ? JSON.parse(data.tags) : data.tags;
         localStorage.setItem(TAGS_KEY, JSON.stringify(t));
       }
+      if (data.notebooks) {
+        const n = typeof data.notebooks === 'string' ? JSON.parse(data.notebooks) : data.notebooks;
+        if (Array.isArray(n) && n.length) localStorage.setItem(NOTEBOOKS_KEY, JSON.stringify(n));
+      }
     }
   } catch(e) { console.warn('TradeLog: loadUserData failed', e); }
 
@@ -5629,10 +5633,11 @@ async function saveUserDataToSupabase() {
   if (!uid) { console.warn('TradeLog: saveUserData — no session'); return; }
   try {
     const { error } = await sb.from('user_data').upsert({
-      user_id: uid,
-      mindset: getMindsetDataLocal(),
-      journal: JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
-      tags:    JSON.parse(localStorage.getItem(TAGS_KEY) || '[]')
+      user_id:   uid,
+      mindset:   getMindsetDataLocal(),
+      journal:   JSON.parse(localStorage.getItem(JOURNAL_KEY)    || '{}'),
+      tags:      JSON.parse(localStorage.getItem(TAGS_KEY)       || '[]'),
+      notebooks: JSON.parse(localStorage.getItem(NOTEBOOKS_KEY)  || '[]'),
     });
     if (error) console.warn('TradeLog: saveUserData error', error);
   } catch(e) { console.warn('TradeLog: saveUserData failed', e); }
@@ -11477,19 +11482,23 @@ function getTodayKey() {
   return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
 }
 
-// ── SUPABASE USER-DATA SYNC (mindset, journal, tags) ─────────────────────────
+// ── SUPABASE USER-DATA SYNC (mindset, journal, tags, notebooks) ───────────────
 // Requires a `user_data` table in Supabase. Run this SQL once in your Supabase
 // SQL Editor (Dashboard → SQL Editor → New Query):
 //
 //   create table if not exists public.user_data (
 //     user_id uuid primary key references auth.users(id) on delete cascade,
-//     mindset jsonb default '{}'::jsonb,
-//     journal jsonb default '{}'::jsonb,
-//     tags    jsonb default '[]'::jsonb
+//     mindset   jsonb default '{}'::jsonb,
+//     journal   jsonb default '{}'::jsonb,
+//     tags      jsonb default '[]'::jsonb,
+//     notebooks jsonb default '[]'::jsonb
 //   );
 //   alter table public.user_data enable row level security;
 //   create policy "Users manage own data" on public.user_data
 //     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+//
+//  If the table already exists, just add the notebooks column:
+//   alter table public.user_data add column if not exists notebooks jsonb default '[]'::jsonb;
 
 // (loadUserDataFromSupabase and saveUserDataToSupabase defined above in Supabase block)
 
@@ -12951,6 +12960,9 @@ function selectNotebook(id) {
       const linked = e.linkedTradeId
         ? `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:8px;background:rgba(99,102,241,.12);color:var(--accent);font-size:9px;font-weight:700;">🔗 Trade</span>`
         : '';
+      const photosBadge = (e.images&&e.images.length)
+        ? `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:8px;background:rgba(0,255,187,.1);color:var(--green);font-size:9px;font-weight:700;">📷 ${e.images.length}</span>`
+        : '';
       return `<div class="nb-entry-card${e.pinned?' pinned':''}" onclick="openNoteEntry('${id}','${e.id}')">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
           <div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;">
@@ -12963,6 +12975,7 @@ function selectNotebook(id) {
         ${e.content ? `<div class="entry-preview">${e.content.replace(/[#*_\`>]/g,'').trim()}</div>` : ''}
         <div class="entry-footer">
           ${tags.map(t=>`<span class="nb-tag">${t}</span>`).join('')}
+          ${linked}${photosBadge}
           ${wc ? `<span style="margin-left:auto;font-size:10px;color:var(--muted);font-weight:600;">${wc}w</span>` : ''}
         </div>
       </div>`;
@@ -12994,6 +13007,9 @@ function openNoteEntry(nbId, entryId) {
   nbEditorDirty  = false;
   nbEditorMode   = 'write';
 
+  // Load existing images into pending state so _persistNoteEntry can carry them
+  window._nbPendingImages = e?.images ? [...e.images] : [];
+
   document.getElementById('ne-title').value   = e?.title   || '';
   document.getElementById('ne-content').value = e?.content || '';
   document.getElementById('ne-tags-input').value = e?.tags ? e.tags.join(', ') : '';
@@ -13005,6 +13021,9 @@ function openNoteEntry(nbId, entryId) {
   document.getElementById('ne-pin-btn').title = e?.pinned ? 'Unpin entry' : 'Pin entry';
   document.getElementById('ne-pin-btn').style.color = e?.pinned ? 'var(--accent)' : '';
 
+  // Render images strip
+  _renderNbImageStrip();
+
   // Show the editor, hide preview
   setNbEditorMode('write');
   updateNbWordCount();
@@ -13012,6 +13031,30 @@ function openNoteEntry(nbId, entryId) {
 
   document.getElementById('note-entry-modal').style.display = 'flex';
   setTimeout(() => document.getElementById('ne-title').focus(), 80);
+
+  // Paste handler — attach to modal
+  const modal = document.getElementById('note-entry-modal');
+  modal._nbPasteHandler && document.removeEventListener('paste', modal._nbPasteHandler);
+  modal._nbPasteHandler = function(ev) {
+    if (modal.style.display === 'none') return;
+    const item = [...(ev.clipboardData?.items||[])].find(i => i.type.startsWith('image/'));
+    if (!item) return;
+    ev.preventDefault();
+    const file = item.getAsFile();
+    if (file) _nbProcessImageFile(file);
+  };
+  document.addEventListener('paste', modal._nbPasteHandler);
+
+  // Drag-drop on the modal body
+  const modalBox = modal.querySelector('div');
+  if (modalBox) {
+    modalBox.ondragover = ev => { ev.preventDefault(); ev.dataTransfer.dropEffect = 'copy'; };
+    modalBox.ondrop = ev => {
+      ev.preventDefault();
+      const file = ev.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) _nbProcessImageFile(file);
+    };
+  }
 }
 
 function openNoteEntryModal(nbId, entryId) { openNoteEntry(nbId, entryId); }
@@ -13021,7 +13064,81 @@ function closeNoteEntryModal() {
     autoSaveEntry(true);
   }
   clearTimeout(nbAutoSaveTimer);
+  // Remove paste handler
+  const modal = document.getElementById('note-entry-modal');
+  if (modal._nbPasteHandler) {
+    document.removeEventListener('paste', modal._nbPasteHandler);
+    modal._nbPasteHandler = null;
+  }
+  window._nbPendingImages = [];
   document.getElementById('note-entry-modal').style.display = 'none';
+}
+
+// ── Notebook photo helpers ────────────────────────────────────────
+function _nbProcessImageFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  _processImageHighQuality(file, dataUrl => {
+    if (!window._nbPendingImages) window._nbPendingImages = [];
+    window._nbPendingImages.push({ id: uid(), src: dataUrl, addedAt: new Date().toISOString() });
+    _renderNbImageStrip();
+    // Auto-save with new image
+    nbEditorDirty = true;
+    clearTimeout(nbAutoSaveTimer);
+    nbAutoSaveTimer = setTimeout(() => autoSaveEntry(false), 800);
+    toast('📸 Photo added', 'success');
+  });
+}
+
+function _renderNbImageStrip() {
+  const strip = document.getElementById('ne-image-strip');
+  if (!strip) return;
+  const imgs = window._nbPendingImages || [];
+  if (!imgs.length) {
+    strip.style.display = 'none';
+    strip.innerHTML = '';
+    return;
+  }
+  strip.style.display = 'flex';
+  strip.innerHTML = imgs.map((img, i) => `
+    <div style="position:relative;flex-shrink:0;">
+      <img src="${img.src}" onclick="nbOpenImageFullscreen(${i})"
+        style="height:80px;width:auto;max-width:140px;border-radius:8px;border:1px solid var(--border);cursor:zoom-in;object-fit:cover;display:block;">
+      <button onclick="nbRemoveImage(${i})" title="Remove photo"
+        style="position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:none;background:var(--red);color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;">×</button>
+    </div>`).join('');
+}
+
+function nbRemoveImage(idx) {
+  if (!window._nbPendingImages) return;
+  window._nbPendingImages.splice(idx, 1);
+  _renderNbImageStrip();
+  nbEditorDirty = true;
+  clearTimeout(nbAutoSaveTimer);
+  nbAutoSaveTimer = setTimeout(() => autoSaveEntry(false), 600);
+}
+
+function nbOpenImageFullscreen(idx) {
+  const img = (window._nbPendingImages || [])[idx];
+  if (!img) return;
+  const lb = document.createElement('div');
+  lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+  lb.innerHTML = `<button style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;z-index:1;">×</button>
+    <img src="${img.src}" style="max-width:95vw;max-height:95vh;object-fit:contain;border-radius:10px;">`;
+  lb.querySelector('button').onclick = e => { e.stopPropagation(); lb.remove(); };
+  lb.onclick = () => lb.remove();
+  document.body.appendChild(lb);
+}
+
+function nbPickPhoto() {
+  let inp = document.getElementById('ne-photo-file-input');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.id = 'ne-photo-file-input';
+    inp.style.display = 'none';
+    document.body.appendChild(inp);
+    inp.onchange = () => { if (inp.files[0]) _nbProcessImageFile(inp.files[0]); inp.value = ''; };
+  }
+  inp.click();
 }
 
 // ── Rich editor mode toggle ───────────────────────────────────────
@@ -13032,7 +13149,15 @@ function setNbEditorMode(mode) {
   const wBtn = document.getElementById('nb-mode-write');
   const pBtn = document.getElementById('nb-mode-preview');
   if (mode === 'preview') {
-    pre.innerHTML = renderMarkdown(ta.value);
+    let html = renderMarkdown(ta.value);
+    // Append attached images
+    const imgs = window._nbPendingImages || [];
+    if (imgs.length) {
+      html += `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">` +
+        imgs.map((img, i) => `<img src="${img.src}" onclick="nbOpenImageFullscreen(${i})" style="height:120px;width:auto;max-width:200px;border-radius:9px;border:1px solid var(--border);cursor:zoom-in;object-fit:cover;">`).join('') +
+        `</div>`;
+    }
+    pre.innerHTML = html;
     pre.style.display = 'block';
     ta.style.display  = 'none';
     if (wBtn) { wBtn.classList.remove('active'); pBtn.classList.add('active'); }
@@ -13198,7 +13323,7 @@ function insertWeeklySummary() {
   ta.focus();
 }
 
-// ── Save entry to localStorage ────────────────────────────────────
+// ── Save entry to localStorage + Supabase ────────────────────────
 function _persistNoteEntry(silent) {
   const title   = document.getElementById('ne-title').value.trim();
   const content = document.getElementById('ne-content').value.trim();
@@ -13209,9 +13334,12 @@ function _persistNoteEntry(silent) {
   const tags     = document.getElementById('ne-tags-input').value.split(',').map(t=>t.trim()).filter(Boolean);
   const pinned   = document.getElementById('ne-pinned').checked;
   const linkedTradeId = document.getElementById('ne-linked-trade').value.trim() || null;
+  // Always use _nbPendingImages as source of truth — it's updated live as
+  // user adds/removes photos. existingEntry.images is only the on-disk snapshot.
+  const images = [...(window._nbPendingImages || [])];
   const entry = {
     id: nbCurrentEditId || uid(),
-    title, content, tags, pinned, linkedTradeId,
+    title, content, tags, pinned, linkedTradeId, images,
     date: new Date().toISOString()
   };
   if (!nb.entries) nb.entries = [];
@@ -13226,6 +13354,8 @@ function _persistNoteEntry(silent) {
   saveData(NOTEBOOKS_KEY, notebooks);
   nbEditorDirty = false;
   updateNbAutoSave('saved');
+  // Sync to Supabase in background (don't await — non-blocking)
+  saveUserDataToSupabase().catch(e => console.warn('TradeLog: notebook sync failed', e));
   if (!silent) selectNotebook(nbCurrentNbId);
 }
 
@@ -13235,7 +13365,14 @@ function saveNoteEntry() {
   if (!title && !content) { toast('Add a title or content','error'); return; }
   _persistNoteEntry(false);
   clearTimeout(nbAutoSaveTimer);
-  document.getElementById('note-entry-modal').style.display = 'none';
+  // Clean up paste handler and pending state before closing
+  const modal = document.getElementById('note-entry-modal');
+  if (modal?._nbPasteHandler) {
+    document.removeEventListener('paste', modal._nbPasteHandler);
+    modal._nbPasteHandler = null;
+  }
+  window._nbPendingImages = [];
+  modal.style.display = 'none';
   toast('Entry saved!','success');
 }
 
@@ -13246,8 +13383,16 @@ function deleteNoteEntry() {
     const nb = notebooks.find(x => x.id === nbCurrentNbId);
     if (nb) nb.entries = (nb.entries||[]).filter(x => x.id !== nbCurrentEditId);
     saveData(NOTEBOOKS_KEY, notebooks);
+    saveUserDataToSupabase().catch(e => console.warn('TradeLog: notebook sync failed', e));
     clearTimeout(nbAutoSaveTimer);
-    document.getElementById('note-entry-modal').style.display = 'none';
+    // Clean up paste handler
+    const modal = document.getElementById('note-entry-modal');
+    if (modal?._nbPasteHandler) {
+      document.removeEventListener('paste', modal._nbPasteHandler);
+      modal._nbPasteHandler = null;
+    }
+    window._nbPendingImages = [];
+    modal.style.display = 'none';
     selectNotebook(nbCurrentNbId);
     toast('Entry deleted','');
   }});
@@ -13292,6 +13437,7 @@ function deleteNotebook() {
   showConfirm({ icon:'🗑️', title:'Delete Notebook', message:`Delete "${nb.name}" and all its entries? This cannot be undone.`, okText:'Delete', okColor:'var(--red)', onOk: () => {
     const updated = notebooks.filter(x => x.id !== activeNotebookId);
     saveData(NOTEBOOKS_KEY, updated);
+    saveUserDataToSupabase().catch(e => console.warn('TradeLog: notebook sync failed', e));
     activeNotebookId = null;
     renderNotebooks();
     toast('Notebook deleted','');
@@ -13318,6 +13464,7 @@ function confirmAddNotebook() {
   const nb = { id: uid(), name, emoji, color, description: desc, entries: [] };
   notebooks.push(nb);
   saveData(NOTEBOOKS_KEY, notebooks);
+  saveUserDataToSupabase().catch(e => console.warn('TradeLog: notebook sync failed', e));
   activeNotebookId = nb.id;
   closeNewNotebookModal();
   renderNotebooks();
@@ -13565,12 +13712,17 @@ handleNotebooksMobile();
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
           </button>
           <button class="tb-btn" onclick="nbFormat('hr')" title="Divider" style="font-size:14px;font-weight:300;">—</button>
+          <div class="tb-sep"></div>
+          <button class="tb-btn" onclick="nbPickPhoto()" title="Attach photo (or paste / drag-drop an image)" style="font-size:13px;">📷</button>
         </div>
 
         <textarea id="ne-content" class="notebook-editor"
-          placeholder="Start writing…&#10;&#10;Tips: **bold**  *italic*  # Heading  - list  > quote  \`code\`"
+          placeholder="Start writing…&#10;&#10;Tips: **bold**  *italic*  # Heading  - list  > quote  \`code\`&#10;&#10;📷 Paste, drag-drop, or click the camera button to attach images"
           oninput="onNbContentChange()"></textarea>
         <div id="ne-preview" class="nb-preview" style="display:none;min-height:300px;border-top:none;"></div>
+
+        <!-- Attached images strip -->
+        <div id="ne-image-strip" style="display:none;flex-wrap:wrap;gap:8px;padding:10px 0 4px;"></div>
 
         <div class="nb-meta-bar">
           <span id="nb-word-count">0 words</span>
