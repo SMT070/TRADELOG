@@ -3495,8 +3495,10 @@
               <div class="panel-header-left"><div class="panel-title">Groups by Result</div></div>
             </div>
             <div style="display:flex;align-items:center;gap:20px;">
-              <canvas id="pa-result-chart" width="120" height="120" style="flex-shrink:0;"></canvas>
-              <div id="pa-result-legend" style="display:flex;flex-direction:column;gap:8px;flex:1;"></div>
+              <div style="width:120px;height:120px;flex-shrink:0;position:relative;">
+                <canvas id="pa-result-chart" style="width:120px!important;height:120px!important;"></canvas>
+              </div>
+              <div id="pa-result-legend" style="display:flex;flex-direction:column;gap:10px;flex:1;"></div>
             </div>
           </div>
 
@@ -9353,7 +9355,13 @@ function renderPackAnalytics() {
     const anyWin = childResults.some(r => r === 'win');
     const anyLoss= childResults.some(r => r === 'loss');
     const result = allBe ? 'be' : (anyWin && !anyLoss) ? 'win' : (anyLoss && !anyWin) ? 'loss' : pnl >= 0 ? 'win' : 'loss';
-    return { pid, name: ts[0].packName || 'Pack', pnl, count: ts.length, result, symbol: ts[0].symbol || '' };
+    const sym = ts[0].symbol || '';
+    const dateStr = (ts[0].date || '').slice(0, 10);
+    // Use custom pack name if it differs from the auto-generated "SYMBOL DIR" pattern
+    const autoName = sym + ' ' + (ts[0].dir || '');
+    const rawName  = ts[0].packName || '';
+    const name = (rawName && rawName !== autoName) ? rawName : sym + (dateStr ? '  ' + dateStr : '');
+    return { pid, name, pnl, count: ts.length, result, symbol: sym };
   });
 
   // Aggregate stats
@@ -9377,7 +9385,7 @@ function renderPackAnalytics() {
   _set('pa-wr',      wr.toFixed(1) + '%', 'var(--accent)');
   _set('pa-total',   groups.length, 'var(--yellow)');
   const sub = document.getElementById('pa-total-sub');
-  if (sub) sub.textContent = wins.length + 'W  ' + losses.length + 'L  ' + bes.length + 'BE';
+  if (sub) sub.textContent = wins.length + 'W · ' + losses.length + 'L · ' + bes.length + ' BE';
   _set('pa-avg-pnl',  fmt(avgPnl),  avgPnl >= 0 ? 'var(--green)' : 'var(--red)');
   _set('pa-avg-size', avgSize.toFixed(1) + ' trades', 'var(--text)');
   _set('pa-best',     fmt(best.pnl),  'var(--green)');
@@ -9401,7 +9409,7 @@ function renderPackAnalytics() {
           backgroundColor: [getCss('--green') || '#00FFBB', getCss('--red') || '#FF3B5C', '#f59e0b'],
           borderWidth: 0, hoverOffset: 4 }]
       },
-      options: { cutout: '72%', plugins: { legend: { display: false }, tooltip: { callbacks: {
+      options: { responsive: false, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false }, tooltip: { callbacks: {
         label: ctx => ' ' + ctx.label + ': ' + ctx.raw + ' group' + (ctx.raw !== 1 ? 's' : '')
       }}}, animation: { duration: 400 } }
     });
