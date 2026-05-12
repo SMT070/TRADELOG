@@ -14879,6 +14879,7 @@ function openPackDetail(packId, e, _autoTrades) {
     if (deleteBtn) { deleteBtn.style.display = ''; deleteBtn.onclick = () => deletePackGroup(packId); }
     document.getElementById('trade-detail-body').innerHTML = html;
     window._currentPackId = packId;
+    selectedId = null; // clear any individual trade selection — pack is now the focus
   }
 }
 
@@ -15126,7 +15127,7 @@ function cancelPackEdit(packId) {
 
 function _packDetailHeaderBtns() {
   return `
-    <button id="detail-expand-btn" onclick="openDetailOverlay()" title="Expand" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+    <button id="detail-expand-btn" onclick="if(window._currentPackId)openPackOverlay(window._currentPackId);else openDetailOverlay();" title="Expand" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
     </button>
     <button id="detail-edit-btn" title="Edit" style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
