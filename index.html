@@ -11252,24 +11252,26 @@ document.addEventListener('keydown', e => {
 
 // Global paste → attach photo to selected trade OR notebook entry
 document.addEventListener('paste', e => {
-  // Allow normal paste in text inputs/textareas
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-  // If note entry modal is open, paste goes to the notebook photo strip
+  // If note entry modal is open, intercept image pastes FIRST (before textarea early-return)
+  // so Ctrl+V on a screenshot goes to the photo strip even when the editor is focused
   const noteModal = document.getElementById('note-entry-modal');
   if (noteModal && noteModal.style.display === 'flex') {
-    const items = e.clipboardData && e.clipboardData.items;
-    if (items) {
-      for (const item of items) {
-        if (item.type.startsWith('image/')) {
+    const _items = e.clipboardData && e.clipboardData.items;
+    if (_items) {
+      for (const _item of _items) {
+        if (_item.type.startsWith('image/')) {
           e.preventDefault();
-          nbAttachPhotos([item.getAsFile()]);
+          nbAttachPhotos([_item.getAsFile()]);
           return;
         }
       }
     }
-    return; // modal is open but no image — don't fall through
+    // Modal open but pasting text — let normal textarea paste proceed
+    return;
   }
+
+  // Allow normal paste in text inputs/textareas (non-modal)
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   const items = e.clipboardData && e.clipboardData.items;
   if (!items) return;
   // Find image item
