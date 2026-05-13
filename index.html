@@ -15018,6 +15018,7 @@ function openPackEditMode(packId) {
   window._peTags     = [...packTags];
   window._peEmotion  = packEmotion;
   window._peConf     = packConfidence;
+  window._peTradeResults = {}; // per-trade result overrides
 
   // Update panel title & header buttons
   document.querySelector('#trade-detail-panel .panel-title').textContent = 'Edit Group';
@@ -15073,6 +15074,67 @@ function openPackEditMode(packId) {
           </div>
         </div>
         <div style="font-size:22px;font-weight:900;color:${pnlColor2};">${pnlStr2}</div>
+      </div>
+
+      <!-- Individual Trades -->
+      <div style="margin-bottom:14px;">
+        <div class="detail-label" style="margin-bottom:8px;">Positions</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${packTrades.map((t, i) => {
+            const tid = t.id;
+            const pnlVal = getPnl(t);
+            const pnlColor = t.result==='be'?'var(--yellow)':pnlVal>=0?'var(--green)':'var(--red)';
+            const sym2 = getCurrencySymbol();
+            const numInpT = (fid, val, color='var(--text)') =>
+              `<input id="pe-t-${fid}-${tid}" type="number" value="${val||''}"
+                style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);color:${color};font-size:12px;font-weight:600;font-family:var(--sans);box-sizing:border-box;outline:none;-moz-appearance:textfield;"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">`;
+            const fieldRow = (label, html) =>
+              `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 12px;border-bottom:1px solid var(--border);">
+                <span style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.8px;min-width:75px;">${label}</span>
+                <div style="flex:1;margin-left:8px;">${html}</div>
+              </div>`;
+            const dateVal = (v) => {
+              if (!v) return '';
+              const d = new Date(v);
+              return isNaN(d) ? v : d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + (v.includes('T') ? ' ' + v.slice(11,16) : '');
+            };
+            const dateInp = (fid, val) =>
+              `<input id="pe-t-${fid}-${tid}" type="text" value="${dateVal(val)}" placeholder="DD Mon YYYY HH:MM"
+                style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:11px;font-weight:600;font-family:var(--sans);box-sizing:border-box;outline:none;"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'"
+                data-rawdate="${val||''}">`;
+            return `
+            <div style="background:var(--surface2);border-radius:10px;overflow:hidden;border:1px solid var(--border);">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface3);border-bottom:1px solid var(--border);">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:12px;font-weight:800;color:var(--text);">#${i+1}</span>
+                  <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:9px;">${t.dir||'—'}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:13px;font-weight:800;color:${pnlColor};">${pnlVal>=0?'+':''}${sym2}${Math.abs(pnlVal).toFixed(2)}</span>
+                  <div style="display:flex;gap:3px;">
+                    ${['win','loss','be'].map(r => {
+                      const active = (t.result||'') === r;
+                      const col = r==='win'?'var(--green)':r==='loss'?'var(--red)':'var(--yellow)';
+                      const bg  = r==='win'?'var(--green-bg)':r==='loss'?'var(--red-bg)':'rgba(245,158,11,.12)';
+                      return `<button type="button" id="pe-res-${r}-${tid}" onclick="peSetTradeResult('${tid}','${r}')"
+                        style="padding:3px 7px;border-radius:5px;font-size:9px;font-weight:700;font-family:var(--sans);cursor:pointer;border:1px solid ${active?col:'var(--border)'};background:${active?bg:'var(--surface2)'};color:${active?col:'var(--muted)'};transition:all .12s;">${r.toUpperCase()}</button>`;
+                    }).join('')}
+                  </div>
+                </div>
+              </div>
+              ${fieldRow('Lots', numInpT('lots', t.lots))}
+              ${fieldRow('Entry', numInpT('entry', t.entry))}
+              ${fieldRow('Exit', numInpT('exit', t.exit))}
+              ${fieldRow('Stop Loss', numInpT('sl', t.sl, 'var(--red)'))}
+              ${fieldRow('Take Profit', numInpT('tp', t.tp, 'var(--green)'))}
+              ${fieldRow('Commission', `<div style="display:flex;align-items:center;gap:4px;"><span style="font-size:11px;color:var(--muted);font-weight:600;">${sym2}</span>${numInpT('commission', t.commission)}</div>`)}
+              ${fieldRow('Open Date', dateInp('date', t.date))}
+              ${fieldRow('Close Date', dateInp('closeDate', t.closeDate||''))}
+            </div>`;
+          }).join('')}
+        </div>
       </div>
 
       <!-- Tags -->
@@ -15154,6 +15216,23 @@ function peSetConf(n) {
     btn.style.borderColor  = active ? 'var(--accent)' : 'var(--border2)';
   }
 }
+function peSetTradeResult(tradeId, result) {
+  // Update button states visually
+  ['win','loss','be'].forEach(r => {
+    const btn = document.getElementById(`pe-res-${r}-${tradeId}`);
+    if (!btn) return;
+    const active = r === result;
+    const col = r==='win'?'var(--green)':r==='loss'?'var(--red)':'var(--yellow)';
+    const bg  = r==='win'?'var(--green-bg)':r==='loss'?'var(--red-bg)':'rgba(245,158,11,.12)';
+    btn.style.borderColor = active ? col : 'var(--border)';
+    btn.style.background  = active ? bg  : 'var(--surface2)';
+    btn.style.color       = active ? col : 'var(--muted)';
+  });
+  // Store on a map so savePackEdit can read it
+  if (!window._peTradeResults) window._peTradeResults = {};
+  window._peTradeResults[tradeId] = result;
+}
+
 function peToggleTag(tag) {
   if (!window._peTags.includes(tag)) window._peTags.push(tag);
   _refreshPeTagsList();
@@ -15210,6 +15289,67 @@ async function savePackEdit(packId) {
   if (!packTrades.length) return;
 
   try {
+    // ── Save per-trade fields from the individual trade rows ──────────────────
+    packTrades.forEach(t => {
+      const tid = t.id;
+      const idx = trades.findIndex(x => x.id === tid);
+      if (idx === -1) return;
+      const tr = trades[idx];
+
+      const getNum = (field) => {
+        const el = document.getElementById(`pe-t-${field}-${tid}`);
+        return el ? (parseFloat(el.value) || 0) : (tr[field] || 0);
+      };
+      const getDateStr = (field) => {
+        const el = document.getElementById(`pe-t-${field}-${tid}`);
+        if (!el) return tr[field] || null;
+        // If user didn't change it we stored the raw date in data-rawdate
+        const raw = el.getAttribute('data-rawdate');
+        const typed = el.value.trim();
+        // Try to parse the typed value as a date
+        if (typed) {
+          const d = new Date(typed);
+          if (!isNaN(d)) return d.toISOString().slice(0,16);
+        }
+        return raw || null;
+      };
+
+      tr.lots       = getNum('lots');
+      tr.entry      = getNum('entry');
+      tr.exit       = getNum('exit');
+      tr.sl         = getNum('sl');
+      tr.tp         = getNum('tp');
+      tr.commission = getNum('commission');
+      tr.date       = getDateStr('date') || tr.date;
+      tr.closeDate  = getDateStr('closeDate') || null;
+
+      // P&L recalc from entry/exit/lots if we have all values
+      if (tr.entry && tr.exit && tr.lots) {
+        const pipVal = tr.exit - tr.entry;
+        const dirMult = tr.dir === 'BUY' ? 1 : -1;
+        // Keep existing pnl calculation style: pnl is already stored, so only recalc if meaningful
+        // If they changed entry/exit we should update pnl
+        // Use the same logic as the add-trade form if available, otherwise estimate
+        const rawPnl = dirMult * pipVal * tr.lots;
+        if (Math.abs(rawPnl) > 0) tr.pnl = parseFloat(rawPnl.toFixed(2));
+      }
+      tr.netPnl = (tr.pnl || 0) - Math.abs(tr.commission || 0) + (tr.swap || 0);
+
+      // Result override from per-trade buttons, or auto-detect
+      if (window._peTradeResults && window._peTradeResults[tid]) {
+        tr.result = window._peTradeResults[tid];
+      } else if (!tr.result) {
+        tr.result = tr.netPnl > 0 ? 'win' : tr.netPnl < 0 ? 'loss' : 'be';
+      }
+      // Recalc R if possible
+      if (tr.entry && tr.sl && tr.exit) {
+        const riskPts   = Math.abs(tr.entry - tr.sl);
+        const rewardPts = tr.dir === 'BUY' ? (tr.exit - tr.entry) : (tr.entry - tr.exit);
+        tr.r = riskPts ? +( rewardPts / riskPts ).toFixed(2) : 0;
+      }
+    });
+    // ── end per-trade save ─────────────────────────────────────────────────────
+
     // Clear all pack metadata from every trade in the pack
     const fields = ['packNotes','packEmotion','packConfidence','packTags'];
     packTrades.forEach(t => fields.forEach(f => delete t[f]));
@@ -15233,6 +15373,8 @@ async function savePackEdit(packId) {
     await saveUserDataToSupabase();
 
     toast('✓ Group saved', 'success');
+    invalidateStatCache();
+    refreshDashboard();
   } catch(err) {
     console.error('savePackEdit failed', err);
     toast('❌ Save failed — check console', 'error');
@@ -15240,6 +15382,7 @@ async function savePackEdit(packId) {
 
   // Clear editing state
   window._pePackId = null;
+  window._peTradeResults = {};
   window._currentPackId = packId;
 
   // Restore header buttons and show view mode
