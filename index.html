@@ -11062,6 +11062,11 @@ function renderCalendar() {
         else                   pnlStr = sign + sym + abs.toFixed(2);
         inner += '<div class="cal-pnl ' + pnlClass + '">' + pnlStr + '</div>';
         inner += '<div class="cal-trades">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
+        // Mood emoji from any trade on this day
+        const dayMoods = [...new Set((trades||[]).filter(t=>(t.date||'').slice(0,10)===dateStr && t.emotion).map(t=>t.emotion))];
+        if (dayMoods.length) {
+          inner += '<div style="font-size:9px;line-height:1;margin-top:1px;opacity:0.85;">' + dayMoods.slice(0,2).join('') + '</div>';
+        }
         inner += '<div class="cal-cell-bar ' + pnlClass + '"></div>';
       } else if (hasBEevt) {
         // Only balance event on this day — show the amount
@@ -12115,6 +12120,23 @@ function selectCalDay(dateStr) {
         </div>
       </div>
 
+      ${(() => {
+        // Aggregate trade-level psychology across all day's trades
+        const confs  = dayTrades.map(t => t.confidence).filter(Boolean);
+        const moods  = [...new Set(dayTrades.map(t => t.emotion).filter(Boolean))];
+        if (!confs.length && !moods.length) return '';
+        const avgConf = confs.length ? Math.round(confs.reduce((a,b)=>a+b,0)/confs.length) : 0;
+        const confColor = avgConf>=7?'var(--green)':avgConf>=4?'var(--yellow)':'var(--red)';
+        const confLabel = ['','Terrible','Poor','Low','Okay','Moderate','Good','Confident','Strong','Excellent','Peak'][avgConf]||'';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;margin-bottom:12px;">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);white-space:nowrap;">Trade Mindset</div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:4px;">
+            ${moods.map(m => `<span style="font-size:16px;line-height:1;" title="Mood">${m}</span>`).join('')}
+            ${avgConf ? `<span style="font-size:11px;font-weight:800;color:${confColor};padding:2px 7px;border-radius:6px;background:${avgConf>=7?'rgba(0,255,187,.1)':avgConf>=4?'rgba(245,158,11,.1)':'rgba(255,59,92,.1)'};">${avgConf}/10 ${confLabel}</span>` : ''}
+          </div>
+        </div>`;
+      })()}
+
       <!-- Trade rows -->
       <div style="display:flex;flex-direction:column;gap:6px;">
         ${dayTrades.sort((a,b) => (a.date||'').localeCompare(b.date||'')).map(t => {
@@ -12126,6 +12148,9 @@ function selectCalDay(dateStr) {
           const pnlStr = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
           const timeStr = (t.date||'').slice(11,16) || '';
           const rVal = getR(t);
+          const tradeConf = t.confidence || 0;
+          const tradeEmo  = t.emotion    || '';
+          const confColor = tradeConf>=7?'var(--green)':tradeConf>=4?'var(--yellow)':'var(--red)';
           return `<div onclick="selectTrade('${t.id}');switchPage('trades');" style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:10px;background:${bg};border:1px solid ${border};cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
             <div style="display:flex;align-items:center;gap:8px;min-width:0;">
               <div style="width:3px;height:32px;border-radius:2px;background:${col};flex-shrink:0;"></div>
@@ -12133,8 +12158,12 @@ function selectCalDay(dateStr) {
                 <div style="font-size:12px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:5px;">
                   ${t.symbol}
                   <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:8px;padding:1px 6px;">${t.dir}</span>
+                  ${tradeEmo ? `<span style="font-size:13px;line-height:1;" title="Mood">${tradeEmo}</span>` : ''}
                 </div>
-                <div style="font-size:10px;color:var(--muted);margin-top:1px;">${timeStr}${timeStr&&t.lots?' · ':''}${t.lots?t.lots+' lots':''}${t.entry?' · @'+t.entry:''}</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:1px;display:flex;align-items:center;gap:5px;">
+                  <span>${timeStr}${timeStr&&t.lots?' · ':''}${t.lots?t.lots+' lots':''}${t.entry?' · @'+t.entry:''}</span>
+                  ${tradeConf ? `<span style="color:${confColor};font-weight:700;">${tradeConf}/10</span>` : ''}
+                </div>
               </div>
             </div>
             <div style="text-align:right;flex-shrink:0;">
@@ -15039,8 +15068,8 @@ function openPackEditMode(packId) {
   document.querySelector('#trade-detail-panel .panel-title').textContent = 'Edit Group';
   const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
   if (headerBtns) headerBtns.innerHTML = `
-    <button onclick="cancelPackEdit('${packId}')" style="padding:5px 12px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Cancel</button>
-    <button onclick="savePackEdit('${packId}')" style="padding:5px 14px;height:30px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>`;
+    <button onclick="cancelPackEdit(window._pePackId)" style="padding:5px 12px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Cancel</button>
+    <button onclick="savePackEdit(window._pePackId)" style="padding:5px 14px;height:30px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>`;
 
   // Confidence pills
   const confPills = Array.from({length:10},(_,i)=>i+1).map(n => {
@@ -15189,19 +15218,19 @@ function openPackEditMode(packId) {
       <!-- Chart Photo -->
       <div style="margin-bottom:14px;">
         <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
-        <input type="file" id="pe-photo-input" accept="image/*" style="display:none;" onchange="uploadPackPhotoAndRefresh(event,'${packId}');">
+        <input type="file" id="pe-photo-input" accept="image/*" style="display:none;" onchange="uploadPackPhotoAndRefresh(event,window._pePackId);">
         ${packPhoto
-          ? `<div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPackPhotoFullscreen('${packId}')">
+          ? `<div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPackPhotoFullscreen(window._pePackId)">
                <img src="${packPhoto}" style="width:100%;display:block;border-radius:10px;">
                <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
                  <button onclick="event.stopPropagation();document.getElementById('pe-photo-input').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
-                 <button onclick="event.stopPropagation();savePackField('${packId}','packScreenshot',null).then(()=>openPackEditMode('${packId}'))" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
+                 <button onclick="event.stopPropagation();savePackField(window._pePackId,'packScreenshot',null).then(()=>openPackEditMode(window._pePackId))" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
                </div>
              </div>`
           : `<div onclick="document.getElementById('pe-photo-input').click()"
                ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
                ondragleave="this.style.borderColor='var(--border2)'"
-               ondrop="event.preventDefault();uploadPackPhotoAndRefresh({target:{files:[event.dataTransfer.files[0]]}},'${packId}')"
+               ondrop="event.preventDefault();uploadPackPhotoAndRefresh({target:{files:[event.dataTransfer.files[0]]}},window._pePackId)"
                style="border:2px dashed var(--border2);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .15s;"
                onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
                <div style="font-size:22px;margin-bottom:6px;">📸</div>
@@ -15389,10 +15418,10 @@ async function savePackEdit(packId) {
 
     // Set values on the stable anchor (lowest index in master array)
     const anchorIdx = Math.min(...packTrades.map(t => trades.indexOf(t)));
-    if (notes)              trades[anchorIdx].packNotes      = notes;
-    if (emotion)            trades[anchorIdx].packEmotion    = emotion;
-    if (conf)               trades[anchorIdx].packConfidence = conf;
-    if (tags && tags.length) trades[anchorIdx].packTags      = tags;
+    if (notes)                        trades[anchorIdx].packNotes      = notes;
+    if (emotion)                      trades[anchorIdx].packEmotion    = emotion;
+    if (conf !== '' && conf != null)  trades[anchorIdx].packConfidence = conf;
+    if (tags && tags.length)          trades[anchorIdx].packTags       = tags;
 
     save();
 
@@ -15721,9 +15750,10 @@ async function savePackField(packId, field, value) {
     packTrades = trades.filter(t => t.packId === realPackId);
     // Re-render so the row now shows as a real pack
     renderTrades();
-    // Update packId reference for the rest of this call AND for any live overlay
+    // Update packId reference for the rest of this call AND for any live overlay/edit panel
     packId = realPackId;
     if (window._packOvCurrentId) window._packOvCurrentId = realPackId;
+    if (window._pePackId)        window._pePackId        = realPackId;
   }
 
   if (!packTrades.length) return;
