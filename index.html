@@ -5601,6 +5601,10 @@ async function loadAllFromSupabase() {
         const t = typeof data.tags === 'string' ? JSON.parse(data.tags) : data.tags;
         localStorage.setItem(TAGS_KEY, JSON.stringify(t));
       }
+      if (data.notebooks) {
+        const nb = typeof data.notebooks === 'string' ? JSON.parse(data.notebooks) : data.notebooks;
+        if (Array.isArray(nb) && nb.length) localStorage.setItem(NOTEBOOKS_KEY, JSON.stringify(nb));
+      }
       // Merge pack_meta back into trades (notes, photo, mindset, tags per pack)
       if (data.pack_meta) {
         const pm = typeof data.pack_meta === 'string' ? JSON.parse(data.pack_meta) : data.pack_meta;
@@ -5668,6 +5672,7 @@ async function saveUserDataToSupabase() {
       journal:   JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
       tags:      JSON.parse(localStorage.getItem(TAGS_KEY) || '[]'),
       pack_meta: packMeta,
+      notebooks: JSON.parse(localStorage.getItem(NOTEBOOKS_KEY) || '[]'),
     });
     if (error) console.warn('TradeLog: saveUserData error', error);
   } catch(e) { console.warn('TradeLog: saveUserData failed', e); }
@@ -11245,10 +11250,26 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Global paste → attach photo to selected trade
+// Global paste → attach photo to selected trade OR notebook entry
 document.addEventListener('paste', e => {
   // Allow normal paste in text inputs/textareas
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  // If note entry modal is open, paste goes to the notebook photo strip
+  const noteModal = document.getElementById('note-entry-modal');
+  if (noteModal && noteModal.style.display === 'flex') {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (items) {
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          nbAttachPhotos([item.getAsFile()]);
+          return;
+        }
+      }
+    }
+    return; // modal is open but no image — don't fall through
+  }
   const items = e.clipboardData && e.clipboardData.items;
   if (!items) return;
   // Find image item
@@ -12784,7 +12805,11 @@ const NOTEBOOKS_KEY = 'tradelog_notebooks';
 function loadData(key, def=[]) {
   try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; }
 }
-function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+function saveData(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+  // Persist notebooks to Supabase whenever they change
+  if (key === NOTEBOOKS_KEY) { saveUserDataToSupabase(); }
+}
 
 // ══════════════════════════════════════════════════════════════════
 //  NOTEBOOKS — full-featured
@@ -12991,6 +13016,10 @@ function selectNotebook(id) {
           <div style="font-size:10px;color:var(--muted);flex-shrink:0;white-space:nowrap;">${dateStr}</div>
         </div>
         ${e.content ? `<div class="entry-preview">${e.content.replace(/[#*_\`>]/g,'').trim()}</div>` : ''}
+        ${e.photos && e.photos.length ? `<div style="display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;">
+          ${e.photos.slice(0,4).map((src,i)=>`<img src="${src}" style="height:44px;border-radius:6px;border:1px solid var(--border);object-fit:cover;max-width:80px;">`).join('')}
+          ${e.photos.length > 4 ? `<div style="height:44px;width:44px;border-radius:6px;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted);">+${e.photos.length-4}</div>` : ''}
+        </div>` : ''}
         <div class="entry-footer">
           ${tags.map(t=>`<span class="nb-tag">${t}</span>`).join('')}
           ${wc ? `<span style="margin-left:auto;font-size:10px;color:var(--muted);font-weight:600;">${wc}w</span>` : ''}
@@ -13023,6 +13052,7 @@ function openNoteEntry(nbId, entryId) {
   nbCurrentEditId= entryId || null;
   nbEditorDirty  = false;
   nbEditorMode   = 'write';
+  window.nbCurrentEntryPhotos = e?.photos ? [...e.photos] : [];
 
   document.getElementById('ne-title').value   = e?.title   || '';
   document.getElementById('ne-content').value = e?.content || '';
@@ -13035,6 +13065,9 @@ function openNoteEntry(nbId, entryId) {
   document.getElementById('ne-pin-btn').title = e?.pinned ? 'Unpin entry' : 'Pin entry';
   document.getElementById('ne-pin-btn').style.color = e?.pinned ? 'var(--accent)' : '';
 
+  // Populate photo strip
+  _renderNbPhotoStrip();
+
   // Show the editor, hide preview
   setNbEditorMode('write');
   updateNbWordCount();
@@ -13045,6 +13078,52 @@ function openNoteEntry(nbId, entryId) {
 }
 
 function openNoteEntryModal(nbId, entryId) { openNoteEntry(nbId, entryId); }
+
+// ── Notebook entry photo handling ─────────────────────────────────
+function _renderNbPhotoStrip() {
+  const strip = document.getElementById('ne-photo-strip');
+  const hint  = document.getElementById('ne-photo-hint');
+  if (!strip) return;
+  const photos = window.nbCurrentEntryPhotos || [];
+  strip.innerHTML = photos.map((src, i) => `
+    <div style="position:relative;display:inline-block;">
+      <img data-nb-photo src="${src}" onclick="nbPhotoFullscreen('${i}')"
+        style="height:80px;border-radius:8px;border:1px solid var(--border);cursor:zoom-in;object-fit:cover;max-width:160px;">
+      <button onclick="nbRemovePhoto(${i})" title="Remove"
+        style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;border:none;background:rgba(0,0,0,.7);color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">&times;</button>
+    </div>`).join('');
+  if (hint) hint.style.display = photos.length ? 'none' : 'block';
+  onNbContentChange();
+}
+
+function nbAttachPhotos(files) {
+  if (!files || !files.length) return;
+  [...files].forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    _processImageHighQuality(file, dataUrl => {
+      if (!dataUrl) return;
+      if (!window.nbCurrentEntryPhotos) window.nbCurrentEntryPhotos = [];
+      window.nbCurrentEntryPhotos.push(dataUrl);
+      _renderNbPhotoStrip();
+    });
+  });
+}
+
+function nbRemovePhoto(idx) {
+  if (!window.nbCurrentEntryPhotos) return;
+  window.nbCurrentEntryPhotos.splice(idx, 1);
+  _renderNbPhotoStrip();
+}
+
+function nbPhotoFullscreen(idx) {
+  const src = (window.nbCurrentEntryPhotos || [])[idx];
+  if (!src) return;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+  ov.onclick = () => ov.remove();
+  ov.innerHTML = `<img src="${src}" style="max-width:95vw;max-height:92vh;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.8);">`;
+  document.body.appendChild(ov);
+}
 
 function closeNoteEntryModal() {
   if (nbEditorDirty) {
@@ -13239,9 +13318,15 @@ function _persistNoteEntry(silent) {
   const tags     = document.getElementById('ne-tags-input').value.split(',').map(t=>t.trim()).filter(Boolean);
   const pinned   = document.getElementById('ne-pinned').checked;
   const linkedTradeId = document.getElementById('ne-linked-trade').value.trim() || null;
+  // Collect photos from the UI strip
+  const photoStrip = document.getElementById('ne-photo-strip');
+  const photos = photoStrip
+    ? [...photoStrip.querySelectorAll('img[data-nb-photo]')].map(i => i.src)
+    : (nbCurrentEntryPhotos || []);
   const entry = {
     id: nbCurrentEditId || uid(),
     title, content, tags, pinned, linkedTradeId,
+    photos: photos.length ? photos : undefined,
     date: new Date().toISOString()
   };
   if (!nb.entries) nb.entries = [];
@@ -13618,6 +13703,23 @@ handleNotebooksMobile();
           style="width:100%;padding:10px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:12px;font-family:var(--sans);box-sizing:border-box;outline:none;transition:border-color .2s;"
           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
           oninput="onNbContentChange()">
+      </div>
+
+      <!-- Photos -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;">Photos</label>
+          <button onclick="document.getElementById('ne-photo-file-input').click()" style="font-size:11px;padding:4px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:var(--sans);font-weight:600;transition:all .12s;" onmouseenter="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">📎 Attach</button>
+          <input type="file" id="ne-photo-file-input" accept="image/*" multiple style="display:none;" onchange="nbAttachPhotos(this.files)">
+        </div>
+        <div id="ne-photo-drop-zone"
+          ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+          ondragleave="this.style.borderColor='var(--border2)'"
+          ondrop="event.preventDefault();nbAttachPhotos(event.dataTransfer.files)"
+          style="border:2px dashed var(--border2);border-radius:10px;padding:10px;transition:border-color .15s;min-height:48px;">
+          <div id="ne-photo-strip" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;"></div>
+          <div id="ne-photo-hint" style="text-align:center;color:var(--muted);font-size:11px;padding:6px 0;">Drag &amp; drop or <b style="color:var(--text2);">Ctrl+V</b> to paste a screenshot</div>
+        </div>
       </div>
 
       <!-- Link to Trade -->
