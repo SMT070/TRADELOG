@@ -15711,8 +15711,9 @@ async function savePackField(packId, field, value) {
     packTrades = trades.filter(t => t.packId === realPackId);
     // Re-render so the row now shows as a real pack
     renderTrades();
-    // Update packId reference for the rest of this call
+    // Update packId reference for the rest of this call AND for any live overlay
     packId = realPackId;
+    if (window._packOvCurrentId) window._packOvCurrentId = realPackId;
   }
 
   if (!packTrades.length) return;
@@ -15780,13 +15781,15 @@ function openPackOverlay(packId) {
          onclick="document.getElementById('pack-ov-photo-input-${safeId}').click()"
          ondragover="event.preventDefault();this.style.background='var(--surface3)'"
          ondragleave="this.style.background='transparent'"
-         ondrop="_packOvHandleDrop(event,'${packId}','${safeId}')"
+         ondrop="_packOvHandleDrop(event,window._packOvCurrentId,'${safeId}')"
          style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;outline:none;gap:12px;">
          <div style="font-size:48px;opacity:.3;">📸</div>
          <div style="font-size:14px;color:var(--muted);font-weight:600;">Click, drag & drop, or Ctrl+V to paste chart screenshot</div>
        </div>`;
 
   document.getElementById('overlay-detail-title').textContent = '📦 ' + packName + '  ·  ' + pnlStr;
+  // Store the live packId so all inline handlers always use the current (possibly converted) id
+  window._packOvCurrentId = packId;
 
   document.getElementById('trade-detail-overlay-body').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 380px;height:100%;overflow:hidden;">
@@ -15795,7 +15798,7 @@ function openPackOverlay(packId) {
       <div style="background:var(--surface2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--border);">
         ${photoSection}
         <input type="file" id="pack-ov-photo-input-${safeId}" accept="image/*" style="display:none;"
-          onchange="_packOvUpload(event,'${packId}','${safeId}')">
+          onchange="_packOvUpload(event,window._packOvCurrentId,'${safeId}')">
       </div>
 
       <!-- RIGHT: Stats, Positions, then Notes + Mindset -->
@@ -15875,7 +15878,7 @@ function openPackOverlay(packId) {
             placeholder="Setup idea, reasoning, confluences…"
             style="width:100%;min-height:100px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-            oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
+            oninput="savePackNoteDebounced(window._packOvCurrentId,this.value)">${packNotes}</textarea>
         </div>
 
         <!-- Mood — FOURTH -->
@@ -15883,7 +15886,7 @@ function openPackOverlay(packId) {
           <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">🧠 Mindset</div>
           <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
             ${emotions.map(em => `<span
-              onclick="savePackField('${packId}','packEmotion','${em}');document.querySelectorAll('.pkov-emo-${safeId}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
+              onclick="savePackField(window._packOvCurrentId,'packEmotion','${em}');document.querySelectorAll('.pkov-emo-${safeId}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
               class="pkov-emo-${safeId}"
               style="font-size:22px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${packEmotion===em?'2px solid var(--accent)':'none'};transform:${packEmotion===em?'scale(1.12)':'scale(1)'};">${em}</span>`).join('')}
           </div>
@@ -15891,7 +15894,7 @@ function openPackOverlay(packId) {
             Confidence <span style="color:var(--accent);font-weight:700;" id="pack-ov-conf-${safeId}">${packConf||'—'}/10</span>
           </div>
           <input type="range" min="1" max="10" value="${packConf||5}" style="width:100%;accent-color:var(--accent);"
-            oninput="document.getElementById('pack-ov-conf-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',this.value)">
+            oninput="document.getElementById('pack-ov-conf-${safeId}').textContent=this.value+'/10';savePackField(window._packOvCurrentId,'packConfidence',this.value)">
           <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-top:2px;"><span>Low</span><span>High</span></div>
         </div>
 
@@ -15927,7 +15930,8 @@ function _packOvSetupPaste(packId, safeId) {
     e.preventDefault();
     const file = item.getAsFile();
     if (!file) return;
-    _packOvUpload({ target: { files: [file] } }, packId, safeId);
+    // Always use the current live packId (may have been converted from _auto_)
+    _packOvUpload({ target: { files: [file] } }, window._packOvCurrentId || packId, safeId);
   };
   document.addEventListener('paste', window._packOvPasteHandler);
 }
