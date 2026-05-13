@@ -14183,7 +14183,7 @@ tr.pack-header-row:hover .pack-row-actions { opacity: 1 !important; }
 
 /* ── Pack child rows — same bg, purple accent only ── */
 tr.pack-child-row td {
-  opacity: 1;
+  opacity: 0.65;
   background: var(--surface) !important;
   border-left: 3px solid transparent !important;
 }
@@ -14207,7 +14207,7 @@ tr.pack-child-row td:first-child {
   display: flex;
   align-items: center;
 }
-tr.pack-child-row:hover td { background: var(--surface2) !important; }
+tr.pack-child-row:hover td { background: var(--surface2) !important; opacity: 1; }
 tr.pack-child-row.hidden { display: none; }
 tr.pack-child-row[data-pack^="_auto_"] td:first-child { border-left: 3px solid var(--border) !important; }
 /* Bottom border on last child to close the group visually */
@@ -15797,7 +15797,7 @@ function renderPackRows(packId, packTrades, sym) {
   const safePackName = packName.replace(/'/g,"\\'");
 
   // ── HTML: looks like a normal trade row ──────────────────────────
-  const chevron = `<svg class="pack-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;${isExpanded?'transform:rotate(90deg)':''}"><polyline points="9 18 15 12 9 6"/></svg>`;
+  const chevron = `<svg class="pack-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;${isExpanded?'transform:rotate(90deg)':''}"><polyline points="9 18 15 12 9 6"/></svg>`;
   const dateHtml = newestDate
     ? newestDate.slice(0,10) + '<br><span style="font-size:11px;color:var(--text2);font-weight:500;">' + newestDate.slice(11,19) + '</span>'
     : '—';
@@ -16267,7 +16267,7 @@ function renderAutoPackRows(key, packTrades, sym) {
   const resultLabel = packResult==='win' ? 'WIN'            : packResult==='loss' ? 'LOSS'           : 'BE';
 
   // Header row visuals
-  const chevron     = `<svg class="pack-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;${isExpanded?'transform:rotate(90deg)':''}"><polyline points="9 18 15 12 9 6"/></svg>`;
+  const chevron     = `<svg class="pack-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;${isExpanded?'transform:rotate(90deg)':''}"><polyline points="9 18 15 12 9 6"/></svg>`;
   const dateHtml    = `${earliest.slice(0,10)}<br><span style="font-size:11px;color:var(--text2);font-weight:500;">${timeStr}</span>`;
   const dirBadge    = dir === 'MIXED'
     ? `<span class="badge" style="background:var(--surface3);color:var(--muted);">MIX</span>`
