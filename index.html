@@ -2191,23 +2191,7 @@
   .feat-info-wrap:hover .feat-info-tip,
   .feat-info-wrap:focus-within .feat-info-tip { display: block !important; }
 </style>
-  <link rel="manifest" href="data:application/json;charset=utf-8,{
-    &quot;name&quot;: &quot;TradeLog&quot;,
-    &quot;short_name&quot;: &quot;TradeLog&quot;,
-    &quot;description&quot;: &quot;Your Professional Trading Journal&quot;,
-    &quot;start_url&quot;: &quot;.&quot;,
-    &quot;display&quot;: &quot;standalone&quot;,
-    &quot;display_override&quot;: [&quot;fullscreen&quot;, &quot;standalone&quot;, &quot;minimal-ui&quot;],
-    &quot;background_color&quot;: &quot;#05080f&quot;,
-    &quot;theme_color&quot;: &quot;#05080f&quot;,
-    &quot;orientation&quot;: &quot;portrait-primary&quot;,
-    &quot;icons&quot;: [{
-      &quot;src&quot;: &quot;data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'&gt;&lt;rect width='512' height='512' rx='80' fill='%2305080f'/&gt;&lt;text y='360' x='80' font-size='380' font-family='Arial'&gt;📈&lt;/text&gt;&lt;/svg&gt;&quot;,
-      &quot;sizes&quot;: &quot;any&quot;,
-      &quot;type&quot;: &quot;image/svg+xml&quot;,
-      &quot;purpose&quot;: &quot;any maskable&quot;
-    }]
-  }">
+  <link rel="manifest" href="data:application/json;charset=utf-8,{&quot;name&quot;:&quot;TradeLog&quot;,&quot;short_name&quot;:&quot;TradeLog&quot;,&quot;description&quot;:&quot;Your Professional Trading Journal&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;display_override&quot;:[&quot;fullscreen&quot;,&quot;standalone&quot;,&quot;minimal-ui&quot;],&quot;background_color&quot;:&quot;#05080f&quot;,&quot;theme_color&quot;:&quot;#05080f&quot;,&quot;orientation&quot;:&quot;portrait-primary&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'&gt;&lt;rect width='512' height='512' rx='80' fill='%2305080f'/&gt;&lt;text y='360' x='80' font-size='380' font-family='Arial'&gt;📈&lt;/text&gt;&lt;/svg&gt;&quot;,&quot;sizes&quot;:&quot;any&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;,&quot;purpose&quot;:&quot;any maskable&quot;}]}">
   <style>
     /* ── PWA INSTALL BUTTON ── */
     #pwa-install-btn {
@@ -5776,12 +5760,28 @@ window.addEventListener('load', () => {
       if (!_appInitialized) showAuthScreen();
     } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
       currentUser = session.user;
+    } else if (event === 'TOKEN_REFRESH_FAILED' || (event === 'SIGNED_OUT' && !session)) {
+      // Stale/invalid refresh token — clear local session and show login
+      _appInitialized = false;
+      currentUser = null;
+      trades = [];
+      balanceEvents = [];
+      const _t = localStorage.getItem(THEME_KEY);
+      localStorage.removeItem(KEY);
+      localStorage.removeItem(MINDSET_KEY);
+      localStorage.removeItem(JOURNAL_KEY);
+      localStorage.removeItem(TAGS_KEY);
+      localStorage.removeItem(GOALS_KEY);
+      localStorage.removeItem(PROFILE_KEY);
+      localStorage.removeItem(BAL_KEY);
+      localStorage.removeItem(CUR_KEY);
+      if (_t) localStorage.setItem(THEME_KEY, _t);
+      showAuthScreen();
     } else if (event === 'SIGNED_OUT') {
       _appInitialized = false;
       currentUser = null;
       trades = [];
       balanceEvents = [];
-      // Wipe all user-specific localStorage so next user starts clean
       const _t = localStorage.getItem(THEME_KEY);
       localStorage.removeItem(KEY);
       localStorage.removeItem(MINDSET_KEY);
@@ -5795,6 +5795,16 @@ window.addEventListener('load', () => {
       showAuthScreen();
     }
   });
+
+  // Suppress "Receiving end does not exist" noise from browser extensions
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    const _origOnMsg = chrome.runtime.onMessage;
+    if (_origOnMsg && _origOnMsg.addListener) {
+      window.addEventListener('unhandledrejection', e => {
+        if (e.reason?.message?.includes('Receiving end does not exist')) e.preventDefault();
+      });
+    }
+  }
 });
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
