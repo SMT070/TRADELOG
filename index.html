@@ -14164,7 +14164,7 @@ tr.pack-separator td {
   pointer-events: none;
 }
 tr.pack-separator td > div {
-  height: 0;
+  /* overridden below */
 }
 
 /* ── Pack header row — same bg as all rows, purple accent only ── */
@@ -14181,11 +14181,12 @@ tr.pack-header-row:hover td { background: var(--surface2) !important; }
 tr.pack-header-row.expanded td { border-bottom: 1px solid var(--border) !important; }
 tr.pack-header-row:hover .pack-row-actions { opacity: 1 !important; }
 
-/* ── Pack child rows — same bg, purple accent only ── */
+/* ── Pack child rows — full opacity, subtle tinted bg, accent left border ── */
 tr.pack-child-row td {
-  opacity: 0.65;
-  background: var(--surface) !important;
+  opacity: 1;
+  background: var(--surface2) !important;
   border-left: 3px solid transparent !important;
+  border-bottom: 1px solid var(--border) !important;
 }
 tr.pack-child-row td:first-child {
   border-left: 3px solid var(--accent) !important;
@@ -14207,12 +14208,16 @@ tr.pack-child-row td:first-child {
   display: flex;
   align-items: center;
 }
-tr.pack-child-row:hover td { background: var(--surface2) !important; opacity: 1; }
+tr.pack-child-row:hover td { background: var(--surface3) !important; }
 tr.pack-child-row.hidden { display: none; }
 tr.pack-child-row[data-pack^="_auto_"] td:first-child { border-left: 3px solid var(--border) !important; }
-/* Bottom border on last child to close the group visually */
-tr.pack-separator + * , tr.pack-child-row:last-of-type td {
-  border-bottom: 2px solid var(--border2) !important;
+/* Accent bottom on the spacer row that always follows a group */
+tr.pack-separator td > div {
+  height: 2px !important;
+  background: linear-gradient(90deg, var(--accent), transparent 80%);
+  opacity: 0.3;
+  border-radius: 2px;
+  margin: 3px 0;
 }
 tr.pack-inline-detail-row.hidden { display: none; }
 tr.pack-inline-detail-row td { padding: 0 !important; }
