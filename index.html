@@ -15703,25 +15703,25 @@ function openPackOverlay(packId) {
                 const mins = Math.round((new Date(t.closeDate)-new Date(t.date))/60000);
                 dur = mins < 60 ? mins+'m' : Math.floor(mins/60)+'h '+(mins%60)+'m';
               }
-              return \`<div style="background:var(--surface2);border-radius:10px;padding:11px 13px;border:1px solid var(--border);">
+              return `<div style="background:var(--surface2);border-radius:10px;padding:11px 13px;border:1px solid var(--border);">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
                   <div style="display:flex;align-items:center;gap:6px;">
-                    <span class="badge \${t.dir==='BUY'?'buy':'sell'}" style="font-size:9px;">\${t.dir}</span>
-                    <span style="font-size:11px;color:var(--muted);font-weight:600;">\${t.lots||'—'} lots</span>
-                    \${res ? \`<span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;border:1px solid \${resColor};background:\${resBg};color:\${resColor};">\${res.toUpperCase()}</span>\` : ''}
+                    <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:9px;">${t.dir}</span>
+                    <span style="font-size:11px;color:var(--muted);font-weight:600;">${t.lots||'—'} lots</span>
+                    ${res ? `<span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;border:1px solid ${resColor};background:${resBg};color:${resColor};">${res.toUpperCase()}</span>` : ''}
                   </div>
-                  <span style="font-size:14px;font-weight:900;color:\${pc};">\${ps}</span>
+                  <span style="font-size:14px;font-weight:900;color:${pc};">${ps}</span>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:11px;">
-                  <div style="color:var(--muted);">Entry <b style="color:var(--text);">\${t.entry||'—'}</b></div>
-                  <div style="color:var(--muted);">Exit <b style="color:var(--text);">\${t.exit||'—'}</b></div>
-                  \${t.sl ? \`<div style="color:var(--muted);">SL <b style="color:var(--red);">\${t.sl}</b></div>\` : ''}
-                  \${t.tp ? \`<div style="color:var(--muted);">TP <b style="color:var(--green);">\${t.tp}</b></div>\` : ''}
-                  \${dur ? \`<div style="color:var(--muted);">Duration <b style="color:var(--text2);">\${dur}</b></div>\` : ''}
-                  \${t.commission ? \`<div style="color:var(--muted);">Comm. <b style="color:var(--text2);">\${sym}\${parseFloat(t.commission).toFixed(2)}</b></div>\` : ''}
+                  <div style="color:var(--muted);">Entry <b style="color:var(--text);">${t.entry||'—'}</b></div>
+                  <div style="color:var(--muted);">Exit <b style="color:var(--text);">${t.exit||'—'}</b></div>
+                  ${t.sl ? `<div style="color:var(--muted);">SL <b style="color:var(--red);">${t.sl}</b></div>` : ''}
+                  ${t.tp ? `<div style="color:var(--muted);">TP <b style="color:var(--green);">${t.tp}</b></div>` : ''}
+                  ${dur ? `<div style="color:var(--muted);">Duration <b style="color:var(--text2);">${dur}</b></div>` : ''}
+                  ${t.commission ? `<div style="color:var(--muted);">Comm. <b style="color:var(--text2);">${sym}${parseFloat(t.commission).toFixed(2)}</b></div>` : ''}
                 </div>
-                \${t.notes ? \`<div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.5;">\${t.notes}</div>\` : ''}
-              </div>\`;
+                ${t.notes ? `<div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.5;">${t.notes}</div>` : ''}
+              </div>`;
             }).join('')}
           </div>
         </div>
