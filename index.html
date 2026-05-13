@@ -15798,37 +15798,10 @@ function openPackOverlay(packId) {
           onchange="_packOvUpload(event,'${packId}','${safeId}')">
       </div>
 
-      <!-- RIGHT: Notes + Mindset -->
+      <!-- RIGHT: Stats, Positions, then Notes + Mindset -->
       <div style="overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;">
 
-        <!-- Notes -->
-        <div>
-          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">📝 Group Notes</div>
-          <textarea id="pack-ov-notes-${safeId}"
-            placeholder="Setup idea, reasoning, confluences…"
-            style="width:100%;min-height:120px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
-            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-            oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
-        </div>
-
-        <!-- Mood -->
-        <div>
-          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">🧠 Mindset</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
-            ${emotions.map(em => `<span
-              onclick="savePackField('${packId}','packEmotion','${em}');document.querySelectorAll('.pkov-emo-${safeId}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
-              class="pkov-emo-${safeId}"
-              style="font-size:22px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${packEmotion===em?'2px solid var(--accent)':'none'};transform:${packEmotion===em?'scale(1.12)':'scale(1)'};">${em}</span>`).join('')}
-          </div>
-          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">
-            Confidence <span style="color:var(--accent);font-weight:700;" id="pack-ov-conf-${safeId}">${packConf||'—'}/10</span>
-          </div>
-          <input type="range" min="1" max="10" value="${packConf||5}" style="width:100%;accent-color:var(--accent);"
-            oninput="document.getElementById('pack-ov-conf-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-top:2px;"><span>Low</span><span>High</span></div>
-        </div>
-
-        <!-- Stats bar -->
+        <!-- Stats bar — TOP -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
           ${(() => {
             const wins   = packTrades.filter(t => getResult(t)==='win').length;
@@ -15853,7 +15826,7 @@ function openPackOverlay(packId) {
           })()}
         </div>
 
-        <!-- Positions list -->
+        <!-- Positions list — SECOND -->
         <div>
           <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">Positions (${packTrades.length})</div>
           <div style="display:flex;flex-direction:column;gap:8px;">
@@ -15890,6 +15863,36 @@ function openPackOverlay(packId) {
               </div>`;
             }).join('')}
           </div>
+        </div>
+
+        <!-- Divider -->
+        <div style="border-top:1px solid var(--border);margin:0 -4px;"></div>
+
+        <!-- Notes — THIRD -->
+        <div>
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">📝 Group Notes</div>
+          <textarea id="pack-ov-notes-${safeId}"
+            placeholder="Setup idea, reasoning, confluences…"
+            style="width:100%;min-height:100px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
+        </div>
+
+        <!-- Mood — FOURTH -->
+        <div>
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">🧠 Mindset</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+            ${emotions.map(em => `<span
+              onclick="savePackField('${packId}','packEmotion','${em}');document.querySelectorAll('.pkov-emo-${safeId}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
+              class="pkov-emo-${safeId}"
+              style="font-size:22px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${packEmotion===em?'2px solid var(--accent)':'none'};transform:${packEmotion===em?'scale(1.12)':'scale(1)'};">${em}</span>`).join('')}
+          </div>
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">
+            Confidence <span style="color:var(--accent);font-weight:700;" id="pack-ov-conf-${safeId}">${packConf||'—'}/10</span>
+          </div>
+          <input type="range" min="1" max="10" value="${packConf||5}" style="width:100%;accent-color:var(--accent);"
+            oninput="document.getElementById('pack-ov-conf-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-top:2px;"><span>Low</span><span>High</span></div>
         </div>
 
       </div>
