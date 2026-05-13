@@ -5596,11 +5596,11 @@ async function loadAllFromSupabase() {
           // Find the anchor trade for this pack (first one by array order)
           const anchorIdx = trades.findIndex(t => t.packId === packId);
           if (anchorIdx === -1) return;
-          if (meta.packNotes)      trades[anchorIdx].packNotes      = meta.packNotes;
-          if (meta.packEmotion)    trades[anchorIdx].packEmotion    = meta.packEmotion;
-          if (meta.packConfidence) trades[anchorIdx].packConfidence = meta.packConfidence;
-          if (meta.packScreenshot) trades[anchorIdx].packScreenshot = meta.packScreenshot;
-          if (meta.packTags)       trades[anchorIdx].packTags       = meta.packTags;
+          if (meta.packNotes      != null) trades[anchorIdx].packNotes      = meta.packNotes;
+          if (meta.packEmotion    != null) trades[anchorIdx].packEmotion    = meta.packEmotion;
+          if (meta.packConfidence != null) trades[anchorIdx].packConfidence = meta.packConfidence;
+          if (meta.packScreenshot != null) trades[anchorIdx].packScreenshot = meta.packScreenshot;
+          if (meta.packTags       != null) trades[anchorIdx].packTags       = meta.packTags;
         });
         // Re-save to localStorage with merged pack meta
         localStorage.setItem(KEY, JSON.stringify(trades));
@@ -5644,11 +5644,11 @@ async function saveUserDataToSupabase() {
     trades.forEach(t => {
       if (!t.packId) return;
       if (!packMeta[t.packId]) packMeta[t.packId] = {};
-      if (t.packNotes)      packMeta[t.packId].packNotes      = t.packNotes;
-      if (t.packEmotion)    packMeta[t.packId].packEmotion    = t.packEmotion;
-      if (t.packConfidence) packMeta[t.packId].packConfidence = t.packConfidence;
-      if (t.packScreenshot) packMeta[t.packId].packScreenshot = t.packScreenshot;
-      if (t.packTags)       packMeta[t.packId].packTags       = t.packTags;
+      if (t.packNotes      != null) packMeta[t.packId].packNotes      = t.packNotes;
+      if (t.packEmotion    != null) packMeta[t.packId].packEmotion    = t.packEmotion;
+      if (t.packConfidence != null) packMeta[t.packId].packConfidence = t.packConfidence;
+      if (t.packScreenshot != null) packMeta[t.packId].packScreenshot = t.packScreenshot;
+      if (t.packTags       != null) packMeta[t.packId].packTags       = t.packTags;
     });
     const { error } = await sb.from('user_data').upsert({
       user_id: uid,
@@ -15412,16 +15412,27 @@ async function savePackEdit(packId) {
     });
     // ── end per-trade save ─────────────────────────────────────────────────────
 
-    // Clear all pack metadata from every trade in the pack
+    // Always work with live trades[] references — _lastRenderedPackMap holds snapshots
+    const livePackTrades = packTrades.map(t => trades.find(x => x.id === t.id)).filter(Boolean);
+
+    // Clear all pack metadata from every live trade in the pack
     const fields = ['packNotes','packEmotion','packConfidence','packTags'];
-    packTrades.forEach(t => fields.forEach(f => delete t[f]));
+    livePackTrades.forEach(t => fields.forEach(f => delete t[f]));
 
     // Set values on the stable anchor (lowest index in master array)
-    const anchorIdx = Math.min(...packTrades.map(t => trades.indexOf(t)));
-    if (notes)                        trades[anchorIdx].packNotes      = notes;
-    if (emotion)                      trades[anchorIdx].packEmotion    = emotion;
-    if (conf !== '' && conf != null)  trades[anchorIdx].packConfidence = conf;
-    if (tags && tags.length)          trades[anchorIdx].packTags       = tags;
+    const anchorIdx = livePackTrades.reduce((minIdx, t) => {
+      const i = trades.indexOf(t);
+      return (i !== -1 && i < minIdx) ? i : minIdx;
+    }, Infinity);
+
+    if (anchorIdx === Infinity) {
+      console.error('savePackEdit: could not find anchor trade in master array');
+    } else {
+      if (notes)                        trades[anchorIdx].packNotes      = notes;
+      if (emotion)                      trades[anchorIdx].packEmotion    = emotion;
+      if (conf !== '' && conf != null)  trades[anchorIdx].packConfidence = conf;
+      if (tags && tags.length)          trades[anchorIdx].packTags       = tags;
+    }
 
     save();
 
