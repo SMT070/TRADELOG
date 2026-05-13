@@ -12120,56 +12120,68 @@ function selectCalDay(dateStr) {
         </div>
       </div>
 
-      ${(() => {
-        // Aggregate trade-level psychology across all day's trades
-        const confs  = dayTrades.map(t => t.confidence).filter(Boolean);
-        const moods  = [...new Set(dayTrades.map(t => t.emotion).filter(Boolean))];
-        if (!confs.length && !moods.length) return '';
-        const avgConf = confs.length ? Math.round(confs.reduce((a,b)=>a+b,0)/confs.length) : 0;
-        const confColor = avgConf>=7?'var(--green)':avgConf>=4?'var(--yellow)':'var(--red)';
-        const confLabel = ['','Terrible','Poor','Low','Okay','Moderate','Good','Confident','Strong','Excellent','Peak'][avgConf]||'';
-        return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;margin-bottom:12px;">
-          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);white-space:nowrap;">Trade Mindset</div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:4px;">
-            ${moods.map(m => `<span style="font-size:16px;line-height:1;" title="Mood">${m}</span>`).join('')}
-            ${avgConf ? `<span style="font-size:11px;font-weight:800;color:${confColor};padding:2px 7px;border-radius:6px;background:${avgConf>=7?'rgba(0,255,187,.1)':avgConf>=4?'rgba(245,158,11,.1)':'rgba(255,59,92,.1)'};">${avgConf}/10 ${confLabel}</span>` : ''}
-          </div>
-        </div>`;
-      })()}
-
       <!-- Trade rows -->
-      <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;flex-direction:column;gap:8px;">
         ${dayTrades.sort((a,b) => (a.date||'').localeCompare(b.date||'')).map(t => {
           const pnl    = getPnl(t);
           const result = getResult(t);
           const col    = result==='be' ? 'var(--yellow)' : pnl>=0 ? 'var(--green)' : 'var(--red)';
           const bg     = result==='be' ? 'rgba(245,158,11,0.08)' : pnl>=0 ? 'rgba(0,255,187,0.08)' : 'rgba(255,59,92,0.08)';
           const border = result==='be' ? 'rgba(245,158,11,0.25)' : pnl>=0 ? 'rgba(0,255,187,0.25)' : 'rgba(255,59,92,0.25)';
-          const pnlStr = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
+          const pnlStr  = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
           const timeStr = (t.date||'').slice(11,16) || '';
-          const rVal = getR(t);
-          const tradeConf = t.confidence || 0;
-          const tradeEmo  = t.emotion    || '';
-          const confColor = tradeConf>=7?'var(--green)':tradeConf>=4?'var(--yellow)':'var(--red)';
-          return `<div onclick="selectTrade('${t.id}');switchPage('trades');" style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:10px;background:${bg};border:1px solid ${border};cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
-            <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-              <div style="width:3px;height:32px;border-radius:2px;background:${col};flex-shrink:0;"></div>
-              <div style="min-width:0;">
-                <div style="font-size:12px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:5px;">
-                  ${t.symbol}
-                  <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:8px;padding:1px 6px;">${t.dir}</span>
-                  ${tradeEmo ? `<span style="font-size:13px;line-height:1;" title="Mood">${tradeEmo}</span>` : ''}
-                </div>
-                <div style="font-size:10px;color:var(--muted);margin-top:1px;display:flex;align-items:center;gap:5px;">
-                  <span>${timeStr}${timeStr&&t.lots?' · ':''}${t.lots?t.lots+' lots':''}${t.entry?' · @'+t.entry:''}</span>
-                  ${tradeConf ? `<span style="color:${confColor};font-weight:700;">${tradeConf}/10</span>` : ''}
+          const rVal    = getR(t);
+
+          // Psychology: use pack-level fields if in a group, else trade-level
+          const packAnchor = t.packId ? trades.find(x => x.packId === t.packId && x.packEmotion) : null;
+          const emo   = (packAnchor?.packEmotion)   || t.emotion   || '';
+          const conf  = (packAnchor ? packAnchor.packConfidence : t.confidence) || 0;
+          const notes = (packAnchor?.packNotes)      || t.notes     || '';
+          const photo = (packAnchor?.packScreenshot) || t.screenshot || '';
+          const confColor = conf>=7?'var(--green)':conf>=4?'var(--yellow)':'var(--red)';
+          const confLabel = ['','Terrible','Poor','Low','Okay','Moderate','Good','Confident','Strong','Excellent','Peak'][conf]||'';
+          const isGroup = !!t.packId;
+
+          return `<div style="border-radius:10px;background:${bg};border:1px solid ${border};overflow:hidden;">
+            <!-- Main row — click navigates to trade -->
+            <div onclick="selectTrade('${t.id}');switchPage('trades');" style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
+              <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                <div style="width:3px;height:32px;border-radius:2px;background:${col};flex-shrink:0;"></div>
+                <div style="min-width:0;">
+                  <div style="font-size:12px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:5px;">
+                    ${t.symbol}
+                    <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:8px;padding:1px 6px;">${t.dir}</span>
+                    ${isGroup ? `<span style="font-size:8px;font-weight:700;color:var(--accent);background:rgba(99,102,241,.12);padding:1px 5px;border-radius:4px;">GROUP</span>` : ''}
+                    ${emo ? `<span style="font-size:13px;line-height:1;">${emo}</span>` : ''}
+                  </div>
+                  <div style="font-size:10px;color:var(--muted);margin-top:1px;display:flex;align-items:center;gap:5px;">
+                    <span>${timeStr}${timeStr&&t.lots?' · ':''}${t.lots?t.lots+' lots':''}${t.entry?' · @'+t.entry:''}</span>
+                    ${conf ? `<span style="color:${confColor};font-weight:700;">${conf}/10</span>` : ''}
+                  </div>
                 </div>
               </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-size:13px;font-weight:900;color:${col};">${pnlStr}</div>
+                ${rVal !== null ? `<div style="font-size:10px;font-weight:700;color:${rVal>=0?'var(--green)':'var(--red)'};">${rVal>=0?'+':''}${rVal.toFixed(2)}R</div>` : ''}
+              </div>
             </div>
-            <div style="text-align:right;flex-shrink:0;">
-              <div style="font-size:13px;font-weight:900;color:${col};">${pnlStr}</div>
-              ${rVal !== null ? `<div style="font-size:10px;font-weight:700;color:${rVal>=0?'var(--green)':'var(--red)'};">${rVal>=0?'+':''}${rVal.toFixed(2)}R</div>` : ''}
-            </div>
+            ${(notes || photo || conf) ? `
+            <!-- Extra info strip -->
+            <div style="border-top:1px solid ${border};padding:8px 12px;display:flex;flex-direction:column;gap:7px;">
+              ${(emo || conf) ? `
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                ${emo ? `<div style="display:flex;align-items:center;gap:4px;background:var(--surface2);border-radius:6px;padding:3px 8px;">
+                  <span style="font-size:14px;">${emo}</span>
+                  <span style="font-size:9px;color:var(--muted);font-weight:600;">Mood</span>
+                </div>` : ''}
+                ${conf ? `<div style="display:flex;align-items:center;gap:4px;background:var(--surface2);border-radius:6px;padding:3px 8px;">
+                  <span style="font-size:11px;font-weight:800;color:${confColor};">${conf}/10</span>
+                  <span style="font-size:9px;color:var(--muted);font-weight:600;">${confLabel}</span>
+                </div>` : ''}
+              </div>` : ''}
+              ${notes ? `<div style="font-size:11px;color:var(--text2);line-height:1.55;border-left:2px solid ${col};padding-left:8px;">${notes.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>` : ''}
+              ${photo ? `<img src="${photo}" style="width:100%;border-radius:7px;display:block;max-height:160px;object-fit:cover;cursor:zoom-in;" onclick="event.stopPropagation();(function(src){const lb=document.createElement('div');lb.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;';lb.innerHTML='<button style=\\'position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;\\'>×</button><img src=\\''+src+'\\' style=\\'max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;\\'>';lb.querySelector('button').onclick=()=>lb.remove();lb.onclick=ev=>{if(ev.target===lb)lb.remove()};document.body.appendChild(lb);})(this.src)">` : ''}
+            </div>` : ''}
           </div>`;
         }).join('')}
       </div>
