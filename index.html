@@ -1305,22 +1305,7 @@
   @media (max-width: 768px) {
     /* ── GENERAL ── */
     .container { padding: 10px !important; }
-    #main-content {
-      overflow-x: hidden;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-    }
-
-    /* Scrollable pages: must scroll within #main-content, not body */
-    #page-dashboard,
-    #page-analytics,
-    #page-add,
-    #page-import {
-      overflow-y: auto !important;
-      -webkit-overflow-scrolling: touch !important;
-      overscroll-behavior: contain !important;
-    }
+    #main-content { overflow-x: hidden; }
 
     /* ── SAFE AREA + 100dvh FIXES ── */
     /* Use 100% so body safe-area padding is respected */
@@ -1414,6 +1399,8 @@
     .two-col .panel:first-child > div:last-child {
       min-height: 220px !important;
       max-height: 260px !important;
+      height: 240px !important;
+      padding: 8px 10px 12px !important;
     }
 
     /* ── GOALS + JOURNAL: stack vertically ── */
@@ -1772,7 +1759,7 @@
     #page-trades .trades-table th:nth-child(1),
     #page-trades .trades-table td:nth-child(1) {
       min-width: 78px !important;
-      padding-left: 10px !important;
+      padding-left: 4px !important;
       font-size: 10px !important;
       white-space: normal !important;
       line-height: 1.3 !important;
@@ -2067,18 +2054,6 @@
       display: flex !important;
       flex-direction: column !important;
       flex: 1 !important;
-      min-height: 0 !important;
-      width: 100% !important;
-    }
-
-    /* Editor panel fills all available height when open */
-    #notebooks-main.nb-editor-open #notebook-editor-panel {
-      display: flex !important;
-      flex-direction: column !important;
-      flex: 1 !important;
-      min-height: 0 !important;
-      width: 100% !important;
-      overflow: hidden !important;
     }
 
     /* Entry modal full-screen on mobile */
@@ -5842,11 +5817,6 @@ window.addEventListener('load', () => {
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
   try {
-  // Close notebook editor panel when navigating away on mobile
-  if (name !== 'notebooks') {
-    const nbMain = document.getElementById('notebooks-main');
-    if (nbMain) nbMain.classList.remove('nb-editor-open');
-  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
   if (!nextPage) { console.warn('switchPage: no page found for', name); return; }
@@ -14692,19 +14662,6 @@ const _origConfirmCreatePack = window.confirmCreatePack;
 // ── Toggle pack expand/collapse ───────────────────────────────────
 function togglePackExpand(packId, e) {
   if (e) e.stopPropagation();
-
-  // Mobile double-tap → open pack detail instead of expand/collapse
-  if (e && e.type === 'click' && window.innerWidth <= 768) {
-    const now = Date.now();
-    const last = togglePackExpand._lastTap || {};
-    if (last.id === packId && now - last.time < 350) {
-      togglePackExpand._lastTap = null;
-      openPackDetail(packId);
-      return;
-    }
-    togglePackExpand._lastTap = { id: packId, time: now };
-  }
-
   if (packExpandedIds.has(packId)) packExpandedIds.delete(packId);
   else packExpandedIds.add(packId);
   // Persist expanded state across sessions
