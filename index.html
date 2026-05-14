@@ -5535,6 +5535,8 @@ async function loadAllFromSupabase() {
           }
           if (s.goals) localStorage.setItem(GOALS_KEY, typeof s.goals === 'string' ? s.goals : JSON.stringify(s.goals));
           if (typeof s.autopack !== 'undefined') { localStorage.setItem('tradelog_autopack', s.autopack ? 'true' : 'false'); }
+          // Re-sync pill states now that localStorage is accurate
+          _syncFeatureDropStates();
         } catch(e) {}
       }
     }
@@ -6683,6 +6685,20 @@ async function saveTrade() {
     await guaranteedSaveToSupabase(trade);
     // If Auto-Pack is on, re-evaluate groups and commit any new groups to Supabase
     if (isAutoPack()) await commitAllAutoPacksToSupabase();
+    // If Auto-BE is on, check if this new trade qualifies and mark it
+    if (_autoBEActive) {
+      const bal = getBalance();
+      if (bal > 0) {
+        const threshold = bal * 0.0002;
+        const t2 = trades.find(t => t.id === trade.id);
+        if (t2 && Math.abs(getPnl(t2)) <= threshold && getResult(t2) !== 'be') {
+          t2.result = 'be';
+          save();
+          renderTrades();
+          await guaranteedSaveToSupabase(t2);
+        }
+      }
+    }
   } catch(e) {
     toast('⚠️ Saved locally — sync failed, will retry', 'error');
     console.error('TradeLog: saveTrade sync failed', e);
@@ -8949,6 +8965,19 @@ async function saveInlineEdit(id) {
   toast('✓ Trade updated', 'success');
   try {
     await guaranteedSaveToSupabase(t);
+    if (isAutoPack()) await commitAllAutoPacksToSupabase();
+    if (_autoBEActive) {
+      const bal = getBalance();
+      if (bal > 0) {
+        const threshold = bal * 0.0002;
+        if (Math.abs(getPnl(t)) <= threshold && getResult(t) !== 'be') {
+          t.result = 'be';
+          save();
+          renderTrades();
+          await guaranteedSaveToSupabase(t);
+        }
+      }
+    }
   } catch(e) {
     toast('⚠️ Saved locally — sync failed', 'error');
   }
