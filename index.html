@@ -857,7 +857,7 @@
   .cal-cell.weekend-cell { /* opacity handled inline */ }
   .cal-cell.today { outline: none; border-radius: 10px; }
   /* Today with no trades keeps surface bg */
-  .cal-cell.today:not(.has-win):not(.has-loss):not(.has-be) { background: var(--surface); }
+  .cal-cell.today:not(.has-win):not(.has-loss) { background: var(--surface); }
   .cal-cell.today .cal-day-num {
     background: var(--accent);
     color: #fff;
@@ -885,16 +885,12 @@
   [data-theme="light"] .cal-cell.has-loss { background: rgba(225,29,72,0.15); box-shadow: inset 0 0 0 2px rgba(225,29,72,0.45), inset 0 3px 0 rgba(225,29,72,0.6); }
   [data-theme="light"] .cal-cell.has-win:hover  { background: rgba(5,150,105,0.25); }
   [data-theme="light"] .cal-cell.has-loss:hover { background: rgba(225,29,72,0.24); }
-  [data-theme="light"] .cal-cell.has-be  { background: rgba(217,119,6,0.13); box-shadow: inset 0 0 0 2px rgba(217,119,6,0.45), inset 0 3px 0 rgba(217,119,6,0.6); }
-  [data-theme="light"] .cal-cell.has-be:hover { background: rgba(217,119,6,0.22); }
 
   [data-theme="gray"] .cal-cell { background: var(--surface); border-radius: 10px; }
   [data-theme="gray"] .cal-cell.empty { background: transparent !important; }
   [data-theme="gray"] .cal-cell:not(.empty):hover { background: var(--surface2); }
   [data-theme="gray"] .cal-cell.has-win  { background: rgba(0,255,187,0.18); box-shadow: inset 0 0 0 2px rgba(0,255,187,0.55), inset 0 3px 0 rgba(0,255,187,0.7); }
   [data-theme="gray"] .cal-cell.has-loss { background: rgba(255,59,92,0.18); box-shadow: inset 0 0 0 2px rgba(255,59,92,0.55), inset 0 3px 0 rgba(255,59,92,0.7); }
-  [data-theme="gray"] .cal-cell.has-be   { background: rgba(245,158,11,0.15); box-shadow: inset 0 0 0 2px rgba(245,158,11,0.55), inset 0 3px 0 rgba(245,158,11,0.7); }
-  [data-theme="gray"] .cal-cell.has-be:hover { background: rgba(245,158,11,0.25); }
   [data-theme="black"] .cal-cell { background: #0d0d0d; border-radius: 10px; }
   [data-theme="black"] .cal-cell.empty { background: transparent !important; }
   [data-theme="black"] .cal-cell:not(.empty):hover { background: #161616; }
@@ -965,11 +961,7 @@
   .cal-cell-bar.pos { background: var(--green); opacity: 0.7; }
   .cal-cell-bar.neg { background: var(--red);   opacity: 0.7; }
   .cal-cell-bar.be  { background: var(--yellow);opacity: 0.7; }
-  .cal-cell.has-be  { background: rgba(245,158,11,0.15); box-shadow: inset 0 0 0 2px rgba(245,158,11,0.55), inset 0 3px 0 rgba(245,158,11,0.7); }
-  .cal-cell.has-be:hover { background: rgba(245,158,11,0.25); }
-  .cal-cell.has-be .cal-day-num { color: var(--text); font-weight: 800; }
-  .cal-cell.today.has-be .cal-day-num { color: #fff; }
-  .cal-cell.today.has-be .cal-pnl, .cal-cell.today.has-be .cal-trades { color: var(--yellow) !important; }
+  .cal-cell.has-be  { border-color: rgba(245,158,11,0.45) !important; }
 
   /* Calendar summary cards */
   .cal-summary-card {
@@ -1313,7 +1305,22 @@
   @media (max-width: 768px) {
     /* ── GENERAL ── */
     .container { padding: 10px !important; }
-    #main-content { overflow-x: hidden; }
+    #main-content {
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    /* Scrollable pages: must scroll within #main-content, not body */
+    #page-dashboard,
+    #page-analytics,
+    #page-add,
+    #page-import {
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      overscroll-behavior: contain !important;
+    }
 
     /* ── SAFE AREA + 100dvh FIXES ── */
     /* Use 100% so body safe-area padding is respected */
@@ -2060,6 +2067,18 @@
       display: flex !important;
       flex-direction: column !important;
       flex: 1 !important;
+      min-height: 0 !important;
+      width: 100% !important;
+    }
+
+    /* Editor panel fills all available height when open */
+    #notebooks-main.nb-editor-open #notebook-editor-panel {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 !important;
+      min-height: 0 !important;
+      width: 100% !important;
+      overflow: hidden !important;
     }
 
     /* Entry modal full-screen on mobile */
@@ -5823,6 +5842,11 @@ window.addEventListener('load', () => {
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
   try {
+  // Close notebook editor panel when navigating away on mobile
+  if (name !== 'notebooks') {
+    const nbMain = document.getElementById('notebooks-main');
+    if (nbMain) nbMain.classList.remove('nb-editor-open');
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
   if (!nextPage) { console.warn('switchPage: no page found for', name); return; }
@@ -14668,6 +14692,19 @@ const _origConfirmCreatePack = window.confirmCreatePack;
 // ── Toggle pack expand/collapse ───────────────────────────────────
 function togglePackExpand(packId, e) {
   if (e) e.stopPropagation();
+
+  // Mobile double-tap → open pack detail instead of expand/collapse
+  if (e && e.type === 'click' && window.innerWidth <= 768) {
+    const now = Date.now();
+    const last = togglePackExpand._lastTap || {};
+    if (last.id === packId && now - last.time < 350) {
+      togglePackExpand._lastTap = null;
+      openPackDetail(packId);
+      return;
+    }
+    togglePackExpand._lastTap = { id: packId, time: now };
+  }
+
   if (packExpandedIds.has(packId)) packExpandedIds.delete(packId);
   else packExpandedIds.add(packId);
   // Persist expanded state across sessions
