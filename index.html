@@ -1399,8 +1399,6 @@
     .two-col .panel:first-child > div:last-child {
       min-height: 220px !important;
       max-height: 260px !important;
-      height: 240px !important;
-      padding: 8px 10px 12px !important;
     }
 
     /* ── GOALS + JOURNAL: stack vertically ── */
@@ -1759,7 +1757,7 @@
     #page-trades .trades-table th:nth-child(1),
     #page-trades .trades-table td:nth-child(1) {
       min-width: 78px !important;
-      padding-left: 4px !important;
+      padding-left: 10px !important;
       font-size: 10px !important;
       white-space: normal !important;
       line-height: 1.3 !important;
@@ -7978,11 +7976,21 @@ function openMobilePhotoFullscreen(id) {
 }
 
 function closeMobileTradeSheet() {
-  document.getElementById('mobile-trade-sheet').style.display = 'none';
+  const sheet = document.getElementById('mobile-trade-sheet');
+  sheet.style.display = 'none';
+  sheet.dataset.packId  = '';
+  sheet.dataset.tradeId = '';
+  window._pePackId = null;
 }
 
 function openMobileSheetEdit() {
   const sheet = document.getElementById('mobile-trade-sheet');
+  // If this sheet is showing a pack group, open pack edit in the sheet
+  const packId = sheet.dataset.packId;
+  if (packId) {
+    openPackEditMode(packId);
+    return;
+  }
   const id = sheet.dataset.tradeId || selectedId;
   const t = trades.find(x => x.id === id);
   if (t) selectedId = t.id; // make sure selectedId is in sync
@@ -15165,9 +15173,12 @@ function openPackDetail(packId, e, _autoTrades) {
 
   // ── Render into right side panel (desktop) or bottom sheet (mobile) ──
   if (window.innerWidth <= 768) {
+    const sheet = document.getElementById('mobile-trade-sheet');
+    sheet.dataset.packId  = packId;
+    sheet.dataset.tradeId = ''; // clear single-trade id
     document.getElementById('mobile-sheet-title').innerHTML = `<span style="font-size:13px;">📦</span> ${packName}`;
     document.getElementById('mobile-sheet-body').innerHTML = html;
-    document.getElementById('mobile-trade-sheet').style.display = 'flex';
+    sheet.style.display = 'flex';
   } else {
     document.querySelector('#trade-detail-panel .panel-title').textContent = '📦 ' + packName;
     // Show all 3 buttons — edit triggers pack edit mode, delete deletes the group
@@ -15193,6 +15204,7 @@ function openPackDetail(packId, e, _autoTrades) {
 
 // ── PACK EDIT MODE — mirrors single trade inline edit exactly ──────────────
 function openPackEditMode(packId) {
+  if (!packId) { console.warn('openPackEditMode: no packId'); return; }
   let packTrades = _lastRenderedPackMap[packId] || trades.filter(t => t.packId === packId);
   if (!packTrades || !packTrades.length) {
     const { autoGroups } = buildAutoPackGroups(trades);
@@ -15216,12 +15228,15 @@ function openPackEditMode(packId) {
   window._peConf     = packConfidence;
   window._peTradeResults = {}; // per-trade result overrides
 
-  // Update panel title & header buttons
-  document.querySelector('#trade-detail-panel .panel-title').textContent = 'Edit Group';
-  const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
-  if (headerBtns) headerBtns.innerHTML = `
-    <button onclick="cancelPackEdit(window._pePackId)" style="padding:5px 12px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Cancel</button>
-    <button onclick="savePackEdit(window._pePackId)" style="padding:5px 14px;height:30px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>`;
+  // Update panel title & header buttons (desktop only)
+  const isMobile = window.innerWidth <= 768;
+  if (!isMobile) {
+    document.querySelector('#trade-detail-panel .panel-title').textContent = 'Edit Group';
+    const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
+    if (headerBtns) headerBtns.innerHTML = `
+      <button onclick="cancelPackEdit(window._pePackId)" style="padding:5px 12px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Cancel</button>
+      <button onclick="savePackEdit(window._pePackId)" style="padding:5px 14px;height:30px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>`;
+  }
 
   // Confidence pills
   const confPills = Array.from({length:10},(_,i)=>i+1).map(n => {
@@ -15257,7 +15272,7 @@ function openPackEditMode(packId) {
   const symbol2     = packTrades[0]?.symbol || '';
   const dir2        = packTrades[0]?.dir || '';
 
-  document.getElementById('trade-detail-body').innerHTML = `
+  const _peHtml = `
     <div style="padding:18px 20px 24px;display:flex;flex-direction:column;gap:0;">
 
       <!-- Group Summary Header -->
@@ -15391,6 +15406,25 @@ function openPackEditMode(packId) {
         }
       </div>
     </div>`;
+
+  // Route to mobile sheet or desktop panel
+  if (isMobile) {
+    const sheet = document.getElementById('mobile-trade-sheet');
+    sheet.dataset.packId  = packId;
+    sheet.dataset.tradeId = '';
+    document.getElementById('mobile-sheet-title').innerHTML = `✏️ Edit Group`;
+    // Inject Save/Cancel buttons into the sheet header area
+    const sheetHeaderBtns = sheet.querySelector('div > div > div:last-child');
+    if (sheetHeaderBtns) sheetHeaderBtns.innerHTML = `
+      <button onclick="savePackEdit(window._pePackId)" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>
+      <button onclick="cancelPackEdit(window._pePackId)" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>`;
+    document.getElementById('mobile-sheet-body').innerHTML = _peHtml;
+    sheet.style.display = 'flex';
+  } else {
+    document.getElementById('trade-detail-body').innerHTML = _peHtml;
+    // Setup Ctrl+V paste for photo in edit panel
+    _packOvSetupPaste(packId, safeId);
+  }
 }
 
 // Pack edit mode helpers
@@ -15611,14 +15645,27 @@ async function savePackEdit(packId) {
   window._currentPackId = packId;
 
   // Restore header buttons and show view mode
-  const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
-  if (headerBtns) headerBtns.innerHTML = _packDetailHeaderBtns();
+  if (window.innerWidth <= 768) {
+    const sheet = document.getElementById('mobile-trade-sheet');
+    const sheetHeaderBtns = sheet?.querySelector('div > div > div:last-child');
+    if (sheetHeaderBtns) sheetHeaderBtns.innerHTML = `
+      <button onclick="openMobileSheetEdit()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:rgba(99,102,241,.1);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Edit</button>
+      <button onclick="closeMobileTradeSheet()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>`;
+  } else {
+    const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
+    if (headerBtns) headerBtns.innerHTML = _packDetailHeaderBtns();
+  }
   renderTrades();
   openPackDetail(packId);
 }
 
 function cancelPackEdit(packId) {
   window._pePackId = null;
+  if (window.innerWidth <= 768) {
+    closeMobileTradeSheet();
+    openPackDetail(packId);
+    return;
+  }
   const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
   if (headerBtns) headerBtns.innerHTML = _packDetailHeaderBtns();
   renderTrades();
