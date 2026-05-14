@@ -945,6 +945,7 @@
   }
   .cal-pnl.pos { color: var(--green); }
   .cal-pnl.neg { color: var(--red); }
+  .cal-pnl.be  { color: var(--yellow); }
 
   .cal-trades {
     position: absolute; bottom: 8px; left: 0; right: 0;
@@ -959,6 +960,8 @@
   }
   .cal-cell-bar.pos { background: var(--green); opacity: 0.7; }
   .cal-cell-bar.neg { background: var(--red);   opacity: 0.7; }
+  .cal-cell-bar.be  { background: var(--yellow);opacity: 0.7; }
+  .cal-cell.has-be  { border-color: rgba(245,158,11,0.45) !important; }
 
   /* Calendar summary cards */
   .cal-summary-card {
@@ -11064,7 +11067,7 @@ function renderCalendar() {
       let cellClass = 'cal-cell';
       if (isToday)   cellClass += ' today';
       if (isWeekend && !isToday) cellClass += ' weekend-cell';
-      if (data)      cellClass += data.pnl >= 0 ? ' has-win' : ' has-loss';
+      if (data)      cellClass += allDayBE ? ' has-be' : (data.pnl >= 0 ? ' has-win' : ' has-loss');
 
       const dayNumStyle = data ? 'color:var(--text);font-weight:800;' : (isToday ? '' : 'color:var(--muted);');
       let inner = `<div class="cal-day-num" style="${dayNumStyle}">${d}</div>`;
@@ -11080,7 +11083,9 @@ function renderCalendar() {
       }
       const hasBEevt = dayBEall.length > 0;
       if (data) {
-        const pnlClass = data.pnl >= 0 ? 'pos' : 'neg';
+        const dayTradesAll = (trades||[]).filter(t=>(t.date||'').slice(0,10)===dateStr);
+        const allDayBE = dayTradesAll.length > 0 && dayTradesAll.every(t=>getResult(t)==='be');
+        const pnlClass = allDayBE ? 'be' : data.pnl >= 0 ? 'pos' : 'neg';
         const abs  = Math.abs(data.pnl);
         const sym  = getCurrencySymbol();
         const sign = data.pnl >= 0 ? '+' : '-';
@@ -12134,7 +12139,8 @@ function selectCalDay(dateStr) {
   const dayLosses = dayTrades.filter(t => getResult(t) === 'loss').length;
   const dayBEs    = dayTrades.filter(t => getResult(t) === 'be').length;
   const totalItems = soloTrades.length + packGroups.length;
-  const pnlColor  = dayPnl >= 0 ? 'var(--green)' : 'var(--red)';
+  const allBE     = dayTrades.length > 0 && dayBEs === dayTrades.length;
+  const pnlColor  = allBE ? 'var(--yellow)' : dayPnl >= 0 ? 'var(--green)' : 'var(--red)';
   const pnlSign   = dayPnl >= 0 ? '+' : '';
 
   const tradesHTML = dayTrades.length ? `
@@ -12146,15 +12152,15 @@ function selectCalDay(dateStr) {
           <div style="font-size:30px;font-weight:900;color:${pnlColor};letter-spacing:-1px;line-height:1;">${pnlSign}${sym}${Math.abs(dayPnl).toFixed(2)}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:8px;align-items:center;">
             <span>${dayTrades.length} trade${dayTrades.length!==1?'s':''} · ${totalItems} card${totalItems!==1?'s':''}</span>
-            ${dayWins ? `<span style="color:var(--green);font-weight:700;">·  ${dayWins}W</span>` : ''}
-            ${dayLosses ? `<span style="color:var(--red);font-weight:700;">${dayWins?'':' ·'} ${dayLosses}L</span>` : ''}
-            ${dayBEs ? `<span style="color:var(--yellow);font-weight:700;"> ${dayBEs}BE</span>` : ''}
+            ${dayWins   ? `<span style="color:var(--green);font-weight:700;">· ${dayWins}W</span>`  : ''}
+            ${dayLosses ? `<span style="color:var(--red);font-weight:700;">${dayWins?'':'· '}${dayLosses}L</span>` : ''}
+            ${dayBEs    ? `<span style="color:var(--yellow);font-weight:700;">${(dayWins||dayLosses)?'':'· '}${dayBEs}BE</span>` : ''}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
           <div style="font-size:10px;color:var(--muted);font-weight:600;">Win Rate</div>
-          <div style="font-size:18px;font-weight:900;color:${(dayWins+dayLosses)?((dayWins/(dayWins+dayLosses))>=0.5?'var(--green)':'var(--red)'):'var(--muted)'};">
-            ${(dayWins+dayLosses) ? Math.round(dayWins/(dayWins+dayLosses)*100)+'%' : '—'}
+          <div style="font-size:18px;font-weight:900;color:${allBE?'var(--yellow)':(dayWins+dayLosses)?((dayWins/(dayWins+dayLosses))>=0.5?'var(--green)':'var(--red)'):'var(--muted)'};">
+            ${allBE ? 'BE' : (dayWins+dayLosses) ? Math.round(dayWins/(dayWins+dayLosses)*100)+'%' : '—'}
           </div>
         </div>
       </div>
