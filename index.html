@@ -12054,6 +12054,15 @@ function selectCalDay(dateStr) {
   });
 
   const dayTrades = trades.filter(t => (t.date||'').slice(0,10) === dateStr);
+  // Also include pack trades whose siblings might be on different days but the pack was opened on this day
+  // Group by packId so we show one card per group, individual cards for solo trades
+  const packIdsOnDay = [...new Set(dayTrades.filter(t=>t.packId).map(t=>t.packId))];
+  const soloTrades   = dayTrades.filter(t => !t.packId);
+  // For each pack, get ALL trades in that pack (may span times but same day)
+  const packGroups   = packIdsOnDay.map(pid => ({
+    packId: pid,
+    trades: trades.filter(t => t.packId === pid)
+  })).filter(g => g.trades.some(t => (t.date||'').slice(0,10) === dateStr));
   const dayBEevts = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
   const body  = document.getElementById('cal-day-body');
   const titleEl = document.getElementById('cal-day-panel-title');
@@ -12095,6 +12104,7 @@ function selectCalDay(dateStr) {
   const dayWins   = dayTrades.filter(t => getResult(t) === 'win').length;
   const dayLosses = dayTrades.filter(t => getResult(t) === 'loss').length;
   const dayBEs    = dayTrades.filter(t => getResult(t) === 'be').length;
+  const totalItems = soloTrades.length + packGroups.length;
   const pnlColor  = dayPnl >= 0 ? 'var(--green)' : 'var(--red)';
   const pnlSign   = dayPnl >= 0 ? '+' : '';
 
@@ -12106,7 +12116,7 @@ function selectCalDay(dateStr) {
         <div>
           <div style="font-size:30px;font-weight:900;color:${pnlColor};letter-spacing:-1px;line-height:1;">${pnlSign}${sym}${Math.abs(dayPnl).toFixed(2)}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:8px;align-items:center;">
-            <span>${dayTrades.length} trade${dayTrades.length!==1?'s':''}</span>
+            <span>${dayTrades.length} trade${dayTrades.length!==1?'s':''} · ${totalItems} card${totalItems!==1?'s':''}</span>
             ${dayWins ? `<span style="color:var(--green);font-weight:700;">·  ${dayWins}W</span>` : ''}
             ${dayLosses ? `<span style="color:var(--red);font-weight:700;">${dayWins?'':' ·'} ${dayLosses}L</span>` : ''}
             ${dayBEs ? `<span style="color:var(--yellow);font-weight:700;"> ${dayBEs}BE</span>` : ''}
@@ -12120,67 +12130,148 @@ function selectCalDay(dateStr) {
         </div>
       </div>
 
-      <!-- Trade rows -->
+      <!-- Trade rows: groups as single cards, solos as individual -->
       <div style="display:flex;flex-direction:column;gap:8px;">
-        ${dayTrades.sort((a,b) => (a.date||'').localeCompare(b.date||'')).map(t => {
-          try {
-          const pnl    = getPnl(t);
-          const result = getResult(t);
-          const col    = result==='be' ? 'var(--yellow)' : pnl>=0 ? 'var(--green)' : 'var(--red)';
-          const bg     = result==='be' ? 'rgba(245,158,11,0.08)' : pnl>=0 ? 'rgba(0,255,187,0.08)' : 'rgba(255,59,92,0.08)';
-          const border = result==='be' ? 'rgba(245,158,11,0.25)' : pnl>=0 ? 'rgba(0,255,187,0.25)' : 'rgba(255,59,92,0.25)';
-          const pnlStr  = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
-          const timeStr = (t.date||'').slice(11,16) || '';
-          const rVal    = getR(t);
+        ${(() => {
+          const renderPsychStrip = (emo, conf, notes, photo, borderCol) => {
+            if (!emo && !conf && !notes && !photo) return '';
+            const cc = conf>=7?'var(--green)':conf>=4?'var(--yellow)':'var(--red)';
+            const cl = ['','Terrible','Poor','Low','Okay','Moderate','Good','Confident','Strong','Excellent','Peak'][conf]||'';
+            return `<div style="border-top:1px solid ${borderCol};padding:8px 12px;display:flex;flex-direction:column;gap:7px;">
+              ${(emo||conf) ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                ${emo ? `<div style="display:flex;align-items:center;gap:4px;background:var(--surface2);border-radius:6px;padding:3px 8px;"><span style="font-size:14px;">${emo}</span><span style="font-size:9px;color:var(--muted);font-weight:600;">Mood</span></div>` : ''}
+                ${conf ? `<div style="display:flex;align-items:center;gap:4px;background:var(--surface2);border-radius:6px;padding:3px 8px;"><span style="font-size:11px;font-weight:800;color:${cc};">${conf}/10</span><span style="font-size:9px;color:var(--muted);font-weight:600;">${cl}</span></div>` : ''}
+              </div>` : ''}
+              ${notes ? `<div style="font-size:11px;color:var(--text2);line-height:1.55;border-left:2px solid ${borderCol};padding-left:8px;">${String(notes).replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>` : ''}
+              ${photo ? `<img src="${photo}" style="width:100%;border-radius:7px;display:block;max-height:160px;object-fit:cover;cursor:zoom-in;" onclick="event.stopPropagation();(function(src){const lb=document.createElement('div');lb.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;';lb.innerHTML='<button style=\\'position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;\\'>&#215;</button><img src=\\''+src+'\\' style=\\'max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;\\'>';lb.querySelector('button').onclick=function(){lb.remove()};lb.onclick=function(ev){if(ev.target===lb)lb.remove()};document.body.appendChild(lb);})(this.src)">` : ''}
+            </div>`;
+          };
 
-          // Psychology: use pack-level fields if in a group, else trade-level
-          const packAnchor = t.packId ? trades.find(x => x.packId === t.packId && x.packEmotion) : null;
-          const packConfAnchor = t.packId ? trades.find(x => x.packId === t.packId && x.packConfidence) : null;
-          const emo   = (packAnchor?.packEmotion)                || t.emotion    || '';
-          const conf  = parseInt((packConfAnchor?.packConfidence) || t.confidence || 0) || 0;
-          const notes = (t.packId ? trades.find(x=>x.packId===t.packId&&x.packNotes)?.packNotes : null) || t.notes || '';
-          const photo = (t.packId ? trades.find(x=>x.packId===t.packId&&x.packScreenshot)?.packScreenshot : null) || t.screenshot || '';
-          const confColor = conf>=7?'var(--green)':conf>=4?'var(--yellow)':'var(--red)';
-          const confLabel = ['','Terrible','Poor','Low','Okay','Moderate','Good','Confident','Strong','Excellent','Peak'][conf]||'';
-          const isGroup = !!t.packId;
-
-          return `<div style="border-radius:10px;background:${bg};border:1px solid ${border};overflow:hidden;">
-            <div onclick="selectTrade('${t.id}');switchPage('trades');" style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
-              <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-                <div style="width:3px;height:32px;border-radius:2px;background:${col};flex-shrink:0;"></div>
-                <div style="min-width:0;">
-                  <div style="font-size:12px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:5px;">
-                    ${t.symbol}
-                    <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:8px;padding:1px 6px;">${t.dir}</span>
-                    ${isGroup ? `<span style="font-size:8px;font-weight:700;color:var(--accent);background:rgba(99,102,241,.12);padding:1px 5px;border-radius:4px;">GROUP</span>` : ''}
-                    ${emo ? `<span style="font-size:13px;line-height:1;">${emo}</span>` : ''}
+          // ── RENDER PACK GROUP CARD ──
+          const renderGroup = (g) => {
+            try {
+              const gPnl   = g.trades.reduce((s,t) => s+getPnl(t), 0);
+              const gWins  = g.trades.filter(t=>getResult(t)==='win').length;
+              const gLoss  = g.trades.filter(t=>getResult(t)==='loss').length;
+              const gBE    = g.trades.filter(t=>getResult(t)==='be').length;
+              const gRes   = gPnl>0?'win':gPnl<0?'loss':'be';
+              const col    = gRes==='be'?'var(--yellow)':gPnl>=0?'var(--green)':'var(--red)';
+              const bg     = gRes==='be'?'rgba(245,158,11,0.08)':gPnl>=0?'rgba(0,255,187,0.08)':'rgba(255,59,92,0.08)';
+              const border = gRes==='be'?'rgba(245,158,11,0.25)':gPnl>=0?'rgba(0,255,187,0.25)':'rgba(255,59,92,0.25)';
+              const pnlStr = (gPnl>=0?'+'+sym:'-'+sym)+Math.abs(gPnl).toFixed(2);
+              const sym2   = g.trades[0]?.symbol||'';
+              const dir2   = g.trades[0]?.dir||'';
+              const lots   = g.trades.reduce((s,t)=>s+(parseFloat(t.lots)||0),0);
+              const anchor = g.trades.find(t=>t.packEmotion)||g.trades.find(t=>t.packConfidence)||g.trades.find(t=>t.packNotes)||g.trades.find(t=>t.packScreenshot);
+              const emo    = anchor?.packEmotion  || '';
+              const conf   = parseInt(anchor?.packConfidence||0)||0;
+              const notes  = anchor?.packNotes    || '';
+              const photo  = anchor?.packScreenshot||'';
+              // Child trade rows inside group card
+              const childRows = g.trades.map(ct => {
+                const cpnl = getPnl(ct); const cres = getResult(ct);
+                const cc   = cres==='be'?'var(--yellow)':cpnl>=0?'var(--green)':'var(--red)';
+                const cstr = (cpnl>=0?'+'+sym:'-'+sym)+Math.abs(cpnl).toFixed(2);
+                return `<div onclick="selectTrade('${ct.id}');switchPage('trades');" style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;cursor:pointer;border-top:1px solid ${border};transition:opacity .15s;" onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='1'">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <div style="width:2px;height:24px;border-radius:2px;background:${cc};flex-shrink:0;"></div>
+                    <div>
+                      <div style="font-size:10px;font-weight:700;color:var(--text2);">${ct.lots||'?'} lots · @${ct.entry||'?'}</div>
+                      <div style="font-size:9px;color:var(--muted);">${(ct.date||'').slice(11,16)}</div>
+                    </div>
                   </div>
-                  <div style="font-size:10px;color:var(--muted);margin-top:1px;display:flex;align-items:center;gap:5px;">
-                    <span>${timeStr}${timeStr&&t.lots?' · ':''}${t.lots?t.lots+' lots':''}${t.entry?' · @'+t.entry:''}</span>
-                    ${conf ? `<span style="color:${confColor};font-weight:700;">${conf}/10</span>` : ''}
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:4px;border:1px solid ${cc};color:${cc};">${cres.toUpperCase()}</span>
+                    <span style="font-size:11px;font-weight:800;color:${cc};">${cstr}</span>
+                  </div>
+                </div>`;
+              }).join('');
+
+              return `<div style="border-radius:10px;background:${bg};border:1px solid ${border};overflow:hidden;">
+                <!-- Group header row -->
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:3px;height:36px;border-radius:2px;background:var(--accent);flex-shrink:0;"></div>
+                    <div>
+                      <div style="font-size:12px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:5px;">
+                        ${sym2}
+                        <span class="badge ${dir2==='BUY'?'buy':'sell'}" style="font-size:8px;padding:1px 6px;">${dir2}</span>
+                        <span style="font-size:8px;font-weight:700;color:var(--accent);background:rgba(99,102,241,.15);padding:1px 6px;border-radius:4px;">${g.trades.length}× GROUP</span>
+                        ${emo ? `<span style="font-size:13px;">${emo}</span>` : ''}
+                      </div>
+                      <div style="font-size:10px;color:var(--muted);margin-top:2px;display:flex;gap:6px;">
+                        <span>${lots.toFixed(2)} lots total</span>
+                        ${gWins?`<span style="color:var(--green);font-weight:700;">${gWins}W</span>`:''}
+                        ${gLoss?`<span style="color:var(--red);font-weight:700;">${gLoss}L</span>`:''}
+                        ${gBE?`<span style="color:var(--yellow);font-weight:700;">${gBE}BE</span>`:''}
+                        ${conf ? `<span style="color:${conf>=7?'var(--green)':conf>=4?'var(--yellow)':'var(--red)'};font-weight:700;">${conf}/10</span>` : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <div style="font-size:15px;font-weight:900;color:${col};">${pnlStr}</div>
+                </div>
+                <!-- Child trade rows -->
+                ${childRows}
+                <!-- Psychology strip -->
+                ${renderPsychStrip(emo, conf, notes, photo, border)}
+              </div>`;
+            } catch(e) {
+              console.warn('Group card error:', e);
+              return `<div style="padding:9px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);font-size:11px;color:var(--muted);">Group — display error</div>`;
+            }
+          };
+
+          // ── RENDER SOLO TRADE CARD ──
+          const renderSolo = (t) => {
+            try {
+              const pnl    = getPnl(t); const result = getResult(t);
+              const col    = result==='be'?'var(--yellow)':pnl>=0?'var(--green)':'var(--red)';
+              const bg     = result==='be'?'rgba(245,158,11,0.08)':pnl>=0?'rgba(0,255,187,0.08)':'rgba(255,59,92,0.08)';
+              const border = result==='be'?'rgba(245,158,11,0.25)':pnl>=0?'rgba(0,255,187,0.25)':'rgba(255,59,92,0.25)';
+              const pnlStr = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
+              const timeStr= (t.date||'').slice(11,16)||'';
+              const rVal   = getR(t);
+              const emo    = t.emotion||'';
+              const conf   = parseInt(t.confidence||0)||0;
+              const notes  = t.notes||'';
+              const photo  = t.screenshot||'';
+              return `<div style="border-radius:10px;background:${bg};border:1px solid ${border};overflow:hidden;">
+                <div onclick="selectTrade('${t.id}');switchPage('trades');" style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;cursor:pointer;transition:opacity .15s;" onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
+                  <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                    <div style="width:3px;height:32px;border-radius:2px;background:${col};flex-shrink:0;"></div>
+                    <div>
+                      <div style="font-size:12px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:5px;">
+                        ${t.symbol}
+                        <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:8px;padding:1px 6px;">${t.dir}</span>
+                        ${emo ? `<span style="font-size:13px;">${emo}</span>` : ''}
+                      </div>
+                      <div style="font-size:10px;color:var(--muted);margin-top:1px;display:flex;gap:5px;">
+                        <span>${timeStr}${timeStr&&t.lots?' · ':''}${t.lots?t.lots+' lots':''}${t.entry?' · @'+t.entry:''}</span>
+                        ${conf ? `<span style="color:${conf>=7?'var(--green)':conf>=4?'var(--yellow)':'var(--red)'};font-weight:700;">${conf}/10</span>` : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-size:13px;font-weight:900;color:${col};">${pnlStr}</div>
+                    ${rVal!==null?`<div style="font-size:10px;font-weight:700;color:${rVal>=0?'var(--green)':'var(--red)'};">${rVal>=0?'+':''}${rVal.toFixed(2)}R</div>`:''}
                   </div>
                 </div>
-              </div>
-              <div style="text-align:right;flex-shrink:0;">
-                <div style="font-size:13px;font-weight:900;color:${col};">${pnlStr}</div>
-                ${rVal !== null ? `<div style="font-size:10px;font-weight:700;color:${rVal>=0?'var(--green)':'var(--red)'};">${rVal>=0?'+':''}${rVal.toFixed(2)}R</div>` : ''}
-              </div>
-            </div>
-            ${(notes || photo || conf) ? `
-            <div style="border-top:1px solid ${border};padding:8px 12px;display:flex;flex-direction:column;gap:7px;">
-              ${(emo || conf) ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                ${emo ? `<div style="display:flex;align-items:center;gap:4px;background:var(--surface2);border-radius:6px;padding:3px 8px;"><span style="font-size:14px;">${emo}</span><span style="font-size:9px;color:var(--muted);font-weight:600;">Mood</span></div>` : ''}
-                ${conf ? `<div style="display:flex;align-items:center;gap:4px;background:var(--surface2);border-radius:6px;padding:3px 8px;"><span style="font-size:11px;font-weight:800;color:${confColor};">${conf}/10</span><span style="font-size:9px;color:var(--muted);font-weight:600;">${confLabel}</span></div>` : ''}
-              </div>` : ''}
-              ${notes ? `<div style="font-size:11px;color:var(--text2);line-height:1.55;border-left:2px solid ${col};padding-left:8px;">${String(notes).replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>` : ''}
-              ${photo ? `<img src="${photo}" style="width:100%;border-radius:7px;display:block;max-height:160px;object-fit:cover;cursor:zoom-in;" onclick="event.stopPropagation();(function(src){const lb=document.createElement('div');lb.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;';lb.innerHTML='<button style=\\'position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;\\'>&#215;</button><img src=\\''+src+'\\' style=\\'max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;\\'>';lb.querySelector('button').onclick=function(){lb.remove()};lb.onclick=function(ev){if(ev.target===lb)lb.remove()};document.body.appendChild(lb);})(this.src)">` : ''}
-            </div>` : ''}
-          </div>`;
-          } catch(e) {
-            console.warn('Calendar trade card render error:', e, t);
-            return `<div style="padding:9px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);font-size:11px;color:var(--muted);">${t.symbol||'Trade'} — display error</div>`;
-          }
-        }).join('')}
+                ${renderPsychStrip(emo, conf, notes, photo, border)}
+              </div>`;
+            } catch(e) {
+              console.warn('Solo card error:', e);
+              return `<div style="padding:9px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);font-size:11px;color:var(--muted);">${t.symbol||'Trade'} — display error</div>`;
+            }
+          };
+
+          // Merge and sort: use first trade date for groups, trade date for solos
+          const items = [
+            ...packGroups.map(g => ({ type:'group', data:g, sortDate: g.trades.map(t=>t.date||'').sort()[0]||'' })),
+            ...soloTrades.map(t  => ({ type:'solo',  data:t, sortDate: t.date||'' }))
+          ].sort((a,b) => a.sortDate.localeCompare(b.sortDate));
+
+          return items.map(item => item.type==='group' ? renderGroup(item.data) : renderSolo(item.data)).join('');
+        })()}
       </div>
 
       <button class="btn btn-ghost" style="width:100%;margin-top:10px;font-size:11px;padding:8px;" onclick="jumpToDateTrades('${dateStr}')">
