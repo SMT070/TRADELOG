@@ -857,7 +857,7 @@
   .cal-cell.weekend-cell { /* opacity handled inline */ }
   .cal-cell.today { outline: none; border-radius: 10px; }
   /* Today with no trades keeps surface bg */
-  .cal-cell.today:not(.has-win):not(.has-loss) { background: var(--surface); }
+  .cal-cell.today:not(.has-win):not(.has-loss):not(.has-be) { background: var(--surface); }
   .cal-cell.today .cal-day-num {
     background: var(--accent);
     color: #fff;
@@ -1305,7 +1305,21 @@
   @media (max-width: 768px) {
     /* ── GENERAL ── */
     .container { padding: 10px !important; }
-    #main-content { overflow-x: hidden; }
+    #main-content {
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+    /* Scrollable pages must scroll within #main-content, not body */
+    #page-dashboard,
+    #page-analytics,
+    #page-add,
+    #page-import {
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      overscroll-behavior: contain !important;
+    }
 
     /* ── SAFE AREA + 100dvh FIXES ── */
     /* Use 100% so body safe-area padding is respected */
@@ -1757,7 +1771,7 @@
     #page-trades .trades-table th:nth-child(1),
     #page-trades .trades-table td:nth-child(1) {
       min-width: 78px !important;
-      padding-left: 10px !important;
+      padding-left: 4px !important;
       font-size: 10px !important;
       white-space: normal !important;
       line-height: 1.3 !important;
@@ -2052,6 +2066,17 @@
       display: flex !important;
       flex-direction: column !important;
       flex: 1 !important;
+      min-height: 0 !important;
+      width: 100% !important;
+    }
+    /* Editor panel fills all height when open */
+    #notebooks-main.nb-editor-open #notebook-editor-panel {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 !important;
+      min-height: 0 !important;
+      width: 100% !important;
+      overflow: hidden !important;
     }
 
     /* Entry modal full-screen on mobile */
@@ -5815,6 +5840,11 @@ window.addEventListener('load', () => {
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
   try {
+  // On mobile: close notebook editor panel when navigating away
+  if (name !== 'notebooks') {
+    const nbMain = document.getElementById('notebooks-main');
+    if (nbMain) nbMain.classList.remove('nb-editor-open');
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
   if (!nextPage) { console.warn('switchPage: no page found for', name); return; }
@@ -7976,21 +8006,18 @@ function openMobilePhotoFullscreen(id) {
 }
 
 function closeMobileTradeSheet() {
-  const sheet = document.getElementById('mobile-trade-sheet');
-  sheet.style.display = 'none';
-  sheet.dataset.packId  = '';
-  sheet.dataset.tradeId = '';
-  window._pePackId = null;
+  const _s = document.getElementById('mobile-trade-sheet');
+  _s.style.display  = 'none';
+  _s.dataset.packId  = '';
+  _s.dataset.tradeId = '';
+  window._pePackId   = null;
 }
 
 function openMobileSheetEdit() {
   const sheet = document.getElementById('mobile-trade-sheet');
-  // If this sheet is showing a pack group, open pack edit in the sheet
-  const packId = sheet.dataset.packId;
-  if (packId) {
-    openPackEditMode(packId);
-    return;
-  }
+  // Pack group — open pack edit mode inside the sheet
+  const _pid = sheet.dataset.packId;
+  if (_pid) { openPackEditMode(_pid); return; }
   const id = sheet.dataset.tradeId || selectedId;
   const t = trades.find(x => x.id === id);
   if (t) selectedId = t.id; // make sure selectedId is in sync
@@ -14670,6 +14697,19 @@ const _origConfirmCreatePack = window.confirmCreatePack;
 // ── Toggle pack expand/collapse ───────────────────────────────────
 function togglePackExpand(packId, e) {
   if (e) e.stopPropagation();
+
+  // Mobile double-tap → open pack detail instead of toggling expand
+  if (e && e.type === 'click' && window.innerWidth <= 768) {
+    const now  = Date.now();
+    const last = togglePackExpand._lastTap || {};
+    if (last.id === packId && now - last.time < 350) {
+      togglePackExpand._lastTap = null;
+      openPackDetail(packId);
+      return;
+    }
+    togglePackExpand._lastTap = { id: packId, time: now };
+  }
+
   if (packExpandedIds.has(packId)) packExpandedIds.delete(packId);
   else packExpandedIds.add(packId);
   // Persist expanded state across sessions
@@ -15173,12 +15213,12 @@ function openPackDetail(packId, e, _autoTrades) {
 
   // ── Render into right side panel (desktop) or bottom sheet (mobile) ──
   if (window.innerWidth <= 768) {
-    const sheet = document.getElementById('mobile-trade-sheet');
-    sheet.dataset.packId  = packId;
-    sheet.dataset.tradeId = ''; // clear single-trade id
+    const _sheet = document.getElementById('mobile-trade-sheet');
+    _sheet.dataset.packId  = packId;
+    _sheet.dataset.tradeId = '';
     document.getElementById('mobile-sheet-title').innerHTML = `<span style="font-size:13px;">📦</span> ${packName}`;
     document.getElementById('mobile-sheet-body').innerHTML = html;
-    sheet.style.display = 'flex';
+    _sheet.style.display = 'flex';
   } else {
     document.querySelector('#trade-detail-panel .panel-title').textContent = '📦 ' + packName;
     // Show all 3 buttons — edit triggers pack edit mode, delete deletes the group
@@ -15222,15 +15262,16 @@ function openPackEditMode(packId) {
 
   // Store editing state
   window._pePackId       = packId;
-  window._currentPackId  = packId;   // ← ensures Ctrl+V paste works in edit mode
+  window._currentPackId  = packId;
   window._peTags     = [...packTags];
   window._peEmotion  = packEmotion;
   window._peConf     = packConfidence;
-  window._peTradeResults = {}; // per-trade result overrides
+  window._peTradeResults = {};
 
-  // Update panel title & header buttons (desktop only)
-  const isMobile = window.innerWidth <= 768;
-  if (!isMobile) {
+  const _isMobileEdit = window.innerWidth <= 768;
+
+  // Desktop only: update panel title & header buttons
+  if (!_isMobileEdit) {
     document.querySelector('#trade-detail-panel .panel-title').textContent = 'Edit Group';
     const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
     if (headerBtns) headerBtns.innerHTML = `
@@ -15272,7 +15313,7 @@ function openPackEditMode(packId) {
   const symbol2     = packTrades[0]?.symbol || '';
   const dir2        = packTrades[0]?.dir || '';
 
-  const _peHtml = `
+  const _peEditHtml = `
     <div style="padding:18px 20px 24px;display:flex;flex-direction:column;gap:0;">
 
       <!-- Group Summary Header -->
@@ -15408,21 +15449,19 @@ function openPackEditMode(packId) {
     </div>`;
 
   // Route to mobile sheet or desktop panel
-  if (isMobile) {
-    const sheet = document.getElementById('mobile-trade-sheet');
-    sheet.dataset.packId  = packId;
-    sheet.dataset.tradeId = '';
-    document.getElementById('mobile-sheet-title').innerHTML = `✏️ Edit Group`;
-    // Inject Save/Cancel buttons into the sheet header area
-    const sheetHeaderBtns = sheet.querySelector('div > div > div:last-child');
-    if (sheetHeaderBtns) sheetHeaderBtns.innerHTML = `
+  if (_isMobileEdit) {
+    const _s = document.getElementById('mobile-trade-sheet');
+    _s.dataset.packId  = packId;
+    _s.dataset.tradeId = '';
+    const _shBtns = _s.querySelector('div > div > div:last-child');
+    if (_shBtns) _shBtns.innerHTML = `
       <button onclick="savePackEdit(window._pePackId)" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>
       <button onclick="cancelPackEdit(window._pePackId)" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>`;
-    document.getElementById('mobile-sheet-body').innerHTML = _peHtml;
-    sheet.style.display = 'flex';
+    document.getElementById('mobile-sheet-title').innerHTML = `✏️ Edit Group`;
+    document.getElementById('mobile-sheet-body').innerHTML  = _peEditHtml;
+    _s.style.display = 'flex';
   } else {
-    document.getElementById('trade-detail-body').innerHTML = _peHtml;
-    // Setup Ctrl+V paste for photo in edit panel
+    document.getElementById('trade-detail-body').innerHTML = _peEditHtml;
     _packOvSetupPaste(packId, safeId);
   }
 }
@@ -15646,9 +15685,9 @@ async function savePackEdit(packId) {
 
   // Restore header buttons and show view mode
   if (window.innerWidth <= 768) {
-    const sheet = document.getElementById('mobile-trade-sheet');
-    const sheetHeaderBtns = sheet?.querySelector('div > div > div:last-child');
-    if (sheetHeaderBtns) sheetHeaderBtns.innerHTML = `
+    const _s = document.getElementById('mobile-trade-sheet');
+    const _shBtns = _s?.querySelector('div > div > div:last-child');
+    if (_shBtns) _shBtns.innerHTML = `
       <button onclick="openMobileSheetEdit()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:rgba(99,102,241,.1);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Edit</button>
       <button onclick="closeMobileTradeSheet()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>`;
   } else {
