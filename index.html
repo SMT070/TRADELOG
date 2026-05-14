@@ -857,7 +857,7 @@
   .cal-cell.weekend-cell { /* opacity handled inline */ }
   .cal-cell.today { outline: none; border-radius: 10px; }
   /* Today with no trades keeps surface bg */
-  .cal-cell.today:not(.has-win):not(.has-loss):not(.has-be) { background: var(--surface); }
+  .cal-cell.today:not(.has-win):not(.has-loss) { background: var(--surface); }
   .cal-cell.today .cal-day-num {
     background: var(--accent);
     color: #fff;
@@ -883,14 +883,18 @@
   [data-theme="light"] .cal-cell:not(.empty):hover { background: #f8fafc; }
   [data-theme="light"] .cal-cell.has-win  { background: rgba(5,150,105,0.16); box-shadow: inset 0 0 0 2px rgba(5,150,105,0.45), inset 0 3px 0 rgba(5,150,105,0.6); }
   [data-theme="light"] .cal-cell.has-loss { background: rgba(225,29,72,0.15); box-shadow: inset 0 0 0 2px rgba(225,29,72,0.45), inset 0 3px 0 rgba(225,29,72,0.6); }
+  [data-theme="light"] .cal-cell.has-be   { background: rgba(217,119,6,0.13); box-shadow: inset 0 0 0 2px rgba(217,119,6,0.45), inset 0 3px 0 rgba(217,119,6,0.6); }
   [data-theme="light"] .cal-cell.has-win:hover  { background: rgba(5,150,105,0.25); }
   [data-theme="light"] .cal-cell.has-loss:hover { background: rgba(225,29,72,0.24); }
+  [data-theme="light"] .cal-cell.has-be:hover   { background: rgba(217,119,6,0.22); }
 
   [data-theme="gray"] .cal-cell { background: var(--surface); border-radius: 10px; }
   [data-theme="gray"] .cal-cell.empty { background: transparent !important; }
   [data-theme="gray"] .cal-cell:not(.empty):hover { background: var(--surface2); }
   [data-theme="gray"] .cal-cell.has-win  { background: rgba(0,255,187,0.18); box-shadow: inset 0 0 0 2px rgba(0,255,187,0.55), inset 0 3px 0 rgba(0,255,187,0.7); }
   [data-theme="gray"] .cal-cell.has-loss { background: rgba(255,59,92,0.18); box-shadow: inset 0 0 0 2px rgba(255,59,92,0.55), inset 0 3px 0 rgba(255,59,92,0.7); }
+  [data-theme="gray"] .cal-cell.has-be   { background: rgba(245,158,11,0.15); box-shadow: inset 0 0 0 2px rgba(245,158,11,0.55), inset 0 3px 0 rgba(245,158,11,0.7); }
+  [data-theme="gray"] .cal-cell.has-be:hover { background: rgba(245,158,11,0.25); }
   [data-theme="black"] .cal-cell { background: #0d0d0d; border-radius: 10px; }
   [data-theme="black"] .cal-cell.empty { background: transparent !important; }
   [data-theme="black"] .cal-cell:not(.empty):hover { background: #161616; }
@@ -961,7 +965,12 @@
   .cal-cell-bar.pos { background: var(--green); opacity: 0.7; }
   .cal-cell-bar.neg { background: var(--red);   opacity: 0.7; }
   .cal-cell-bar.be  { background: var(--yellow);opacity: 0.7; }
-  .cal-cell.has-be  { border-color: rgba(245,158,11,0.45) !important; }
+  .cal-cell.has-be  { background: rgba(245,158,11,0.15); box-shadow: inset 0 0 0 2px rgba(245,158,11,0.55), inset 0 3px 0 rgba(245,158,11,0.7); }
+  .cal-cell.has-be:hover { background: rgba(245,158,11,0.25); }
+  .cal-cell.has-be .cal-day-num { color: var(--text); font-weight: 800; }
+  .cal-cell.today:not(.has-win):not(.has-loss):not(.has-be) { background: var(--surface); }
+  .cal-cell.today.has-be .cal-day-num { color: #fff; }
+  .cal-cell.today.has-be .cal-pnl, .cal-cell.today.has-be .cal-trades { color: var(--yellow) !important; }
 
   /* Calendar summary cards */
   .cal-summary-card {
@@ -1305,21 +1314,7 @@
   @media (max-width: 768px) {
     /* ── GENERAL ── */
     .container { padding: 10px !important; }
-    #main-content {
-      overflow-x: hidden;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-    }
-    /* Scrollable pages must scroll within #main-content, not body */
-    #page-dashboard,
-    #page-analytics,
-    #page-add,
-    #page-import {
-      overflow-y: auto !important;
-      -webkit-overflow-scrolling: touch !important;
-      overscroll-behavior: contain !important;
-    }
+    #main-content { overflow-x: hidden; }
 
     /* ── SAFE AREA + 100dvh FIXES ── */
     /* Use 100% so body safe-area padding is respected */
@@ -1588,25 +1583,27 @@
     #cal-view-year, #cal-view-alltime { display: none !important; }
     /* Stats strip hidden on mobile (nav bar is too narrow) */
     #cal-month-stats { display: none !important; }
-    /* Cal cells — fill space equally, no min-height */
+    /* Cal cells — fill space equally, symmetrical layout */
     .cal-cell {
       min-height: 0 !important;
-      padding: 4px 3px 3px !important;
+      padding: 4px 4px 4px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
-      justify-content: center !important;
+      justify-content: space-between !important;
       text-align: center !important;
       border-radius: 7px !important;
+      position: relative !important;
     }
     .cal-day-num {
       font-size: 10px !important;
       font-weight: 700 !important;
-      top: 4px !important;
-      left: 4px !important;
+      position: static !important;
+      align-self: flex-start !important;
+      line-height: 1 !important;
     }
-    .cal-pnl { font-size: 11px !important; letter-spacing: -0.4px !important; }
-    .cal-trades { font-size: 8px !important; bottom: 3px !important; }
+    .cal-pnl { font-size: 11px !important; letter-spacing: -0.4px !important; flex: 1 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+    .cal-trades { position: static !important; font-size: 8px !important; align-self: center !important; }
     .cal-cell-bar { display: none !important; }
     /* DOW header: compact */
     #cal-dow-row {
@@ -1771,7 +1768,7 @@
     #page-trades .trades-table th:nth-child(1),
     #page-trades .trades-table td:nth-child(1) {
       min-width: 78px !important;
-      padding-left: 4px !important;
+      padding-left: 10px !important;
       font-size: 10px !important;
       white-space: normal !important;
       line-height: 1.3 !important;
@@ -2066,17 +2063,6 @@
       display: flex !important;
       flex-direction: column !important;
       flex: 1 !important;
-      min-height: 0 !important;
-      width: 100% !important;
-    }
-    /* Editor panel fills all height when open */
-    #notebooks-main.nb-editor-open #notebook-editor-panel {
-      display: flex !important;
-      flex-direction: column !important;
-      flex: 1 !important;
-      min-height: 0 !important;
-      width: 100% !important;
-      overflow: hidden !important;
     }
 
     /* Entry modal full-screen on mobile */
@@ -5840,11 +5826,6 @@ window.addEventListener('load', () => {
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
   try {
-  // On mobile: close notebook editor panel when navigating away
-  if (name !== 'notebooks') {
-    const nbMain = document.getElementById('notebooks-main');
-    if (nbMain) nbMain.classList.remove('nb-editor-open');
-  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
   if (!nextPage) { console.warn('switchPage: no page found for', name); return; }
@@ -8006,18 +7987,11 @@ function openMobilePhotoFullscreen(id) {
 }
 
 function closeMobileTradeSheet() {
-  const _s = document.getElementById('mobile-trade-sheet');
-  _s.style.display  = 'none';
-  _s.dataset.packId  = '';
-  _s.dataset.tradeId = '';
-  window._pePackId   = null;
+  document.getElementById('mobile-trade-sheet').style.display = 'none';
 }
 
 function openMobileSheetEdit() {
   const sheet = document.getElementById('mobile-trade-sheet');
-  // Pack group — open pack edit mode inside the sheet
-  const _pid = sheet.dataset.packId;
-  if (_pid) { openPackEditMode(_pid); return; }
   const id = sheet.dataset.tradeId || selectedId;
   const t = trades.find(x => x.id === id);
   if (t) selectedId = t.id; // make sure selectedId is in sync
@@ -14697,19 +14671,6 @@ const _origConfirmCreatePack = window.confirmCreatePack;
 // ── Toggle pack expand/collapse ───────────────────────────────────
 function togglePackExpand(packId, e) {
   if (e) e.stopPropagation();
-
-  // Mobile double-tap → open pack detail instead of toggling expand
-  if (e && e.type === 'click' && window.innerWidth <= 768) {
-    const now  = Date.now();
-    const last = togglePackExpand._lastTap || {};
-    if (last.id === packId && now - last.time < 350) {
-      togglePackExpand._lastTap = null;
-      openPackDetail(packId);
-      return;
-    }
-    togglePackExpand._lastTap = { id: packId, time: now };
-  }
-
   if (packExpandedIds.has(packId)) packExpandedIds.delete(packId);
   else packExpandedIds.add(packId);
   // Persist expanded state across sessions
@@ -15213,12 +15174,9 @@ function openPackDetail(packId, e, _autoTrades) {
 
   // ── Render into right side panel (desktop) or bottom sheet (mobile) ──
   if (window.innerWidth <= 768) {
-    const _sheet = document.getElementById('mobile-trade-sheet');
-    _sheet.dataset.packId  = packId;
-    _sheet.dataset.tradeId = '';
     document.getElementById('mobile-sheet-title').innerHTML = `<span style="font-size:13px;">📦</span> ${packName}`;
     document.getElementById('mobile-sheet-body').innerHTML = html;
-    _sheet.style.display = 'flex';
+    document.getElementById('mobile-trade-sheet').style.display = 'flex';
   } else {
     document.querySelector('#trade-detail-panel .panel-title').textContent = '📦 ' + packName;
     // Show all 3 buttons — edit triggers pack edit mode, delete deletes the group
@@ -15244,7 +15202,6 @@ function openPackDetail(packId, e, _autoTrades) {
 
 // ── PACK EDIT MODE — mirrors single trade inline edit exactly ──────────────
 function openPackEditMode(packId) {
-  if (!packId) { console.warn('openPackEditMode: no packId'); return; }
   let packTrades = _lastRenderedPackMap[packId] || trades.filter(t => t.packId === packId);
   if (!packTrades || !packTrades.length) {
     const { autoGroups } = buildAutoPackGroups(trades);
@@ -15262,22 +15219,18 @@ function openPackEditMode(packId) {
 
   // Store editing state
   window._pePackId       = packId;
-  window._currentPackId  = packId;
+  window._currentPackId  = packId;   // ← ensures Ctrl+V paste works in edit mode
   window._peTags     = [...packTags];
   window._peEmotion  = packEmotion;
   window._peConf     = packConfidence;
-  window._peTradeResults = {};
+  window._peTradeResults = {}; // per-trade result overrides
 
-  const _isMobileEdit = window.innerWidth <= 768;
-
-  // Desktop only: update panel title & header buttons
-  if (!_isMobileEdit) {
-    document.querySelector('#trade-detail-panel .panel-title').textContent = 'Edit Group';
-    const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
-    if (headerBtns) headerBtns.innerHTML = `
-      <button onclick="cancelPackEdit(window._pePackId)" style="padding:5px 12px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Cancel</button>
-      <button onclick="savePackEdit(window._pePackId)" style="padding:5px 14px;height:30px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>`;
-  }
+  // Update panel title & header buttons
+  document.querySelector('#trade-detail-panel .panel-title').textContent = 'Edit Group';
+  const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
+  if (headerBtns) headerBtns.innerHTML = `
+    <button onclick="cancelPackEdit(window._pePackId)" style="padding:5px 12px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Cancel</button>
+    <button onclick="savePackEdit(window._pePackId)" style="padding:5px 14px;height:30px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>`;
 
   // Confidence pills
   const confPills = Array.from({length:10},(_,i)=>i+1).map(n => {
@@ -15313,7 +15266,7 @@ function openPackEditMode(packId) {
   const symbol2     = packTrades[0]?.symbol || '';
   const dir2        = packTrades[0]?.dir || '';
 
-  const _peEditHtml = `
+  document.getElementById('trade-detail-body').innerHTML = `
     <div style="padding:18px 20px 24px;display:flex;flex-direction:column;gap:0;">
 
       <!-- Group Summary Header -->
@@ -15447,23 +15400,6 @@ function openPackEditMode(packId) {
         }
       </div>
     </div>`;
-
-  // Route to mobile sheet or desktop panel
-  if (_isMobileEdit) {
-    const _s = document.getElementById('mobile-trade-sheet');
-    _s.dataset.packId  = packId;
-    _s.dataset.tradeId = '';
-    const _shBtns = _s.querySelector('div > div > div:last-child');
-    if (_shBtns) _shBtns.innerHTML = `
-      <button onclick="savePackEdit(window._pePackId)" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>
-      <button onclick="cancelPackEdit(window._pePackId)" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>`;
-    document.getElementById('mobile-sheet-title').innerHTML = `✏️ Edit Group`;
-    document.getElementById('mobile-sheet-body').innerHTML  = _peEditHtml;
-    _s.style.display = 'flex';
-  } else {
-    document.getElementById('trade-detail-body').innerHTML = _peEditHtml;
-    _packOvSetupPaste(packId, safeId);
-  }
 }
 
 // Pack edit mode helpers
@@ -15684,27 +15620,14 @@ async function savePackEdit(packId) {
   window._currentPackId = packId;
 
   // Restore header buttons and show view mode
-  if (window.innerWidth <= 768) {
-    const _s = document.getElementById('mobile-trade-sheet');
-    const _shBtns = _s?.querySelector('div > div > div:last-child');
-    if (_shBtns) _shBtns.innerHTML = `
-      <button onclick="openMobileSheetEdit()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:rgba(99,102,241,.1);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Edit</button>
-      <button onclick="closeMobileTradeSheet()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>`;
-  } else {
-    const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
-    if (headerBtns) headerBtns.innerHTML = _packDetailHeaderBtns();
-  }
+  const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
+  if (headerBtns) headerBtns.innerHTML = _packDetailHeaderBtns();
   renderTrades();
   openPackDetail(packId);
 }
 
 function cancelPackEdit(packId) {
   window._pePackId = null;
-  if (window.innerWidth <= 768) {
-    closeMobileTradeSheet();
-    openPackDetail(packId);
-    return;
-  }
   const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
   if (headerBtns) headerBtns.innerHTML = _packDetailHeaderBtns();
   renderTrades();
