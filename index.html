@@ -883,18 +883,14 @@
   [data-theme="light"] .cal-cell:not(.empty):hover { background: #f8fafc; }
   [data-theme="light"] .cal-cell.has-win  { background: rgba(5,150,105,0.16); box-shadow: inset 0 0 0 2px rgba(5,150,105,0.45), inset 0 3px 0 rgba(5,150,105,0.6); }
   [data-theme="light"] .cal-cell.has-loss { background: rgba(225,29,72,0.15); box-shadow: inset 0 0 0 2px rgba(225,29,72,0.45), inset 0 3px 0 rgba(225,29,72,0.6); }
-  [data-theme="light"] .cal-cell.has-be   { background: rgba(217,119,6,0.13); box-shadow: inset 0 0 0 2px rgba(217,119,6,0.45), inset 0 3px 0 rgba(217,119,6,0.6); }
   [data-theme="light"] .cal-cell.has-win:hover  { background: rgba(5,150,105,0.25); }
   [data-theme="light"] .cal-cell.has-loss:hover { background: rgba(225,29,72,0.24); }
-  [data-theme="light"] .cal-cell.has-be:hover   { background: rgba(217,119,6,0.22); }
 
   [data-theme="gray"] .cal-cell { background: var(--surface); border-radius: 10px; }
   [data-theme="gray"] .cal-cell.empty { background: transparent !important; }
   [data-theme="gray"] .cal-cell:not(.empty):hover { background: var(--surface2); }
   [data-theme="gray"] .cal-cell.has-win  { background: rgba(0,255,187,0.18); box-shadow: inset 0 0 0 2px rgba(0,255,187,0.55), inset 0 3px 0 rgba(0,255,187,0.7); }
   [data-theme="gray"] .cal-cell.has-loss { background: rgba(255,59,92,0.18); box-shadow: inset 0 0 0 2px rgba(255,59,92,0.55), inset 0 3px 0 rgba(255,59,92,0.7); }
-  [data-theme="gray"] .cal-cell.has-be   { background: rgba(245,158,11,0.15); box-shadow: inset 0 0 0 2px rgba(245,158,11,0.55), inset 0 3px 0 rgba(245,158,11,0.7); }
-  [data-theme="gray"] .cal-cell.has-be:hover { background: rgba(245,158,11,0.25); }
   [data-theme="black"] .cal-cell { background: #0d0d0d; border-radius: 10px; }
   [data-theme="black"] .cal-cell.empty { background: transparent !important; }
   [data-theme="black"] .cal-cell:not(.empty):hover { background: #161616; }
@@ -965,12 +961,7 @@
   .cal-cell-bar.pos { background: var(--green); opacity: 0.7; }
   .cal-cell-bar.neg { background: var(--red);   opacity: 0.7; }
   .cal-cell-bar.be  { background: var(--yellow);opacity: 0.7; }
-  .cal-cell.has-be  { background: rgba(245,158,11,0.15); box-shadow: inset 0 0 0 2px rgba(245,158,11,0.55), inset 0 3px 0 rgba(245,158,11,0.7); }
-  .cal-cell.has-be:hover { background: rgba(245,158,11,0.25); }
-  .cal-cell.has-be .cal-day-num { color: var(--text); font-weight: 800; }
-  .cal-cell.today:not(.has-win):not(.has-loss):not(.has-be) { background: var(--surface); }
-  .cal-cell.today.has-be .cal-day-num { color: #fff; }
-  .cal-cell.today.has-be .cal-pnl, .cal-cell.today.has-be .cal-trades { color: var(--yellow) !important; }
+  .cal-cell.has-be  { border-color: rgba(245,158,11,0.45) !important; }
 
   /* Calendar summary cards */
   .cal-summary-card {
@@ -1583,27 +1574,25 @@
     #cal-view-year, #cal-view-alltime { display: none !important; }
     /* Stats strip hidden on mobile (nav bar is too narrow) */
     #cal-month-stats { display: none !important; }
-    /* Cal cells — fill space equally, symmetrical layout */
+    /* Cal cells — fill space equally, no min-height */
     .cal-cell {
       min-height: 0 !important;
-      padding: 4px 4px 4px !important;
+      padding: 4px 3px 3px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
-      justify-content: space-between !important;
+      justify-content: center !important;
       text-align: center !important;
       border-radius: 7px !important;
-      position: relative !important;
     }
     .cal-day-num {
       font-size: 10px !important;
       font-weight: 700 !important;
-      position: static !important;
-      align-self: flex-start !important;
-      line-height: 1 !important;
+      top: 4px !important;
+      left: 4px !important;
     }
-    .cal-pnl { font-size: 11px !important; letter-spacing: -0.4px !important; flex: 1 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
-    .cal-trades { position: static !important; font-size: 8px !important; align-self: center !important; }
+    .cal-pnl { font-size: 11px !important; letter-spacing: -0.4px !important; }
+    .cal-trades { font-size: 8px !important; bottom: 3px !important; }
     .cal-cell-bar { display: none !important; }
     /* DOW header: compact */
     #cal-dow-row {
@@ -6708,8 +6697,12 @@ async function saveTrade() {
         if (t2 && Math.abs(getPnl(t2)) <= threshold && getResult(t2) !== 'be') {
           t2.result = 'be';
           save();
+          invalidateStatCache();
           renderTrades();
+          refreshDashboard();
+          _syncFeatureDropStates();
           await guaranteedSaveToSupabase(t2);
+          toast('⚖️ Auto BE applied to new trade', 'success');
         }
       }
     }
@@ -8987,8 +8980,12 @@ async function saveInlineEdit(id) {
         if (Math.abs(getPnl(t)) <= threshold && getResult(t) !== 'be') {
           t.result = 'be';
           save();
+          invalidateStatCache();
           renderTrades();
+          refreshDashboard();
+          _syncFeatureDropStates();
           await guaranteedSaveToSupabase(t);
+          toast('⚖️ Auto BE applied to edited trade', 'success');
         }
       }
     }
@@ -16999,15 +16996,8 @@ function _setFeatPill(pillId, btnId, on, onBg, onColor) {
 }
 
 function _syncFeatureDropStates() {
-  // Auto BE: pill is ON when no qualifying trades remain (rule fully applied)
-  const _beApplied = (() => {
-    const bal = getBalance();
-    if (bal <= 0) return _autoBEActive;
-    const threshold = bal * 0.0002;
-    const remaining = trades.filter(t => Math.abs(getPnl(t)) <= threshold && getResult(t) !== 'be');
-    return remaining.length === 0 && _autoBEActive;
-  })();
-  _setFeatPill('feat-be-pill',     'feat-auto-be-btn',  _beApplied,                              'rgba(245,158,11,0.25)', 'var(--yellow)');
+  // Auto BE: pill is ON when the feature is enabled (persistent setting)
+  _setFeatPill('feat-be-pill',     'feat-auto-be-btn',  _autoBEActive,                              'rgba(245,158,11,0.25)', 'var(--yellow)');
   const beLabel = document.getElementById('feat-be-label');
   if (beLabel) beLabel.textContent = 'Auto BE';
 
@@ -17021,7 +17011,16 @@ function _syncFeatureDropStates() {
 
 // ── Feature action wrappers (keep dropdown open while toggling) ───────────────
 function featToggleAutoBE() {
-  autoMarkBE();
+  if (_autoBEActive) {
+    // Turn OFF — just disable, don't un-mark any trades
+    _autoBEActive = false;
+    _persistAutoBEState();
+    _syncFeatureDropStates();
+    toast('Auto BE disabled', '');
+  } else {
+    // Turn ON — run immediately on existing trades, then stays active for new ones
+    autoMarkBE();
+  }
   setTimeout(_syncFeatureDropStates, 100);
 }
 
@@ -17070,7 +17069,11 @@ async function autoMarkBE() {
   });
 
   if (!candidates.length) {
-    toast(`No trades within ±${getCurrencySymbol()}${threshold.toFixed(2)} (0.02% of ${getCurrencySymbol()}${bal.toLocaleString()}) — all qualifying trades already marked BE`, '');
+    // No existing trades qualify right now — enable the flag for future trades
+    _autoBEActive = true;
+    _persistAutoBEState();
+    _syncFeatureDropStates();
+    toast('Auto BE enabled — new qualifying trades will be marked automatically', 'success');
     return;
   }
 
@@ -17093,14 +17096,20 @@ async function autoMarkBE() {
       renderTrades();
       refreshDashboard();
       _syncFeatureDropStates();
-      toast(`✓ ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} marked as BE`, 'success');
+      toast(`✓ ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} marked as BE — Auto BE now active`, 'success');
       // Save every affected trade to Supabase
       try {
         await Promise.all(candidates.map(t => {
           const updated = trades.find(x => x.id === t.id);
           return updated ? guaranteedSaveToSupabase(updated) : Promise.resolve();
         }));
-      } catch(e) { console.warn('Auto BE sync failed:', e); }
+      } catch(e) { console.warn('Auto BE Supabase sync failed:', e); }
+    },
+    onCancel: () => {
+      // User cancelled confirm — keep toggle OFF
+      _autoBEActive = false;
+      _persistAutoBEState();
+      _syncFeatureDropStates();
     }
   });
 }
