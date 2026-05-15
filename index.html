@@ -857,7 +857,7 @@
   .cal-cell.weekend-cell { /* opacity handled inline */ }
   .cal-cell.today { outline: none; border-radius: 10px; }
   /* Today with no trades keeps surface bg */
-  .cal-cell.today:not(.has-win):not(.has-loss) { background: var(--surface); }
+  .cal-cell.today:not(.has-win):not(.has-loss):not(.has-be) { background: var(--surface); }
   .cal-cell.today .cal-day-num {
     background: var(--accent);
     color: #fff;
@@ -883,14 +883,18 @@
   [data-theme="light"] .cal-cell:not(.empty):hover { background: #f8fafc; }
   [data-theme="light"] .cal-cell.has-win  { background: rgba(5,150,105,0.16); box-shadow: inset 0 0 0 2px rgba(5,150,105,0.45), inset 0 3px 0 rgba(5,150,105,0.6); }
   [data-theme="light"] .cal-cell.has-loss { background: rgba(225,29,72,0.15); box-shadow: inset 0 0 0 2px rgba(225,29,72,0.45), inset 0 3px 0 rgba(225,29,72,0.6); }
+  [data-theme="light"] .cal-cell.has-be   { background: rgba(217,119,6,0.13); box-shadow: inset 0 0 0 2px rgba(217,119,6,0.45), inset 0 3px 0 rgba(217,119,6,0.6); }
   [data-theme="light"] .cal-cell.has-win:hover  { background: rgba(5,150,105,0.25); }
   [data-theme="light"] .cal-cell.has-loss:hover { background: rgba(225,29,72,0.24); }
+  [data-theme="light"] .cal-cell.has-be:hover   { background: rgba(217,119,6,0.22); }
 
   [data-theme="gray"] .cal-cell { background: var(--surface); border-radius: 10px; }
   [data-theme="gray"] .cal-cell.empty { background: transparent !important; }
   [data-theme="gray"] .cal-cell:not(.empty):hover { background: var(--surface2); }
   [data-theme="gray"] .cal-cell.has-win  { background: rgba(0,255,187,0.18); box-shadow: inset 0 0 0 2px rgba(0,255,187,0.55), inset 0 3px 0 rgba(0,255,187,0.7); }
   [data-theme="gray"] .cal-cell.has-loss { background: rgba(255,59,92,0.18); box-shadow: inset 0 0 0 2px rgba(255,59,92,0.55), inset 0 3px 0 rgba(255,59,92,0.7); }
+  [data-theme="gray"] .cal-cell.has-be   { background: rgba(245,158,11,0.15); box-shadow: inset 0 0 0 2px rgba(245,158,11,0.55), inset 0 3px 0 rgba(245,158,11,0.7); }
+  [data-theme="gray"] .cal-cell.has-be:hover { background: rgba(245,158,11,0.25); }
   [data-theme="black"] .cal-cell { background: #0d0d0d; border-radius: 10px; }
   [data-theme="black"] .cal-cell.empty { background: transparent !important; }
   [data-theme="black"] .cal-cell:not(.empty):hover { background: #161616; }
@@ -961,7 +965,12 @@
   .cal-cell-bar.pos { background: var(--green); opacity: 0.7; }
   .cal-cell-bar.neg { background: var(--red);   opacity: 0.7; }
   .cal-cell-bar.be  { background: var(--yellow);opacity: 0.7; }
-  .cal-cell.has-be  { border-color: rgba(245,158,11,0.45) !important; }
+  .cal-cell.has-be        { background: rgba(245,158,11,0.15); box-shadow: inset 0 0 0 2px rgba(245,158,11,0.55), inset 0 3px 0 rgba(245,158,11,0.7); }
+  .cal-cell.has-be:hover  { background: rgba(245,158,11,0.25); }
+  .cal-cell.has-be .cal-day-num { color: var(--text); font-weight: 800; }
+  .cal-cell.today.has-be .cal-day-num { color: #fff; }
+  .cal-cell.today.has-be .cal-pnl,
+  .cal-cell.today.has-be .cal-trades { color: var(--yellow) !important; }
 
   /* Calendar summary cards */
   .cal-summary-card {
@@ -1745,16 +1754,12 @@
       letter-spacing: 0.8px !important;
       position: sticky !important;
       top: 0 !important;
-      user-select: none !important;
-      -webkit-user-select: none !important;
     }
     #page-trades .trades-table td {
       font-size: 11px !important;
       padding: 11px 8px !important;
       vertical-align: middle !important;
       white-space: nowrap !important;
-      user-select: none !important;
-      -webkit-user-select: none !important;
     }
 
     /* Col 1: Date — compact, two lines */
@@ -1868,8 +1873,6 @@
     #page-trades .trades-table tr.pack-child-row td {
       white-space: nowrap !important;
       overflow: visible !important;
-      user-select: none !important;
-      -webkit-user-select: none !important;
     }
     /* Date col in pack rows: allow natural width */
     #page-trades .trades-table tr.pack-header-row td:first-child,
