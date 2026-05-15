@@ -1745,12 +1745,16 @@
       letter-spacing: 0.8px !important;
       position: sticky !important;
       top: 0 !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
     }
     #page-trades .trades-table td {
       font-size: 11px !important;
       padding: 11px 8px !important;
       vertical-align: middle !important;
       white-space: nowrap !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
     }
 
     /* Col 1: Date — compact, two lines */
@@ -1864,6 +1868,8 @@
     #page-trades .trades-table tr.pack-child-row td {
       white-space: nowrap !important;
       overflow: visible !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
     }
     /* Date col in pack rows: allow natural width */
     #page-trades .trades-table tr.pack-header-row td:first-child,
@@ -6697,12 +6703,8 @@ async function saveTrade() {
         if (t2 && Math.abs(getPnl(t2)) <= threshold && getResult(t2) !== 'be') {
           t2.result = 'be';
           save();
-          invalidateStatCache();
           renderTrades();
-          refreshDashboard();
-          _syncFeatureDropStates();
           await guaranteedSaveToSupabase(t2);
-          toast('⚖️ Auto BE applied to new trade', 'success');
         }
       }
     }
@@ -8980,12 +8982,8 @@ async function saveInlineEdit(id) {
         if (Math.abs(getPnl(t)) <= threshold && getResult(t) !== 'be') {
           t.result = 'be';
           save();
-          invalidateStatCache();
           renderTrades();
-          refreshDashboard();
-          _syncFeatureDropStates();
           await guaranteedSaveToSupabase(t);
-          toast('⚖️ Auto BE applied to edited trade', 'success');
         }
       }
     }
@@ -16996,8 +16994,15 @@ function _setFeatPill(pillId, btnId, on, onBg, onColor) {
 }
 
 function _syncFeatureDropStates() {
-  // Auto BE: pill is ON when the feature is enabled (persistent setting)
-  _setFeatPill('feat-be-pill',     'feat-auto-be-btn',  _autoBEActive,                              'rgba(245,158,11,0.25)', 'var(--yellow)');
+  // Auto BE: pill is ON when no qualifying trades remain (rule fully applied)
+  const _beApplied = (() => {
+    const bal = getBalance();
+    if (bal <= 0) return _autoBEActive;
+    const threshold = bal * 0.0002;
+    const remaining = trades.filter(t => Math.abs(getPnl(t)) <= threshold && getResult(t) !== 'be');
+    return remaining.length === 0 && _autoBEActive;
+  })();
+  _setFeatPill('feat-be-pill',     'feat-auto-be-btn',  _beApplied,                              'rgba(245,158,11,0.25)', 'var(--yellow)');
   const beLabel = document.getElementById('feat-be-label');
   if (beLabel) beLabel.textContent = 'Auto BE';
 
@@ -17011,16 +17016,7 @@ function _syncFeatureDropStates() {
 
 // ── Feature action wrappers (keep dropdown open while toggling) ───────────────
 function featToggleAutoBE() {
-  if (_autoBEActive) {
-    // Turn OFF — just disable, don't un-mark any trades
-    _autoBEActive = false;
-    _persistAutoBEState();
-    _syncFeatureDropStates();
-    toast('Auto BE disabled', '');
-  } else {
-    // Turn ON — run immediately on existing trades, then stays active for new ones
-    autoMarkBE();
-  }
+  autoMarkBE();
   setTimeout(_syncFeatureDropStates, 100);
 }
 
@@ -17069,11 +17065,7 @@ async function autoMarkBE() {
   });
 
   if (!candidates.length) {
-    // No existing trades qualify right now — enable the flag for future trades
-    _autoBEActive = true;
-    _persistAutoBEState();
-    _syncFeatureDropStates();
-    toast('Auto BE enabled — new qualifying trades will be marked automatically', 'success');
+    toast(`No trades within ±${getCurrencySymbol()}${threshold.toFixed(2)} (0.02% of ${getCurrencySymbol()}${bal.toLocaleString()}) — all qualifying trades already marked BE`, '');
     return;
   }
 
@@ -17096,20 +17088,14 @@ async function autoMarkBE() {
       renderTrades();
       refreshDashboard();
       _syncFeatureDropStates();
-      toast(`✓ ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} marked as BE — Auto BE now active`, 'success');
+      toast(`✓ ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} marked as BE`, 'success');
       // Save every affected trade to Supabase
       try {
         await Promise.all(candidates.map(t => {
           const updated = trades.find(x => x.id === t.id);
           return updated ? guaranteedSaveToSupabase(updated) : Promise.resolve();
         }));
-      } catch(e) { console.warn('Auto BE Supabase sync failed:', e); }
-    },
-    onCancel: () => {
-      // User cancelled confirm — keep toggle OFF
-      _autoBEActive = false;
-      _persistAutoBEState();
-      _syncFeatureDropStates();
+      } catch(e) { console.warn('Auto BE sync failed:', e); }
     }
   });
 }
