@@ -8228,29 +8228,44 @@ function showTradeDetail(id) {
         <div id="detail-tag-editor">${renderDetailTagsHTML(t.id)}</div>
       </div>
 
-      <!-- Mood & Confidence: always both slots -->
-      <div style="display:flex;gap:12px;margin-bottom:14px;">
-        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
-          <div class="detail-label" style="margin-bottom:6px;">Mood</div>
-          <div style="font-size:22px;">${t.emotion || '—'}</div>
-        </div>
-        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
-          <div class="detail-label" style="margin-bottom:6px;">Confidence</div>
-          <div style="font-size:18px;font-weight:800;color:${t.confidence ? 'var(--accent)' : 'var(--muted)'};">
-            ${t.confidence ? `${t.confidence}<span style="font-size:11px;color:var(--muted);font-weight:600;">/10</span>` : '—'}
+      <!-- Mood: editable emoji grid, saves on click -->
+      <div style="margin-bottom:14px;">
+        <div class="detail-label" style="margin-bottom:8px;">Mood</div>
+        <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;" id="detail-emo-grid-${t.id}">
+            ${['😤','😰','😊','😎','🤔','😴','😡','🥳','😬','🙏'].map(em => {
+              const active = t.emotion === em;
+              return `<span
+                onclick="saveTradeFieldDebounced('${t.id}','emotion','${em}');document.querySelectorAll('.dt-emo-${t.id.replace(/[^a-z0-9]/gi,'_')}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
+                class="dt-emo-${t.id.replace(/[^a-z0-9]/gi,'_')}"
+                style="font-size:20px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${active?'2px solid var(--accent)':'none'};transform:${active?'scale(1.12)':'scale(1)'};"
+              >${em}</span>`;
+            }).join('')}
           </div>
         </div>
       </div>
 
-      <!-- Notes: always visible -->
+      <!-- Confidence: range slider, saves on drag -->
+      <div style="margin-bottom:14px;">
+        <div class="detail-label" style="margin-bottom:8px;">Confidence <span id="detail-conf-val-${t.id}" style="color:var(--accent);font-weight:700;">${t.confidence ? t.confidence + '/10' : ''}</span></div>
+        <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
+          <input type="range" min="1" max="10" value="${t.confidence || 5}"
+            style="width:100%;accent-color:var(--accent);margin-bottom:6px;cursor:pointer;"
+            oninput="document.getElementById('detail-conf-val-${t.id}').textContent=this.value+'/10';saveTradeFieldDebounced('${t.id}','confidence',parseInt(this.value))">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;"><span>Low</span><span>High</span></div>
+        </div>
+      </div>
+
+      <!-- Notes: editable textarea, saves on input -->
       <div style="margin-bottom:14px;">
         <div class="detail-label" style="margin-bottom:6px;">Notes</div>
-        <div class="notes-hover-wrap">
-          <div style="font-size:12px;line-height:1.7;color:${t.notes?'var(--text2)':'var(--muted)'};background:var(--surface2);padding:12px;border-radius:10px;${t.notes?'border-left:3px solid var(--accent);':'border-left:3px solid var(--border2);'}">
-            <div class="notes-clamp">${t.notes || 'No notes added.'}</div>
-          </div>
-          ${t.notes ? `<div class="notes-popup">${t.notes.replace(/</g,'&lt;')}</div>` : ''}
-        </div>
+        <textarea
+          placeholder="Add trade notes, observations, lessons…"
+          style="width:100%;min-height:80px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
+          onfocus="this.style.borderColor='var(--accent)'"
+          onblur="this.style.borderColor='var(--border)'"
+          oninput="saveTradeFieldDebounced('${t.id}','notes',this.value)"
+        >${(t.notes||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
       </div>
 
       <!-- Chart Photo: always visible -->
@@ -8491,18 +8506,32 @@ function saveOverlayNotes(id, val) {
   if (!t) return;
   t.notes = val;
   save();
-  // Update the static notes display in the side detail panel
   const clamp = document.querySelector('.notes-clamp');
   if (clamp) clamp.textContent = val || 'No notes added.';
-  // Sync if edit panel is open
   const ieNotes = document.getElementById('ie-notes');
   if (ieNotes) ieNotes.value = val;
-  // Debounced Supabase sync (600ms after last keystroke)
   clearTimeout(_overlayNotesTimer);
   _overlayNotesTimer = setTimeout(async () => {
     const latest = trades.find(x => x.id === id);
     if (latest) {
       try { await guaranteedSaveToSupabase(latest); } catch(e) { console.warn('TradeLog: notes sync failed', e); }
+    }
+  }, 600);
+}
+
+// Save any single-trade field instantly to localStorage, debounced to Supabase
+const _tradeFieldTimers = {};
+function saveTradeFieldDebounced(id, field, value) {
+  const idx = trades.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  trades[idx][field] = value;
+  save();
+  clearTimeout(_tradeFieldTimers[id + '|' + field]);
+  _tradeFieldTimers[id + '|' + field] = setTimeout(async () => {
+    const latest = trades.find(t => t.id === id);
+    if (latest) {
+      try { await guaranteedSaveToSupabase(latest); }
+      catch(e) { console.warn('TradeLog: field sync failed', e); }
     }
   }, 600);
 }
