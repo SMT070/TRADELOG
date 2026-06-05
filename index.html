@@ -439,7 +439,9 @@
   .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; }
   .panel-header {
     display:flex; align-items:center; justify-content:space-between;
-    padding: 14px var(--page-px);
+    padding: 0 20px;
+    height: 48px;
+    flex-shrink: 0;
     border-bottom: 1px solid var(--border);
   }
   .panel-header-left { display:flex; align-items:center; gap:10px; }
@@ -2644,13 +2646,13 @@
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;align-items:stretch;">
 
       <!-- Goals / Targets -->
-      <div class="panel" style="display:flex;flex-direction:column;min-height:220px;max-height:280px;">
+      <div class="panel" style="display:flex;flex-direction:column;height:260px;">
         <div class="panel-header" style="flex-shrink:0;">
           <div class="panel-header-left">
             <div class="panel-title">Daily Goals</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Goals','P&L targets. Green = on track, red = behind.')" onmouseleave="hideInfo()">i</button>
           </div>
-          <button class="btn btn-ghost" style="font-size:10px;padding:5px 12px;" onclick="openGoalsModal()">Edit Goals</button>
+          <button class="btn btn-ghost" style="width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;font-size:14px;border-radius:8px;" onclick="openGoalsModal()" title="Edit Goals">✏️</button>
         </div>
         <div style="padding:16px 20px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;">
           <!-- Daily P&L Goal -->
@@ -2690,28 +2692,28 @@
       </div>
 
       <!-- Daily Journal -->
-      <div class="panel" style="display:flex;flex-direction:column;min-height:220px;max-height:280px;">
+      <div class="panel" style="display:flex;flex-direction:column;height:260px;">
         <div class="panel-header" style="flex-shrink:0;">
           <div class="panel-header-left"><div class="panel-title">Today's Journal</div></div>
-          <span style="font-size:10px;color:var(--muted);" id="journal-date-label"></span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:10px;color:var(--muted);" id="journal-date-label"></span>
+            <button class="btn btn-ghost" style="width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;font-size:14px;border-radius:8px;" onclick="saveJournal()" title="Save Journal">💾</button>
+          </div>
         </div>
         <div style="padding:16px 20px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
           <textarea id="journal-plan" rows="2" placeholder="📋 What's your plan for today? Key levels, news, strategy..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;flex-shrink:0;"></textarea>
           <textarea id="journal-review" rows="2" placeholder="🔁 End of day review — what worked, what didn't, lessons learned..." style="resize:none;font-size:12px;line-height:1.6;border-radius:10px;flex-shrink:0;"></textarea>
-          <div style="display:flex;justify-content:flex-end;flex-shrink:0;">
-            <button class="btn btn-primary" onclick="saveJournal()" style="font-size:11px;padding:7px 18px;">Save Journal</button>
-          </div>
         </div>
       </div>
 
       <!-- Trading Rules -->
-      <div class="panel" style="display:flex;flex-direction:column;min-height:220px;max-height:280px;">
+      <div class="panel" style="display:flex;flex-direction:column;height:260px;">
         <div class="panel-header" style="flex-shrink:0;">
           <div class="panel-header-left">
             <div class="panel-title">Trading Rules</div>
             <button class="info-btn" onmouseenter="showInfo(this,'Trading Rules','Your personal rules. Manage them in the Mindset page.')" onmouseleave="hideInfo()">i</button>
           </div>
-          <button class="btn btn-ghost" style="font-size:10px;padding:5px 12px;" onclick="switchPage('mindset')">Manage →</button>
+          <button class="btn btn-ghost" style="width:28px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:8px;" onclick="switchPage('mindset')" title="Manage Rules">→</button>
         </div>
         <div id="dash-rules-list" style="padding:12px 20px 16px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
           <div style="text-align:center;color:var(--muted);font-size:12px;padding:20px 0;">Loading…</div>
@@ -6583,37 +6585,6 @@ function uploadTradePhoto(ev, id) {
   saveTradePhoto(file, id);
 }
 
-function _renderDetailPhotoBlock(t) {
-  return `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <div class="detail-label">Chart Photo</div>
-      <div style="display:flex;gap:6px;">
-        <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="document.getElementById('detail-photo-input').click()">
-          ${t.screenshot ? '🔄 Replace' : '📸 Add Photo'}
-        </button>
-        ${t.screenshot ? `<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);" onclick="removeTradePhoto('${t.id}')">Remove</button>` : ''}
-      </div>
-    </div>
-    <input type="file" id="detail-photo-input" accept="image/*" style="display:none;" onchange="uploadTradePhoto(event,'${t.id}')">
-    ${t.screenshot
-      ? `<div style="cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPhotoLightbox('${t.id}')">
-           <img src="${t.screenshot}" alt="chart" style="width:100%;display:block;border-radius:10px;">
-           <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
-         </div>`
-      : `<div tabindex="0" data-photo-id="${t.id}"
-           onclick="document.getElementById('detail-photo-input').click()"
-           onpaste="handlePhotoZonePaste(event,'${t.id}')"
-           ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-           ondragleave="this.style.borderColor='var(--border2)'"
-           ondrop="handlePhotoZoneDrop(event,'${t.id}')"
-           style="border:2px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;outline:none;"
-           onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
-           <div style="font-size:24px;margin-bottom:6px;">📸</div>
-           <div style="font-size:12px;color:var(--muted);">Click, drag & drop, or paste a screenshot</div>
-         </div>`
-    }`;
-}
-
 function saveTradePhoto(file, id) {
   if (!file || !file.type.startsWith('image/')) return;
   _processImageHighQuality(file, async dataUrl => {
@@ -6621,15 +6592,7 @@ function saveTradePhoto(file, id) {
     if (idx === -1) return;
     trades[idx].screenshot = dataUrl;
     save();
-    // Update ONLY the photo block — never re-render the whole panel so
-    // mood/confidence/notes the user has typed are never wiped
-    const wrap = document.getElementById('dp-photo-wrap');
-    if (wrap) {
-      wrap.innerHTML = _renderDetailPhotoBlock(trades[idx]);
-    } else {
-      // Fallback: full re-render only if panel isn't open yet
-      showTradeDetail(id);
-    }
+    showTradeDetail(id);
     if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
     toast('📸 Photo saved', 'success');
     try { await guaranteedSaveToSupabase(trades[idx]); } catch(err) { console.error('TradeLog: photo sync failed', err); }
@@ -6662,12 +6625,7 @@ async function removeTradePhoto(id) {
   if (idx === -1) return;
   trades[idx].screenshot = null;
   save();
-  const wrap = document.getElementById('dp-photo-wrap');
-  if (wrap) {
-    wrap.innerHTML = _renderDetailPhotoBlock(trades[idx]);
-  } else {
-    showTradeDetail(id);
-  }
+  showTradeDetail(id);
   if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
   toast('Photo removed', '');
   try { await guaranteedSaveToSupabase(trades[idx]); } catch(err) { console.error('TradeLog: photo remove sync failed', err); }
@@ -8272,47 +8230,60 @@ function showTradeDetail(id) {
         <div id="detail-tag-editor">${renderDetailTagsHTML(t.id)}</div>
       </div>
 
-      <!-- Mood: editable pills, saves instantly -->
-      <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:6px;">Mood</div>
-        <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;display:flex;flex-wrap:wrap;gap:5px;" id="dp-emo-wrap">
-          ${['😌 Calm','🔥 Excited','😰 Anxious','😤 FOMO','😠 Revenge','🧠 Focused'].map(e => {
-            const active = e === (t.emotion||'');
-            return `<span
-              onclick="saveDetailEmotion('${t.id}','${e}');document.querySelectorAll('#dp-emo-wrap span').forEach(b=>{b.style.borderColor='var(--border2)';b.style.background='var(--surface)';b.style.color='var(--text2)'});this.style.borderColor='var(--accent)';this.style.background='rgba(99,102,241,.15)';this.style.color='var(--accent)'"
-              style="padding:4px 9px;border-radius:16px;font-size:11px;cursor:pointer;border:1px solid ${active?'var(--accent)':'var(--border2)'};background:${active?'rgba(99,102,241,.15)':'var(--surface)'};color:${active?'var(--accent)':'var(--text2)'};transition:all .15s;">${e}</span>`;
-          }).join('')}
+      <!-- Mood & Confidence: always both slots -->
+      <div style="display:flex;gap:12px;margin-bottom:14px;">
+        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
+          <div class="detail-label" style="margin-bottom:6px;">Mood</div>
+          <div style="font-size:22px;">${t.emotion || '—'}</div>
+        </div>
+        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
+          <div class="detail-label" style="margin-bottom:6px;">Confidence</div>
+          <div style="font-size:18px;font-weight:800;color:${t.confidence ? 'var(--accent)' : 'var(--muted)'};">
+            ${t.confidence ? `${t.confidence}<span style="font-size:11px;color:var(--muted);font-weight:600;">/10</span>` : '—'}
+          </div>
         </div>
       </div>
 
-      <!-- Confidence: number pills, saves instantly -->
-      <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:6px;">Confidence <span id="dp-conf-label" style="color:var(--accent);font-weight:700;">${t.confidence?t.confidence+'/10':''}</span></div>
-        <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;display:flex;gap:4px;flex-wrap:wrap;" id="dp-conf-wrap">
-          ${Array.from({length:10},(_,i)=>i+1).map(n=>{
-            const active = n===(t.confidence||0);
-            return `<button type="button"
-              onclick="document.getElementById('dp-conf-label').textContent='${n}/10';document.querySelectorAll('#dp-conf-wrap button').forEach(b=>{b.style.background='var(--surface)';b.style.color='var(--muted)';b.style.borderColor='var(--border2)'});this.style.background='var(--accent)';this.style.color='#fff';this.style.borderColor='var(--accent)';saveDetailConfidence('${t.id}',${n})"
-              style="width:26px;height:26px;border-radius:6px;border:1px solid ${active?'var(--accent)':'var(--border2)'};background:${active?'var(--accent)':'var(--surface)'};color:${active?'#fff':'var(--muted)'};font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;">${n}</button>`;
-          }).join('')}
-        </div>
-      </div>
-
-      <!-- Notes: editable textarea, saves on every keystroke -->
+      <!-- Notes: always visible -->
       <div style="margin-bottom:14px;">
         <div class="detail-label" style="margin-bottom:6px;">Notes</div>
-        <textarea id="dp-notes-ta"
-          placeholder="Add trade notes…"
-          style="width:100%;min-height:80px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
-          onfocus="this.style.borderColor='var(--accent)'"
-          onblur="this.style.borderColor='var(--border)'"
-          oninput="saveDetailNotes('${t.id}',this.value)"
-        >${(t.notes||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+        <div class="notes-hover-wrap">
+          <div style="font-size:12px;line-height:1.7;color:${t.notes?'var(--text2)':'var(--muted)'};background:var(--surface2);padding:12px;border-radius:10px;${t.notes?'border-left:3px solid var(--accent);':'border-left:3px solid var(--border2);'}">
+            <div class="notes-clamp">${t.notes || 'No notes added.'}</div>
+          </div>
+          ${t.notes ? `<div class="notes-popup">${t.notes.replace(/</g,'&lt;')}</div>` : ''}
+        </div>
       </div>
 
       <!-- Chart Photo: always visible -->
-      <div id="dp-photo-wrap" style="margin-bottom:14px;">
-        ${_renderDetailPhotoBlock(t)}
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="detail-label">Chart Photo</div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="document.getElementById('detail-photo-input').click()">
+              ${t.screenshot ? '🔄 Replace' : '📸 Add Photo'}
+            </button>
+            ${t.screenshot ? `<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);" onclick="removeTradePhoto('${t.id}')">Remove</button>` : ''}
+          </div>
+        </div>
+        <input type="file" id="detail-photo-input" accept="image/*" style="display:none;" onchange="uploadTradePhoto(event,'${t.id}')">
+        ${t.screenshot
+          ? `<div style="cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPhotoLightbox('${t.id}')">
+               <img src="${t.screenshot}" alt="chart" style="width:100%;display:block;border-radius:10px;">
+               <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
+             </div>`
+          : `<div tabindex="0" data-photo-id="${t.id}"
+               onclick="document.getElementById('detail-photo-input').click()"
+               onpaste="handlePhotoZonePaste(event,'${t.id}')"
+               ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+               ondragleave="this.style.borderColor='var(--border2)'"
+               ondrop="handlePhotoZoneDrop(event,'${t.id}')"
+               style="border:2px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;outline:none;"
+               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
+               <div style="font-size:24px;margin-bottom:6px;">📸</div>
+               <div style="font-size:12px;color:var(--muted);">Click, drag & drop, or paste a screenshot</div>
+             </div>`
+        }
       </div>
 
     </div>
@@ -8522,48 +8493,19 @@ function saveOverlayNotes(id, val) {
   if (!t) return;
   t.notes = val;
   save();
+  // Update the static notes display in the side detail panel
   const clamp = document.querySelector('.notes-clamp');
   if (clamp) clamp.textContent = val || 'No notes added.';
+  // Sync if edit panel is open
   const ieNotes = document.getElementById('ie-notes');
   if (ieNotes) ieNotes.value = val;
+  // Debounced Supabase sync (600ms after last keystroke)
   clearTimeout(_overlayNotesTimer);
   _overlayNotesTimer = setTimeout(async () => {
     const latest = trades.find(x => x.id === id);
     if (latest) {
       try { await guaranteedSaveToSupabase(latest); } catch(e) { console.warn('TradeLog: notes sync failed', e); }
     }
-  }, 600);
-}
-
-function saveDetailEmotion(id, val) {
-  const idx = trades.findIndex(x => x.id === id);
-  if (idx === -1) return;
-  trades[idx].emotion = val;
-  save();
-  guaranteedSaveToSupabase(trades[idx]).catch(e => console.warn('TradeLog: emotion sync failed', e));
-}
-
-let _detailConfTimer = null;
-function saveDetailConfidence(id, val) {
-  const idx = trades.findIndex(x => x.id === id);
-  if (idx === -1) return;
-  trades[idx].confidence = val;
-  save();
-  clearTimeout(_detailConfTimer);
-  _detailConfTimer = setTimeout(() => {
-    guaranteedSaveToSupabase(trades[idx]).catch(e => console.warn('TradeLog: confidence sync failed', e));
-  }, 400);
-}
-
-let _detailNotesTimer = null;
-function saveDetailNotes(id, val) {
-  const idx = trades.findIndex(x => x.id === id);
-  if (idx === -1) return;
-  trades[idx].notes = val;
-  save();
-  clearTimeout(_detailNotesTimer);
-  _detailNotesTimer = setTimeout(() => {
-    guaranteedSaveToSupabase(trades[idx]).catch(e => console.warn('TradeLog: notes sync failed', e));
   }, 600);
 }
 
