@@ -8228,43 +8228,41 @@ function showTradeDetail(id) {
         <div id="detail-tag-editor">${renderDetailTagsHTML(t.id)}</div>
       </div>
 
-      <!-- Mood: editable emoji grid, saves on click -->
-      <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:8px;">Mood</div>
-        <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
-          <div style="display:flex;flex-wrap:wrap;gap:6px;" id="detail-emo-grid-${t.id}">
-            ${['😤','😰','😊','😎','🤔','😴','😡','🥳','😬','🙏'].map(em => {
-              const active = t.emotion === em;
-              return `<span
-                onclick="saveTradeFieldDebounced('${t.id}','emotion','${em}');document.querySelectorAll('.dt-emo-${t.id.replace(/[^a-z0-9]/gi,'_')}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
-                class="dt-emo-${t.id.replace(/[^a-z0-9]/gi,'_')}"
-                style="font-size:20px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${active?'2px solid var(--accent)':'none'};transform:${active?'scale(1.12)':'scale(1)'};"
-              >${em}</span>`;
+      <!-- Mood & Confidence: editable -->
+      <div style="display:flex;gap:12px;margin-bottom:14px;">
+        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
+          <div class="detail-label" style="margin-bottom:6px;">Mood</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            ${['😌 Calm','🔥 Excited','😰 Anxious','😤 FOMO','😠 Revenge','🧠 Focused'].map(e => {
+              const active = e === (t.emotion||'');
+              return `<span onclick="saveDetailEmotion('${t.id}','${e}');document.querySelectorAll('.dp-emo-${t.id}').forEach(b=>{b.style.borderColor='var(--border2)';b.style.background='var(--surface)';b.style.color='var(--text2)'});this.style.borderColor='var(--accent)';this.style.background='rgba(99,102,241,.15)';this.style.color='var(--accent)'"
+                class="dp-emo-${t.id}"
+                style="padding:4px 9px;border-radius:16px;font-size:11px;cursor:pointer;border:1px solid ${active?'var(--accent)':'var(--border2)'};background:${active?'rgba(99,102,241,.15)':'var(--surface)'};color:${active?'var(--accent)':'var(--text2)'};transition:all .15s;">${e}</span>`;
+            }).join('')}
+          </div>
+        </div>
+        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
+          <div class="detail-label" style="margin-bottom:6px;">Confidence <span id="dp-conf-val-${t.id}" style="color:var(--accent);font-weight:700;">${t.confidence?t.confidence+'/10':''}</span></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            ${Array.from({length:10},(_,i)=>i+1).map(n=>{
+              const active = n===(t.confidence||0);
+              return `<button type="button" onclick="document.getElementById('dp-conf-val-${t.id}').textContent='${n}/10';document.querySelectorAll('.dp-conf-${t.id}').forEach(b=>{b.style.background='var(--surface)';b.style.color='var(--muted)';b.style.borderColor='var(--border2)'});this.style.background='var(--accent)';this.style.color='#fff';this.style.borderColor='var(--accent)';saveDetailConfidence('${t.id}',${n})"
+                class="dp-conf-${t.id}"
+                style="width:26px;height:26px;border-radius:6px;border:1px solid ${active?'var(--accent)':'var(--border2)'};background:${active?'var(--accent)':'var(--surface)'};color:${active?'#fff':'var(--muted)'};font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;">${n}</button>`;
             }).join('')}
           </div>
         </div>
       </div>
 
-      <!-- Confidence: range slider, saves on drag -->
-      <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:8px;">Confidence <span id="detail-conf-val-${t.id}" style="color:var(--accent);font-weight:700;">${t.confidence ? t.confidence + '/10' : ''}</span></div>
-        <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
-          <input type="range" min="1" max="10" value="${t.confidence || 5}"
-            style="width:100%;accent-color:var(--accent);margin-bottom:6px;cursor:pointer;"
-            oninput="document.getElementById('detail-conf-val-${t.id}').textContent=this.value+'/10';saveTradeFieldDebounced('${t.id}','confidence',parseInt(this.value))">
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;"><span>Low</span><span>High</span></div>
-        </div>
-      </div>
-
-      <!-- Notes: editable textarea, saves on input -->
+      <!-- Notes: editable -->
       <div style="margin-bottom:14px;">
         <div class="detail-label" style="margin-bottom:6px;">Notes</div>
         <textarea
-          placeholder="Add trade notes, observations, lessons…"
+          placeholder="Add trade notes…"
           style="width:100%;min-height:80px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
           onfocus="this.style.borderColor='var(--accent)'"
           onblur="this.style.borderColor='var(--border)'"
-          oninput="saveTradeFieldDebounced('${t.id}','notes',this.value)"
+          oninput="saveDetailNotes('${t.id}',this.value)"
         >${(t.notes||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
       </div>
 
@@ -8506,10 +8504,13 @@ function saveOverlayNotes(id, val) {
   if (!t) return;
   t.notes = val;
   save();
+  // Update the static notes display in the side detail panel
   const clamp = document.querySelector('.notes-clamp');
   if (clamp) clamp.textContent = val || 'No notes added.';
+  // Sync if edit panel is open
   const ieNotes = document.getElementById('ie-notes');
   if (ieNotes) ieNotes.value = val;
+  // Debounced Supabase sync (600ms after last keystroke)
   clearTimeout(_overlayNotesTimer);
   _overlayNotesTimer = setTimeout(async () => {
     const latest = trades.find(x => x.id === id);
@@ -8519,20 +8520,35 @@ function saveOverlayNotes(id, val) {
   }, 600);
 }
 
-// Save any single-trade field instantly to localStorage, debounced to Supabase
-const _tradeFieldTimers = {};
-function saveTradeFieldDebounced(id, field, value) {
-  const idx = trades.findIndex(t => t.id === id);
-  if (idx === -1) return;
-  trades[idx][field] = value;
+function saveDetailEmotion(id, val) {
+  const t = trades.find(x => x.id === id);
+  if (!t) return;
+  t.emotion = val;
   save();
-  clearTimeout(_tradeFieldTimers[id + '|' + field]);
-  _tradeFieldTimers[id + '|' + field] = setTimeout(async () => {
-    const latest = trades.find(t => t.id === id);
-    if (latest) {
-      try { await guaranteedSaveToSupabase(latest); }
-      catch(e) { console.warn('TradeLog: field sync failed', e); }
-    }
+  guaranteedSaveToSupabase(t).catch(e => console.warn('TradeLog: emotion sync failed', e));
+}
+
+let _detailConfTimer = null;
+function saveDetailConfidence(id, val) {
+  const t = trades.find(x => x.id === id);
+  if (!t) return;
+  t.confidence = val;
+  save();
+  clearTimeout(_detailConfTimer);
+  _detailConfTimer = setTimeout(() => {
+    guaranteedSaveToSupabase(t).catch(e => console.warn('TradeLog: confidence sync failed', e));
+  }, 400);
+}
+
+let _detailNotesTimer = null;
+function saveDetailNotes(id, val) {
+  const t = trades.find(x => x.id === id);
+  if (!t) return;
+  t.notes = val;
+  save();
+  clearTimeout(_detailNotesTimer);
+  _detailNotesTimer = setTimeout(() => {
+    guaranteedSaveToSupabase(t).catch(e => console.warn('TradeLog: notes sync failed', e));
   }, 600);
 }
 
