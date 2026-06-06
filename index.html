@@ -6577,28 +6577,26 @@ function _renderDetailPhotoBlock(t) {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <div class="detail-label">Chart Photo</div>
       <div style="display:flex;gap:6px;">
-        <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="document.getElementById('detail-photo-input').click()">
-          ${t.screenshot ? '🔄 Replace' : '📸 Add Photo'}</button>
-        ${t.screenshot ? `<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);" onclick="removeTradePhoto('${t.id}')">Remove</button>` : ''}
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="document.getElementById('detail-photo-input').click()">${t.screenshot?'🔄 Replace':'📸 Add Photo'}</button>
+        ${t.screenshot?`<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);" onclick="removeTradePhoto('${t.id}')">Remove</button>`:''}
       </div>
     </div>
     <input type="file" id="detail-photo-input" accept="image/*" style="display:none;" onchange="uploadTradePhoto(event,'${t.id}')">
     ${t.screenshot
-      ? `<div style="cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPhotoLightbox('${t.id}')">
-           <img src="${t.screenshot}" alt="chart" style="width:100%;display:block;border-radius:10px;">
-           <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
-         </div>`
-      : `<div tabindex="0" onclick="document.getElementById('detail-photo-input').click()"
-           onpaste="handlePhotoZonePaste(event,'${t.id}')"
-           ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-           ondragleave="this.style.borderColor='var(--border2)'"
-           ondrop="handlePhotoZoneDrop(event,'${t.id}')"
-           style="border:2px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;outline:none;"
-           onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
-           <div style="font-size:24px;margin-bottom:6px;">📸</div>
-           <div style="font-size:12px;color:var(--muted);">Click, drag & drop, or paste a screenshot</div>
-         </div>`
-    }`;
+      ?`<div style="cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPhotoLightbox('${t.id}')">
+          <img src="${t.screenshot}" style="width:100%;display:block;border-radius:10px;">
+          <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
+        </div>`
+      :`<div tabindex="0" onclick="document.getElementById('detail-photo-input').click()"
+          onpaste="handlePhotoZonePaste(event,'${t.id}')"
+          ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+          ondragleave="this.style.borderColor='var(--border2)'"
+          ondrop="handlePhotoZoneDrop(event,'${t.id}')"
+          style="border:2px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;outline:none;"
+          onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
+          <div style="font-size:24px;margin-bottom:6px;">📸</div>
+          <div style="font-size:12px;color:var(--muted);">Click, drag & drop, or paste a screenshot</div>
+        </div>`}`;
 }
 
 function saveTradePhoto(file, id) {
@@ -6608,13 +6606,12 @@ function saveTradePhoto(file, id) {
     if (idx === -1) return;
     trades[idx].screenshot = dataUrl;
     save();
-    // Update only the photo block — never re-render the whole panel
     const wrap = document.getElementById('dp-photo-wrap');
     if (wrap) wrap.innerHTML = _renderDetailPhotoBlock(trades[idx]);
     else showTradeDetail(id);
     if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
     toast('📸 Photo saved', 'success');
-    try { await guaranteedSaveToSupabase(trades[idx]); } catch(e) { console.error('photo sync failed', e); }
+    try { await guaranteedSaveToSupabase(trades[idx]); } catch(e) { console.error('photo sync',e); }
   });
 }
 
@@ -6642,14 +6639,13 @@ function handlePhotoZoneDrop(ev, id) {
 async function removeTradePhoto(id) {
   const idx = trades.findIndex(t => t.id === id);
   if (idx === -1) return;
-  trades[idx].screenshot = null;
-  save();
+  trades[idx].screenshot = null; save();
   const wrap = document.getElementById('dp-photo-wrap');
   if (wrap) wrap.innerHTML = _renderDetailPhotoBlock(trades[idx]);
   else showTradeDetail(id);
   if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
-  toast('Photo removed', '');
-  try { await guaranteedSaveToSupabase(trades[idx]); } catch(e) { console.error('photo remove failed', e); }
+  toast('Photo removed','');
+  try { await guaranteedSaveToSupabase(trades[idx]); } catch(e) { console.error('photo remove',e); }
 }
 
 function openPhotoLightbox(id) {
@@ -8263,7 +8259,6 @@ function showTradeDetail(id) {
           }).join('')}
         </div>
       </div>
-
       <!-- Confidence: number pills, instant save -->
       <div style="margin-bottom:14px;">
         <div class="detail-label" style="margin-bottom:6px;">Confidence <span id="dp-conf-label" style="color:var(--accent);font-weight:700;">${t.confidence?t.confidence+'/10':''}</span></div>
@@ -8276,20 +8271,16 @@ function showTradeDetail(id) {
           }).join('')}
         </div>
       </div>
-
       <!-- Notes: editable textarea, instant save -->
       <div style="margin-bottom:14px;">
         <div class="detail-label" style="margin-bottom:6px;">Notes</div>
-        <textarea id="dp-notes-ta"
-          placeholder="Add trade notes…"
+        <textarea id="dp-notes-ta" placeholder="Add trade notes…"
           style="width:100%;min-height:80px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
-          onfocus="this.style.borderColor='var(--accent)'"
-          onblur="this.style.borderColor='var(--border)'"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
           oninput="saveDetailNotes('${t.id}',this.value)"
         >${(t.notes||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
       </div>
-
-      <!-- Chart Photo: stable wrapper — only this div updates on photo change -->
+      <!-- Chart Photo: stable wrapper, updated in-place -->
       <div id="dp-photo-wrap" style="margin-bottom:14px;">
         ${_renderDetailPhotoBlock(t)}
       </div>
@@ -8500,35 +8491,25 @@ let _overlayNotesTimer = null;
 function saveDetailEmotion(id, val) {
   const idx = trades.findIndex(x => x.id === id);
   if (idx === -1) return;
-  trades[idx].emotion = val;
-  save();
-  guaranteedSaveToSupabase(trades[idx]).catch(e => console.warn('emotion sync', e));
+  trades[idx].emotion = val; save();
+  guaranteedSaveToSupabase(trades[idx]).catch(e => console.warn('emotion sync',e));
 }
-
 let _detailConfTimer = null;
 function saveDetailConfidence(id, val) {
   const idx = trades.findIndex(x => x.id === id);
   if (idx === -1) return;
-  trades[idx].confidence = val;
-  save();
+  trades[idx].confidence = val; save();
   clearTimeout(_detailConfTimer);
-  _detailConfTimer = setTimeout(() => {
-    guaranteedSaveToSupabase(trades[idx]).catch(e => console.warn('conf sync', e));
-  }, 400);
+  _detailConfTimer = setTimeout(() => guaranteedSaveToSupabase(trades[idx]).catch(e=>console.warn('conf sync',e)), 400);
 }
-
 let _detailNotesTimer = null;
 function saveDetailNotes(id, val) {
   const idx = trades.findIndex(x => x.id === id);
   if (idx === -1) return;
-  trades[idx].notes = val;
-  save();
+  trades[idx].notes = val; save();
   clearTimeout(_detailNotesTimer);
-  _detailNotesTimer = setTimeout(() => {
-    guaranteedSaveToSupabase(trades[idx]).catch(e => console.warn('notes sync', e));
-  }, 600);
+  _detailNotesTimer = setTimeout(() => guaranteedSaveToSupabase(trades[idx]).catch(e=>console.warn('notes sync',e)), 600);
 }
-
 function saveOverlayNotes(id, val) {
   const t = trades.find(x => x.id === id);
   if (!t) return;
@@ -15047,6 +15028,23 @@ function openPackDetail(packId, e, _autoTrades) {
   }
   if (!packTrades.length) return;
 
+  // Convert auto-pack to real pack synchronously so saves work immediately
+  if (packId.startsWith('_auto_')) {
+    const realPackId = uid();
+    const sym0 = packTrades[0].symbol, dir0 = packTrades[0].dir;
+    packTrades.forEach(t => {
+      const idx = trades.findIndex(x => x.id === t.id);
+      if (idx !== -1) { trades[idx].packId = realPackId; trades[idx].packName = sym0+' '+dir0; }
+    });
+    save();
+    packId = realPackId;
+    window._currentPackId = realPackId;
+    Promise.all(packTrades.map(t => {
+      const u = trades.find(x => x.id === t.id);
+      return u ? guaranteedSaveToSupabase(u) : Promise.resolve();
+    })).catch(e => console.warn('auto-pack sync',e));
+  }
+
   const sym        = getCurrencySymbol();
   const packName   = packTrades[0].packName || 'Group';
   const totalPnl   = packTrades.reduce((s,t) => s + getPnl(t), 0);
@@ -15157,33 +15155,26 @@ function openPackDetail(packId, e, _autoTrades) {
         <div style="display:flex;flex-direction:column;gap:6px;">${positionsHtml}</div>
       </div>
 
-      <!-- Mood: baked packId, instant save -->
-      <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:8px;">Mood</div>
-        <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);display:flex;flex-wrap:wrap;gap:5px;" id="pd-emo-wrap-${safeId}">
-          ${emotions.map(em => {
-            const active = packEmotion === em;
-            return `<span
+      <!-- Mood & Confidence — inline editable, live save -->
+      <div style="display:flex;gap:12px;margin-bottom:14px;">
+        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
+          <div class="detail-label" style="margin-bottom:8px;">Mood</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;" id="pd-emo-wrap-${safeId}">
+            ${emotions.map(em => `<span
               onclick="savePackField('${packId}','packEmotion','${em}').then(r=>{if(r&&r!=='${packId}')window._currentPackId=r});document.querySelectorAll('#pd-emo-wrap-${safeId} span').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
-              style="font-size:20px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${active?'2px solid var(--accent)':'none'};transform:${active?'scale(1.12)':'scale(1)'};">${em}</span>`;
-          }).join('')}
+              class="pd-emo-${safeId}"
+              style="font-size:20px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${packEmotion===em?'2px solid var(--accent)':'none'};transform:${packEmotion===em?'scale(1.12)':'scale(1)'};">${em}</span>`).join('')}
+          </div>
+        </div>
+        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
+          <div class="detail-label" style="margin-bottom:6px;">Confidence <span id="pd-conf-val-${safeId}" style="color:var(--accent);font-weight:700;">${packConfidence?packConfidence+'/10':''}</span></div>
+          <input type="range" min="1" max="10" value="${packConfidence||5}" style="width:100%;accent-color:var(--accent);margin-bottom:4px;"
+            oninput="document.getElementById('pd-conf-val-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',parseInt(this.value)).then(r=>{if(r&&r!=='${packId}')window._currentPackId=r})">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;"><span>Low</span><span>High</span></div>
         </div>
       </div>
 
-      <!-- Confidence: number pills, baked packId, instant save -->
-      <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:6px;">Confidence <span id="pd-conf-val-${safeId}" style="color:var(--accent);font-weight:700;">${packConfidence?packConfidence+'/10':''}</span></div>
-        <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);display:flex;gap:4px;flex-wrap:wrap;" id="pd-conf-wrap-${safeId}">
-          ${Array.from({length:10},(_,i)=>i+1).map(n => {
-            const active = n === (packConfidence||0);
-            return `<button type="button"
-              onclick="document.getElementById('pd-conf-val-${safeId}').textContent='${n}/10';document.querySelectorAll('#pd-conf-wrap-${safeId} button').forEach(b=>{b.style.background='var(--surface)';b.style.color='var(--muted)';b.style.borderColor='var(--border2)'});this.style.background='var(--accent)';this.style.color='#fff';this.style.borderColor='var(--accent)';savePackField('${packId}','packConfidence',${n}).then(r=>{if(r&&r!=='${packId}')window._currentPackId=r})"
-              style="width:26px;height:26px;border-radius:6px;border:1px solid ${active?'var(--accent)':'var(--border2)'};background:${active?'var(--accent)':'var(--surface)'};color:${active?'#fff':'var(--muted)'};font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;">${n}</button>`;
-          }).join('')}
-        </div>
-      </div>
-
-      <!-- Notes: baked packId, instant save -->
+      <!-- Notes — inline editable textarea, live save -->
       <div style="margin-bottom:14px;">
         <div class="detail-label" style="margin-bottom:6px;">Group Notes</div>
         <textarea id="pd-notes-${safeId}" placeholder="Setup idea, reasoning, confluences…"
@@ -15192,9 +15183,30 @@ function openPackDetail(packId, e, _autoTrades) {
           oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
       </div>
 
-      <!-- Chart Photo: stable wrapper, updated in-place -->
-      <div id="pd-photo-wrap-${safeId}" style="margin-bottom:14px;">
-        ${_renderPackPhotoBlock('${packId}','${safeId}',packPhoto)}
+      <!-- Chart Photo — inline drop/paste/click, live save -->
+      <div style="margin-bottom:14px;">
+        <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
+        <input type="file" id="pd-photo-input-${safeId}" accept="image/*" style="display:none;"
+          onchange="uploadPackPhotoAndRefresh(event,window._currentPackId)">
+        ${packPhoto
+          ? `<div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPackPhotoFullscreen(window._currentPackId)">
+               <img src="${packPhoto}" style="width:100%;display:block;border-radius:10px;">
+               <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
+                 <button onclick="event.stopPropagation();document.getElementById('pd-photo-input-${safeId}').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
+                 <button onclick="event.stopPropagation();savePackField(window._currentPackId,'packScreenshot',null).then(()=>openPackDetail(window._currentPackId))" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
+               </div>
+               <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
+             </div>`
+          : `<div onclick="document.getElementById('pd-photo-input-${safeId}').click()"
+               ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+               ondragleave="this.style.borderColor='var(--border2)'"
+               ondrop="event.preventDefault();uploadPackPhotoAndRefresh({target:{files:[event.dataTransfer.files[0]]}},window._currentPackId)"
+               style="border:2px dashed var(--border2);border-radius:10px;padding:24px 16px;text-align:center;color:var(--muted);font-size:12px;cursor:pointer;transition:border-color .15s;"
+               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
+               <div style="font-size:22px;margin-bottom:6px;">📸</div>
+               Click, drag &amp; drop, or <b style="color:var(--text2);">Ctrl+V</b> to paste chart screenshot
+             </div>`
+        }
       </div>
 
     </div>`;
@@ -15726,24 +15738,20 @@ showTradeDetail = function(id) {
 
 // Upload photo from pack detail panel and refresh the panel
 function _renderPackPhotoBlock(packId, safeId, photo) {
-  if (photo) {
-    return `
-      <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
-      <input type="file" id="pd-photo-input-${safeId}" accept="image/*" style="display:none;"
-        onchange="uploadPackPhotoAndRefresh(event,'${packId}')">
-      <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPackPhotoFullscreen('${packId}')">
-        <img src="${photo}" style="width:100%;display:block;border-radius:10px;">
-        <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
-          <button onclick="event.stopPropagation();document.getElementById('pd-photo-input-${safeId}').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
-          <button onclick="event.stopPropagation();removePackPhoto('${packId}','${safeId}')" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
-        </div>
-        <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
-      </div>`;
-  }
+  if (photo) return `
+    <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
+    <input type="file" id="pd-photo-input-${safeId}" accept="image/*" style="display:none;" onchange="uploadPackPhotoAndRefresh(event,'${packId}')">
+    <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPackPhotoFullscreen('${packId}')">
+      <img src="${photo}" style="width:100%;display:block;border-radius:10px;">
+      <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
+        <button onclick="event.stopPropagation();document.getElementById('pd-photo-input-${safeId}').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
+        <button onclick="event.stopPropagation();removePackPhoto('${packId}','${safeId}')" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
+      </div>
+      <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
+    </div>`;
   return `
     <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
-    <input type="file" id="pd-photo-input-${safeId}" accept="image/*" style="display:none;"
-      onchange="uploadPackPhotoAndRefresh(event,'${packId}')">
+    <input type="file" id="pd-photo-input-${safeId}" accept="image/*" style="display:none;" onchange="uploadPackPhotoAndRefresh(event,'${packId}')">
     <div onclick="document.getElementById('pd-photo-input-${safeId}').click()"
       ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
       ondragleave="this.style.borderColor='var(--border2)'"
@@ -15755,49 +15763,39 @@ function _renderPackPhotoBlock(packId, safeId, photo) {
       Click, drag &amp; drop, or <b style="color:var(--text2);">Ctrl+V</b> to paste chart screenshot
     </div>`;
 }
-
 function handlePackPhotoPaste(event, packId, safeId) {
   const items = event.clipboardData && event.clipboardData.items;
   if (!items) return;
   for (const item of items) {
-    if (item.type.startsWith('image/')) {
-      event.preventDefault();
-      uploadPackPhotoAndRefresh({ target: { files: [item.getAsFile()] } }, packId);
-      return;
-    }
+    if (item.type.startsWith('image/')) { event.preventDefault(); uploadPackPhotoAndRefresh({target:{files:[item.getAsFile()]}},packId); return; }
   }
 }
-
 async function removePackPhoto(packId, safeId) {
   try {
-    const realId = await savePackField(packId, 'packScreenshot', null);
-    const targetId = realId || packId;
-    const targetSafe = targetId.replace(/[^a-zA-Z0-9_-]/g,'_');
-    window._currentPackId = targetId;
-    const wrap = document.getElementById('pd-photo-wrap-' + safeId) || document.getElementById('pd-photo-wrap-' + targetSafe);
-    if (wrap) { wrap.id = 'pd-photo-wrap-' + targetSafe; wrap.innerHTML = _renderPackPhotoBlock(targetId, targetSafe, null); }
-    toast('Photo removed', '');
-  } catch(e) { console.error('removePackPhoto failed', e); }
+    const realId = await savePackField(packId,'packScreenshot',null);
+    const tid=realId||packId, ts=tid.replace(/[^a-zA-Z0-9_-]/g,'_');
+    window._currentPackId=tid;
+    const wrap=document.getElementById('pd-photo-wrap-'+safeId)||document.getElementById('pd-photo-wrap-'+ts);
+    if(wrap){wrap.id='pd-photo-wrap-'+ts;wrap.innerHTML=_renderPackPhotoBlock(tid,ts,null);}
+    toast('Photo removed','');
+  } catch(e){console.error('removePackPhoto',e);}
 }
-
 function uploadPackPhotoAndRefresh(event, packId) {
-  const file = event.target?.files?.[0] || event;
-  if (!file || !(file instanceof File)) return;
+  const file = event.target?.files?.[0]||event;
+  if (!file||!(file instanceof File)) return;
   const safeId = packId.replace(/[^a-zA-Z0-9_-]/g,'_');
   _processImageHighQuality(file, async dataUrl => {
     try {
-      const realPackId = await savePackField(packId, 'packScreenshot', dataUrl);
-      const targetId   = realPackId || packId;
-      const targetSafe = targetId.replace(/[^a-zA-Z0-9_-]/g,'_');
-      window._currentPackId = targetId;
-      // Update only the photo block — never re-render the whole panel
-      const wrap = document.getElementById('pd-photo-wrap-' + safeId) || document.getElementById('pd-photo-wrap-' + targetSafe);
-      if (wrap) { wrap.id = 'pd-photo-wrap-' + targetSafe; wrap.innerHTML = _renderPackPhotoBlock(targetId, targetSafe, dataUrl); }
-      if (window._pePackId === packId || window._pePackId === targetId) { window._pePackId = targetId; openPackEditMode(targetId); }
-      const ov = document.getElementById('trade-detail-overlay');
-      if (ov && ov.style.display === 'flex') openPackOverlay(targetId);
-      toast('📸 Photo saved', 'success');
-    } catch(err) { console.error('TradeLog: pack photo save failed', err); toast('❌ Photo save failed', 'error'); }
+      const realPackId = await savePackField(packId,'packScreenshot',dataUrl);
+      const tid=realPackId||packId, ts=tid.replace(/[^a-zA-Z0-9_-]/g,'_');
+      window._currentPackId=tid;
+      const wrap=document.getElementById('pd-photo-wrap-'+safeId)||document.getElementById('pd-photo-wrap-'+ts);
+      if(wrap){wrap.id='pd-photo-wrap-'+ts;wrap.innerHTML=_renderPackPhotoBlock(tid,ts,dataUrl);}
+      if(window._pePackId===packId||window._pePackId===tid){window._pePackId=tid;openPackEditMode(tid);}
+      const ov=document.getElementById('trade-detail-overlay');
+      if(ov&&ov.style.display==='flex') openPackOverlay(tid);
+      toast('📸 Photo saved','success');
+    } catch(err){console.error('pack photo',err);toast('❌ Photo save failed','error');}
   });
 }
 
