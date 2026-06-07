@@ -5739,9 +5739,10 @@ function scheduleMidnightRefresh() {
 }
 
 function _clearAllUserLocalStorage() {
-  [KEY, MINDSET_KEY, JOURNAL_KEY, TAGS_KEY, GOALS_KEY, PROFILE_KEY,
-   BAL_KEY, CUR_KEY, NOTEBOOKS_KEY, EVENTS_KEY, PLAYBOOK_KEY,
-   CHECKLIST_KEY, RULES_KEY, _AUTO_BE_KEY,
+  ['tradelog_v1', 'tradelog_mindset_v2', 'tradelog_journal', 'tradelog_custom_tags',
+   'tradelog_goals', 'tradelog_profile', 'tradelog_balance', 'tradelog_currency',
+   'tradelog_notebooks', 'tradelog_events', 'tradelog_playbook',
+   'tradelog_checklist', 'tradelog_rules_v2', 'tradelog_auto_be_active',
    'tradelog_last_uid'
   ].forEach(k => localStorage.removeItem(k));
 }
