@@ -676,7 +676,11 @@
   /* ── PAGE sections ── */
   .page { display:none !important; }
   .page.active { display:block !important; }
-  #page-trades.active     { display:flex !important; flex-direction:column; height:100%; overflow:hidden; }
+  #page-trades.active     { display:flex !important; flex-direction:column; height:100%; overflow:visible; }
+  /* Filter bar must float above the scrollable trades panel */
+  #page-trades .trades-filter-bar { position:relative; z-index:100; }
+  /* Trades panel scrolls internally and sits below the filter bar */
+  #trades-grid { position:relative; z-index:1; overflow:hidden; }
   #page-calendar.active   { display:flex !important; flex-direction:column; gap:12px; overflow:hidden; height:100%; }
   #page-mindset.active    { display:flex !important; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
   #page-notebooks.active  { display:flex !important; flex-direction:column; height:100%; overflow:hidden; }
@@ -2866,7 +2870,7 @@
       </div>
 
       <!-- Row 2: Search + segmented timeframe + filters + add (all one bar) -->
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:visible;position:relative;z-index:10;">
+      <div class="trades-filter-bar" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:visible;position:relative;z-index:100;">
 
         <!-- Search — grows to fill -->
         <div style="position:relative;flex:1;min-width:0;">
@@ -3010,7 +3014,7 @@
 
 
     <!-- Table + Detail: fills all remaining height -->
-    <div id="trades-grid" style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden;">
+    <div id="trades-grid" style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden;position:relative;z-index:1;">
       <div class="panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;flex:1;min-width:0;">
         <!-- Mobile scroll hint — hidden on desktop via CSS -->
         <div id="trades-scroll-hint" style="display:none;align-items:center;justify-content:center;gap:5px;padding:5px 12px;background:rgba(99,102,241,.07);border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);font-weight:600;transition:opacity .6s ease,max-height .6s ease,padding .6s ease;overflow:hidden;max-height:40px;">
