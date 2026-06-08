@@ -2,9 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <style>
   html, body {
@@ -679,11 +676,7 @@
   /* ── PAGE sections ── */
   .page { display:none !important; }
   .page.active { display:block !important; }
-  #page-trades.active     { display:flex !important; flex-direction:column; height:100%; overflow:visible; }
-  /* Filter bar must float above the scrollable trades panel */
-  #page-trades .trades-filter-bar { position:relative; z-index:100; }
-  /* Trades panel scrolls internally and sits below the filter bar */
-  #trades-grid { position:relative; z-index:1; overflow:hidden; }
+  #page-trades.active     { display:flex !important; flex-direction:column; height:100%; overflow:hidden; }
   #page-calendar.active   { display:flex !important; flex-direction:column; gap:12px; overflow:hidden; height:100%; }
   #page-mindset.active    { display:flex !important; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
   #page-notebooks.active  { display:flex !important; flex-direction:column; height:100%; overflow:hidden; }
@@ -860,10 +853,7 @@
   }
   .cal-cell.empty { cursor: default; background: transparent !important; border-radius: 10px; }
   .cal-cell:not(.empty):hover { background: var(--surface2); }
-  .cal-cell.selected-day               { outline: 3px solid var(--accent) !important; outline-offset: -2px; border-radius: 10px; }
-  .cal-cell.selected-day.has-win       { outline-color: var(--green) !important; }
-  .cal-cell.selected-day.has-loss      { outline-color: var(--red) !important; }
-  .cal-cell.selected-day.has-be        { outline-color: var(--yellow) !important; }
+  .cal-cell.selected-day { outline: 2px solid var(--accent) !important; outline-offset: -2px; border-radius: 10px; }
   .cal-cell.weekend-cell { /* opacity handled inline */ }
   .cal-cell.today { outline: none; border-radius: 10px; }
   /* Today with no trades keeps surface bg */
@@ -953,8 +943,8 @@
   .cal-cell.today.has-loss .cal-day-num { color: #fff; }
 
   .cal-pnl {
-    font-size: 18px; font-weight: 900;
-    letter-spacing: -0.8px; line-height: 1;
+    font-size: 15px; font-weight: 900;
+    letter-spacing: -0.5px; line-height: 1;
     text-align: center;
   }
   .cal-pnl.pos { color: var(--green); }
@@ -1610,7 +1600,7 @@
       top: 4px !important;
       left: 4px !important;
     }
-    .cal-pnl { font-size: 13px !important; letter-spacing: -0.4px !important; }
+    .cal-pnl { font-size: 11px !important; letter-spacing: -0.4px !important; }
     .cal-trades { font-size: 8px !important; bottom: 3px !important; }
     .cal-cell-bar { display: none !important; }
     /* DOW header: compact */
@@ -1865,7 +1855,18 @@
       border-bottom: 1px solid var(--border) !important;
     }
 
-
+    /* Scroll hint shadow on right edge */
+    #page-trades .panel > div:after {
+      content: '';
+      position: sticky;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 24px;
+      background: linear-gradient(to right, transparent, var(--surface));
+      pointer-events: none;
+      flex-shrink: 0;
+    }
 
     /* ── Pack rows on mobile: no text overflow, let table scroll ── */
     #page-trades .trades-table tr.pack-header-row td,
@@ -2873,7 +2874,7 @@
       </div>
 
       <!-- Row 2: Search + segmented timeframe + filters + add (all one bar) -->
-      <div class="trades-filter-bar" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:visible;position:relative;z-index:100;">
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:visible;position:relative;z-index:10;">
 
         <!-- Search — grows to fill -->
         <div style="position:relative;flex:1;min-width:0;">
@@ -3017,7 +3018,7 @@
 
 
     <!-- Table + Detail: fills all remaining height -->
-    <div id="trades-grid" style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden;position:relative;z-index:1;">
+    <div id="trades-grid" style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden;">
       <div class="panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;flex:1;min-width:0;">
         <!-- Mobile scroll hint — hidden on desktop via CSS -->
         <div id="trades-scroll-hint" style="display:none;align-items:center;justify-content:center;gap:5px;padding:5px 12px;background:rgba(99,102,241,.07);border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);font-weight:600;transition:opacity .6s ease,max-height .6s ease,padding .6s ease;overflow:hidden;max-height:40px;">
@@ -5597,14 +5598,11 @@ async function loadAllFromSupabase() {
       if (data.tags) {
         const t = typeof data.tags === 'string' ? JSON.parse(data.tags) : data.tags;
         localStorage.setItem(TAGS_KEY, JSON.stringify(t));
-      } else {
-        localStorage.setItem(TAGS_KEY, JSON.stringify([]));
       }
       if (data.notebooks !== undefined) {
         const nb = typeof data.notebooks === 'string' ? JSON.parse(data.notebooks) : (data.notebooks || []);
         localStorage.setItem(NOTEBOOKS_KEY, JSON.stringify(Array.isArray(nb) ? nb : []));
       } else {
-        // No notebooks in Supabase for this user — ensure we don't use another user's local data
         localStorage.setItem(NOTEBOOKS_KEY, JSON.stringify([]));
       }
       // Merge pack_meta back into trades (notes, photo, mindset, tags per pack)
@@ -5742,25 +5740,23 @@ function scheduleMidnightRefresh() {
 }
 
 function _clearAllUserLocalStorage() {
-  ['tradelog_v1', 'tradelog_mindset_v2', 'tradelog_journal', 'tradelog_custom_tags',
-   'tradelog_goals', 'tradelog_profile', 'tradelog_balance', 'tradelog_currency',
-   'tradelog_notebooks', 'tradelog_events', 'tradelog_playbook',
-   'tradelog_checklist', 'tradelog_rules_v2', 'tradelog_auto_be_active',
+  ['tradelog_v1','tradelog_mindset_v2','tradelog_journal','tradelog_custom_tags',
+   'tradelog_goals','tradelog_profile','tradelog_balance','tradelog_currency',
+   'tradelog_notebooks','tradelog_events','tradelog_playbook',
+   'tradelog_checklist','tradelog_rules_v2','tradelog_auto_be_active',
    'tradelog_last_uid'
-  ].forEach(k => localStorage.removeItem(k));
+  ].forEach(function(k){ localStorage.removeItem(k); });
 }
 
 async function initApp(user) {
   currentUser = user;
   _appInitialized = true;
-
-  // ── Cross-account isolation: if a different user logs in, wipe localStorage ──
-  const _lastUid = localStorage.getItem('tradelog_last_uid');
+  // Clear data if different user logs in on same browser
+  var _lastUid = localStorage.getItem('tradelog_last_uid');
   if (_lastUid && _lastUid !== user.id) {
-    console.log('TradeLog: different user detected — clearing local data for fresh load');
-    const _t = localStorage.getItem(THEME_KEY);
+    var _t = localStorage.getItem('tradelog_theme');
     _clearAllUserLocalStorage();
-    if (_t) localStorage.setItem(THEME_KEY, _t);
+    if (_t) localStorage.setItem('tradelog_theme', _t);
   }
   localStorage.setItem('tradelog_last_uid', user.id);
 
@@ -5805,16 +5801,16 @@ window.addEventListener('load', () => {
       balanceEvents = [];
       const _t = localStorage.getItem(THEME_KEY);
       _clearAllUserLocalStorage();
-      if (_t) localStorage.setItem(THEME_KEY, _t);
+      if (_t) localStorage.setItem('tradelog_theme', _t);
       showAuthScreen();
     } else if (event === 'SIGNED_OUT') {
       _appInitialized = false;
       currentUser = null;
       trades = [];
       balanceEvents = [];
-      const _t = localStorage.getItem(THEME_KEY);
+      const _t = localStorage.getItem('tradelog_theme');
       _clearAllUserLocalStorage();
-      if (_t) localStorage.setItem(THEME_KEY, _t);
+      if (_t) localStorage.setItem('tradelog_theme', _t);
       showAuthScreen();
     }
   });
@@ -6592,42 +6588,17 @@ function uploadTradePhoto(ev, id) {
   saveTradePhoto(file, id);
 }
 
-function _renderDetailPhotoBlock(t) {
-  var btnReplace = '<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="document.getElementById('detail-photo-input').click()">' + (t.screenshot ? '🔄 Replace' : '📸 Add Photo') + '</button>';
-  var btnRemove  = t.screenshot ? '<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);" onclick="removeTradePhoto(\'' + t.id + '\')">Remove</button>' : '';
-  var fileInput  = '<input type="file" id="detail-photo-input" accept="image/*" style="display:none;" onchange="uploadTradePhoto(event,\'' + t.id + '\')">';
-  var photoBody  = t.screenshot
-    ? ('<div style="cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPhotoLightbox(\'' + t.id + '\')">'
-      + '<img src="' + t.screenshot + '" style="width:100%;display:block;border-radius:10px;">'
-      + '<div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div></div>')
-    : ('<div tabindex="0" onclick="document.getElementById('detail-photo-input').click()"'
-      + ' onpaste="handlePhotoZonePaste(event,\'' + t.id + '\')"'
-      + ' ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"'
-      + ' ondragleave="this.style.borderColor='var(--border2)'"'
-      + ' ondrop="handlePhotoZoneDrop(event,\'' + t.id + '\')"'
-      + ' style="border:2px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;outline:none;"'
-      + ' onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">'
-      + '<div style="font-size:24px;margin-bottom:6px;">📸</div>'
-      + '<div style="font-size:12px;color:var(--muted);">Click, drag & drop, or paste a screenshot</div></div>');
-  return ('<div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">'
-    + '<div class="detail-label">Chart Photo</div>'
-    + '<div style="display:flex;gap:6px;">' + btnReplace + btnRemove + '</div>'
-    + '</div>' + fileInput + photoBody);
-}
-
-
 function saveTradePhoto(file, id) {
   if (!file || !file.type.startsWith('image/')) return;
   _processImageHighQuality(file, async dataUrl => {
     const idx = trades.findIndex(t => t.id === id);
     if (idx === -1) return;
-    trades[idx].screenshot = dataUrl; save();
-    const wrap = document.getElementById('dp-photo-wrap');
-    if (wrap) wrap.innerHTML = _renderDetailPhotoBlock(trades[idx]);
-    else showTradeDetail(id);
+    trades[idx].screenshot = dataUrl;
+    save();
+    showTradeDetail(id);
     if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
-    toast('📸 Photo saved','success');
-    try { await guaranteedSaveToSupabase(trades[idx]); } catch(e) { console.error('photo sync',e); }
+    toast('📸 Photo saved', 'success');
+    try { await guaranteedSaveToSupabase(trades[idx]); } catch(err) { console.error('TradeLog: photo sync failed', err); }
   });
 }
 
@@ -6655,13 +6626,12 @@ function handlePhotoZoneDrop(ev, id) {
 async function removeTradePhoto(id) {
   const idx = trades.findIndex(t => t.id === id);
   if (idx === -1) return;
-  trades[idx].screenshot = null; save();
-  const wrap = document.getElementById('dp-photo-wrap');
-  if (wrap) wrap.innerHTML = _renderDetailPhotoBlock(trades[idx]);
-  else showTradeDetail(id);
+  trades[idx].screenshot = null;
+  save();
+  showTradeDetail(id);
   if (document.getElementById('trade-detail-overlay').style.display === 'flex') openDetailOverlay();
-  toast('Photo removed','');
-  try { await guaranteedSaveToSupabase(trades[idx]); } catch(e) { console.error('photo remove',e); }
+  toast('Photo removed', '');
+  try { await guaranteedSaveToSupabase(trades[idx]); } catch(err) { console.error('TradeLog: photo remove sync failed', err); }
 }
 
 function openPhotoLightbox(id) {
@@ -7715,9 +7685,9 @@ function renderTrades(skipTagRebuild) {
   if (tradesRange === 'today') {
     fromStr = todayStr; toStr = todayStr;
   } else if (tradesRange === 'week') {
-    // Sunday of current week
+    // Monday of current week
     const mon = new Date(now);
-    mon.setDate(now.getDate() - now.getDay());
+    mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
     fromStr = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
     toStr = todayStr;
   } else if (tradesRange === 'month') {
@@ -8263,27 +8233,61 @@ function showTradeDetail(id) {
         <div id="detail-tag-editor">${renderDetailTagsHTML(t.id)}</div>
       </div>
 
-      <!-- Mood: editable, instant save -->
-      <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:6px;">Mood</div>
-        <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;display:flex;flex-wrap:wrap;gap:5px;" id="dp-emo-wrap">
-          ${['😌 Calm','🔥 Excited','😰 Anxious','😤 FOMO','😠 Revenge','🧠 Focused'].map(e=>{const active=e===(t.emotion||'');return `<span onclick="saveDetailEmotion('${t.id}','${e}');document.querySelectorAll('#dp-emo-wrap span').forEach(b=>{b.style.borderColor='var(--border2)';b.style.background='var(--surface)';b.style.color='var(--text2)'});this.style.borderColor='var(--accent)';this.style.background='rgba(99,102,241,.15)';this.style.color='var(--accent)'" style="padding:4px 9px;border-radius:16px;font-size:11px;cursor:pointer;border:1px solid ${active?'var(--accent)':'var(--border2)'};background:${active?'rgba(99,102,241,.15)':'var(--surface)'};color:${active?'var(--accent)':'var(--text2)'};transition:all .15s;">${e}</span>`;}).join('')}
+      <!-- Mood & Confidence: always both slots -->
+      <div style="display:flex;gap:12px;margin-bottom:14px;">
+        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
+          <div class="detail-label" style="margin-bottom:6px;">Mood</div>
+          <div style="font-size:22px;">${t.emotion || '—'}</div>
+        </div>
+        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
+          <div class="detail-label" style="margin-bottom:6px;">Confidence</div>
+          <div style="font-size:18px;font-weight:800;color:${t.confidence ? 'var(--accent)' : 'var(--muted)'};">
+            ${t.confidence ? `${t.confidence}<span style="font-size:11px;color:var(--muted);font-weight:600;">/10</span>` : '—'}
+          </div>
         </div>
       </div>
-      <!-- Confidence: number pills, instant save -->
-      <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:6px;">Confidence <span id="dp-conf-label" style="color:var(--accent);font-weight:700;">${t.confidence?t.confidence+'/10':''}</span></div>
-        <div style="background:var(--surface2);border-radius:10px;padding:10px 14px;display:flex;gap:4px;flex-wrap:wrap;" id="dp-conf-wrap">
-          ${Array.from({length:10},(_,i)=>i+1).map(n=>{const active=n===(t.confidence||0);return `<button type="button" onclick="document.getElementById('dp-conf-label').textContent='${n}/10';document.querySelectorAll('#dp-conf-wrap button').forEach(b=>{b.style.background='var(--surface)';b.style.color='var(--muted)';b.style.borderColor='var(--border2)'});this.style.background='var(--accent)';this.style.color='#fff';this.style.borderColor='var(--accent)';saveDetailConfidence('${t.id}',${n})" style="width:26px;height:26px;border-radius:6px;border:1px solid ${active?'var(--accent)':'var(--border2)'};background:${active?'var(--accent)':'var(--surface)'};color:${active?'#fff':'var(--muted)'};font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;">${n}</button>`;}).join('')}
-        </div>
-      </div>
-      <!-- Notes: editable textarea, instant save -->
+
+      <!-- Notes: always visible -->
       <div style="margin-bottom:14px;">
         <div class="detail-label" style="margin-bottom:6px;">Notes</div>
-        <textarea id="dp-notes-ta" placeholder="Add trade notes…" style="width:100%;min-height:80px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" oninput="saveDetailNotes('${t.id}',this.value)">${(t.notes||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+        <div class="notes-hover-wrap">
+          <div style="font-size:12px;line-height:1.7;color:${t.notes?'var(--text2)':'var(--muted)'};background:var(--surface2);padding:12px;border-radius:10px;${t.notes?'border-left:3px solid var(--accent);':'border-left:3px solid var(--border2);'}">
+            <div class="notes-clamp">${t.notes || 'No notes added.'}</div>
+          </div>
+          ${t.notes ? `<div class="notes-popup">${t.notes.replace(/</g,'&lt;')}</div>` : ''}
+        </div>
       </div>
-            <!-- Chart Photo: stable wrapper, updated in-place -->
-      <div id="dp-photo-wrap" style="margin-bottom:14px;">${_renderDetailPhotoBlock(t)}</div>
+
+      <!-- Chart Photo: always visible -->
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="detail-label">Chart Photo</div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="document.getElementById('detail-photo-input').click()">
+              ${t.screenshot ? '🔄 Replace' : '📸 Add Photo'}
+            </button>
+            ${t.screenshot ? `<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);" onclick="removeTradePhoto('${t.id}')">Remove</button>` : ''}
+          </div>
+        </div>
+        <input type="file" id="detail-photo-input" accept="image/*" style="display:none;" onchange="uploadTradePhoto(event,'${t.id}')">
+        ${t.screenshot
+          ? `<div style="cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPhotoLightbox('${t.id}')">
+               <img src="${t.screenshot}" alt="chart" style="width:100%;display:block;border-radius:10px;">
+               <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
+             </div>`
+          : `<div tabindex="0" data-photo-id="${t.id}"
+               onclick="document.getElementById('detail-photo-input').click()"
+               onpaste="handlePhotoZonePaste(event,'${t.id}')"
+               ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+               ondragleave="this.style.borderColor='var(--border2)'"
+               ondrop="handlePhotoZoneDrop(event,'${t.id}')"
+               style="border:2px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;outline:none;"
+               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
+               <div style="font-size:24px;margin-bottom:6px;">📸</div>
+               <div style="font-size:12px;color:var(--muted);">Click, drag & drop, or paste a screenshot</div>
+             </div>`
+        }
+      </div>
 
     </div>
   `;
@@ -8487,26 +8491,6 @@ function openDetailOverlay() {
 }
 
 let _overlayNotesTimer = null;
-
-function saveDetailEmotion(id, val) {
-  const idx = trades.findIndex(x => x.id === id); if (idx===-1) return;
-  trades[idx].emotion = val; save();
-  guaranteedSaveToSupabase(trades[idx]).catch(e=>console.warn('emo sync',e));
-}
-let _detailConfTimer=null;
-function saveDetailConfidence(id, val) {
-  const idx = trades.findIndex(x => x.id === id); if (idx===-1) return;
-  trades[idx].confidence = val; save();
-  clearTimeout(_detailConfTimer);
-  _detailConfTimer=setTimeout(()=>guaranteedSaveToSupabase(trades[idx]).catch(e=>console.warn('conf sync',e)),400);
-}
-let _detailNotesTimer=null;
-function saveDetailNotes(id, val) {
-  const idx = trades.findIndex(x => x.id === id); if (idx===-1) return;
-  trades[idx].notes = val; save();
-  clearTimeout(_detailNotesTimer);
-  _detailNotesTimer=setTimeout(()=>guaranteedSaveToSupabase(trades[idx]).catch(e=>console.warn('notes sync',e)),600);
-}
 function saveOverlayNotes(id, val) {
   const t = trades.find(x => x.id === id);
   if (!t) return;
@@ -9249,10 +9233,10 @@ function renderAnalytics() {
   const syms = Object.entries(symMap).sort((a,b)=>b[1]-a[1]);
   mkChart('symbol-chart','bar',{labels:syms.map(s=>s[0]),datasets:[{data:syms.map(s=>+s[1].toFixed(2)),backgroundColor:syms.map(s=>s[1]>=0?G:R),borderColor:syms.map(s=>s[1]>=0?GB:RB),borderWidth:1,borderRadius:6}]},chartOpts);
 
-  // By Day of Week — Sunday=0
-  const dowLabels=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  // By Day of Week
+  const dowLabels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const dowMap={0:0,1:0,2:0,3:0,4:0,5:0,6:0};
-  trades.forEach(t=>{ const d=new Date(t.date); if(!isNaN(d)){const dow=d.getDay(); dowMap[dow]+=getPnl(t); // 0=Sun} });
+  trades.forEach(t=>{ const d=new Date(t.date); if(!isNaN(d)){const dow=(d.getDay()+6)%7; dowMap[dow]+=getPnl(t);} });
   const dowVals = Object.values(dowMap).map(v=>+v.toFixed(2));
   mkChart('dow-chart','bar',{labels:dowLabels,datasets:[{data:dowVals,backgroundColor:dowVals.map(v=>v>=0?G:R),borderColor:dowVals.map(v=>v>=0?GB:RB),borderWidth:1,borderRadius:6}]},chartOpts);
 
@@ -10820,7 +10804,7 @@ function renderCalendar() {
   // ── WEEK VIEW ──
   if (calView === 'week') {
     if (window.calWeekOffset === undefined) window.calWeekOffset = 0;
-    const dow = today.getDay(); // 0=Sun, 6=Sat — week starts Sunday
+    const dow = (today.getDay() + 6) % 7;
     const weekStart = new Date(today);
     weekStart.setHours(0,0,0,0);
     weekStart.setDate(today.getDate() - dow + window.calWeekOffset * 7);
@@ -10840,7 +10824,7 @@ function renderCalendar() {
     }
     const weekPnlColor = weekPnl >= 0 ? 'var(--green)' : 'var(--red)';
 
-    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     let html = '<div style="display:flex;flex-direction:column;height:100%;overflow-y:auto;">';
     // Summary row at top
     html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface2);">';
@@ -11126,6 +11110,11 @@ function renderCalendar() {
         else                   pnlStr = sign + sym + abs.toFixed(2);
         inner += '<div class="cal-pnl ' + pnlClass + '">' + pnlStr + '</div>';
         inner += '<div class="cal-trades">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
+        // Mood emoji from any trade on this day
+        const dayMoods = [...new Set((trades||[]).filter(t=>(t.date||'').slice(0,10)===dateStr && t.emotion).map(t=>t.emotion))];
+        if (dayMoods.length) {
+          inner += '<div style="font-size:9px;line-height:1;margin-top:1px;opacity:0.85;">' + dayMoods.slice(0,2).join('') + '</div>';
+        }
         inner += '<div class="cal-cell-bar ' + pnlClass + '"></div>';
       } else if (hasBEevt) {
         // Only balance event on this day — show the amount
@@ -11232,7 +11221,7 @@ function renderHeatmap() {
   for (var mo = 0; mo < 12; mo++) {
     var firstDay = new Date(heatmapYear, mo, 1);
     var lastDay  = new Date(heatmapYear, mo+1, 0);
-    var startDow = firstDay.getDay(); // 0=Sun — week starts Sunday
+    var startDow = (firstDay.getDay()+6)%7;
     var weeks = [];
     var cur = new Date(firstDay);
     cur.setDate(cur.getDate() - startDow);
@@ -11481,8 +11470,8 @@ function renderGoals() {
   const dailyTrades = trades.filter(t => tradeDate(t) === todayStr);
   const dailyPnl = dailyTrades.reduce((s,t) => s + getPnl(t), 0);
 
-  // Weekly (Sun–Sat of current week)
-  const dow2 = now.getDay(); // 0=Sun
+  // Weekly (Mon–Sun of current week)
+  const dow2 = (now.getDay() + 6) % 7;
   const weekStart2 = new Date(now); weekStart2.setHours(0,0,0,0); weekStart2.setDate(now.getDate() - dow2);
   const weekEnd2 = new Date(weekStart2); weekEnd2.setDate(weekStart2.getDate() + 6); weekEnd2.setHours(23,59,59,999);
   const weeklyPnl = trades.filter(t => {
@@ -12493,7 +12482,7 @@ function _getShareTrades(tf) {
     return trades.filter(t => (t.date||'').slice(0,10) === todayStr);
   }
   if (tf === 'week') {
-    const mon = new Date(now); mon.setDate(now.getDate() - now.getDay()); mon.setHours(0,0,0,0);
+    const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7)); mon.setHours(0,0,0,0);
     const monStr = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
     return trades.filter(t => (t.date||'').slice(0,10) >= monStr && (t.date||'').slice(0,10) <= todayStr);
   }
@@ -12514,8 +12503,8 @@ function _getShareLabel(tf) {
     return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
   }
   if (tf === 'week') {
-    const mon = new Date(now); mon.setDate(now.getDate() - now.getDay());
-    const sat = new Date(mon); sat.setDate(mon.getDate() + 6);
+    const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7));
+    const fri = new Date(mon); fri.setDate(mon.getDate() + 4);
     return `Week of ${mon.getDate()} ${months[mon.getMonth()]}`;
   }
   if (tf === 'month') {
@@ -13473,9 +13462,9 @@ function insertDailyRecap() {
 function insertWeeklySummary() {
   const ta = document.getElementById('ne-content');
   const today = new Date();
-  const sunday = new Date(today); sunday.setDate(today.getDate() - today.getDay());
-  const saturday = new Date(sunday); saturday.setDate(sunday.getDate() + 6);
-  const weekStr = `${sunday.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} – ${saturday.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`;
+  const monday = new Date(today); monday.setDate(today.getDate() - today.getDay() + 1);
+  const friday = new Date(monday); friday.setDate(monday.getDate() + 4);
+  const weekStr = `${monday.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} – ${friday.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`;
   const template = `# Weekly Summary — ${weekStr}
 
 ## 📊 Performance overview
@@ -14726,7 +14715,7 @@ renderTrades = function(skipTagRebuild) {
   let fromStr = '', toStr = '';
   if (tradesRange === 'today')  { fromStr = todayStr; toStr = todayStr; }
   else if (tradesRange === 'week') {
-    const mon = new Date(now); mon.setDate(now.getDate() - now.getDay());
+    const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
     fromStr = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
     toStr = todayStr;
   }
@@ -15020,23 +15009,6 @@ function openPackDetail(packId, e, _autoTrades) {
   }
   if (!packTrades.length) return;
 
-  // Convert auto-pack synchronously so all saves work on first interaction
-  if (packId.startsWith('_auto_')) {
-    const _realId = uid();
-    const _s = packTrades[0].symbol, _d = packTrades[0].dir;
-    packTrades.forEach(t => {
-      const i = trades.findIndex(x => x.id === t.id);
-      if (i !== -1) { trades[i].packId = _realId; trades[i].packName = _s+' '+_d; }
-    });
-    save();
-    packId = _realId;
-    window._currentPackId = _realId;
-    Promise.all(packTrades.map(t => {
-      const u = trades.find(x => x.id === t.id);
-      return u ? guaranteedSaveToSupabase(u) : Promise.resolve();
-    })).catch(e => console.warn('auto-pack eager sync',e));
-  }
-
   const sym        = getCurrencySymbol();
   const packName   = packTrades[0].packName || 'Group';
   const totalPnl   = packTrades.reduce((s,t) => s + getPnl(t), 0);
@@ -15153,7 +15125,7 @@ function openPackDetail(packId, e, _autoTrades) {
           <div class="detail-label" style="margin-bottom:8px;">Mood</div>
           <div style="display:flex;flex-wrap:wrap;gap:5px;" id="pd-emo-wrap-${safeId}">
             ${emotions.map(em => `<span
-              onclick="savePackField('${packId}','packEmotion','${em}').then(r=>{if(r&&r!=='${packId}')window._currentPackId=r});document.querySelectorAll('#pd-emo-wrap-${safeId} span').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
+              onclick="savePackField(window._currentPackId,'packEmotion','${em}');document.querySelectorAll('.pd-emo-${safeId}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
               class="pd-emo-${safeId}"
               style="font-size:20px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${packEmotion===em?'2px solid var(--accent)':'none'};transform:${packEmotion===em?'scale(1.12)':'scale(1)'};">${em}</span>`).join('')}
           </div>
@@ -15161,7 +15133,7 @@ function openPackDetail(packId, e, _autoTrades) {
         <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
           <div class="detail-label" style="margin-bottom:6px;">Confidence <span id="pd-conf-val-${safeId}" style="color:var(--accent);font-weight:700;">${packConfidence?packConfidence+'/10':''}</span></div>
           <input type="range" min="1" max="10" value="${packConfidence||5}" style="width:100%;accent-color:var(--accent);margin-bottom:4px;"
-            oninput="document.getElementById('pd-conf-val-${safeId}').textContent=this.value+'/10';savePackField('${packId}','packConfidence',parseInt(this.value)).then(r=>{if(r&&r!=='${packId}')window._currentPackId=r})">
+            oninput="document.getElementById('pd-conf-val-${safeId}').textContent=this.value+'/10';savePackField(window._currentPackId,'packConfidence',parseInt(this.value))">
           <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;"><span>Low</span><span>High</span></div>
         </div>
       </div>
@@ -15172,19 +15144,39 @@ function openPackDetail(packId, e, _autoTrades) {
         <textarea id="pd-notes-${safeId}" placeholder="Setup idea, reasoning, confluences…"
           style="width:100%;min-height:90px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-          oninput="savePackNoteDebounced('${packId}',this.value)">${packNotes}</textarea>
+          oninput="savePackNoteDebounced(window._currentPackId,this.value)">${packNotes}</textarea>
       </div>
 
-      <!-- Chart Photo: stable wrapper, updated in-place so other fields aren't wiped -->
-      <div id="pd-photo-wrap-${safeId}" style="margin-bottom:14px;">
-        ${_renderPackPhotoBlock('${packId}','${safeId}',packPhoto)}
+      <!-- Chart Photo — inline drop/paste/click, live save -->
+      <div style="margin-bottom:14px;">
+        <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
+        <input type="file" id="pd-photo-input-${safeId}" accept="image/*" style="display:none;"
+          onchange="uploadPackPhotoAndRefresh(event,window._currentPackId)">
+        ${packPhoto
+          ? `<div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPackPhotoFullscreen(window._currentPackId)">
+               <img src="${packPhoto}" style="width:100%;display:block;border-radius:10px;">
+               <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
+                 <button onclick="event.stopPropagation();document.getElementById('pd-photo-input-${safeId}').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
+                 <button onclick="event.stopPropagation();savePackField(window._currentPackId,'packScreenshot',null).then(()=>openPackDetail(window._currentPackId))" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
+               </div>
+               <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
+             </div>`
+          : `<div onclick="document.getElementById('pd-photo-input-${safeId}').click()"
+               ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+               ondragleave="this.style.borderColor='var(--border2)'"
+               ondrop="event.preventDefault();uploadPackPhotoAndRefresh({target:{files:[event.dataTransfer.files[0]]}},window._currentPackId)"
+               style="border:2px dashed var(--border2);border-radius:10px;padding:24px 16px;text-align:center;color:var(--muted);font-size:12px;cursor:pointer;transition:border-color .15s;"
+               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
+               <div style="font-size:22px;margin-bottom:6px;">📸</div>
+               Click, drag &amp; drop, or <b style="color:var(--text2);">Ctrl+V</b> to paste chart screenshot
+             </div>`
+        }
       </div>
 
     </div>`;
 
   // ── Render into right side panel (desktop) or bottom sheet (mobile) ──
   if (window.innerWidth <= 768) {
-    window._currentPackId = packId;
     document.getElementById('mobile-sheet-title').innerHTML = `<span style="font-size:13px;">📦</span> ${packName}`;
     document.getElementById('mobile-sheet-body').innerHTML = html;
     document.getElementById('mobile-trade-sheet').style.display = 'flex';
@@ -15708,56 +15700,31 @@ showTradeDetail = function(id) {
 };
 
 // Upload photo from pack detail panel and refresh the panel
-function _renderPackPhotoBlock(packId, safeId, photo) {
-  if (photo) return `
-    <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
-    <input type="file" id="pd-photo-input-${safeId}" accept="image/*" style="display:none;" onchange="uploadPackPhotoAndRefresh(event,'${packId}')">
-    <div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPackPhotoFullscreen('${packId}')">
-      <img src="${photo}" style="width:100%;display:block;border-radius:10px;">
-      <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
-        <button onclick="event.stopPropagation();document.getElementById('pd-photo-input-${safeId}').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
-        <button onclick="event.stopPropagation();_removePackPhoto('${packId}','${safeId}')" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
-      </div>
-      <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
-    </div>`;
-  return `
-    <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
-    <input type="file" id="pd-photo-input-${safeId}" accept="image/*" style="display:none;" onchange="uploadPackPhotoAndRefresh(event,'${packId}')">
-    <div onclick="document.getElementById('pd-photo-input-${safeId}').click()"
-      ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-      ondragleave="this.style.borderColor='var(--border2)'"
-      ondrop="event.preventDefault();uploadPackPhotoAndRefresh({target:{files:[event.dataTransfer.files[0]]}},'${packId}')"
-      style="border:2px dashed var(--border2);border-radius:10px;padding:24px 16px;text-align:center;color:var(--muted);font-size:12px;cursor:pointer;transition:border-color .15s;"
-      onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
-      <div style="font-size:22px;margin-bottom:6px;">📸</div>
-      Click, drag &amp; drop, or <b style="color:var(--text2);">Ctrl+V</b> to paste chart screenshot
-    </div>`;
-}
-async function _removePackPhoto(packId, safeId) {
-  const realId = await savePackField(packId,'packScreenshot',null).catch(e=>{console.error(e);return packId;});
-  const tid=realId||packId, ts=tid.replace(/[^a-zA-Z0-9_-]/g,'_');
-  window._currentPackId=tid;
-  const wrap=document.getElementById('pd-photo-wrap-'+safeId)||document.getElementById('pd-photo-wrap-'+ts);
-  if(wrap){wrap.id='pd-photo-wrap-'+ts;wrap.innerHTML=_renderPackPhotoBlock(tid,ts,null);}
-  toast('Photo removed','');
-}
 function uploadPackPhotoAndRefresh(event, packId) {
-  const file = event.target?.files?.[0]||event;
-  if (!file||(!(file instanceof File)&&!(file instanceof Blob))) return;
-  const safeId = packId.replace(/[^a-zA-Z0-9_-]/g,'_');
+  const file = event.target?.files?.[0] || event;
+  if (!file || !(file instanceof File)) return;
+  const inEditMode = (window._pePackId === packId);
   _processImageHighQuality(file, async dataUrl => {
     try {
-      const realPackId = await savePackField(packId,'packScreenshot',dataUrl);
-      const tid=realPackId||packId, ts=tid.replace(/[^a-zA-Z0-9_-]/g,'_');
-      window._currentPackId=tid;
-      // Update ONLY the photo block — never re-render the whole panel
-      const wrap=document.getElementById('pd-photo-wrap-'+safeId)||document.getElementById('pd-photo-wrap-'+ts);
-      if(wrap){wrap.id='pd-photo-wrap-'+ts;wrap.innerHTML=_renderPackPhotoBlock(tid,ts,dataUrl);}
-      if(window._pePackId===packId||window._pePackId===tid){window._pePackId=tid;openPackEditMode(tid);}
-      const ov=document.getElementById('trade-detail-overlay');
-      if(ov&&ov.style.display==='flex') openPackOverlay(tid);
-      toast('📸 Photo saved','success');
-    } catch(err){console.error('pack photo',err);toast('❌ Photo save failed','error');}
+      const realPackId = await savePackField(packId, 'packScreenshot', dataUrl);
+      renderTrades();
+      const targetId = realPackId || packId;
+      if (inEditMode) {
+        window._pePackId = targetId;
+        window._currentPackId = targetId;
+        openPackEditMode(targetId);
+      } else {
+        window._currentPackId = targetId;
+        openPackDetail(targetId);
+      }
+      // If the expand overlay is open, refresh it so photo appears there too
+      const ov = document.getElementById('trade-detail-overlay');
+      if (ov && ov.style.display === 'flex') openPackOverlay(targetId);
+      toast('📸 Photo saved', 'success');
+    } catch(err) {
+      console.error('TradeLog: pack photo save failed', err);
+      toast('❌ Photo save failed — check console', 'error');
+    }
   });
 }
 
@@ -15962,7 +15929,6 @@ async function savePackField(packId, field, value) {
     packId = realPackId;
     if (window._packOvCurrentId) window._packOvCurrentId = realPackId;
     if (window._pePackId)        window._pePackId        = realPackId;
-    window._currentPackId = realPackId;
   }
 
   if (!packTrades.length) return;
@@ -16833,7 +16799,7 @@ function renderAutoPackRows(key, packTrades, sym) {
     if (typeof tradesRange !== 'undefined') {
       if (tradesRange === 'today')  { fromStr = todayStr; toStr = todayStr; }
       else if (tradesRange === 'week') {
-        const mon = new Date(now); mon.setDate(now.getDate() - now.getDay());
+        const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7));
         fromStr = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
         toStr   = todayStr;
       }
