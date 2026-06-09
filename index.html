@@ -2878,7 +2878,7 @@
       </div>
 
       <!-- Row 2: Search + segmented timeframe + filters + add (all one bar) -->
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:visible;position:relative;z-index:999;">
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:visible;position:relative;z-index:1000;">
 
         <!-- Search — grows to fill -->
         <div style="position:relative;flex:1;min-width:0;">
@@ -3022,8 +3022,8 @@
 
 
     <!-- Table + Detail: fills all remaining height -->
-    <div id="trades-grid" style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden;position:relative;z-index:1;">
-      <div class="panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;flex:1;min-width:0;">
+    <div id="trades-grid" style="display:flex;gap:16px;flex:1;min-height:0;overflow:visible;position:relative;z-index:1;">
+      <div class="panel" style="display:flex;flex-direction:column;min-height:0;overflow:visible;flex:1;min-width:0;">
         <!-- Mobile scroll hint — hidden on desktop via CSS -->
         <div id="trades-scroll-hint" style="display:none;align-items:center;justify-content:center;gap:5px;padding:5px 12px;background:rgba(99,102,241,.07);border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);font-weight:600;transition:opacity .6s ease,max-height .6s ease,padding .6s ease;overflow:hidden;max-height:40px;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
