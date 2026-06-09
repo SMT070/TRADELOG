@@ -600,7 +600,7 @@
   .filter-drop-menu {
     display:none; position:absolute; top:calc(100% + 6px); left:0;
     min-width:100%; background:var(--surface); border:1px solid var(--border2);
-    border-radius:10px; padding:4px; z-index:200;
+    border-radius:10px; padding:4px; z-index:10000;
     box-shadow:0 8px 24px rgba(0,0,0,0.3);
     overflow:hidden;
   }
@@ -680,7 +680,7 @@
   /* ── PAGE sections ── */
   .page { display:none !important; }
   .page.active { display:block !important; }
-  #page-trades.active     { display:flex !important; flex-direction:column; height:100%; overflow:hidden; }
+  #page-trades.active     { display:flex !important; flex-direction:column; height:100%; overflow:visible; }
   #page-calendar.active   { display:flex !important; flex-direction:column; gap:12px; overflow:hidden; height:100%; }
   #page-mindset.active    { display:flex !important; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
   #page-notebooks.active  { display:flex !important; flex-direction:column; height:100%; overflow:hidden; }
@@ -2878,7 +2878,7 @@
       </div>
 
       <!-- Row 2: Search + segmented timeframe + filters + add (all one bar) -->
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:visible;position:relative;z-index:10;">
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:visible;position:relative;z-index:999;">
 
         <!-- Search — grows to fill -->
         <div style="position:relative;flex:1;min-width:0;">
@@ -2971,7 +2971,7 @@
             Features
             <svg id="features-drop-chevron" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .2s;opacity:.5;"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <div id="features-drop-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:6px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.35);min-width:220px;">
+          <div id="features-drop-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:6px;z-index:10000;box-shadow:0 8px 32px rgba(0,0,0,0.35);min-width:220px;">
 
             <!-- Auto BE -->
             <button id="feat-auto-be-btn" onclick="featToggleAutoBE()" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);text-align:left;transition:background .15s,color .15s;">
@@ -3022,7 +3022,7 @@
 
 
     <!-- Table + Detail: fills all remaining height -->
-    <div id="trades-grid" style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden;">
+    <div id="trades-grid" style="display:flex;gap:16px;flex:1;min-height:0;overflow:hidden;position:relative;z-index:1;">
       <div class="panel" style="display:flex;flex-direction:column;min-height:0;overflow:hidden;flex:1;min-width:0;">
         <!-- Mobile scroll hint — hidden on desktop via CSS -->
         <div id="trades-scroll-hint" style="display:none;align-items:center;justify-content:center;gap:5px;padding:5px 12px;background:rgba(99,102,241,.07);border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);font-weight:600;transition:opacity .6s ease,max-height .6s ease,padding .6s ease;overflow:hidden;max-height:40px;">
@@ -5499,6 +5499,8 @@ function showApp() {
   const app  = document.getElementById('app-root');
   if (auth) auth.style.display = 'none';
   if (app)  app.style.display  = 'block';
+  // Always land on dashboard when logging in
+  try { switchPage('dashboard'); } catch(e) {}
 }
 function showAuthScreen() {
   const auth = document.getElementById('auth-screen');
@@ -11634,13 +11636,20 @@ function loadJournal() {
     const d = new Date();
     label.textContent = d.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
   }
+  const plan   = document.getElementById('journal-plan');
+  const review = document.getElementById('journal-review');
   try {
     const all = JSON.parse(localStorage.getItem(JOURNAL_KEY)) || {};
     const entry = all[key] || {};
-    const plan = document.getElementById('journal-plan');
-    const review = document.getElementById('journal-review');
-    if (plan) plan.value = entry.plan || '';
-    if (review) review.value = entry.review || '';
+    // Only update if we have actual data OR localStorage has been populated
+    const hasData = Object.keys(all).length > 0;
+    if (plan)   plan.value   = entry.plan   || (hasData ? '' : (plan.value   || ''));
+    if (review) review.value = entry.review || (hasData ? '' : (review.value || ''));
+    // Show placeholder text while loading
+    if (!hasData && plan)   plan.placeholder   = 'Loading…';
+    if (!hasData && review) review.placeholder = 'Loading…';
+    if (hasData && plan)    plan.placeholder    = '📋 What\'s your plan for today? Key levels, news, strategy...';
+    if (hasData && review)  review.placeholder  = '🔁 End of day review — what worked, what didn\'t, lessons learned...';
   } catch {}
 }
 
@@ -11692,9 +11701,12 @@ function initMindsetPage() {
 function mindsetNavDay(dir) {
   const cur = new Date((window._mindsetViewDate || getTodayKey()) + 'T12:00:00');
   cur.setDate(cur.getDate() + dir);
-  const today = new Date(); today.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(12,0,0,0);
   if (cur > today) return;
   window._mindsetViewDate = cur.toISOString().slice(0,10);
+  // Re-enable next button immediately before UI update
+  const nextBtn = document.getElementById('mindset-nav-next');
+  if (nextBtn) { nextBtn.style.opacity = '1'; nextBtn.style.pointerEvents = ''; }
   loadMindsetDay(window._mindsetViewDate);
   updateMindsetNavUI();
 }
@@ -11703,6 +11715,9 @@ function mindsetGoToday() {
   window._mindsetViewDate = getTodayKey();
   loadMindsetDay(window._mindsetViewDate);
   updateMindsetNavUI();
+  // Force correct next-btn state
+  const nextBtn = document.getElementById('mindset-nav-next');
+  if (nextBtn) { nextBtn.style.opacity = '0.3'; nextBtn.style.pointerEvents = 'none'; }
 }
 
 function updateMindsetNavUI() {
@@ -14176,7 +14191,7 @@ window.addEventListener('resize', () => {
 </div><!-- /app-root -->
 
 <!-- ── Custom Date Picker Dropdown (body-level to escape overflow:hidden) ── -->
-<div id="custom-cal-dropdown" style="display:none;position:fixed;z-index:9999;width:280px;
+<div id="custom-cal-dropdown" style="display:none;position:fixed;z-index:400;width:280px;
   background:var(--surface);border:1px solid var(--border2);border-radius:16px;
   padding:0;box-shadow:0 20px 60px rgba(0,0,0,0.5);overflow:hidden;">
 
