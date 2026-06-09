@@ -1549,10 +1549,19 @@
       border-radius: 12px !important;
       flex-shrink: 0 !important;
       margin-bottom: 8px !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
     }
     #cal-month-label { font-size: 15px !important; font-weight: 800 !important; min-width: 0 !important; text-align: center !important; }
-    #cal-view-year, #cal-view-alltime { display: none !important; }
-    #cal-view-month { padding: 5px 12px !important; font-size: 11px !important; }
+    /* Show all 4 view buttons on mobile — compact */
+    #cal-view-month, #cal-view-week, #cal-view-year, #cal-view-alltime {
+      padding: 5px 9px !important; font-size: 10px !important;
+    }
+    /* View switcher pill row: allow overflow scroll if needed */
+    #page-calendar > div:first-child > div:last-child {
+      overflow-x: auto !important;
+      flex-shrink: 0 !important;
+    }
     #page-calendar > div:first-child > div:last-child > div { padding: 2px !important; }
     #cal-month-stats {
       display: flex !important;
@@ -1644,6 +1653,51 @@
     .cal-trades { position: static !important; font-size: 9px !important; font-weight: 600 !important; margin-top: 2px !important; opacity: 0.75 !important; }
     .cal-cell-bar { display: none !important; }
     .cal-cell.mob-tapped { outline: 2px solid var(--accent) !important; outline-offset: -2px !important; }
+
+    /* ── WEEK VIEW on mobile: compact rows ── */
+    #cal-grid > div > div[onclick*="selectCalDay"] {
+      padding: 10px 12px !important;
+      gap: 8px !important;
+    }
+    #cal-grid > div > div[style*="Week Summary"] {
+      padding: 10px 14px !important;
+      flex-wrap: wrap !important;
+      gap: 6px !important;
+    }
+    #cal-grid > div > div[style*="Week Summary"] div[style*="font-size:22px"] {
+      font-size: 16px !important;
+    }
+    #cal-grid > div > div[style*="Week Summary"] div[style*="font-size:18px"] {
+      font-size: 14px !important;
+    }
+    #cal-grid > div > div[style*="Week Summary"] > div:last-child {
+      gap: 14px !important;
+    }
+    #cal-grid > div > div[onclick*="selectCalDay"] > div:first-child {
+      width: 50px !important;
+    }
+    #cal-grid > div > div[onclick*="selectCalDay"] > div[style*="width:100px"] {
+      width: 72px !important;
+      font-size: 13px !important;
+    }
+
+    /* ── YEAR VIEW on mobile: 2x6 grid ── */
+    #cal-grid > div[style*="repeat(4,1fr)"] {
+      grid-template-columns: repeat(2, 1fr) !important;
+      grid-template-rows: unset !important;
+      gap: 8px !important;
+      padding: 10px !important;
+    }
+    #cal-grid > div[style*="repeat(4,1fr)"] > div {
+      padding: 12px 10px !important;
+    }
+    #cal-grid > div[style*="repeat(4,1fr)"] > div div[style*="font-size:20px"] {
+      font-size: 15px !important;
+    }
+    #cal-grid > div[style*="repeat(4,1fr)"] > div div[style*="font-size:11px"] {
+      font-size: 9px !important;
+    }
+
 
     /* ══ MINDSET PAGE ══ */
     #page-mindset {
@@ -3484,6 +3538,7 @@
     <!-- View switcher -->
     <div style="flex-shrink:0;display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;border:1px solid var(--border);">
       <button id="cal-view-month"   onclick="setCalView('month')"   style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;">Month</button>
+      <button id="cal-view-week"    onclick="setCalView('week')"    style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Week</button>
       <button id="cal-view-year"    onclick="setCalView('year')"    style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Year</button>
       <button id="cal-view-alltime" onclick="setCalView('alltime')" style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">All Time</button>
     </div>
@@ -10807,7 +10862,7 @@ function getDayMap() {
 function setCalView(v) {
   calView = v;
   // Toggle view buttons
-  ;['month','year','alltime'].forEach(id => {
+  ;['month','week','year','alltime'].forEach(id => {
     const btn = document.getElementById('cal-view-' + id);
     if (!btn) return;
     btn.style.background = v === id ? 'var(--accent)' : 'transparent';
