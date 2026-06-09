@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <style>
   html, body {
@@ -4941,9 +4945,9 @@ window.switchPage = function(name) {
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
 <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>');}</script>
 
 <script>
@@ -5767,19 +5771,25 @@ async function initApp(user) {
   showApp();
   updateGreeting();
 
-  try { await loadAllFromSupabase(); } catch(e) { console.warn('TradeLog: loadAllFromSupabase failed, showing app anyway', e); }
-
+  // ── Show app instantly from localStorage, sync Supabase in background ──
   try { refreshDashboard(); } catch(e) {}
   try { renderTrades(); } catch(e) {}
   try { loadJournal(); } catch(e) {}
-  // Restore feature pill states (auto-BE, etc.) from persisted localStorage
   try { _syncFeatureDropStates(); } catch(e) {}
-
-  // Start midnight auto-refresh — goals/greeting auto-reset at day boundary
-  scheduleMidnightRefresh();
-
-  // Hide the loading screen now that everything is rendered
   window.hideTradelogLoader();
+
+  // Sync with Supabase in background after app is visible
+  setTimeout(async () => {
+    try {
+      await loadAllFromSupabase();
+      try { refreshDashboard(); } catch(e) {}
+      try { renderTrades(); } catch(e) {}
+      try { loadJournal(); } catch(e) {}
+      try { _syncFeatureDropStates(); } catch(e) {}
+    } catch(e) { console.warn('TradeLog: background sync failed', e); }
+  }, 0);
+
+  scheduleMidnightRefresh();
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
@@ -6818,6 +6828,7 @@ function calcStats() {
 }
 
 function invalidateStatCache() { _statCache = null; _statCacheKey = ''; }
+function _getStatCacheKey() { return trades.length + '_' + (trades[0]&&trades[0].id||'')+'_'+(trades[trades.length-1]&&trades[trades.length-1].id||''); }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 let equityChartInst = null;
@@ -7669,6 +7680,7 @@ document.addEventListener('click', e => {
   }
 });
 
+var _renderTradesRAF = null;
 function renderTrades(skipTagRebuild) {
   if (!skipTagRebuild) rebuildTagDropdown();
   const q   = (document.getElementById('search-input').value||'').toLowerCase();
