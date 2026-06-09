@@ -1535,87 +1535,115 @@
     .dash-header button { font-size: 11px !important; padding: 7px 12px !important; }
 
     /* ══ CALENDAR PAGE ══ */
+    /* ══ CALENDAR PAGE — MOBILE REDESIGN ══ */
     #page-calendar.active {
-      padding: 6px !important;
+      padding: 8px 8px 0 8px !important;
       height: 100% !important;
       display: flex !important;
       flex-direction: column !important;
-      gap: 5px !important;
+      gap: 0 !important;
+      overflow: hidden !important;
     }
-    /* Hide side panel on mobile */
+    #page-calendar > div:first-child {
+      padding: 8px 10px !important;
+      border-radius: 12px !important;
+      flex-shrink: 0 !important;
+      margin-bottom: 8px !important;
+    }
+    #cal-month-label { font-size: 15px !important; font-weight: 800 !important; min-width: 0 !important; text-align: center !important; }
+    #cal-view-year, #cal-view-alltime { display: none !important; }
+    #cal-view-month { padding: 5px 12px !important; font-size: 11px !important; }
+    #page-calendar > div:first-child > div:last-child > div { padding: 2px !important; }
+    #cal-month-stats {
+      display: flex !important;
+      flex: unset !important;
+      gap: 6px !important;
+      padding: 0 !important;
+      background: transparent !important;
+      border: none !important;
+      margin-bottom: 8px !important;
+      flex-shrink: 0 !important;
+    }
+    #cal-month-stats .cal-stat-chip { flex: 1 !important; padding: 6px 8px !important; border-radius: 10px !important; }
+    #cal-month-stats .cal-stat-chip .chip-label { font-size: 8px !important; }
+    #cal-month-stats .cal-stat-chip .chip-val { font-size: 13px !important; }
     #cal-day-panel { display: none !important; }
-    /* Hide news overlay on mobile */
     #cal-news-overlay { display: none !important; }
-    /* Hide Events toggle on mobile */
     #cal-events-toggle { display: none !important; }
-    /* Body grid full width */
     #cal-body-grid {
       grid-template-columns: 1fr !important;
       flex: 1 !important;
       overflow: hidden !important;
       min-height: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
     }
-    /* Hide week column header + cells */
-    #cal-dow-row > div:last-child { display: none !important; }
-    /* Cal grid: 7 equal cols, fills remaining height */
+    #cal-body-grid > div:first-child {
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+      flex: 1 !important;
+      min-height: 0 !important;
+      border-radius: 12px !important;
+      margin-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    }
+    #cal-dow-row {
+      grid-template-columns: repeat(5, 1fr) !important;
+      gap: 3px !important;
+      padding: 6px 6px 4px !important;
+      border-radius: 12px 12px 0 0 !important;
+    }
+    #cal-dow-row > div:nth-child(1),
+    #cal-dow-row > div:nth-child(7),
+    #cal-dow-row > div:nth-child(8) { display: none !important; }
+    .cal-dow { padding: 4px 0 !important; font-size: 10px !important; font-weight: 800 !important; letter-spacing: 0.5px !important; text-align: center !important; }
     #cal-grid {
-      grid-template-columns: repeat(7, 1fr) !important;
+      display: grid !important;
+      grid-template-columns: repeat(5, 1fr) !important;
       grid-auto-rows: 1fr !important;
       gap: 3px !important;
-      background: transparent !important;
-      padding: 3px !important;
-      height: 100% !important;
-      overflow: hidden !important;
-    }
-    /* Remove week totals (every 8th cell) */
-    #cal-grid > div:nth-child(8n) { display: none !important; }
-    /* Header nav: compact, no overflow */
-    #page-calendar > div:first-child {
-      padding: 8px 10px !important;
-      border-radius: 10px !important;
-      flex-shrink: 0 !important;
-      overflow: hidden !important;
-    }
-    /* Nav left group */
-    #page-calendar > div:first-child > div:first-child {
-      gap: 6px !important;
-    }
-    #cal-month-label { font-size: 14px !important; min-width: 0 !important; }
-    /* View buttons: compact */
-    #page-calendar > div:first-child > div:last-child > div {
-      padding: 2px !important;
-    }
-    #cal-view-month { padding: 5px 10px !important; font-size: 11px !important; }
-    #cal-view-year, #cal-view-alltime { display: none !important; }
-    /* Stats strip hidden on mobile (nav bar is too narrow) */
-    #cal-month-stats { display: none !important; }
-    /* Cal cells — fill space equally, no min-height */
-    .cal-cell {
+      background: var(--bg) !important;
+      padding: 4px !important;
+      flex: 1 !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      border-radius: 0 0 12px 12px !important;
       min-height: 0 !important;
-      padding: 4px 3px 3px !important;
+    }
+    .cal-cell-mob-hide { display: none !important; }
+    .cal-cell {
+      min-height: 62px !important;
+      padding: 6px 5px 5px !important;
+      border-radius: 9px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
-      justify-content: center !important;
+      justify-content: flex-start !important;
       text-align: center !important;
-      border-radius: 7px !important;
+      cursor: pointer !important;
+      position: relative !important;
     }
     .cal-day-num {
-      font-size: 10px !important;
+      position: static !important;
+      font-size: 11px !important;
       font-weight: 700 !important;
-      top: 4px !important;
-      left: 4px !important;
+      color: var(--muted) !important;
+      line-height: 1 !important;
+      margin-bottom: 4px !important;
+      width: 20px !important;
+      height: 20px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 50% !important;
+      flex-shrink: 0 !important;
     }
-    .cal-pnl { font-size: 11px !important; letter-spacing: -0.4px !important; }
-    .cal-trades { font-size: 8px !important; bottom: 3px !important; }
+    .cal-cell.today .cal-day-num { background: var(--accent) !important; color: #fff !important; font-weight: 900 !important; }
+    .cal-cell.has-win  .cal-day-num, .cal-cell.has-loss .cal-day-num { color: var(--text) !important; font-weight: 800 !important; }
+    .cal-pnl { font-size: 12px !important; font-weight: 900 !important; letter-spacing: -0.5px !important; line-height: 1.1 !important; text-align: center !important; }
+    .cal-trades { position: static !important; font-size: 9px !important; font-weight: 600 !important; margin-top: 2px !important; opacity: 0.75 !important; }
     .cal-cell-bar { display: none !important; }
-    /* DOW header: compact */
-    #cal-dow-row {
-      grid-template-columns: repeat(7, 1fr) !important;
-      gap: 3px !important;
-      padding: 0 3px !important;
-    }
-    .cal-dow { padding: 5px 0 4px !important; font-size: 9px !important; letter-spacing: 0.5px !important; }
+    .cal-cell.mob-tapped { outline: 2px solid var(--accent) !important; outline-offset: -2px !important; }
 
     /* ══ MINDSET PAGE ══ */
     #page-mindset {
@@ -3453,8 +3481,6 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
     </div>
-    <!-- Stats inline — filled by renderCalendar -->
-    <div id="cal-month-stats" style="display:none;flex:1;align-items:center;gap:8px;"></div>
     <!-- View switcher -->
     <div style="flex-shrink:0;display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;border:1px solid var(--border);">
       <button id="cal-view-month"   onclick="setCalView('month')"   style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;">Month</button>
@@ -3462,6 +3488,9 @@
       <button id="cal-view-alltime" onclick="setCalView('alltime')" style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">All Time</button>
     </div>
   </div>
+
+  <!-- Stats bar — filled by renderCalendar, shown on mobile below nav -->
+  <div id="cal-month-stats" style="display:none;flex:1;align-items:center;gap:8px;"></div>
 
   <!-- BODY ROW: calendar grid + side panel, both rounded -->
   <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;gap:12px;flex:1;overflow:hidden;min-height:0;">
@@ -11175,6 +11204,52 @@ function renderCalendar() {
     }
   }
   document.getElementById('cal-grid').innerHTML = html;
+
+  // ── MOBILE POST-PROCESS: hide Sun/Sat/Week cells, attach double-tap ──
+  if (window.innerWidth <= 768) {
+    _calMobilePostProcess();
+  }
+}
+
+function _calMobilePostProcess() {
+  const grid = document.getElementById('cal-grid');
+  if (!grid) return;
+
+  // In the desktop render each group of 8 children = 7 days + 1 week total.
+  // On mobile we want Mon-Fri only (indices 1-5 in 0-based: Mon=1,Tue=2,Wed=3,Thu=4,Fri=5)
+  // Sun=0, Sat=6, WeekTotal=7 get hidden.
+  const children = Array.from(grid.children);
+  children.forEach((el, i) => {
+    const posInWeek = i % 8; // 0=Sun,1=Mon,...,6=Sat,7=WeekTotal
+    if (posInWeek === 0 || posInWeek === 6 || posInWeek === 7) {
+      el.classList.add('cal-cell-mob-hide');
+    }
+  });
+
+  // Double-tap logic: first tap highlights, second tap opens sheet
+  let _lastTapEl = null;
+  let _lastTapTime = 0;
+  grid.addEventListener('click', function(e) {
+    const cell = e.target.closest('.cal-cell:not(.empty):not(.cal-cell-mob-hide)');
+    if (!cell) return;
+    const dateStr = cell.getAttribute('onclick') ? cell.getAttribute('onclick').match(/'([^']+)'/)?.[1] : null;
+    if (!dateStr) return;
+    const now = Date.now();
+    const isDoubleTap = (_lastTapEl === cell && now - _lastTapTime < 400);
+    _lastTapEl = cell;
+    _lastTapTime = now;
+
+    // Remove previous highlight
+    grid.querySelectorAll('.mob-tapped').forEach(c => c.classList.remove('mob-tapped'));
+
+    if (isDoubleTap) {
+      // Double tap — open detail sheet
+      selectCalDay(dateStr);
+    } else {
+      // Single tap — just highlight
+      cell.classList.add('mob-tapped');
+    }
+  }, { passive: true });
 }
 
 function setCalViewMonth(m) {
