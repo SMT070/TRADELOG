@@ -2310,7 +2310,13 @@
   window._tlLoaderTimer = setTimeout(function() {
     var l = document.getElementById('tradelog-loader');
     if (l) l.classList.add('tl-hidden');
-  }, 8000);
+    // Show app even if data load timed out
+    var app = document.getElementById('app-root');
+    var auth = document.getElementById('auth-screen');
+    if (app && app.style.display === 'none' && auth && auth.style.display === 'none') {
+      try { showApp(); } catch(e) {}
+    }
+  }, 12000);
 
   // ── Central hide function — call this from anywhere ──
   window.hideTradelogLoader = function() {
@@ -5770,25 +5776,19 @@ async function initApp(user) {
   if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
 
   loadTheme();
-  showApp();
   updateGreeting();
 
-  // ── Show app instantly from localStorage, sync Supabase in background ──
-  try { refreshDashboard(); } catch(e) {}
-  try { renderTrades(); } catch(e) {}
-  try { loadJournal(); } catch(e) {}
-  try { _syncFeatureDropStates(); } catch(e) {}
-  window.hideTradelogLoader();
-
-  // Sync with Supabase in background after app is visible
+  // ── Sync Supabase first, then reveal app with data already populated ──
   setTimeout(async () => {
     try {
       await loadAllFromSupabase();
-      try { refreshDashboard(); } catch(e) {}
-      try { renderTrades(); } catch(e) {}
-      try { loadJournal(); } catch(e) {}
-      try { _syncFeatureDropStates(); } catch(e) {}
     } catch(e) { console.warn('TradeLog: background sync failed', e); }
+    try { refreshDashboard(); } catch(e) {}
+    try { renderTrades(); } catch(e) {}
+    try { loadJournal(); } catch(e) {}
+    try { _syncFeatureDropStates(); } catch(e) {}
+    showApp();
+    window.hideTradelogLoader();
   }, 0);
 
   scheduleMidnightRefresh();
