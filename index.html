@@ -1326,13 +1326,13 @@
     #sidebar    { height: 100% !important; }
     #main-content { height: 100% !important; }
 
-    /* Pages that scroll: add bottom padding so content clears the last sidebar item */
+    /* Pages that scroll: add bottom padding so content clears the safe area */
     #page-dashboard,
     #page-trades,
     #page-analytics,
     #page-add,
     #page-import {
-      padding-bottom: 80px !important;
+      padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
       box-sizing: border-box !important;
     }
 
@@ -1679,32 +1679,43 @@
       grid-template-columns: 1fr !important;
     }
 
-    /* ── Top summary bar: compact 3-column grid ── */
+    /* ── Top summary bar: clean equal 3-column grid ── */
     #page-trades > div:first-child > div:first-child {
-      padding: 10px 12px !important;
+      padding: 12px 14px !important;
       display: grid !important;
-      grid-template-columns: 1fr auto 1fr auto 1fr !important;
+      grid-template-columns: 1fr 1px 1fr 1px 1fr !important;
       gap: 0 !important;
       align-items: center !important;
       flex-wrap: unset !important;
     }
-    /* Dividers (2nd and 4th children = the vertical lines) stay as-is */
+    /* Dividers keep their height */
+    #page-trades > div:first-child > div:first-child > div:nth-child(2),
+    #page-trades > div:first-child > div:first-child > div:nth-child(4) {
+      height: 36px !important;
+      background: var(--border) !important;
+    }
+    /* All 3 stat blocks: equal, centered */
+    #page-trades > div:first-child > div:first-child > div:nth-child(1),
+    #page-trades > div:first-child > div:first-child > div:nth-child(3),
+    #page-trades > div:first-child > div:first-child > div:nth-child(5) {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      text-align: center !important;
+      gap: 2px !important;
+    }
     #tb-count, #tb-pnl, #tb-wr {
-      font-size: 16px !important;
+      font-size: 17px !important;
+      letter-spacing: -0.5px !important;
+    }
+    /* Balance sub-label: smaller, less prominent */
+    #tb-balance {
+      font-size: 10px !important;
+      opacity: 0.65 !important;
     }
     /* Hide wins/losses/be strip on mobile — keeps bar compact */
     #page-trades > div:first-child > div:first-child > div:last-child {
       display: none !important;
-    }
-    /* Center the middle stat (P&L) */
-    #page-trades > div:first-child > div:first-child > div:nth-child(3) {
-      align-items: center !important;
-      text-align: center !important;
-    }
-    /* Align win rate to the right */
-    #page-trades > div:first-child > div:first-child > div:nth-child(5) {
-      align-items: flex-end !important;
-      text-align: right !important;
     }
     /* Hide the flex:1 spacer on mobile */
     #page-trades > div:first-child > div:first-child > div[style*="flex:1"] {
