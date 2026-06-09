@@ -1338,11 +1338,11 @@
 
     /* Scrollable inner bodies: same treatment */
     #mindset-scroll-body {
-      padding-bottom: 80px !important;
+      padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
     }
     #notebooks-list-wrap,
     #nb-entries-list {
-      padding-bottom: 60px !important;
+      padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
     }
 
     /* Fixed-height pages (calendar, fundamentals, mindset, notebooks):
@@ -1355,7 +1355,7 @@
     }
 
     /* ── PAGE-LEVEL PADDING RESET (these use inline var(--page-px/py)) ── */
-    #page-trades    { padding: 10px !important; }
+    #page-trades    { padding: 6px 0 !important; }
 
     #page-mindset   { padding: 10px 10px 0 !important; }
     #page-add .container { padding: 10px !important; }
@@ -1430,7 +1430,6 @@
     /* ── JOURNAL: smaller textareas ── */
     #journal-plan, #journal-review {
       font-size: 12px !important;
-      rows: 2 !important;
       min-height: 60px !important;
     }
 
@@ -1664,9 +1663,6 @@
     }
 
     /* ══ TRADES PAGE — MOBILE REDESIGN ══ */
-    #page-trades {
-      padding: 6px 0 !important;
-    }
 
     /* Show scroll hint on mobile */
     #trades-scroll-hint { display: flex !important; }
@@ -2070,7 +2066,7 @@
     #nb-entries-list {
       overflow-y: auto !important;
       -webkit-overflow-scrolling: touch !important;
-      padding: 12px 0 80px !important;
+      padding: 12px 0 max(24px, env(safe-area-inset-bottom)) !important;
     }
 
     /* Notebook editor content */
