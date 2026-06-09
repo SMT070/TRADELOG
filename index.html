@@ -1549,19 +1549,10 @@
       border-radius: 12px !important;
       flex-shrink: 0 !important;
       margin-bottom: 8px !important;
-      flex-wrap: wrap !important;
-      gap: 8px !important;
     }
     #cal-month-label { font-size: 15px !important; font-weight: 800 !important; min-width: 0 !important; text-align: center !important; }
-    /* Show all 4 view buttons on mobile — compact */
-    #cal-view-month, #cal-view-week, #cal-view-year, #cal-view-alltime {
-      padding: 5px 9px !important; font-size: 10px !important;
-    }
-    /* View switcher pill row: allow overflow scroll if needed */
-    #page-calendar > div:first-child > div:last-child {
-      overflow-x: auto !important;
-      flex-shrink: 0 !important;
-    }
+    #cal-view-year, #cal-view-alltime { display: none !important; }
+    #cal-view-month { padding: 5px 12px !important; font-size: 11px !important; }
     #page-calendar > div:first-child > div:last-child > div { padding: 2px !important; }
     #cal-month-stats {
       display: flex !important;
@@ -1653,51 +1644,6 @@
     .cal-trades { position: static !important; font-size: 9px !important; font-weight: 600 !important; margin-top: 2px !important; opacity: 0.75 !important; }
     .cal-cell-bar { display: none !important; }
     .cal-cell.mob-tapped { outline: 2px solid var(--accent) !important; outline-offset: -2px !important; }
-
-    /* ── WEEK VIEW on mobile: compact rows ── */
-    #cal-grid > div > div[onclick*="selectCalDay"] {
-      padding: 10px 12px !important;
-      gap: 8px !important;
-    }
-    #cal-grid > div > div[style*="Week Summary"] {
-      padding: 10px 14px !important;
-      flex-wrap: wrap !important;
-      gap: 6px !important;
-    }
-    #cal-grid > div > div[style*="Week Summary"] div[style*="font-size:22px"] {
-      font-size: 16px !important;
-    }
-    #cal-grid > div > div[style*="Week Summary"] div[style*="font-size:18px"] {
-      font-size: 14px !important;
-    }
-    #cal-grid > div > div[style*="Week Summary"] > div:last-child {
-      gap: 14px !important;
-    }
-    #cal-grid > div > div[onclick*="selectCalDay"] > div:first-child {
-      width: 50px !important;
-    }
-    #cal-grid > div > div[onclick*="selectCalDay"] > div[style*="width:100px"] {
-      width: 72px !important;
-      font-size: 13px !important;
-    }
-
-    /* ── YEAR VIEW on mobile: 2x6 grid ── */
-    #cal-grid > div[style*="repeat(4,1fr)"] {
-      grid-template-columns: repeat(2, 1fr) !important;
-      grid-template-rows: unset !important;
-      gap: 8px !important;
-      padding: 10px !important;
-    }
-    #cal-grid > div[style*="repeat(4,1fr)"] > div {
-      padding: 12px 10px !important;
-    }
-    #cal-grid > div[style*="repeat(4,1fr)"] > div div[style*="font-size:20px"] {
-      font-size: 15px !important;
-    }
-    #cal-grid > div[style*="repeat(4,1fr)"] > div div[style*="font-size:11px"] {
-      font-size: 9px !important;
-    }
-
 
     /* ══ MINDSET PAGE ══ */
     #page-mindset {
@@ -3538,7 +3484,6 @@
     <!-- View switcher -->
     <div style="flex-shrink:0;display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;border:1px solid var(--border);">
       <button id="cal-view-month"   onclick="setCalView('month')"   style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;">Month</button>
-      <button id="cal-view-week"    onclick="setCalView('week')"    style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Week</button>
       <button id="cal-view-year"    onclick="setCalView('year')"    style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Year</button>
       <button id="cal-view-alltime" onclick="setCalView('alltime')" style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">All Time</button>
     </div>
@@ -10912,6 +10857,7 @@ function renderCalendar() {
   // ── WEEK VIEW ──
   if (calView === 'week') {
     if (window.calWeekOffset === undefined) window.calWeekOffset = 0;
+    const isMob = window.innerWidth <= 768;
     const dow = (today.getDay() + 6) % 7;
     const weekStart = new Date(today);
     weekStart.setHours(0,0,0,0);
@@ -10931,73 +10877,85 @@ function renderCalendar() {
       if (data) { weekPnl += data.pnl; weekTrades += data.count; if (data.pnl >= 0) weekWins++; else weekLosses++; }
     }
     const weekPnlColor = weekPnl >= 0 ? 'var(--green)' : 'var(--red)';
-
+    const maxPnl = Math.max(...Object.values(dayMap).map(d => Math.abs(d.pnl)), 1);
     const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow-y:auto;">';
-    // Summary row at top
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface2);">';
-    html += '<div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Week Summary</div>';
-    html += '<div style="display:flex;gap:32px;align-items:center;">';
-    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Trades</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + weekTrades + '</div></div>';
-    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">W / L</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + weekWins + ' / ' + weekLosses + '</div></div>';
-    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Net P&L</div><div style="font-size:22px;font-weight:900;color:' + weekPnlColor + ';">' + fmt(weekPnl) + '</div></div>';
-    html += '</div></div>';
 
-    // Day rows
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
-      const dateStr = d.toISOString().slice(0,10);
-      const isToday = dateStr === todayStr;
-      const data = dayMap[dateStr];
-      const isWeekend = i >= 5;
-      const dayPnlColor = data ? (data.pnl >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--muted)';
-      const rowBg = isToday ? 'var(--surface2)' : 'transparent';
-      const borderLeft = isToday ? '3px solid var(--accent)' : '3px solid transparent';
-      const maxPnl = Math.max(...Object.values(dayMap).map(d => Math.abs(d.pnl)), 1);
-      const barW = data ? Math.round(Math.abs(data.pnl) / maxPnl * 100) : 0;
-      const barColor = data ? (data.pnl >= 0 ? 'var(--green)' : 'var(--red)') : 'transparent';
+    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;">';
 
-      html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="display:flex;align-items:center;gap:20px;padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer;background:' + rowBg + ';border-left:' + borderLeft + ';transition:background .15s;" onmouseover="if(!this.style.borderLeft.includes(\'accent\'))this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'' + rowBg + '\'">';
-      // Day name + date
-      html += '<div style="width:80px;flex-shrink:0;">';
-      html += '<div style="font-size:13px;font-weight:800;color:' + (isToday ? 'var(--accent)' : isWeekend ? 'var(--muted)' : 'var(--text)') + ';">' + dayNames[i] + '</div>';
-      html += '<div style="font-size:11px;color:var(--muted);margin-top:2px;">' + d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + '</div>';
+    if (isMob) {
+      // ── MOBILE: compact stat chips + card-style day rows ──
+      const wrPct = weekTrades ? Math.round(weekWins/(weekWins+weekLosses||1)*100) : 0;
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;padding:10px 10px 6px;flex-shrink:0;">';
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">P&L</div><div style="font-size:13px;font-weight:900;color:' + weekPnlColor + ';letter-spacing:-0.5px;">' + fmt(weekPnl) + '</div></div>';
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Trades</div><div style="font-size:13px;font-weight:900;color:var(--text);">' + weekTrades + '</div></div>';
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">W / L</div><div style="font-size:13px;font-weight:900;color:var(--text);">' + weekWins + '/' + weekLosses + '</div></div>';
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Win %</div><div style="font-size:13px;font-weight:900;color:' + (wrPct>=50?'var(--green)':'var(--red)') + ';">' + (weekTrades?wrPct+'%':'—') + '</div></div>';
       html += '</div>';
-      // Bar
-      html += '<div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">';
-      html += '<div style="height:100%;width:' + barW + '%;background:' + barColor + ';border-radius:3px;transition:width .3s;"></div>';
-      html += '</div>';
-      // BE event badges
-      const wkBEevts = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
-      const wkHasDep = wkBEevts.some(e => e.type === 'deposit');
-      const wkHasWdr = wkBEevts.some(e => e.type === 'withdrawal');
-      if (wkHasDep || wkHasWdr) {
-        html += '<div style="display:flex;gap:2px;align-items:center;flex-shrink:0;">';
-        if (wkHasDep) {
-          const depAmt = wkBEevts.filter(e=>e.type==='deposit').reduce((s,e)=>s+Math.abs(parseFloat(e.amount)||0),0);
-          html += '<div style="display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;background:var(--green-bg);border:1px solid rgba(0,255,187,0.2);">'
-            + '<span style="font-size:11px;">💰</span>'
-            + '<span style="font-size:10px;font-weight:800;color:var(--green);">+' + getCurrencySymbol() + depAmt.toFixed(0) + '</span>'
-            + '</div>';
-        }
-        if (wkHasWdr) {
-          const wdrAmt = wkBEevts.filter(e=>e.type==='withdrawal').reduce((s,e)=>s+Math.abs(parseFloat(e.amount)||0),0);
-          html += '<div style="display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;background:var(--red-bg);border:1px solid rgba(255,59,92,0.2);">'
-            + '<span style="font-size:11px;">💸</span>'
-            + '<span style="font-size:10px;font-weight:800;color:var(--red);">-' + getCurrencySymbol() + wdrAmt.toFixed(0) + '</span>'
-            + '</div>';
+      // Day cards
+      html += '<div style="display:flex;flex-direction:column;gap:5px;padding:4px 10px 10px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">';
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+        const dateStr = d.toISOString().slice(0,10);
+        const isToday = dateStr === todayStr;
+        const data = dayMap[dateStr];
+        const isWeekend = i >= 5;
+        const dayPnlColor = data ? (data.pnl >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--muted)';
+        const barW = data ? Math.round(Math.abs(data.pnl) / maxPnl * 100) : 0;
+        const barColor = data ? (data.pnl >= 0 ? 'var(--green)' : 'var(--red)') : 'transparent';
+        const cardBg = isToday ? 'var(--surface2)' : 'var(--surface)';
+        const cardBorder = isToday ? '1px solid var(--accent)' : '1px solid var(--border)';
+        const dayColor = isToday ? 'var(--accent)' : isWeekend ? 'var(--muted)' : 'var(--text)';
+        html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:' + cardBg + ';border:' + cardBorder + ';border-radius:12px;cursor:pointer;transition:background .15s;">';
+        html += '<div style="width:44px;flex-shrink:0;"><div style="font-size:13px;font-weight:800;color:' + dayColor + ';">' + dayNames[i] + '</div><div style="font-size:10px;color:var(--muted);margin-top:1px;">' + d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + '</div></div>';
+        html += '<div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="height:100%;width:' + barW + '%;background:' + barColor + ';border-radius:2px;transition:width .3s;"></div></div>';
+        if (data) {
+          html += '<div style="text-align:right;flex-shrink:0;min-width:70px;"><div style="font-size:14px;font-weight:900;color:' + dayPnlColor + ';letter-spacing:-0.5px;">' + fmt(data.pnl) + '</div><div style="font-size:9px;color:var(--muted);margin-top:1px;">' + data.count + 't</div></div>';
+        } else {
+          html += '<div style="text-align:right;flex-shrink:0;min-width:70px;font-size:12px;font-weight:600;color:var(--muted);">—</div>';
         }
         html += '</div>';
       }
-      // Stats
-      if (data) {
-        html += '<div style="width:80px;text-align:right;flex-shrink:0;font-size:11px;color:var(--muted);">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
-        html += '<div style="width:100px;text-align:right;flex-shrink:0;font-size:16px;font-weight:800;color:' + dayPnlColor + ';">' + fmt(data.pnl) + '</div>';
-      } else {
-        html += '<div style="width:80px;text-align:right;flex-shrink:0;font-size:11px;color:var(--muted);">—</div>';
-        html += '<div style="width:100px;text-align:right;flex-shrink:0;font-size:14px;font-weight:600;color:var(--muted);">No trades</div>';
-      }
       html += '</div>';
+    } else {
+      // ── DESKTOP: original layout ──
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface2);">';
+      html += '<div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Week Summary</div>';
+      html += '<div style="display:flex;gap:32px;align-items:center;">';
+      html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Trades</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + weekTrades + '</div></div>';
+      html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">W / L</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + weekWins + ' / ' + weekLosses + '</div></div>';
+      html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Net P&L</div><div style="font-size:22px;font-weight:900;color:' + weekPnlColor + ';">' + fmt(weekPnl) + '</div></div>';
+      html += '</div></div>';
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
+        const dateStr = d.toISOString().slice(0,10);
+        const isToday = dateStr === todayStr;
+        const data = dayMap[dateStr];
+        const isWeekend = i >= 5;
+        const dayPnlColor = data ? (data.pnl >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--muted)';
+        const rowBg = isToday ? 'var(--surface2)' : 'transparent';
+        const borderLeft = isToday ? '3px solid var(--accent)' : '3px solid transparent';
+        const barW = data ? Math.round(Math.abs(data.pnl) / maxPnl * 100) : 0;
+        const barColor = data ? (data.pnl >= 0 ? 'var(--green)' : 'var(--red)') : 'transparent';
+        html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="display:flex;align-items:center;gap:20px;padding:14px 24px;border-bottom:1px solid var(--border);cursor:pointer;background:' + rowBg + ';border-left:' + borderLeft + ';transition:background .15s;" onmouseover="if(!this.style.borderLeft.includes(\'accent\'))this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'' + rowBg + '\'">';
+        html += '<div style="width:80px;flex-shrink:0;"><div style="font-size:13px;font-weight:800;color:' + (isToday ? 'var(--accent)' : isWeekend ? 'var(--muted)' : 'var(--text)') + ';">' + dayNames[i] + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">' + d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + '</div></div>';
+        html += '<div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + barW + '%;background:' + barColor + ';border-radius:3px;transition:width .3s;"></div></div>';
+        const wkBEevts = (balanceEvents||[]).filter(e => (e.time||'').slice(0,10) === dateStr);
+        const wkHasDep = wkBEevts.some(e => e.type === 'deposit');
+        const wkHasWdr = wkBEevts.some(e => e.type === 'withdrawal');
+        if (wkHasDep || wkHasWdr) {
+          html += '<div style="display:flex;gap:2px;align-items:center;flex-shrink:0;">';
+          if (wkHasDep) { const depAmt = wkBEevts.filter(e=>e.type==='deposit').reduce((s,e)=>s+Math.abs(parseFloat(e.amount)||0),0); html += '<div style="display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;background:var(--green-bg);border:1px solid rgba(0,255,187,0.2);"><span style="font-size:11px;">💰</span><span style="font-size:10px;font-weight:800;color:var(--green);">+' + getCurrencySymbol() + depAmt.toFixed(0) + '</span></div>'; }
+          if (wkHasWdr) { const wdrAmt = wkBEevts.filter(e=>e.type==='withdrawal').reduce((s,e)=>s+Math.abs(parseFloat(e.amount)||0),0); html += '<div style="display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;background:var(--red-bg);border:1px solid rgba(255,59,92,0.2);"><span style="font-size:11px;">💸</span><span style="font-size:10px;font-weight:800;color:var(--red);">-' + getCurrencySymbol() + wdrAmt.toFixed(0) + '</span></div>'; }
+          html += '</div>';
+        }
+        if (data) {
+          html += '<div style="width:80px;text-align:right;flex-shrink:0;font-size:11px;color:var(--muted);">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
+          html += '<div style="width:100px;text-align:right;flex-shrink:0;font-size:16px;font-weight:800;color:' + dayPnlColor + ';">' + fmt(data.pnl) + '</div>';
+        } else {
+          html += '<div style="width:80px;text-align:right;flex-shrink:0;font-size:11px;color:var(--muted);">—</div><div style="width:100px;text-align:right;flex-shrink:0;font-size:14px;font-weight:600;color:var(--muted);">No trades</div>';
+        }
+        html += '</div>';
+      }
     }
     html += '</div>';
     document.getElementById('cal-grid').innerHTML = html;
@@ -11006,10 +10964,12 @@ function renderCalendar() {
 
   // ── YEAR VIEW ──
   if (calView === 'year') {
+    const isMob = window.innerWidth <= 768;
     document.getElementById('cal-month-label').textContent = calYear;
     if (fwdBtn)  { fwdBtn.style.opacity  = calYear >= today.getFullYear() ? '0.3' : ''; fwdBtn.style.pointerEvents  = calYear >= today.getFullYear() ? 'none' : ''; }
     if (prevBtn) { prevBtn.style.opacity = ''; prevBtn.style.pointerEvents = ''; }
-    let html = '<div style="display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:12px;padding:16px;width:100%;height:100%;box-sizing:border-box;">';
+    const cols = isMob ? 2 : 4;
+    let html = '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:' + (isMob?'8px':'12px') + ';padding:' + (isMob?'10px':'16px') + ';width:100%;height:100%;box-sizing:border-box;' + (isMob?'align-content:start;overflow-y:auto;':'') + '">';
     for (let m = 0; m < 12; m++) {
       const mKey = calYear + '-' + String(m+1).padStart(2,'0');
       const mTrades = trades.filter(t => (t.date||'').startsWith(mKey));
@@ -11023,13 +10983,16 @@ function renderCalendar() {
       const borderColor = isCurrentMonth ? 'var(--accent)' : 'var(--border)';
       const mn = monthShort[m];
       const labelColor = isCurrentMonth ? 'var(--accent)' : 'var(--text2)';
-      html += '<div onclick="setCalViewMonth(' + m + ')" style="border-radius:10px;border:1px solid ' + borderColor + ';background:' + bgColor + ';padding:16px 14px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;" onmouseover="this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.transform=\'\'">'; 
-      html += '<div style="font-size:12px;font-weight:800;color:' + labelColor + ';text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">' + mn + '</div>';
+      const pad = isMob ? '12px 10px' : '16px 14px';
+      const pnlFs = isMob ? '16px' : '20px';
+      const subFs = isMob ? '10px' : '11px';
+      html += '<div onclick="setCalViewMonth(' + m + ')" style="border-radius:10px;border:1px solid ' + borderColor + ';background:' + bgColor + ';padding:' + pad + ';cursor:pointer;transition:all .15s;display:flex;flex-direction:column;" onmouseover="this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.transform=\'\'">';
+      html += '<div style="font-size:12px;font-weight:800;color:' + labelColor + ';text-transform:uppercase;letter-spacing:1px;margin-bottom:' + (isMob?'6px':'10px') + ';">' + mn + '</div>';
       if (hasTrades) {
-        html += '<div style="font-size:20px;font-weight:900;color:' + pnlColor + ';letter-spacing:-0.5px;">' + fmt(mPnl) + '</div>';
-        html += '<div style="font-size:11px;color:var(--muted);margin-top:6px;">' + mTrades.length + ' trades - ' + mWins + 'W ' + mLosses + 'L</div>';
+        html += '<div style="font-size:' + pnlFs + ';font-weight:900;color:' + pnlColor + ';letter-spacing:-0.5px;">' + fmt(mPnl) + '</div>';
+        html += '<div style="font-size:' + subFs + ';color:var(--muted);margin-top:' + (isMob?'4px':'6px') + ';">' + mTrades.length + 't · ' + mWins + 'W ' + mLosses + 'L</div>';
       } else {
-        html += '<div style="font-size:12px;color:var(--muted);margin-top:4px;">No trades</div>';
+        html += '<div style="font-size:12px;color:var(--muted);margin-top:4px;">—</div>';
       }
       html += '</div>';
     }
@@ -11040,6 +11003,7 @@ function renderCalendar() {
 
   // ── ALL TIME VIEW ──
   if (calView === 'alltime') {
+    const isMob = window.innerWidth <= 768;
     document.getElementById('cal-month-label').textContent = 'All Time';
     if (fwdBtn)  { fwdBtn.style.opacity  = '0.3'; fwdBtn.style.pointerEvents  = 'none'; }
     if (prevBtn) { prevBtn.style.opacity = '0.3'; prevBtn.style.pointerEvents = 'none'; }
@@ -11052,43 +11016,75 @@ function renderCalendar() {
     const totalPnl = trades.reduce((s,t) => s + getPnl(t), 0);
     const totalWins = trades.filter(t => getResult(t)==='win').length;
     const totalLosses = trades.filter(t => getResult(t)==='loss').length;
-    const totalWr = trades.length ? Math.round(totalWins/trades.length*100) : 0;
+    const totalDecided = totalWins + totalLosses;
+    const totalWr = totalDecided ? Math.round(totalWins/totalDecided*100) : 0;
     const totalColor = totalPnl >= 0 ? 'var(--green)' : 'var(--red)';
     const maxYearPnl = Math.max(...years.map(yr => Math.abs(trades.filter(t=>(t.date||'').startsWith(yr)).reduce((s,t)=>s+getPnl(t),0))), 1);
 
-    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow-y:auto;">';
-    // Summary header
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface2);">';
-    html += '<div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">All Time Summary</div>';
-    html += '<div style="display:flex;gap:32px;align-items:center;">';
-    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Trades</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + trades.length + '</div></div>';
-    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Win Rate</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + totalWr + '%</div></div>';
-    html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Net P&L</div><div style="font-size:22px;font-weight:900;color:' + totalColor + ';">' + fmt(totalPnl) + '</div></div>';
-    html += '</div></div>';
-    // Year rows
-    years.forEach(yr => {
-      const yTrades = trades.filter(t => (t.date||'').startsWith(yr));
-      const yPnl = yTrades.reduce((s,t) => s + getPnl(t), 0);
-      const yWins = yTrades.filter(t => getResult(t)==='win').length;
-      const yLosses = yTrades.filter(t => getResult(t)==='loss').length;
-      const yWr = yTrades.length ? Math.round(yWins/yTrades.length*100) : 0;
-      const pnlColor = yPnl >= 0 ? 'var(--green)' : 'var(--red)';
-      const barW = Math.round(Math.abs(yPnl) / maxYearPnl * 100);
-      const barColor = yPnl >= 0 ? 'var(--green)' : 'var(--red)';
-      const isCurrent = yr === String(today.getFullYear());
-      const rowBg = isCurrent ? 'var(--surface2)' : 'transparent';
-      const borderLeft = isCurrent ? '3px solid var(--accent)' : '3px solid transparent';
+    let html = '<div style="display:flex;flex-direction:column;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;">';
 
-      html += '<div onclick="calYear=' + yr + ';setCalView(\'year\')" style="display:flex;align-items:center;gap:20px;padding:16px 24px;border-bottom:1px solid var(--border);cursor:pointer;background:' + rowBg + ';border-left:' + borderLeft + ';transition:background .15s;" onmouseover="if(!this.style.borderLeft.includes(\'accent\'))this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'' + rowBg + '\'">';
-      html += '<div style="width:60px;flex-shrink:0;"><div style="font-size:18px;font-weight:900;color:' + (isCurrent?'var(--accent)':'var(--text)') + ';">' + yr + '</div></div>';
-      html += '<div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + barW + '%;background:' + barColor + ';border-radius:3px;"></div></div>';
-      html += '<div style="width:80px;text-align:right;flex-shrink:0;font-size:12px;color:var(--muted);">' + yTrades.length + ' trades</div>';
-      html += '<div style="width:60px;text-align:right;flex-shrink:0;font-size:12px;color:var(--muted);">' + yWr + '% WR</div>';
-      html += '<div style="width:60px;text-align:right;flex-shrink:0;font-size:12px;color:var(--muted);">' + yWins + 'W / ' + yLosses + 'L</div>';
-      html += '<div style="width:110px;text-align:right;flex-shrink:0;font-size:18px;font-weight:800;color:' + pnlColor + ';">' + fmt(yPnl) + '</div>';
-      html += '<div style="width:20px;flex-shrink:0;color:var(--muted);">›</div>';
+    if (isMob) {
+      // ── MOBILE: stat chips + year cards ──
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:10px 10px 6px;flex-shrink:0;">';
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Net P&L</div><div style="font-size:13px;font-weight:900;color:' + totalColor + ';letter-spacing:-0.5px;">' + fmt(totalPnl) + '</div></div>';
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Trades</div><div style="font-size:13px;font-weight:900;color:var(--text);">' + trades.length + '</div></div>';
+      html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Win %</div><div style="font-size:13px;font-weight:900;color:' + (totalWr>=50?'var(--green)':'var(--red)') + ';">' + (totalDecided?totalWr+'%':'—') + '</div></div>';
       html += '</div>';
-    });
+      // Year cards
+      html += '<div style="display:flex;flex-direction:column;gap:6px;padding:4px 10px 10px;flex:1;">';
+      years.forEach(yr => {
+        const yTrades = trades.filter(t => (t.date||'').startsWith(yr));
+        const yPnl = yTrades.reduce((s,t) => s + getPnl(t), 0);
+        const yWins = yTrades.filter(t => getResult(t)==='win').length;
+        const yLosses = yTrades.filter(t => getResult(t)==='loss').length;
+        const yWr = yTrades.length ? Math.round(yWins/(yWins+yLosses||1)*100) : 0;
+        const pnlColor = yPnl >= 0 ? 'var(--green)' : 'var(--red)';
+        const barW = Math.round(Math.abs(yPnl) / maxYearPnl * 100);
+        const isCurrent = yr === String(today.getFullYear());
+        const cardBorder = isCurrent ? '1px solid var(--accent)' : '1px solid var(--border)';
+        const cardBg = isCurrent ? 'var(--surface2)' : 'var(--surface)';
+        html += '<div onclick="calYear=' + yr + ';setCalView(\'year\')" style="background:' + cardBg + ';border:' + cardBorder + ';border-radius:12px;padding:12px 14px;cursor:pointer;transition:background .15s;">';
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+        html += '<div style="font-size:18px;font-weight:900;color:' + (isCurrent?'var(--accent)':'var(--text)') + ';">' + yr + '</div>';
+        html += '<div style="font-size:18px;font-weight:900;color:' + pnlColor + ';letter-spacing:-0.5px;">' + fmt(yPnl) + '</div>';
+        html += '</div>';
+        html += '<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px;"><div style="height:100%;width:' + barW + '%;background:' + pnlColor + ';border-radius:2px;"></div></div>';
+        html += '<div style="display:flex;gap:12px;"><span style="font-size:10px;color:var(--muted);">' + yTrades.length + ' trades</span><span style="font-size:10px;color:var(--green);">' + yWins + 'W</span><span style="font-size:10px;color:var(--red);">' + yLosses + 'L</span><span style="font-size:10px;color:' + (yWr>=50?'var(--green)':'var(--red)') + ';">' + yWr + '% WR</span></div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      // ── DESKTOP: original layout ──
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface2);">';
+      html += '<div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">All Time Summary</div>';
+      html += '<div style="display:flex;gap:32px;align-items:center;">';
+      html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Trades</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + trades.length + '</div></div>';
+      html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Win Rate</div><div style="font-size:18px;font-weight:900;color:var(--text);">' + totalWr + '%</div></div>';
+      html += '<div style="text-align:right;"><div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Net P&L</div><div style="font-size:22px;font-weight:900;color:' + totalColor + ';">' + fmt(totalPnl) + '</div></div>';
+      html += '</div></div>';
+      years.forEach(yr => {
+        const yTrades = trades.filter(t => (t.date||'').startsWith(yr));
+        const yPnl = yTrades.reduce((s,t) => s + getPnl(t), 0);
+        const yWins = yTrades.filter(t => getResult(t)==='win').length;
+        const yLosses = yTrades.filter(t => getResult(t)==='loss').length;
+        const yWr = yTrades.length ? Math.round(yWins/yTrades.length*100) : 0;
+        const pnlColor = yPnl >= 0 ? 'var(--green)' : 'var(--red)';
+        const barW = Math.round(Math.abs(yPnl) / maxYearPnl * 100);
+        const barColor = yPnl >= 0 ? 'var(--green)' : 'var(--red)';
+        const isCurrent = yr === String(today.getFullYear());
+        const rowBg = isCurrent ? 'var(--surface2)' : 'transparent';
+        const borderLeft = isCurrent ? '3px solid var(--accent)' : '3px solid transparent';
+        html += '<div onclick="calYear=' + yr + ';setCalView(\'year\')" style="display:flex;align-items:center;gap:20px;padding:16px 24px;border-bottom:1px solid var(--border);cursor:pointer;background:' + rowBg + ';border-left:' + borderLeft + ';transition:background .15s;" onmouseover="if(!this.style.borderLeft.includes(\'accent\'))this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'' + rowBg + '\'">';
+        html += '<div style="width:60px;flex-shrink:0;"><div style="font-size:18px;font-weight:900;color:' + (isCurrent?'var(--accent)':'var(--text)') + ';">' + yr + '</div></div>';
+        html += '<div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + barW + '%;background:' + barColor + ';border-radius:3px;"></div></div>';
+        html += '<div style="width:80px;text-align:right;flex-shrink:0;font-size:12px;color:var(--muted);">' + yTrades.length + ' trades</div>';
+        html += '<div style="width:60px;text-align:right;flex-shrink:0;font-size:12px;color:var(--muted);">' + yWr + '% WR</div>';
+        html += '<div style="width:60px;text-align:right;flex-shrink:0;font-size:12px;color:var(--muted);">' + yWins + 'W / ' + yLosses + 'L</div>';
+        html += '<div style="width:110px;text-align:right;flex-shrink:0;font-size:18px;font-weight:800;color:' + pnlColor + ';">' + fmt(yPnl) + '</div>';
+        html += '<div style="width:20px;flex-shrink:0;color:var(--muted);">›</div>';
+        html += '</div>';
+      });
+    }
     html += '</div>';
     document.getElementById('cal-grid').innerHTML = html;
     return;
