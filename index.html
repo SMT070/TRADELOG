@@ -10612,7 +10612,55 @@ function renderCalEventsList() {
   }).join('');
 }
 
-// ── ECONOMIC NEWS OVERLAY (TradingView) ───────────────────────────────────────
+function openEventModal(eventId) {
+  const events = loadData(EVENTS_KEY);
+  const ev = events.find(e => e.id === eventId);
+  if (!ev) return;
+
+  // Remove any existing
+  const old = document.getElementById('cal-event-detail-modal');
+  if (old) old.remove();
+
+  const impactEmoji = { high:'🔴', medium:'🟡', low:'🟢', earnings:'📊' };
+  const emoji = impactEmoji[ev.impact] || '🟡';
+  const d = new Date((ev.date||'') + 'T12:00:00');
+  const dateStr = d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const modal = document.createElement('div');
+  modal.id = 'cal-event-detail-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);';
+  modal.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--surface);border-radius:20px 20px 0 0;border:1px solid var(--border);border-bottom:none;padding:24px 20px max(env(safe-area-inset-bottom,20px),20px);box-sizing:border-box;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:28px;">${emoji}</span>
+          <div>
+            <div style="font-size:15px;font-weight:800;color:var(--text);line-height:1.3;">${ev.title||'Event'}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">${dateStr}${ev.time?' · '+ev.time:''}${ev.currency?' · '+ev.currency:''}</div>
+          </div>
+        </div>
+        <button onclick="document.getElementById('cal-event-detail-modal').remove()" style="width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
+      </div>
+      ${ev.notes ? `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:16px;">${ev.notes}</div>` : ''}
+      <div style="display:flex;gap:8px;">
+        <button onclick="deleteCalEvent('${ev.id}')" style="flex:1;padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--red);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Delete</button>
+        <button onclick="document.getElementById('cal-event-detail-modal').remove()" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Close</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function deleteCalEvent(eventId) {
+  let events = loadData(EVENTS_KEY);
+  events = events.filter(e => e.id !== eventId);
+  saveData(EVENTS_KEY, events);
+  const modal = document.getElementById('cal-event-detail-modal');
+  if (modal) modal.remove();
+  renderCalEventsList();
+}
+
+
 function toggleCalEventsPanel() {
   calNewsOpen = !calNewsOpen;
   const overlay = document.getElementById('cal-news-overlay');
