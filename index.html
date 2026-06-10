@@ -1641,9 +1641,18 @@
       padding: 0 !important;
       flex: 1 !important;
       overflow-y: auto !important;
+      overflow-x: hidden !important;
       -webkit-overflow-scrolling: touch !important;
       border-radius: 12px !important;
       min-height: 0 !important;
+    }
+    /* All children of non-month views fill full width */
+    #cal-grid.cal-view-week > div,
+    #cal-grid.cal-view-year > div,
+    #cal-grid.cal-view-alltime > div {
+      width: 100% !important;
+      box-sizing: border-box !important;
+      overflow-x: hidden !important;
     }
     .cal-cell-mob-hide { display: none !important; }
     .cal-cell {
@@ -4697,16 +4706,16 @@ window.switchPage = function(name) {
 
 <!-- SHARE MODAL -->
 <!-- ── SHARE MODAL ── -->
-<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow-y:auto;-webkit-overflow-scrolling:touch;">
+<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:10000;align-items:flex-end;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);">
   <!-- Theme-aware backdrop -->
   <div id="share-modal-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.88);z-index:0;" onclick="closeShareModal()"></div>
-  <!-- Scrollable container — centered, with safe area padding -->
-  <div style="position:relative;z-index:1;width:100%;max-width:460px;padding:max(env(safe-area-inset-top,16px),16px) 14px max(env(safe-area-inset-bottom,16px),16px);box-sizing:border-box;margin:auto;">
+  <!-- Sheet container — slides up from bottom, no scroll -->
+  <div style="position:relative;z-index:1;width:100%;max-width:460px;padding:12px 12px max(env(safe-area-inset-bottom,12px),12px);box-sizing:border-box;margin:0 auto;">
 
     <!-- ═══════════════════════════════════════════════════ -->
     <!-- SHARE CARD — canvas capture target                  -->
     <!-- ═══════════════════════════════════════════════════ -->
-    <div id="share-card" style="border-radius:28px;padding:0;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 40px 120px rgba(0,0,0,0.8);">
+    <div id="share-card" style="border-radius:24px;padding:0;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 40px 120px rgba(0,0,0,0.8);">
 
       <!-- ── NOISE TEXTURE OVERLAY ── -->
       <div style="position:absolute;inset:0;opacity:0.03;pointer-events:none;z-index:1;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22/></filter><rect width=%22200%22 height=%22200%22 filter=%22url(%23n)%22 opacity=%221%22/></svg>');background-size:180px;"></div>
@@ -4717,63 +4726,63 @@ window.switchPage = function(name) {
       <div id="share-glow-3" style="position:absolute;top:40%;left:30%;width:200px;height:200px;border-radius:50%;pointer-events:none;z-index:0;opacity:0.6;"></div>
 
       <!-- ── INNER CONTENT ── -->
-      <div style="position:relative;z-index:2;padding:36px 36px 28px;">
+      <div style="position:relative;z-index:2;padding:22px 22px 18px;">
 
         <!-- TOP BAR: date left, logo right -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:36px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
           <div>
-            <div id="share-date-label" style="font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-bottom:5px;opacity:0.4;">TODAY</div>
-            <div id="share-trades-label" style="font-size:13px;font-weight:700;opacity:0.65;">0 trades</div>
+            <div id="share-date-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;opacity:0.4;">TODAY</div>
+            <div id="share-trades-label" style="font-size:12px;font-weight:700;opacity:0.65;">0 trades</div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:36px;height:36px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(99,102,241,0.6),0 0 48px rgba(99,102,241,0.2);">
-              <svg width="18" height="18" viewBox="0 0 28 28"><polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.12)"/><polygon points="5,14 2,4 10,12" fill="white" opacity="0.95"/><polygon points="23,14 26,4 18,12" fill="white" opacity="0.95"/><rect x="9" y="19" width="10" height="4" rx="2" fill="white"/></svg>
+            <div style="width:32px;height:32px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(99,102,241,0.6),0 0 48px rgba(99,102,241,0.2);">
+              <svg width="16" height="16" viewBox="0 0 28 28"><polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.12)"/><polygon points="5,14 2,4 10,12" fill="white" opacity="0.95"/><polygon points="23,14 26,4 18,12" fill="white" opacity="0.95"/><rect x="9" y="19" width="10" height="4" rx="2" fill="white"/></svg>
             </div>
-            <div id="share-logo-text" style="font-size:15px;font-weight:900;letter-spacing:-0.5px;">TRADE<span style="color:#818cf8;">LOG</span></div>
+            <div id="share-logo-text" style="font-size:14px;font-weight:900;letter-spacing:-0.5px;">TRADE<span style="color:#818cf8;">LOG</span></div>
           </div>
         </div>
 
         <!-- HERO P&L SECTION -->
-        <div style="margin-bottom:30px;">
-          <div id="share-pnl-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;opacity:0.35;margin-bottom:12px;">TODAY'S P&L</div>
-          <div id="share-pnl" style="font-size:76px;font-weight:900;letter-spacing:-5px;line-height:0.95;font-variant-numeric:tabular-nums;">+$0.00</div>
-          <div style="margin-top:18px;display:flex;align-items:center;gap:12px;">
+        <div style="margin-bottom:14px;">
+          <div id="share-pnl-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;opacity:0.35;margin-bottom:6px;">TODAY'S P&L</div>
+          <div id="share-pnl" style="font-weight:900;letter-spacing:-3px;line-height:1;font-variant-numeric:tabular-nums;word-break:break-all;overflow:hidden;font-size:60px;">+$0.00</div>
+          <div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
             <div id="share-wr-bar-wrap" style="flex:1;height:4px;border-radius:4px;background:rgba(255,255,255,0.08);overflow:hidden;">
               <div id="share-wr-bar" style="height:100%;border-radius:4px;width:0%;transition:width 0s;"></div>
             </div>
-            <div id="share-wr-pct" style="font-size:12px;font-weight:800;letter-spacing:0.5px;opacity:0.7;">0% WIN</div>
+            <div id="share-wr-pct" style="font-size:11px;font-weight:800;letter-spacing:0.5px;opacity:0.7;">0% WIN</div>
           </div>
         </div>
 
         <!-- STAT CARDS ROW -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;">
-          <div id="share-stat-1" style="border-radius:16px;padding:16px 14px;">
-            <div style="font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:8px;">TRADES</div>
-            <div id="share-wr" style="font-size:26px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
-            <div id="share-wl" style="font-size:10px;font-weight:700;opacity:0.45;margin-top:4px;">0W · 0L</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;">
+          <div id="share-stat-1" style="border-radius:12px;padding:10px 10px;">
+            <div style="font-size:7px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:5px;">TRADES</div>
+            <div id="share-wr" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
+            <div id="share-wl" style="font-size:9px;font-weight:700;opacity:0.45;margin-top:3px;">0W · 0L</div>
           </div>
-          <div id="share-stat-2" style="border-radius:16px;padding:16px 14px;">
-            <div style="font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:8px;">BEST TRADE</div>
-            <div id="share-best" style="font-size:26px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
-            <div id="share-best-sym" style="font-size:10px;font-weight:700;opacity:0.45;margin-top:4px;">—</div>
+          <div id="share-stat-2" style="border-radius:12px;padding:10px 10px;">
+            <div style="font-size:7px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:5px;">BEST TRADE</div>
+            <div id="share-best" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
+            <div id="share-best-sym" style="font-size:9px;font-weight:700;opacity:0.45;margin-top:3px;">—</div>
           </div>
-          <div id="share-stat-3" style="border-radius:16px;padding:16px 14px;">
-            <div style="font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:8px;">WIN RATE</div>
-            <div id="share-winrate" style="font-size:26px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
-            <div id="share-winrate-sub" style="font-size:10px;font-weight:700;opacity:0.45;margin-top:4px;">of decided</div>
+          <div id="share-stat-3" style="border-radius:12px;padding:10px 10px;">
+            <div style="font-size:7px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:5px;">WIN RATE</div>
+            <div id="share-winrate" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
+            <div id="share-winrate-sub" style="font-size:9px;font-weight:700;opacity:0.45;margin-top:3px;">of decided</div>
           </div>
         </div>
 
         <!-- TRADE LIST -->
-        <div id="share-trade-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:28px;"></div>
+        <div id="share-trade-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;"></div>
 
         <!-- FOOTER -->
-        <div id="share-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:18px;">
+        <div id="share-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;">
           <div style="display:flex;align-items:center;gap:8px;">
             <div id="share-footer-dot" style="width:6px;height:6px;border-radius:50%;"></div>
-            <div style="font-size:10px;font-weight:700;opacity:0.3;letter-spacing:1px;">TRADELOG.APP</div>
+            <div style="font-size:9px;font-weight:700;opacity:0.3;letter-spacing:1px;">TRADELOG.APP</div>
           </div>
-          <div style="font-size:10px;font-weight:600;opacity:0.22;letter-spacing:0.5px;">Track · Analyse · Improve</div>
+          <div style="font-size:9px;font-weight:600;opacity:0.22;letter-spacing:0.5px;">Track · Analyse · Improve</div>
         </div>
 
       </div><!-- /inner content -->
@@ -10955,14 +10964,14 @@ function renderCalendar() {
     if (isMob) {
       // ── MOBILE: compact stat chips + card-style day rows ──
       const wrPct = weekTrades ? Math.round(weekWins/(weekWins+weekLosses||1)*100) : 0;
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;padding:10px 10px 6px;flex-shrink:0;">';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;padding:10px 8px 6px;flex-shrink:0;box-sizing:border-box;">';
       html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">P&L</div><div style="font-size:13px;font-weight:900;color:' + weekPnlColor + ';letter-spacing:-0.5px;">' + fmt(weekPnl) + '</div></div>';
       html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Trades</div><div style="font-size:13px;font-weight:900;color:var(--text);">' + weekTrades + '</div></div>';
       html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">W / L</div><div style="font-size:13px;font-weight:900;color:var(--text);">' + weekWins + '/' + weekLosses + '</div></div>';
       html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Win %</div><div style="font-size:13px;font-weight:900;color:' + (wrPct>=50?'var(--green)':'var(--red)') + ';">' + (weekTrades?wrPct+'%':'—') + '</div></div>';
       html += '</div>';
       // Day cards
-      html += '<div style="display:flex;flex-direction:column;gap:5px;padding:4px 10px 10px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">';
+      html += '<div style="display:flex;flex-direction:column;gap:5px;padding:4px 8px 10px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;box-sizing:border-box;">';
       for (let i = 0; i < 7; i++) {
         const d = new Date(weekStart); d.setDate(weekStart.getDate() + i);
         const dateStr = d.toISOString().slice(0,10);
@@ -10975,13 +10984,13 @@ function renderCalendar() {
         const cardBg = isToday ? 'var(--surface2)' : 'var(--surface)';
         const cardBorder = isToday ? '1px solid var(--accent)' : '1px solid var(--border)';
         const dayColor = isToday ? 'var(--accent)' : isWeekend ? 'var(--muted)' : 'var(--text)';
-        html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:' + cardBg + ';border:' + cardBorder + ';border-radius:12px;cursor:pointer;transition:background .15s;">';
+        html += '<div onclick="selectCalDay(\'' + dateStr + '\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:' + cardBg + ';border:' + cardBorder + ';border-radius:12px;cursor:pointer;transition:background .15s;box-sizing:border-box;width:100%;">';
         html += '<div style="width:44px;flex-shrink:0;"><div style="font-size:13px;font-weight:800;color:' + dayColor + ';">' + dayNames[i] + '</div><div style="font-size:10px;color:var(--muted);margin-top:1px;">' + d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + '</div></div>';
-        html += '<div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="height:100%;width:' + barW + '%;background:' + barColor + ';border-radius:2px;transition:width .3s;"></div></div>';
+        html += '<div style="flex:1;min-width:0;height:4px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="height:100%;width:' + barW + '%;background:' + barColor + ';border-radius:2px;transition:width .3s;"></div></div>';
         if (data) {
-          html += '<div style="text-align:right;flex-shrink:0;min-width:70px;"><div style="font-size:14px;font-weight:900;color:' + dayPnlColor + ';letter-spacing:-0.5px;">' + fmt(data.pnl) + '</div><div style="font-size:9px;color:var(--muted);margin-top:1px;">' + data.count + 't</div></div>';
+          html += '<div style="text-align:right;flex-shrink:0;min-width:72px;"><div style="font-size:14px;font-weight:900;color:' + dayPnlColor + ';letter-spacing:-0.5px;">' + fmt(data.pnl) + '</div><div style="font-size:9px;color:var(--muted);margin-top:1px;">' + data.count + 't</div></div>';
         } else {
-          html += '<div style="text-align:right;flex-shrink:0;min-width:70px;font-size:12px;font-weight:600;color:var(--muted);">—</div>';
+          html += '<div style="text-align:right;flex-shrink:0;min-width:72px;font-size:12px;font-weight:600;color:var(--muted);">—</div>';
         }
         html += '</div>';
       }
@@ -11095,13 +11104,13 @@ function renderCalendar() {
 
     if (isMob) {
       // ── MOBILE: stat chips + year cards ──
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:10px 10px 6px;flex-shrink:0;">';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:10px 8px 6px;flex-shrink:0;box-sizing:border-box;">';
       html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Net P&L</div><div style="font-size:13px;font-weight:900;color:' + totalColor + ';letter-spacing:-0.5px;">' + fmt(totalPnl) + '</div></div>';
       html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Trades</div><div style="font-size:13px;font-weight:900;color:var(--text);">' + trades.length + '</div></div>';
       html += '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;"><div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Win %</div><div style="font-size:13px;font-weight:900;color:' + (totalWr>=50?'var(--green)':'var(--red)') + ';">' + (totalDecided?totalWr+'%':'—') + '</div></div>';
       html += '</div>';
       // Year cards
-      html += '<div style="display:flex;flex-direction:column;gap:6px;padding:4px 10px 10px;flex:1;">';
+      html += '<div style="display:flex;flex-direction:column;gap:6px;padding:4px 8px 10px;flex:1;box-sizing:border-box;">';
       years.forEach(yr => {
         const yTrades = trades.filter(t => (t.date||'').startsWith(yr));
         const yPnl = yTrades.reduce((s,t) => s + getPnl(t), 0);
@@ -11169,31 +11178,71 @@ function renderCalendar() {
   // ── Build & show monthly stats strip ──
   const monthPrefix = calYear + '-' + String(calMonth+1).padStart(2,'0');
   const monthDays   = Object.keys(dayMap).filter(d => d.startsWith(monthPrefix));
-  const monthPnl    = monthDays.reduce((s,d) => s + dayMap[d].pnl, 0);
-  const winDays     = monthDays.filter(d => dayMap[d].pnl > 0).length;
-  const lossDays    = monthDays.filter(d => dayMap[d].pnl < 0).length;
-  const totalTrades = monthDays.reduce((s,d) => s + dayMap[d].count, 0);
   const sym         = getCurrencySymbol();
   const statsEl     = document.getElementById('cal-month-stats');
+
+  // ── Build stats based on CURRENT VIEW ──
   if (statsEl) {
-    const pnlSign  = monthPnl >= 0 ? '+' : '';
-    const pnlColor = monthPnl >= 0 ? 'var(--green)' : 'var(--red)';
-    const pnlChipClass = monthPnl >= 0 ? 'pnl-pos' : 'pnl-neg';
-    const wr = winDays + lossDays > 0 ? Math.round(winDays / (winDays + lossDays) * 100) : 0;
-    if (monthDays.length > 0) {
-      statsEl.style.display = 'flex'; statsEl.style.alignItems = 'center';
+    let statPnl, statLabel, statWins, statLosses, statTrades, statDays;
+
+    if (calView === 'week') {
+      // Week stats
+      const dow = (today.getDay() + 6) % 7;
+      const ws = new Date(today); ws.setHours(0,0,0,0);
+      ws.setDate(today.getDate() - dow + (window.calWeekOffset||0) * 7);
+      statPnl = 0; statWins = 0; statLosses = 0; statTrades = 0; statDays = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(ws); d.setDate(ws.getDate() + i);
+        const data = dayMap[d.toISOString().slice(0,10)];
+        if (data) { statPnl += data.pnl; statTrades += data.count; statDays++;
+          if (data.pnl >= 0) statWins++; else statLosses++; }
+      }
+      statLabel = 'Week P&L';
+    } else if (calView === 'year') {
+      // Year stats
+      const yDays = Object.keys(dayMap).filter(d => d.startsWith(String(calYear)));
+      statPnl = yDays.reduce((s,d) => s + dayMap[d].pnl, 0);
+      statWins = yDays.filter(d => dayMap[d].pnl > 0).length;
+      statLosses = yDays.filter(d => dayMap[d].pnl < 0).length;
+      statTrades = yDays.reduce((s,d) => s + dayMap[d].count, 0);
+      statLabel = 'Year P&L';
+    } else if (calView === 'alltime') {
+      // All-time stats
+      const allDays = Object.keys(dayMap);
+      statPnl = allDays.reduce((s,d) => s + dayMap[d].pnl, 0);
+      statWins = allDays.filter(d => dayMap[d].pnl > 0).length;
+      statLosses = allDays.filter(d => dayMap[d].pnl < 0).length;
+      statTrades = allDays.reduce((s,d) => s + dayMap[d].count, 0);
+      statLabel = 'All Time P&L';
+    } else {
+      // Month stats (default)
+      statPnl = monthDays.reduce((s,d) => s + dayMap[d].pnl, 0);
+      statWins = monthDays.filter(d => dayMap[d].pnl > 0).length;
+      statLosses = monthDays.filter(d => dayMap[d].pnl < 0).length;
+      statTrades = monthDays.reduce((s,d) => s + dayMap[d].count, 0);
+      statLabel = 'Month P&L';
+    }
+
+    const pnlSign  = statPnl >= 0 ? '+' : '';
+    const pnlColor = statPnl >= 0 ? 'var(--green)' : 'var(--red)';
+    const pnlChipClass = statPnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+    const wr = statWins + statLosses > 0 ? Math.round(statWins / (statWins + statLosses) * 100) : 0;
+
+    if ((calView === 'month' ? monthDays.length : statTrades) > 0 || calView !== 'month') {
+      statsEl.style.display = (calView !== 'month' && window.innerWidth > 768) ? 'none' : 'flex';
+      statsEl.style.alignItems = 'center';
       statsEl.innerHTML = `
         <div class="cal-stat-chip ${pnlChipClass}">
-          <span class="chip-label">Month P&L</span>
-          <span class="chip-val" style="color:${pnlColor};">${pnlSign}${sym}${Math.abs(monthPnl).toFixed(2)}</span>
+          <span class="chip-label">${statLabel}</span>
+          <span class="chip-val" style="color:${pnlColor};">${pnlSign}${sym}${Math.abs(statPnl).toFixed(2)}</span>
         </div>
         <div class="cal-stat-chip win-chip">
           <span class="chip-label">Win</span>
-          <span class="chip-val" style="color:var(--green);">${winDays}d</span>
+          <span class="chip-val" style="color:var(--green);">${statWins}d</span>
         </div>
         <div class="cal-stat-chip loss-chip">
           <span class="chip-label">Loss</span>
-          <span class="chip-val" style="color:var(--red);">${lossDays}d</span>
+          <span class="chip-val" style="color:var(--red);">${statLosses}d</span>
         </div>
         <div class="cal-stat-chip">
           <span class="chip-label">WR</span>
@@ -11201,7 +11250,7 @@ function renderCalendar() {
         </div>
         <div class="cal-stat-chip">
           <span class="chip-label">Trades</span>
-          <span class="chip-val" style="color:var(--text);">${totalTrades}</span>
+          <span class="chip-val" style="color:var(--text);">${statTrades}</span>
         </div>`;
     } else {
       statsEl.style.display = 'none';
@@ -12884,6 +12933,19 @@ function _renderShareCard(tf) {
   pnlEl.textContent = (isPos ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
   pnlEl.style.color = pnlColor;
   pnlEl.style.textShadow = `0 0 60px ${pnlGlow}, 0 0 120px ${pnlGlow}`;
+  // Auto-scale PNL font so big numbers never overflow
+  pnlEl.style.fontSize = '60px';
+  pnlEl.style.letterSpacing = '-3px';
+  requestAnimationFrame(() => {
+    const card = document.getElementById('share-card');
+    const availW = (card ? card.offsetWidth : 320) - 44; // 2×22px padding
+    let fs = 60;
+    while (pnlEl.scrollWidth > availW && fs > 24) {
+      fs -= 2;
+      pnlEl.style.fontSize = fs + 'px';
+    }
+    pnlEl.style.letterSpacing = fs >= 48 ? '-3px' : fs >= 36 ? '-2px' : '-1px';
+  });
 
   // Win-rate progress bar
   const barEl = document.getElementById('share-wr-bar');
@@ -12957,7 +13019,7 @@ function _renderShareCard(tf) {
       const dirCol = t.dir === 'BUY' ? p.pos : p.neg;
       const res = getResult(t);
       const resDot = res === 'win' ? p.pos : res === 'loss' ? p.neg : '#f59e0b';
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:${p.tradeRowBg};border-radius:12px;border:1px solid ${p.tradeRowBorder};">
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:${p.tradeRowBg};border-radius:10px;border:1px solid ${p.tradeRowBorder};">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:6px;height:6px;border-radius:50%;background:${resDot};box-shadow:0 0 6px ${resDot};flex-shrink:0;"></div>
           <span style="font-size:13px;font-weight:800;color:${p.text};letter-spacing:-0.3px;">${t.symbol || '—'}</span>
