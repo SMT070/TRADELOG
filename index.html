@@ -10872,7 +10872,6 @@ function setCalView(v) {
   }
   // DOW row and grid columns — only for desktop (mobile handled via CSS classes)
   const dowRow = document.getElementById('cal-dow-row');
-  const grid   = document.getElementById('cal-grid');
   if (window.innerWidth > 768) {
     if (v === 'month') {
       if (dowRow) dowRow.style.display = 'grid';
