@@ -3555,7 +3555,7 @@
   </div>
 
   <!-- Stats bar — filled by renderCalendar, shown on mobile below nav -->
-  <div id="cal-month-stats" style="display:none;flex:1;align-items:center;gap:8px;"></div>
+  <div id="cal-month-stats" style="display:none;flex-shrink:0;align-items:center;gap:8px;"></div>
 
   <!-- BODY ROW: calendar grid + side panel, both rounded -->
   <div id="cal-body-grid" style="display:grid;grid-template-columns:1fr 300px;gap:12px;flex:1;overflow:hidden;min-height:0;">
@@ -10974,8 +10974,13 @@ function setCalView(v) {
   if (dayPanel) dayPanel.style.display = v === 'month' ? '' : 'none';
   if (bodyGrid) bodyGrid.style.gridTemplateColumns = v === 'month' ? '1fr 300px' : '1fr';
   if (statsStrip) {
-    // On mobile: always show stats. On desktop: only for month view.
-    statsStrip.style.display = (v !== 'month' && window.innerWidth > 768) ? 'none' : '';
+    // Stats strip is mobile-only — always hide on desktop
+    if (window.innerWidth > 768) {
+      statsStrip.style.display = 'none';
+    } else {
+      statsStrip.style.display = 'flex';
+      statsStrip.style.flexShrink = '0';
+    }
   }
   // DOW row and grid columns — only for desktop (mobile handled via CSS classes)
   const dowRow = document.getElementById('cal-dow-row');
@@ -11327,7 +11332,9 @@ function renderCalendar() {
     const wr = statWins + statLosses > 0 ? Math.round(statWins / (statWins + statLosses) * 100) : 0;
 
     if ((calView === 'month' ? monthDays.length : statTrades) > 0 || calView !== 'month') {
-      statsEl.style.display = (calView !== 'month' && window.innerWidth > 768) ? 'none' : 'flex';
+      // Stats strip: mobile-only
+      statsEl.style.display = (window.innerWidth > 768) ? 'none' : 'flex';
+      statsEl.style.flexShrink = '0';
       statsEl.style.alignItems = 'center';
       statsEl.innerHTML = `
         <div class="cal-stat-chip ${pnlChipClass}">
