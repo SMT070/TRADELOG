@@ -12822,23 +12822,23 @@ function _renderShareCard(tf) {
 
   const palettes = {
     dark: {
-      bg:            'linear-gradient(145deg,#060910 0%,#0b0f1c 40%,#0a0e1a 70%,#060910 100%)',
-      cardBorder:    'rgba(139,92,246,0.25)',
+      bg:            'linear-gradient(145deg,#05070f 0%,#090d1a 30%,#0c1022 60%,#08091566 80%,#05070f 100%)',
+      cardBorder:    'rgba(139,92,246,0.3)',
       text:          '#f1f5f9',
-      subText:       'rgba(241,245,249,0.5)',
+      subText:       'rgba(241,245,249,0.45)',
       pos:           '#00FFB2',
       neg:           '#FF3B5C',
-      posGlow:       'rgba(0,255,178,0.35)',
-      negGlow:       'rgba(255,59,92,0.35)',
-      glow1:         'rgba(99,102,241,0.28)',
-      glow2:         'rgba(139,92,246,0.18)',
-      glow3:         'rgba(0,255,178,0.06)',
-      statBg:        'rgba(255,255,255,0.045)',
-      statBorder:    'rgba(255,255,255,0.075)',
-      tradeRowBg:    'rgba(255,255,255,0.04)',
-      tradeRowBorder:'rgba(255,255,255,0.08)',
-      footerBorder:  'rgba(255,255,255,0.07)',
-      barTrack:      'rgba(255,255,255,0.08)',
+      posGlow:       'rgba(0,255,178,0.4)',
+      negGlow:       'rgba(255,59,92,0.4)',
+      glow1:         'rgba(99,102,241,0.35)',
+      glow2:         'rgba(139,92,246,0.22)',
+      glow3:         'rgba(0,255,178,0.08)',
+      statBg:        'rgba(255,255,255,0.055)',
+      statBorder:    'rgba(255,255,255,0.1)',
+      tradeRowBg:    'rgba(255,255,255,0.045)',
+      tradeRowBorder:'rgba(255,255,255,0.09)',
+      footerBorder:  'rgba(255,255,255,0.08)',
+      barTrack:      'rgba(255,255,255,0.1)',
     },
     gray: {
       bg:            'linear-gradient(145deg,#13151e 0%,#191c28 40%,#16192400 70%,#13151e 100%)',
@@ -12904,12 +12904,15 @@ function _renderShareCard(tf) {
 
   // ── APPLY CARD STYLES ─────────────────────────────────────────────
   const card = document.getElementById('share-card');
-  card.style.cssText = `border-radius:28px;padding:0;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 40px 120px rgba(0,0,0,0.8);background:${p.bg};border:1.5px solid ${p.cardBorder};color:${p.text};`;
+  card.style.cssText = `border-radius:24px;padding:0;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 32px 80px rgba(0,0,0,0.9),0 0 0 1px ${p.cardBorder};background:${p.bg};color:${p.text};`;
 
-  // Glows
-  document.getElementById('share-glow-1').style.background = `radial-gradient(circle,${p.glow1},transparent 70%)`;
-  document.getElementById('share-glow-2').style.background = `radial-gradient(circle,${p.glow2},transparent 70%)`;
-  document.getElementById('share-glow-3').style.background = `radial-gradient(circle,${p.glow3},transparent 70%)`;
+  // Glows — bigger, more visible
+  const g1 = document.getElementById('share-glow-1');
+  const g2 = document.getElementById('share-glow-2');
+  const g3 = document.getElementById('share-glow-3');
+  if(g1) { g1.style.background=`radial-gradient(circle,${p.glow1},transparent 65%)`; g1.style.opacity='1'; }
+  if(g2) { g2.style.background=`radial-gradient(circle,${p.glow2},transparent 65%)`; g2.style.opacity='1'; }
+  if(g3) { g3.style.background=`radial-gradient(circle,${pnlGlow.replace('0.35','0.12').replace('0.3','0.1').replace('0.06','0.08')},transparent 65%)`; g3.style.top='35%'; g3.style.left='20%'; g3.style.width='60%'; g3.style.height='180px'; g3.style.opacity='0.7'; }
 
   // Logo
   document.getElementById('share-logo-text').style.color = p.text;
@@ -12917,7 +12920,7 @@ function _renderShareCard(tf) {
   // Footer border
   document.getElementById('share-footer').style.borderTop = `1px solid ${p.footerBorder}`;
   document.getElementById('share-footer-dot').style.background = pnlColor;
-  document.getElementById('share-footer-dot').style.boxShadow = `0 0 6px ${pnlColor}`;
+  document.getElementById('share-footer-dot').style.boxShadow = `0 0 8px ${pnlColor},0 0 16px ${pnlColor}`;
 
   // ── HEADER ────────────────────────────────────────────────────────
   const dateLabel = _getShareLabel(tf);
@@ -12931,15 +12934,13 @@ function _renderShareCard(tf) {
   if (pnlLabelEl) { pnlLabelEl.textContent = _getPnlLabel(tf); pnlLabelEl.style.color = p.subText; }
   const pnlEl = document.getElementById('share-pnl');
   pnlEl.textContent = (isPos ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
-  pnlEl.style.color = pnlColor;
-  pnlEl.style.textShadow = `0 0 60px ${pnlGlow}, 0 0 120px ${pnlGlow}`;
-  // Auto-scale PNL font so big numbers never overflow
-  pnlEl.style.fontSize = '60px';
-  pnlEl.style.letterSpacing = '-3px';
+  // Gradient PNL text for cinematic effect
+  pnlEl.style.cssText = `font-weight:900;line-height:1;font-variant-numeric:tabular-nums;word-break:break-all;overflow:hidden;font-size:60px;letter-spacing:-3px;background:linear-gradient(135deg,${pnlColor} 0%,${pnlColor}cc 60%,${pnlColor}88 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 18px ${pnlGlow}) drop-shadow(0 0 40px ${pnlGlow});`;
+  // Auto-scale font so big numbers never overflow
   requestAnimationFrame(() => {
-    const card = document.getElementById('share-card');
-    const availW = (card ? card.offsetWidth : 320) - 44; // 2×22px padding
+    const availW = (card ? card.offsetWidth : 320) - 44;
     let fs = 60;
+    pnlEl.style.fontSize = fs + 'px';
     while (pnlEl.scrollWidth > availW && fs > 24) {
       fs -= 2;
       pnlEl.style.fontSize = fs + 'px';
@@ -12953,8 +12954,8 @@ function _renderShareCard(tf) {
   if (barEl && barWrap) {
     barWrap.style.background = p.barTrack;
     barEl.style.width = (decided ? wr : 0) + '%';
-    barEl.style.background = `linear-gradient(90deg, ${pnlColor}, ${pnlColor}aa)`;
-    barEl.style.boxShadow = `0 0 10px ${pnlGlow}`;
+    barEl.style.background = `linear-gradient(90deg, ${pnlColor}, ${pnlColor}88)`;
+    barEl.style.boxShadow = `0 0 12px ${pnlGlow}`;
   }
   const wrPctEl = document.getElementById('share-wr-pct');
   if (wrPctEl) {
@@ -12968,6 +12969,7 @@ function _renderShareCard(tf) {
     if (el) {
       el.style.background = p.statBg;
       el.style.border = `1px solid ${p.statBorder}`;
+      el.style.backdropFilter = 'blur(12px)';
     }
   });
 
@@ -12982,12 +12984,12 @@ function _renderShareCard(tf) {
   const bestSymEl = document.getElementById('share-best-sym');
   if (bestTrade) {
     bestEl.textContent = (best >= 0 ? '+' : '-') + sym + Math.abs(best).toFixed(2);
-    bestEl.style.color = best >= 0 ? p.pos : p.neg;
-    bestEl.style.textShadow = `0 0 20px ${best >= 0 ? p.posGlow : p.negGlow}`;
+    bestEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;background:linear-gradient(135deg,${best>=0?p.pos:p.neg},${best>=0?p.pos+'99':p.neg+'99'});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;`;
     bestSymEl.textContent = bestTrade.symbol || '—';
   } else {
     bestEl.textContent = '—';
     bestEl.style.color = p.text;
+    bestEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;color:${p.text};`;
     bestSymEl.textContent = '—';
   }
   bestSymEl.style.color = p.subText;
@@ -12995,41 +12997,44 @@ function _renderShareCard(tf) {
   // Win rate
   const wrEl = document.getElementById('share-winrate');
   const wrSubEl = document.getElementById('share-winrate-sub');
+  if (decided) {
+    wrEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;background:linear-gradient(135deg,${wr>=50?p.pos:p.neg},${wr>=50?p.pos+'99':p.neg+'99'});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;`;
+  } else {
+    wrEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;color:${p.text};`;
+  }
   wrEl.textContent = decided ? wr + '%' : '—';
-  wrEl.style.color = decided ? (wr >= 50 ? p.pos : p.neg) : p.text;
-  if (decided) wrEl.style.textShadow = `0 0 20px ${wr >= 50 ? p.posGlow : p.negGlow}`;
   wrSubEl.textContent = decided ? `${decided} decided` : 'no data';
   wrSubEl.style.color = p.subText;
 
   // ── TRADE LIST ────────────────────────────────────────────────────
   const listEl = document.getElementById('share-trade-list');
   if (tfTrades.length === 0) {
-    listEl.innerHTML = `<div style="text-align:center;padding:18px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">No trades for this period</div>`;
+    listEl.innerHTML = `<div style="text-align:center;padding:16px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">No trades for this period</div>`;
   } else {
-    // For week/month/alltime show top 5 by P&L
     const displayTrades = tf === 'today'
       ? tfTrades.slice(0, 5)
       : [...tfTrades].sort((a,b) => Math.abs(getPnl(b)) - Math.abs(getPnl(a))).slice(0, 5);
 
     listEl.innerHTML = displayTrades.map((t,i) => {
-      const tp   = getPnl(t);
-      const col  = tp >= 0 ? p.pos : p.neg;
-      const glow = tp >= 0 ? p.posGlow : p.negGlow;
-      const dirBg  = t.dir === 'BUY' ? p.pos + '18' : p.neg + '18';
-      const dirCol = t.dir === 'BUY' ? p.pos : p.neg;
-      const res = getResult(t);
-      const resDot = res === 'win' ? p.pos : res === 'loss' ? p.neg : '#f59e0b';
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:${p.tradeRowBg};border-radius:10px;border:1px solid ${p.tradeRowBorder};">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:6px;height:6px;border-radius:50%;background:${resDot};box-shadow:0 0 6px ${resDot};flex-shrink:0;"></div>
-          <span style="font-size:13px;font-weight:800;color:${p.text};letter-spacing:-0.3px;">${t.symbol || '—'}</span>
-          <span style="font-size:9px;font-weight:800;padding:3px 8px;border-radius:6px;background:${dirBg};color:${dirCol};letter-spacing:1px;">${t.dir || ''}</span>
+      const tp      = getPnl(t);
+      const col     = tp >= 0 ? p.pos : p.neg;
+      const glow    = tp >= 0 ? p.posGlow : p.negGlow;
+      const dirBg   = t.dir === 'BUY' ? (theme==='light'?'rgba(5,150,105,0.1)':'rgba(0,255,178,0.1)') : (theme==='light'?'rgba(220,38,38,0.1)':'rgba(255,59,92,0.1)');
+      const dirCol  = t.dir === 'BUY' ? p.pos : p.neg;
+      const res     = getResult(t);
+      const resDot  = res === 'win' ? p.pos : res === 'loss' ? p.neg : '#f59e0b';
+      const accentBar = `3px solid ${col}`;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px 8px 10px;background:${p.tradeRowBg};border-radius:10px;border:1px solid ${p.tradeRowBorder};border-left:${accentBar};overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+          <div style="width:5px;height:5px;border-radius:50%;background:${resDot};box-shadow:0 0 6px ${resDot};flex-shrink:0;"></div>
+          <span style="font-size:13px;font-weight:800;color:${p.text};letter-spacing:-0.3px;white-space:nowrap;">${t.symbol || '—'}</span>
+          <span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px;background:${dirBg};color:${dirCol};letter-spacing:1px;flex-shrink:0;">${t.dir || ''}</span>
         </div>
-        <span style="font-size:14px;font-weight:900;color:${col};text-shadow:0 0 16px ${glow};letter-spacing:-0.5px;">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
+        <span style="font-size:13px;font-weight:900;color:${col};filter:drop-shadow(0 0 6px ${glow});letter-spacing:-0.5px;flex-shrink:0;margin-left:8px;">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
       </div>`;
     }).join('');
     if (tfTrades.length > 5) {
-      listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.subText};padding:6px 0;font-weight:700;letter-spacing:1px;">+ ${tfTrades.length - 5} MORE TRADES</div>`;
+      listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.subText};padding:5px 0 2px;font-weight:700;letter-spacing:1px;">+ ${tfTrades.length - 5} MORE TRADES</div>`;
     }
   }
 }
