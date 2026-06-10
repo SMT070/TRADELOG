@@ -2370,12 +2370,19 @@
     animation:tl-pulse 1.8s ease-in-out infinite;
     flex-shrink:0;
   ">
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+    <svg width="32" height="32" viewBox="0 0 28 28">
+      <polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/>
+      <polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/>
+      <polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/>
+      <rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/>
+      <circle cx="10" cy="15" r="1.5" fill="white"/>
+      <circle cx="18" cy="15" r="1.5" fill="white"/>
     </svg>
   </div>
   <!-- App name -->
   <div style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.4px;color:var(--text);text-shadow:0 1px 20px rgba(99,102,241,0.6);">TradeLog</div>
+  <!-- Status message -->
+  <div id="tl-loader-status" style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.3px;min-height:18px;transition:opacity .3s;">Loading...</div>
   <!-- Shimmer bar -->
   <div style="width:100px;height:3px;background:var(--border);border-radius:99px;overflow:hidden;position:relative;">
     <div style="
@@ -2411,6 +2418,19 @@
         l.classList.add('tl-hidden');
       });
     });
+  };
+
+  // ── Show loader with optional status message ──
+  window.showTradelogLoader = function(status) {
+    var l = document.getElementById('tradelog-loader');
+    if (l) l.classList.remove('tl-hidden');
+    window.setLoaderStatus(status || 'Loading...');
+  };
+
+  // ── Update status text without reshowing loader ──
+  window.setLoaderStatus = function(msg) {
+    var s = document.getElementById('tl-loader-status');
+    if (s) s.textContent = msg;
   };
 </script>
 
@@ -5570,22 +5590,43 @@ async function handleAuth() {
   const btn = document.getElementById('auth-btn');
   document.getElementById('auth-error').style.display = 'none';
   if (!email || !password) { showAuthError('Please enter email and password.'); return; }
-  btn.textContent = '...'; btn.disabled = true;
+
+  btn.textContent = authMode === 'login' ? 'Logging in…' : 'Creating account…';
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+
   try {
     if (authMode === 'login') {
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) { showAuthError(error.message); btn.textContent = 'Log In'; btn.disabled = false; return; }
-      if (data && data.user) await initApp(data.user);
+      if (error) {
+        showAuthError(error.message);
+        btn.textContent = 'Log In'; btn.disabled = false; btn.style.opacity = '';
+        return;
+      }
+      if (data && data.user) {
+        // Show loader immediately with status steps
+        window.showTradelogLoader('Signing you in…');
+        window.setLoaderStatus('Signing you in…');
+        setTimeout(() => window.setLoaderStatus('Loading your trades…'), 600);
+        setTimeout(() => window.setLoaderStatus('Almost there…'), 1800);
+        await initApp(data.user);
+      }
     } else {
       const name = document.getElementById('auth-name').value.trim();
       const { error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
-      if (error) { showAuthError(error.message); btn.textContent = 'Create Account'; btn.disabled = false; return; }
-      showAuthError('Check your email to confirm your account.');
-      btn.textContent = 'Create Account'; btn.disabled = false;
+      if (error) {
+        showAuthError(error.message);
+        btn.textContent = 'Create Account'; btn.disabled = false; btn.style.opacity = '';
+        return;
+      }
+      showAuthError('✓ Check your email to confirm your account.');
+      btn.textContent = 'Create Account'; btn.disabled = false; btn.style.opacity = '';
     }
   } catch(e) {
     showAuthError('Something went wrong. Try again.');
-    btn.textContent = authMode==='login'?'Log In':'Create Account'; btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Log In' : 'Create Account';
+    btn.disabled = false; btn.style.opacity = '';
+    window.hideTradelogLoader && window.hideTradelogLoader();
   }
 }
 function showApp() {
@@ -5869,12 +5910,17 @@ async function initApp(user) {
   // ── Sync Supabase first, then reveal app with data already populated ──
   setTimeout(async () => {
     try {
+      window.setLoaderStatus && window.setLoaderStatus('Loading your trades…');
       await loadAllFromSupabase();
+      window.setLoaderStatus && window.setLoaderStatus('Setting up your dashboard…');
     } catch(e) { console.warn('TradeLog: background sync failed', e); }
     try { refreshDashboard(); } catch(e) {}
     try { renderTrades(); } catch(e) {}
     try { loadJournal(); } catch(e) {}
     try { _syncFeatureDropStates(); } catch(e) {}
+    window.setLoaderStatus && window.setLoaderStatus('Ready!');
+    // Small pause so user sees "Ready!" before it disappears
+    await new Promise(r => setTimeout(r, 350));
     showApp();
     window.hideTradelogLoader();
   }, 0);
