@@ -1553,8 +1553,8 @@
       gap: 8px !important;
     }
     #cal-month-label { font-size: 15px !important; font-weight: 800 !important; min-width: 0 !important; text-align: center !important; }
-    /* Show all 4 view buttons — compact on mobile */
-    #cal-view-month, #cal-view-week, #cal-view-year, #cal-view-alltime {
+    /* Show all view buttons — compact on mobile */
+    #cal-view-month, #cal-view-year, #cal-view-alltime {
       padding: 5px 9px !important; font-size: 10px !important;
     }
     /* View switcher scrollable if needed */
@@ -3548,7 +3548,6 @@
     <!-- View switcher -->
     <div style="flex-shrink:0;display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:2px;border:1px solid var(--border);">
       <button id="cal-view-month"   onclick="setCalView('month')"   style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;">Month</button>
-      <button id="cal-view-week"    onclick="setCalView('week')"    style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Week</button>
       <button id="cal-view-year"    onclick="setCalView('year')"    style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">Year</button>
       <button id="cal-view-alltime" onclick="setCalView('alltime')" style="padding:5px 14px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);">All Time</button>
     </div>
@@ -10950,7 +10949,7 @@ function getDayMap() {
 function setCalView(v) {
   calView = v;
   // Toggle view buttons
-  ;['month','week','year','alltime'].forEach(id => {
+  ;['month','year','alltime'].forEach(id => {
     const btn = document.getElementById('cal-view-' + id);
     if (!btn) return;
     btn.style.background = v === id ? 'var(--accent)' : 'transparent';
