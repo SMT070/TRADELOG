@@ -2242,6 +2242,16 @@
       border: none !important;
     }
 
+    /* Desktop fund iframes - clean, no borders */
+    #fund-ticker-wrap iframe,
+    #fund-cal-wrap-all .tradingview-widget-container,
+    #fund-news-wrap-all .tradingview-widget-container,
+    #fund-cal-wrap-all iframe,
+    #fund-news-wrap-all iframe {
+      border: none !important;
+      outline: none !important;
+    }
+
     .new-page-header { flex-wrap:wrap; gap:8px; margin-bottom:14px !important; }
     .new-page-title { font-size:18px !important; }
 
@@ -5570,12 +5580,20 @@ async function getValidUid() {
 let authMode = 'login';
 function switchAuthTab(mode) {
   authMode = mode;
-  document.getElementById('auth-tab-login').style.background  = mode==='login'  ? 'var(--accent)' : 'transparent';
-  document.getElementById('auth-tab-login').style.color       = mode==='login'  ? '#fff' : 'var(--muted)';
-  document.getElementById('auth-tab-signup').style.background = mode==='signup' ? 'var(--accent)' : 'transparent';
-  document.getElementById('auth-tab-signup').style.color      = mode==='signup' ? '#fff' : 'var(--muted)';
-  document.getElementById('auth-name-field').style.display    = mode==='signup' ? 'block' : 'none';
-  document.getElementById('auth-btn').textContent             = mode==='login'  ? 'Log In' : 'Create Account';
+  const loginBtn  = document.getElementById('auth-tab-login');
+  const signupBtn = document.getElementById('auth-tab-signup');
+  if (loginBtn) {
+    loginBtn.style.background   = mode==='login' ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'transparent';
+    loginBtn.style.color        = mode==='login' ? '#fff' : 'rgba(255,255,255,0.4)';
+    loginBtn.style.boxShadow    = mode==='login' ? '0 2px 10px rgba(99,102,241,0.3)' : 'none';
+  }
+  if (signupBtn) {
+    signupBtn.style.background  = mode==='signup' ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'transparent';
+    signupBtn.style.color       = mode==='signup' ? '#fff' : 'rgba(255,255,255,0.4)';
+    signupBtn.style.boxShadow   = mode==='signup' ? '0 2px 10px rgba(99,102,241,0.3)' : 'none';
+  }
+  document.getElementById('auth-name-field').style.display = mode==='signup' ? 'block' : 'none';
+  document.getElementById('auth-btn').textContent          = mode==='login'  ? 'Log In' : 'Create Account';
   document.getElementById('auth-error').style.display = 'none';
 }
 function showAuthError(msg) {
@@ -5631,9 +5649,13 @@ async function handleAuth() {
 function showApp() {
   const auth = document.getElementById('auth-screen');
   const app  = document.getElementById('app-root');
-  if (auth) auth.style.display = 'none';
-  if (app)  app.style.display  = 'block';
-  // Always land on dashboard when logging in
+  if (auth) {
+    auth.style.transition = 'opacity .35s ease, transform .35s ease';
+    auth.style.opacity = '0';
+    auth.style.transform = 'scale(0.97)';
+    setTimeout(() => { auth.style.display = 'none'; auth.style.transform = ''; }, 380);
+  }
+  if (app) app.style.display = 'block';
   try { switchPage('dashboard'); } catch(e) {}
 }
 function showAuthScreen() {
@@ -14417,7 +14439,7 @@ handleNotebooksMobile();
   </div>
 
   <!-- ── TICKER TAPE ── -->
-  <div id="fund-ticker-wrap" style="flex-shrink:0;height:50px;background:var(--surface);border-bottom:1px solid var(--border);overflow:hidden;"></div>
+  <div id="fund-ticker-wrap" style="flex-shrink:0;height:50px;background:var(--surface);border-bottom:1px solid var(--border);overflow:hidden;transition:background .3s;"></div>
 
   <!-- ── MOBILE TAB BAR (hidden on desktop via CSS) ── -->
   <div id="fund-mobile-tabs" style="display:none;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);padding:0 14px;">
@@ -14461,7 +14483,10 @@ let _fundLoaded = { ticker: false, all: false };
 
 function renderFundamentals() {
   const theme = localStorage.getItem('tradelog_theme') || 'dark';
-  window._fundColorTheme = theme === 'light' ? 'light' : 'dark';
+  const isLight = theme === 'light';
+  window._fundColorTheme = isLight ? 'light' : 'dark';
+  // Background that matches app surface for each theme
+  window._fundBgColor = isLight ? '#ffffff' : '#0f1117';
   const isMobile = window.innerWidth <= 768;
 
   if (!isMobile && !_fundLoaded.ticker) {
@@ -14475,7 +14500,6 @@ function renderFundamentals() {
       if (isMobile) fundMobTab('cal');
     }));
   } else if (isMobile) {
-    // Re-activate cal tab if switching back to page
     const calPanel = document.getElementById('fund-panel-cal');
     if (calPanel && !calPanel.classList.contains('fund-mob-active')) {
       fundMobTab('cal');
@@ -14509,6 +14533,8 @@ function _fundAvailH() {
 function loadFundTicker() {
   const wrap = document.getElementById('fund-ticker-wrap');
   if (!wrap) return;
+  const theme = window._fundColorTheme || 'dark';
+  const isLight = theme === 'light';
   wrap.innerHTML = `<div class="tradingview-widget-container" style="width:100%;height:50px;"><div class="tradingview-widget-container__widget"></div></div>`;
   const s = document.createElement('script');
   s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js';
@@ -14526,21 +14552,28 @@ function loadFundTicker() {
       { proName: "NASDAQ:TSLA",      title: "Tesla" },
       { proName: "BITSTAMP:ETHUSD",  title: "Ethereum" }
     ],
-    showSymbolLogo: true, isTransparent: true, displayMode: "adaptive",
-    colorTheme: window._fundColorTheme || 'dark', locale: "en",
-    width: "100%", height: "50"
+    showSymbolLogo: true,
+    isTransparent: true,
+    displayMode: "adaptive",
+    colorTheme: theme,
+    locale: "en",
+    width: "100%",
+    height: "50"
   });
   wrap.querySelector('.tradingview-widget-container').appendChild(s);
 }
 
 function loadFundAllWidgets() {
   _fundLoaded.all = true;
-  const theme = window._fundColorTheme || 'dark';
+  const theme   = window._fundColorTheme || 'dark';
+  const isLight = theme === 'light';
+  // Match the app's surface color exactly so widgets blend in seamlessly
+  // Dark: #0b0f1a  Light: #ffffff
+  const bgColor = isLight ? '#ffffff' : '#0b0f1a';
   const isMobile = window.innerWidth <= 768;
 
   let widgetH;
   if (isMobile) {
-    // header ~58px + tab bar ~44px = 102px overhead
     widgetH = Math.max(400, window.innerHeight - 102);
   } else {
     widgetH = _fundAvailH() - 45;
@@ -14553,15 +14586,29 @@ function loadFundAllWidgets() {
 
   _injectTVWidget('fund-cal-wrap-all',
     'https://s3.tradingview.com/external-embedding/embed-widget-events.js',
-    { colorTheme: theme, isTransparent: true, locale: 'en',
-      countryFilter: 'us,eu,gb,jp,cn,nz,au,ca', importanceFilter: '0,1',
-      width: '100%', height: widgetH }
+    {
+      colorTheme: theme,
+      isTransparent: false,
+      backgroundColor: bgColor,
+      locale: 'en',
+      countryFilter: 'us,eu,gb,jp,cn,nz,au,ca',
+      importanceFilter: '0,1',
+      width: '100%',
+      height: widgetH
+    }
   );
   _injectTVWidget('fund-news-wrap-all',
     'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js',
-    { displayMode: 'regular', feedMode: 'all_symbols',
-      colorTheme: theme, isTransparent: true, locale: 'en',
-      width: '100%', height: widgetH }
+    {
+      displayMode: 'regular',
+      feedMode: 'all_symbols',
+      colorTheme: theme,
+      isTransparent: false,
+      backgroundColor: bgColor,
+      locale: 'en',
+      width: '100%',
+      height: widgetH
+    }
   );
 }
 
@@ -14673,36 +14720,112 @@ window.addEventListener('resize', () => {
   </div>
 </div>
 <!-- ── AUTH SCREEN ─────────────────────────────────────────────────────────── -->
-<div id="auth-screen" style="display:flex;position:fixed;inset:0;z-index:99998;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;">
-  <div style="width:100%;max-width:400px;padding:0 24px;">
-    <!-- Logo -->
-    <div style="text-align:center;margin-bottom:40px;">
-      <div style="font-size:36px;font-weight:900;color:var(--text);letter-spacing:-2px;">Trade<span style="color:var(--accent);">Log</span></div>
-      <div style="font-size:13px;color:var(--muted);margin-top:6px;">Your professional trading journal</div>
-    </div>
+<style>
+  @keyframes authFadeIn  { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes authOrb1    { 0%,100% { transform:translate(0,0) scale(1); } 50% { transform:translate(30px,-20px) scale(1.08); } }
+  @keyframes authOrb2    { 0%,100% { transform:translate(0,0) scale(1); } 50% { transform:translate(-20px,25px) scale(1.05); } }
+  @keyframes authOrb3    { 0%,100% { transform:translate(0,0) scale(1); } 50% { transform:translate(15px,15px) scale(1.1); } }
+  #auth-screen input:-webkit-autofill,
+  #auth-screen input:-webkit-autofill:hover,
+  #auth-screen input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px #1e1e2e inset !important;
+    -webkit-text-fill-color: #f1f5f9 !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+  #auth-card { animation: authFadeIn .5s cubic-bezier(.16,1,.3,1) both; }
+  .auth-input {
+    width:100%; padding:13px 16px;
+    background:rgba(255,255,255,0.055);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:12px; color:#f1f5f9;
+    font-size:14px; font-family:var(--sans);
+    box-sizing:border-box; outline:none;
+    transition:border-color .2s, background .2s, box-shadow .2s;
+  }
+  .auth-input::placeholder { color:rgba(255,255,255,0.25); }
+  .auth-input:focus {
+    border-color:rgba(99,102,241,0.7);
+    background:rgba(99,102,241,0.07);
+    box-shadow:0 0 0 3px rgba(99,102,241,0.12);
+  }
+  #auth-btn-main {
+    width:100%; padding:14px;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    color:#fff; border:none; border-radius:12px;
+    font-size:15px; font-weight:700; cursor:pointer;
+    font-family:var(--sans);
+    transition:opacity .15s, transform .15s, box-shadow .2s;
+    box-shadow:0 4px 20px rgba(99,102,241,0.35);
+    letter-spacing:-0.2px;
+  }
+  #auth-btn-main:hover  { opacity:.9; transform:translateY(-1px); box-shadow:0 6px 28px rgba(99,102,241,0.45); }
+  #auth-btn-main:active { transform:translateY(0); opacity:.8; }
+  #auth-btn-main:disabled { opacity:.5; transform:none; cursor:not-allowed; }
+  .auth-tab-btn {
+    flex:1; padding:9px; border-radius:9px; border:none;
+    font-size:13px; font-weight:700; cursor:pointer;
+    font-family:var(--sans); transition:all .2s;
+  }
+</style>
 
-    <!-- Tabs -->
-    <div style="display:flex;background:var(--surface2);border-radius:12px;padding:4px;gap:4px;margin-bottom:28px;">
-      <button id="auth-tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:var(--accent);color:#fff;transition:all .2s;">Log In</button>
-      <button id="auth-tab-signup" onclick="switchAuthTab('signup')" style="flex:1;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);background:transparent;color:var(--muted);transition:all .2s;">Sign Up</button>
-    </div>
+<div id="auth-screen" style="display:flex;position:fixed;inset:0;z-index:99998;background:#0a0b14;align-items:center;justify-content:center;overflow:hidden;">
 
-    <!-- Form -->
-    <div style="display:flex;flex-direction:column;gap:14px;">
-      <div id="auth-name-field" style="display:none;">
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Name</label>
-        <input id="auth-name" type="text" placeholder="Your name" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+  <!-- Ambient orbs -->
+  <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
+    <div style="position:absolute;top:-120px;left:-80px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.18),transparent 65%);animation:authOrb1 8s ease-in-out infinite;"></div>
+    <div style="position:absolute;bottom:-100px;right:-60px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,0.14),transparent 65%);animation:authOrb2 10s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:40%;right:15%;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.08),transparent 65%);animation:authOrb3 7s ease-in-out infinite;"></div>
+  </div>
+
+  <!-- Card -->
+  <div id="auth-card" style="position:relative;z-index:1;width:100%;max-width:400px;padding:0 20px;">
+    <div style="background:rgba(255,255,255,0.04);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.09);border-radius:24px;padding:36px 32px;box-shadow:0 32px 80px rgba(0,0,0,0.6);">
+
+      <!-- Logo -->
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:14px;margin-bottom:14px;box-shadow:0 8px 24px rgba(99,102,241,0.4);">
+          <svg width="24" height="24" viewBox="0 0 28 28">
+            <polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/>
+            <polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/>
+            <polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/>
+            <rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/>
+            <circle cx="10" cy="15" r="1.5" fill="white"/>
+            <circle cx="18" cy="15" r="1.5" fill="white"/>
+          </svg>
+        </div>
+        <div style="font-size:26px;font-weight:900;color:#f1f5f9;letter-spacing:-1px;line-height:1;">Trade<span style="color:#818cf8;">Log</span></div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.35);margin-top:5px;font-weight:500;">Your professional trading journal</div>
       </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Email</label>
-        <input id="auth-email" type="email" placeholder="you@example.com" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
+
+      <!-- Tabs -->
+      <div style="display:flex;background:rgba(255,255,255,0.06);border-radius:11px;padding:3px;gap:3px;margin-bottom:24px;border:1px solid rgba(255,255,255,0.07);">
+        <button id="auth-tab-login" class="auth-tab-btn" onclick="switchAuthTab('login')" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 2px 10px rgba(99,102,241,0.3);">Log In</button>
+        <button id="auth-tab-signup" class="auth-tab-btn" onclick="switchAuthTab('signup')" style="background:transparent;color:rgba(255,255,255,0.4);">Sign Up</button>
       </div>
-      <div>
-        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Password</label>
-        <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:14px;font-family:var(--sans);box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'" onkeydown="if(event.key==='Enter')handleAuth()">
+
+      <!-- Form -->
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div id="auth-name-field" style="display:none;">
+          <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Name</label>
+          <input id="auth-name" class="auth-input" type="text" placeholder="Your name">
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Email</label>
+          <input id="auth-email" class="auth-input" type="email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')handleAuth()">
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Password</label>
+          <input id="auth-password" class="auth-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAuth()">
+        </div>
+
+        <div id="auth-error" style="display:none;padding:10px 14px;background:rgba(255,59,92,0.1);border:1px solid rgba(255,59,92,0.3);border-radius:10px;font-size:12px;color:#ff3b5c;line-height:1.5;"></div>
+
+        <button id="auth-btn" onclick="handleAuth()" style="width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;transition:opacity .15s,transform .15s,box-shadow .2s;box-shadow:0 4px 20px rgba(99,102,241,0.35);letter-spacing:-0.2px;"
+          onmouseenter="if(!this.disabled){this.style.opacity='.9';this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 28px rgba(99,102,241,0.45)'}"
+          onmouseleave="this.style.opacity='1';this.style.transform='';this.style.boxShadow='0 4px 20px rgba(99,102,241,0.35)'"
+        >Log In</button>
       </div>
-      <div id="auth-error" style="display:none;padding:10px 14px;background:var(--red-bg);border:1px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);"></div>
-      <button id="auth-btn" onclick="handleAuth()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:4px;transition:opacity .2s;" onmouseenter="this.style.opacity='.85'" onmouseleave="this.style.opacity='1'">Log In</button>
+
     </div>
   </div>
 </div>
