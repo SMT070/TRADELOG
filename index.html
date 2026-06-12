@@ -10881,6 +10881,9 @@ function loadTVWidget() {
       loadDashTvWidget();
     }
     // Reload Fundamentals widgets so they match the new theme
+    const bgMap = { dark:'#05080f', gray:'#1c1e26', black:'#000000', light:'#f0f4f8' };
+    window._fundColorTheme = (t === 'light') ? 'light' : 'dark';
+    window._fundBgColor    = bgMap[t] || '#05080f';
     _fundLoaded = { ticker: false, all: false };
     const calWrap  = document.getElementById('fund-cal-wrap-all');
     const newsWrap = document.getElementById('fund-news-wrap-all');
@@ -14548,10 +14551,11 @@ let _fundLoaded = { ticker: false, all: false };
 
 function renderFundamentals() {
   const theme = localStorage.getItem('tradelog_theme') || 'dark';
-  const isLight = theme === 'light';
-  window._fundColorTheme = isLight ? 'light' : 'dark';
-  // Background that matches app surface for each theme
-  window._fundBgColor = isLight ? '#ffffff' : '#0f1117';
+  // TradingView only supports 'dark' or 'light'
+  window._fundColorTheme = (theme === 'light') ? 'light' : 'dark';
+  // Map each app theme to its exact --bg color so widgets blend seamlessly
+  const bgMap = { dark:'#05080f', gray:'#1c1e26', black:'#000000', light:'#f0f4f8' };
+  window._fundBgColor = bgMap[theme] || '#05080f';
   const isMobile = window.innerWidth <= 768;
 
   if (!isMobile && !_fundLoaded.ticker) {
@@ -14599,7 +14603,6 @@ function loadFundTicker() {
   const wrap = document.getElementById('fund-ticker-wrap');
   if (!wrap) return;
   const theme = window._fundColorTheme || 'dark';
-  const isLight = theme === 'light';
   wrap.innerHTML = `<div class="tradingview-widget-container" style="width:100%;height:50px;"><div class="tradingview-widget-container__widget"></div></div>`;
   const s = document.createElement('script');
   s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js';
@@ -14631,10 +14634,7 @@ function loadFundTicker() {
 function loadFundAllWidgets() {
   _fundLoaded.all = true;
   const theme   = window._fundColorTheme || 'dark';
-  const isLight = theme === 'light';
-  // Use --bg (page background) not --surface so widget blends with the panel's parent
-  // Dark --bg: #060912   Light --bg: #f0f4f8
-  const bgColor = isLight ? '#f0f4f8' : '#060912';
+  const bgColor = window._fundBgColor || '#05080f';
   const isMobile = window.innerWidth <= 768;
 
   let widgetH;
@@ -14649,7 +14649,7 @@ function loadFundAllWidgets() {
   if (calEl)  { calEl.style.height  = widgetH + 'px'; }
   if (newsEl) { newsEl.style.height = widgetH + 'px'; }
 
-  // Also set the parent panel backgrounds to match
+  // Match panel backgrounds to widget background
   const calPanel  = document.getElementById('fund-panel-cal');
   const newsPanel = document.getElementById('fund-panel-news');
   if (calPanel)  calPanel.style.background  = bgColor;
@@ -15034,7 +15034,7 @@ tr.pack-child-row td {
   opacity: 1;
   background: var(--surface2) !important;
   border-left: 3px solid transparent !important;
-  border-bottom: 1px solid var(--border) !important;
+  border-bottom: none !important;
 }
 tr.pack-child-row td:first-child {
   border-left: 3px solid var(--accent) !important;
