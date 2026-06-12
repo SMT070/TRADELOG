@@ -17717,8 +17717,8 @@ let _autoBEActive = localStorage.getItem(_AUTO_BE_KEY) === 'true';
 
 function _persistAutoBEState() {
   localStorage.setItem(_AUTO_BE_KEY, String(_autoBEActive));
-  // Save to Supabase via the same profile save path that autopack uses
-  try { saveProfile(); } catch(e) {}
+  // Save to Supabase profile settings (same place as autopack/theme)
+  try { saveProfileToSupabase(); } catch(e) {}
 }
 
 // Apply BE to any qualifying trades — call this on every save and on toggle
@@ -17729,27 +17729,33 @@ async function _applyAutoBEToAll(silent) {
   const threshold = bal * 0.0002;
   const candidates = trades.filter(t => Math.abs(getPnl(t)) <= threshold && getResult(t) !== 'be');
   if (!candidates.length) return 0;
-  // Mark them all
-  candidates.forEach(t => {
-    const idx = trades.findIndex(x => x.id === t.id);
+
+  // Capture IDs before mutating
+  const candidateIds = candidates.map(t => t.id);
+
+  // Mark them all in the trades array
+  candidateIds.forEach(id => {
+    const idx = trades.findIndex(x => x.id === id);
     if (idx !== -1) trades[idx].result = 'be';
   });
+
+  // Save locally and refresh UI immediately
   save();
   invalidateStatCache();
-  // Sync to Supabase
+  renderTrades();
+  refreshDashboard();
+  _syncFeatureDropStates();
+
+  // Sync to Supabase in background
+  const updatedTrades = candidateIds.map(id => trades.find(x => x.id === id)).filter(Boolean);
   try {
-    await Promise.all(candidates.map(t => {
-      const updated = trades.find(x => x.id === t.id);
-      return updated ? guaranteedSaveToSupabase(updated) : Promise.resolve();
-    }));
+    await Promise.all(updatedTrades.map(t => guaranteedSaveToSupabase(t)));
   } catch(e) { console.warn('Auto BE sync failed:', e); }
+
   if (!silent) {
-    renderTrades();
-    refreshDashboard();
-    _syncFeatureDropStates();
-    toast(`⚖️ Auto BE: ${candidates.length} trade${candidates.length !== 1 ? 's' : ''} marked as BE`, 'success');
+    toast(`⚖️ Auto BE: ${candidateIds.length} trade${candidateIds.length !== 1 ? 's' : ''} marked as BE`, 'success');
   }
-  return candidates.length;
+  return candidateIds.length;
 }
 
 async function autoMarkBE() {
@@ -17792,11 +17798,12 @@ async function autoMarkBE() {
     onOk: async () => {
       _autoBEActive = true;
       _persistAutoBEState();
-      const marked = await _applyAutoBEToAll(false);
-      if (!marked) {
-        // No existing trades to mark, just confirm it's on
-        _syncFeatureDropStates();
-        toast('⚖️ Auto BE enabled — will apply to all future trades', 'success');
+      const marked = await _applyAutoBEToAll(true); // silent — we toast here
+      _syncFeatureDropStates();
+      if (marked > 0) {
+        toast(`⚖️ Auto BE enabled — ${marked} trade${marked !== 1 ? 's' : ''} marked as BE`, 'success');
+      } else {
+        toast('⚖️ Auto BE enabled — applies to all future trades automatically', 'success');
       }
     }
   });
