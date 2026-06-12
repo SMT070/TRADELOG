@@ -905,7 +905,12 @@
 
   /* ── Monthly stats strip ── */
   #cal-month-stats {
-    /* lives inside the nav bar — no bg/border/padding of its own */
+    padding: 8px 0 2px;
+    gap: 8px;
+  }
+  #cal-month-stats .cal-stat-chip {
+    flex: 0 0 auto;
+    min-width: 90px;
   }
   .cal-stat-chip {
     display: flex;
@@ -1689,7 +1694,15 @@
     .cal-cell-bar { display: none !important; }
     .cal-cell.mob-tapped { outline: 2px solid var(--accent) !important; outline-offset: -2px !important; }
 
-    /* ══ MINDSET PAGE ══ */
+    @keyframes shareModalIn { from { opacity:0; transform:scale(0.95) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    /* Share modal — centered on desktop, bottom sheet on mobile */
+    @media (max-width: 600px) {
+      #share-modal { align-items: flex-end !important; }
+      #share-modal > div:last-child { margin: 0 !important; padding-bottom: max(env(safe-area-inset-bottom,12px),12px) !important; border-radius: 20px 20px 0 0 !important; }
+    }
+    @media (min-width: 601px) {
+      #share-modal { align-items: center !important; }
+    }
     #page-mindset {
       height: 100% !important;
       overflow: hidden !important;
@@ -2433,8 +2446,11 @@
   // ── Show loader with optional status message ──
   window.showTradelogLoader = function(status) {
     var l = document.getElementById('tradelog-loader');
-    if (l) l.classList.remove('tl-hidden');
-    window.setLoaderStatus(status || 'Loading...');
+    if (!l) return;
+    // Reset opacity first so transition plays even if it was mid-fade
+    l.style.opacity = '';
+    l.classList.remove('tl-hidden');
+    window.setLoaderStatus(status || 'Loading…');
   };
 
   // ── Update status text without reshowing loader ──
@@ -4735,11 +4751,9 @@ window.switchPage = function(name) {
 
 <!-- SHARE MODAL -->
 <!-- ── SHARE MODAL ── -->
-<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:10000;align-items:flex-end;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);">
-  <!-- Theme-aware backdrop -->
+<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);">
   <div id="share-modal-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.88);z-index:0;" onclick="closeShareModal()"></div>
-  <!-- Sheet container — slides up from bottom, no scroll -->
-  <div style="position:relative;z-index:1;width:100%;max-width:460px;padding:12px 12px max(env(safe-area-inset-bottom,12px),12px);box-sizing:border-box;margin:0 auto;">
+  <div style="position:relative;z-index:1;width:100%;max-width:420px;padding:12px;box-sizing:border-box;margin:auto;max-height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
 
     <!-- ═══════════════════════════════════════════════════ -->
     <!-- SHARE CARD — canvas capture target                  -->
@@ -5608,27 +5622,37 @@ async function handleAuth() {
   document.getElementById('auth-error').style.display = 'none';
   if (!email || !password) { showAuthError('Please enter email and password.'); return; }
 
+  // Disable button immediately
   btn.textContent = authMode === 'login' ? 'Logging in…' : 'Creating account…';
   btn.disabled = true;
   btn.style.opacity = '0.7';
 
-  try {
-    if (authMode === 'login') {
+  if (authMode === 'login') {
+    // Show loader RIGHT NOW — before the network call so user sees feedback instantly
+    window.showTradelogLoader('Connecting…');
+
+    try {
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
       if (error) {
+        // Auth failed — hide loader, reset button, show error
+        window.hideTradelogLoader();
         showAuthError(error.message);
         btn.textContent = 'Log In'; btn.disabled = false; btn.style.opacity = '';
         return;
       }
       if (data && data.user) {
-        // Show loader immediately with status steps
-        window.showTradelogLoader('Signing you in…');
-        window.setLoaderStatus('Signing you in…');
-        setTimeout(() => window.setLoaderStatus('Loading your trades…'), 600);
-        setTimeout(() => window.setLoaderStatus('Almost there…'), 1800);
+        window.setLoaderStatus('Loading your trades…');
+        setTimeout(() => window.setLoaderStatus('Setting up dashboard…'), 800);
+        setTimeout(() => window.setLoaderStatus('Almost ready…'), 2000);
         await initApp(data.user);
       }
-    } else {
+    } catch(e) {
+      window.hideTradelogLoader();
+      showAuthError('Something went wrong. Try again.');
+      btn.textContent = 'Log In'; btn.disabled = false; btn.style.opacity = '';
+    }
+  } else {
+    try {
       const name = document.getElementById('auth-name').value.trim();
       const { error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
       if (error) {
@@ -5638,12 +5662,10 @@ async function handleAuth() {
       }
       showAuthError('✓ Check your email to confirm your account.');
       btn.textContent = 'Create Account'; btn.disabled = false; btn.style.opacity = '';
+    } catch(e) {
+      showAuthError('Something went wrong. Try again.');
+      btn.textContent = 'Create Account'; btn.disabled = false; btn.style.opacity = '';
     }
-  } catch(e) {
-    showAuthError('Something went wrong. Try again.');
-    btn.textContent = authMode === 'login' ? 'Log In' : 'Create Account';
-    btn.disabled = false; btn.style.opacity = '';
-    window.hideTradelogLoader && window.hideTradelogLoader();
   }
 }
 function showApp() {
@@ -11029,11 +11051,13 @@ function setCalView(v) {
   if (dayPanel) dayPanel.style.display = v === 'month' ? '' : 'none';
   if (bodyGrid) bodyGrid.style.gridTemplateColumns = v === 'month' ? '1fr 300px' : '1fr';
   if (statsStrip) {
-    // Stats strip is mobile-only — always hide on desktop
-    if (window.innerWidth > 768) {
-      statsStrip.style.display = 'none';
-    } else {
+    // Show on desktop for month view, always show on mobile
+    const isMob = window.innerWidth <= 768;
+    if (isMob) {
       statsStrip.style.display = 'flex';
+      statsStrip.style.flexShrink = '0';
+    } else {
+      statsStrip.style.display = (v === 'month') ? 'flex' : 'none';
       statsStrip.style.flexShrink = '0';
     }
   }
@@ -11458,8 +11482,9 @@ function renderCalendar() {
     const wr = statWins + statLosses > 0 ? Math.round(statWins / (statWins + statLosses) * 100) : 0;
 
     if ((calView === 'month' ? monthDays.length : statTrades) > 0 || calView !== 'month') {
-      // Stats strip: mobile-only
-      statsEl.style.display = (window.innerWidth > 768) ? 'none' : 'flex';
+      // Stats strip: show on mobile always, on desktop for month view only
+      const isMobStat = window.innerWidth <= 768;
+      statsEl.style.display = (isMobStat || calView === 'month') ? 'flex' : 'none';
       statsEl.style.flexShrink = '0';
       statsEl.style.alignItems = 'center';
       statsEl.innerHTML = `
@@ -13299,7 +13324,11 @@ function openShareModal() {
 
   _invalidateShareCache();
   _renderShareCard(window._shareTimeframe);
-  document.getElementById('share-modal').style.display = 'flex';
+  const modal = document.getElementById('share-modal');
+  modal.style.display = 'flex';
+  // Animate the inner container in
+  const inner = modal.querySelector('div[style*="z-index:1"]');
+  if (inner) { inner.style.animation = 'none'; requestAnimationFrame(() => { inner.style.animation = 'shareModalIn .25s cubic-bezier(.16,1,.3,1) both'; }); }
 }
 
 function closeShareModal() {
