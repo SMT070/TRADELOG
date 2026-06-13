@@ -2359,61 +2359,206 @@
 <!-- ── LOADING SCREEN ──────────────────────────────────────────── -->
 <style>
   @keyframes tl-pulse {
-    0%,100% { transform:scale(1);   box-shadow:0 0 30px rgba(99,102,241,0.35); }
-    50%      { transform:scale(1.08);box-shadow:0 0 55px rgba(99,102,241,0.6);  }
+    0%,100% { transform:scale(1);   box-shadow:0 0 40px rgba(99,102,241,0.45), 0 0 80px rgba(99,102,241,0.15); }
+    50%      { transform:scale(1.07);box-shadow:0 0 70px rgba(99,102,241,0.7),  0 0 120px rgba(99,102,241,0.25); }
   }
-  @keyframes tl-shimmer {
-    0%   { transform:translateX(-200%); }
-    100% { transform:translateX(400%);  }
+  @keyframes tl-bar {
+    0%   { transform:translateX(-100%) scaleX(0.6); }
+    50%  { transform:translateX(50%)   scaleX(1); }
+    100% { transform:translateX(280%)  scaleX(0.6); }
   }
+  @keyframes tl-orb-a {
+    0%,100% { transform:translate(0,0) scale(1); opacity:0.55; }
+    50%     { transform:translate(-40px, 30px) scale(1.15); opacity:0.8; }
+  }
+  @keyframes tl-orb-b {
+    0%,100% { transform:translate(0,0) scale(1); opacity:0.4; }
+    50%     { transform:translate(50px,-25px) scale(1.1); opacity:0.65; }
+  }
+  @keyframes tl-orb-c {
+    0%,100% { transform:translate(0,0) scale(1); opacity:0.35; }
+    60%     { transform:translate(-20px,-40px) scale(1.08); opacity:0.6; }
+  }
+  @keyframes tl-dots {
+    0%,80%,100% { transform:scale(0.6); opacity:0.3; }
+    40%         { transform:scale(1);   opacity:1; }
+  }
+  @keyframes tl-fade-up {
+    from { opacity:0; transform:translateY(10px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  @keyframes tl-status-in {
+    from { opacity:0; transform:translateY(4px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  @keyframes tl-ring-spin {
+    to { transform:rotate(360deg); }
+  }
+
   #tradelog-loader {
     position:fixed;inset:0;z-index:99999;
-    background:#0a0b14;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+    background:var(--bg, #05080f);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:0;
     opacity:1;
     visibility:visible;
     pointer-events:all;
-    transition:opacity .4s ease, visibility .4s ease;
+    transition:opacity .5s ease, visibility .5s ease;
+    overflow:hidden;
   }
   #tradelog-loader.tl-hidden {
     opacity:0;
     visibility:hidden;
     pointer-events:none;
   }
+
+  /* Ambient orbs */
+  .tl-orb {
+    position:absolute;
+    border-radius:50%;
+    filter:blur(70px);
+    pointer-events:none;
+  }
+
+  /* Logo container */
+  .tl-logo-wrap {
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+    width:80px;height:80px;
+    flex-shrink:0;
+    animation:tl-fade-up .5s ease both;
+  }
+  /* Spinning ring */
+  .tl-ring {
+    position:absolute;inset:-8px;
+    border-radius:50%;
+    border:2px solid transparent;
+    border-top-color:rgba(99,102,241,0.7);
+    border-right-color:rgba(165,180,252,0.3);
+    animation:tl-ring-spin 1.6s linear infinite;
+  }
+  .tl-ring-2 {
+    position:absolute;inset:-16px;
+    border-radius:50%;
+    border:1.5px solid transparent;
+    border-bottom-color:rgba(99,102,241,0.25);
+    border-left-color:rgba(165,180,252,0.15);
+    animation:tl-ring-spin 2.8s linear infinite reverse;
+  }
+  .tl-logo-icon {
+    width:70px;height:70px;
+    background:linear-gradient(135deg,#6366f1,#818cf8);
+    border-radius:22px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 40px rgba(99,102,241,0.5), 0 8px 32px rgba(99,102,241,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+    animation:tl-pulse 2s ease-in-out infinite;
+    flex-shrink:0;
+  }
+
+  /* App name */
+  .tl-app-name {
+    font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+    font-size:22px;font-weight:800;letter-spacing:-0.5px;
+    color:var(--text,#f1f5f9);
+    margin-top:20px;
+    animation:tl-fade-up .5s .1s ease both;
+  }
+
+  /* Tagline */
+  .tl-tagline {
+    font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+    font-size:11px;font-weight:600;
+    color:var(--muted,#64748b);
+    letter-spacing:0.8px;
+    text-transform:uppercase;
+    margin-top:4px;
+    animation:tl-fade-up .5s .18s ease both;
+  }
+
+  /* Progress track */
+  .tl-progress-track {
+    width:140px;height:3px;
+    background:rgba(255,255,255,0.07);
+    border-radius:99px;
+    overflow:hidden;
+    position:relative;
+    margin-top:28px;
+    animation:tl-fade-up .5s .25s ease both;
+  }
+  .tl-progress-bar {
+    position:absolute;inset-y:0;left:0;
+    width:50%;
+    background:linear-gradient(90deg,transparent,#6366f1,#a5b4fc,transparent);
+    border-radius:99px;
+    animation:tl-bar 1.5s ease-in-out infinite;
+  }
+
+  /* Status dots + text row */
+  .tl-status-row {
+    display:flex;align-items:center;gap:8px;
+    margin-top:14px;
+    animation:tl-fade-up .5s .3s ease both;
+  }
+  .tl-dots {
+    display:flex;gap:4px;align-items:center;
+  }
+  .tl-dot {
+    width:4px;height:4px;border-radius:50%;
+    background:#6366f1;
+    animation:tl-dots 1.4s ease-in-out infinite;
+  }
+  .tl-dot:nth-child(2){ animation-delay:.2s; }
+  .tl-dot:nth-child(3){ animation-delay:.4s; }
+  #tl-loader-status {
+    font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+    font-size:12px;font-weight:600;
+    color:var(--muted,#64748b);
+    letter-spacing:0.3px;
+    min-height:18px;
+    transition:opacity .25s ease;
+    animation:tl-status-in .3s ease both;
+  }
 </style>
 
 <div id="tradelog-loader">
-  <!-- Logo icon -->
-  <div style="
-    width:64px;height:64px;
-    background:linear-gradient(135deg,#6366f1,#818cf8);
-    border-radius:20px;
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 0 50px rgba(99,102,241,0.55), 0 8px 32px rgba(99,102,241,0.3);
-    animation:tl-pulse 1.8s ease-in-out infinite;
-    flex-shrink:0;
-  ">
-    <svg width="32" height="32" viewBox="0 0 28 28">
-      <polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/>
-      <polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/>
-      <polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/>
-      <rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/>
-      <circle cx="10" cy="15" r="1.5" fill="white"/>
-      <circle cx="18" cy="15" r="1.5" fill="white"/>
-    </svg>
+  <!-- Ambient orbs -->
+  <div class="tl-orb" style="width:500px;height:500px;background:rgba(99,102,241,0.12);top:-180px;left:-120px;animation:tl-orb-a 7s ease-in-out infinite;"></div>
+  <div class="tl-orb" style="width:400px;height:400px;background:rgba(99,102,241,0.08);bottom:-150px;right:-100px;animation:tl-orb-b 9s ease-in-out infinite;"></div>
+  <div class="tl-orb" style="width:300px;height:300px;background:rgba(165,180,252,0.06);top:40%;left:60%;animation:tl-orb-c 11s ease-in-out infinite;"></div>
+
+  <!-- Logo -->
+  <div class="tl-logo-wrap">
+    <div class="tl-ring-2"></div>
+    <div class="tl-ring"></div>
+    <div class="tl-logo-icon">
+      <svg width="34" height="34" viewBox="0 0 28 28">
+        <polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.12)"/>
+        <polygon points="5,14 2,4 10,12" fill="white" opacity="0.95"/>
+        <polygon points="23,14 26,4 18,12" fill="white" opacity="0.95"/>
+        <rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.97"/>
+        <circle cx="10" cy="15" r="1.5" fill="white"/>
+        <circle cx="18" cy="15" r="1.5" fill="white"/>
+      </svg>
+    </div>
   </div>
-  <!-- App name -->
-  <div style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.4px;color:#f1f5f9;text-shadow:0 1px 20px rgba(99,102,241,0.6);">TradeLog</div>
-  <!-- Status message -->
-  <div id="tl-loader-status" style="font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:12px;font-weight:600;color:rgba(241,245,249,0.45);letter-spacing:0.3px;min-height:18px;transition:opacity .3s;">Loading...</div>
-  <!-- Shimmer bar -->
-  <div style="width:100px;height:3px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;position:relative;">
-    <div style="
-      position:absolute;inset-y:0;left:0;width:45%;
-      background:linear-gradient(90deg,transparent,#6366f1,#a5b4fc,transparent);
-      border-radius:99px;
-      animation:tl-shimmer 1.3s ease-in-out infinite;
-    "></div>
+
+  <!-- Name + tagline -->
+  <div class="tl-app-name">TradeLog</div>
+  <div class="tl-tagline">Your Trading Journal</div>
+
+  <!-- Progress bar -->
+  <div class="tl-progress-track">
+    <div class="tl-progress-bar"></div>
+  </div>
+
+  <!-- Dots + status -->
+  <div class="tl-status-row">
+    <div class="tl-dots">
+      <div class="tl-dot"></div>
+      <div class="tl-dot"></div>
+      <div class="tl-dot"></div>
+    </div>
+    <div id="tl-loader-status">Loading…</div>
   </div>
 </div>
 
