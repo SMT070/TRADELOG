@@ -2641,9 +2641,8 @@
         <div class="dash-subtitle" id="dash-date-sub"></div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" onclick="openShareModal()" style="font-size:11px;padding:6px 14px 6px 8px;gap:7px;display:flex;align-items:center;">
-          <span id="share-btn-avatar" style="width:22px;height:22px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:10px;font-weight:800;color:#fff;"></span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        <button class="btn btn-primary" onclick="openShareModal()" style="font-size:11px;padding:8px 16px;gap:6px;display:flex;align-items:center;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           Share P&L
         </button>
       </div>
@@ -4793,44 +4792,62 @@ window.switchPage = function(name) {
           </div>
         </div>
 
-        <!-- HERO P&L SECTION -->
-        <div style="margin-bottom:14px;">
-          <div id="share-pnl-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;opacity:0.35;margin-bottom:6px;">TODAY'S P&L</div>
-          <div id="share-pnl" style="font-weight:900;letter-spacing:-3px;line-height:1;font-variant-numeric:tabular-nums;word-break:break-all;overflow:hidden;font-size:60px;">+$0.00</div>
-          <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
-            <div id="share-wr-pct" style="font-size:11px;font-weight:800;letter-spacing:1px;opacity:0.5;">0% WIN</div>
+        <!-- HEADER: timeframe label + logo -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
+          <div>
+            <div id="share-pnl-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">TODAY'S P&L</div>
+            <div id="share-trades-label" style="font-size:11px;font-weight:600;opacity:0.5;">0 trades</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(99,102,241,0.4);">
+              <svg width="17" height="17" viewBox="0 0 28 28">
+                <polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/>
+                <polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/>
+                <polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/>
+                <rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/>
+                <circle cx="10" cy="15" r="1.5" fill="white"/>
+                <circle cx="18" cy="15" r="1.5" fill="white"/>
+              </svg>
+            </div>
+            <div id="share-logo-text" style="font-size:13px;font-weight:900;letter-spacing:-0.3px;">TRADE<span style="color:#818cf8;">LOG</span></div>
           </div>
         </div>
 
-        <!-- STAT CARDS ROW -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;">
-          <div id="share-stat-1" style="border-radius:12px;padding:10px 10px;">
-            <div style="font-size:7px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:5px;">TRADES</div>
-            <div id="share-wr" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
-            <div id="share-wl" style="font-size:9px;font-weight:700;opacity:0.45;margin-top:3px;">0W · 0L</div>
+        <!-- HERO P&L -->
+        <div style="margin-bottom:16px;">
+          <div id="share-pnl" style="font-weight:900;letter-spacing:-3px;line-height:1;font-variant-numeric:tabular-nums;word-break:break-all;overflow:hidden;font-size:60px;">+$0.00</div>
+        </div>
+
+        <!-- 4 STAT CHIPS in a row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:14px;">
+          <div id="share-stat-1" style="border-radius:10px;padding:10px 8px;">
+            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">TRADES</div>
+            <div id="share-wr" style="font-size:18px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
           </div>
-          <div id="share-stat-2" style="border-radius:12px;padding:10px 10px;">
-            <div style="font-size:7px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:5px;">BEST TRADE</div>
-            <div id="share-best" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
-            <div id="share-best-sym" style="font-size:9px;font-weight:700;opacity:0.45;margin-top:3px;">—</div>
+          <div id="share-stat-2" style="border-radius:10px;padding:10px 8px;">
+            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">WIN RATE</div>
+            <div id="share-winrate" style="font-size:18px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
           </div>
-          <div id="share-stat-3" style="border-radius:12px;padding:10px 10px;">
-            <div style="font-size:7px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:0.35;margin-bottom:5px;">WIN RATE</div>
-            <div id="share-winrate" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;">—</div>
-            <div id="share-winrate-sub" style="font-size:9px;font-weight:700;opacity:0.45;margin-top:3px;">of decided</div>
+          <div id="share-stat-3" style="border-radius:10px;padding:10px 8px;">
+            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">W / L</div>
+            <div id="share-wl" style="font-size:18px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
+          </div>
+          <div id="share-stat-4" style="border-radius:10px;padding:10px 8px;">
+            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">BEST</div>
+            <div id="share-best" style="font-size:18px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
           </div>
         </div>
 
         <!-- TRADE LIST -->
-        <div id="share-trade-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;"></div>
+        <div id="share-trade-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;"></div>
 
-        <!-- FOOTER -->
+        <!-- FOOTER: profile + branding -->
         <div id="share-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;">
           <div style="display:flex;align-items:center;gap:8px;">
-            <div id="share-footer-dot" style="width:6px;height:6px;border-radius:50%;"></div>
-            <div style="font-size:9px;font-weight:700;opacity:0.3;letter-spacing:1px;">TRADELOG.APP</div>
+            <div id="share-profile-avatar" style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;overflow:hidden;flex-shrink:0;"></div>
+            <div id="share-profile-name" style="font-size:11px;font-weight:700;opacity:0.7;">Trader</div>
           </div>
-          <div style="font-size:9px;font-weight:600;opacity:0.22;letter-spacing:0.5px;">Track · Analyse · Improve</div>
+          <div style="font-size:9px;font-weight:600;opacity:0.25;letter-spacing:0.5px;">TRADELOG.APP</div>
         </div>
 
       </div><!-- /inner content -->
@@ -13182,132 +13199,90 @@ function _renderShareCard(tf) {
   const pnlColor = isPos ? p.pos : p.neg;
   const pnlGlow  = isPos ? p.posGlow : p.negGlow;
 
-  // ── APPLY CARD STYLES ─────────────────────────────────────────────
+  // ── CARD BASE ──────────────────────────────────────────────────────
   const card = document.getElementById('share-card');
   card.style.cssText = `border-radius:24px;padding:0;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 32px 80px rgba(0,0,0,0.9),0 0 0 1px ${p.cardBorder};background:${p.bg};color:${p.text};`;
+  const g1=document.getElementById('share-glow-1'), g2=document.getElementById('share-glow-2'), g3=document.getElementById('share-glow-3');
+  if(g1){g1.style.background=`radial-gradient(circle,${p.glow1},transparent 65%)`;g1.style.opacity='1';}
+  if(g2){g2.style.background=`radial-gradient(circle,${p.glow2},transparent 65%)`;g2.style.opacity='1';}
+  if(g3){g3.style.background=`radial-gradient(circle,${pnlGlow},transparent 65%)`;g3.style.top='30%';g3.style.left='10%';g3.style.width='80%';g3.style.height='200px';g3.style.opacity='0.12';}
 
-  // Glows — bigger, more visible
-  const g1 = document.getElementById('share-glow-1');
-  const g2 = document.getElementById('share-glow-2');
-  const g3 = document.getElementById('share-glow-3');
-  if(g1) { g1.style.background=`radial-gradient(circle,${p.glow1},transparent 65%)`; g1.style.opacity='1'; }
-  if(g2) { g2.style.background=`radial-gradient(circle,${p.glow2},transparent 65%)`; g2.style.opacity='1'; }
-  if(g3) { g3.style.background=`radial-gradient(circle,${pnlGlow.replace('0.35','0.12').replace('0.3','0.1').replace('0.06','0.08')},transparent 65%)`; g3.style.top='35%'; g3.style.left='20%'; g3.style.width='60%'; g3.style.height='180px'; g3.style.opacity='0.7'; }
-
-  // Logo
+  // ── HEADER ──────────────────────────────────────────────────────────
   document.getElementById('share-logo-text').style.color = p.text;
-
-  // Footer border
-  document.getElementById('share-footer').style.borderTop = `1px solid ${p.footerBorder}`;
-  document.getElementById('share-footer-dot').style.background = pnlColor;
-  document.getElementById('share-footer-dot').style.boxShadow = `0 0 8px ${pnlColor},0 0 16px ${pnlColor}`;
-
-  // ── HEADER ────────────────────────────────────────────────────────
-  const dateLabel = _getShareLabel(tf);
-  document.getElementById('share-date-label').textContent = dateLabel;
-  document.getElementById('share-date-label').style.color = p.subText;
-  document.getElementById('share-trades-label').textContent = `${tfTrades.length} trade${tfTrades.length!==1?'s':''} · ${wins}W / ${losses}L`;
-  document.getElementById('share-trades-label').style.color = p.subText;
-
-  // ── P&L HERO ──────────────────────────────────────────────────────
   const pnlLabelEl = document.getElementById('share-pnl-label');
-  if (pnlLabelEl) { pnlLabelEl.textContent = _getPnlLabel(tf); pnlLabelEl.style.color = p.subText; }
+  if(pnlLabelEl){pnlLabelEl.textContent=_getPnlLabel(tf);pnlLabelEl.style.color=p.subText;}
+  const tlEl = document.getElementById('share-trades-label');
+  if(tlEl){tlEl.textContent=`${tfTrades.length} trade${tfTrades.length!==1?'s':''}`;tlEl.style.color=p.subText;}
+
+  // ── P&L ──────────────────────────────────────────────────────────────
   const pnlEl = document.getElementById('share-pnl');
-  pnlEl.textContent = (isPos ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
-  // Gradient PNL text for cinematic effect
-  pnlEl.style.cssText = `font-weight:900;line-height:1;font-variant-numeric:tabular-nums;word-break:break-all;overflow:hidden;font-size:60px;letter-spacing:-3px;color:${pnlColor};text-shadow:0 0 40px ${pnlGlow},0 0 80px ${pnlGlow};`;
-  // Auto-scale font so big numbers never overflow
+  pnlEl.textContent = (isPos?'+':'-') + sym + Math.abs(pnl).toFixed(2);
+  pnlEl.style.color = pnlColor;
+  pnlEl.style.textShadow = `0 0 40px ${pnlGlow},0 0 80px ${pnlGlow}`;
+  pnlEl.style.fontSize = '60px'; pnlEl.style.letterSpacing = '-3px';
   requestAnimationFrame(() => {
-    const availW = (card ? card.offsetWidth : 320) - 44;
+    const availW = (card?card.offsetWidth:320) - 44;
     let fs = 60;
-    pnlEl.style.fontSize = fs + 'px';
-    while (pnlEl.scrollWidth > availW && fs > 24) {
-      fs -= 2;
-      pnlEl.style.fontSize = fs + 'px';
-    }
-    pnlEl.style.letterSpacing = fs >= 48 ? '-3px' : fs >= 36 ? '-2px' : '-1px';
+    while(pnlEl.scrollWidth > availW && fs > 24){fs-=2;pnlEl.style.fontSize=fs+'px';}
+    pnlEl.style.letterSpacing = fs>=48?'-3px':fs>=36?'-2px':'-1px';
   });
 
-  const wrPctEl = document.getElementById('share-wr-pct');
-  if (wrPctEl) {
-    wrPctEl.textContent = decided ? `${wr}% WIN` : 'NO DATA';
-    wrPctEl.style.color = p.subText;
-  }
-
-  // ── STAT CARDS ────────────────────────────────────────────────────
-  ['share-stat-1','share-stat-2','share-stat-3'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.style.background = p.statBg;
-      el.style.border = `1px solid ${p.statBorder}`;
-      el.style.backdropFilter = 'blur(12px)';
-    }
+  // ── 4 STAT CHIPS ──────────────────────────────────────────────────────
+  ['share-stat-1','share-stat-2','share-stat-3','share-stat-4'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.style.background=p.statBg;el.style.border=`1px solid ${p.statBorder}`;}
   });
-
-  // Trades count
-  document.getElementById('share-wr').textContent = tfTrades.length || '0';
-  document.getElementById('share-wr').style.color = p.text;
-  document.getElementById('share-wl').textContent = `${wins}W · ${losses}L`;
-  document.getElementById('share-wl').style.color = p.subText;
-
-  // Best trade
-  const bestEl = document.getElementById('share-best');
-  const bestSymEl = document.getElementById('share-best-sym');
-  if (bestTrade) {
-    bestEl.textContent = (best >= 0 ? '+' : '-') + sym + Math.abs(best).toFixed(2);
-    bestEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;color:${best>=0?p.pos:p.neg};`;
-    bestSymEl.textContent = bestTrade.symbol || '—';
-  } else {
-    bestEl.textContent = '—';
-    bestEl.style.color = p.text;
-    bestEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;color:${p.text};`;
-    bestSymEl.textContent = '—';
+  const trEl=document.getElementById('share-wr');
+  const wrEl=document.getElementById('share-winrate');
+  const wlEl=document.getElementById('share-wl');
+  const bsEl=document.getElementById('share-best');
+  if(trEl){trEl.textContent=tfTrades.length||'0';trEl.style.color=p.text;}
+  if(wrEl){wrEl.textContent=decided?wr+'%':'—';wrEl.style.color=decided?(wr>=50?p.pos:p.neg):p.text;}
+  if(wlEl){wlEl.textContent=`${wins}W · ${losses}L`;wlEl.style.color=p.text;}
+  if(bsEl){
+    if(bestTrade){bsEl.textContent=(best>=0?'+':'-')+sym+Math.abs(best).toFixed(2);bsEl.style.color=best>=0?p.pos:p.neg;}
+    else{bsEl.textContent='—';bsEl.style.color=p.text;}
   }
-  bestSymEl.style.color = p.subText;
 
-  // Win rate
-  const wrEl = document.getElementById('share-winrate');
-  const wrSubEl = document.getElementById('share-winrate-sub');
-  if (decided) {
-    wrEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;color:${wr>=50?p.pos:p.neg};`;
-  } else {
-    wrEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;color:${p.text};`;
-  }
-  wrEl.textContent = decided ? wr + '%' : '—';
-  wrSubEl.textContent = decided ? `${decided} decided` : 'no data';
-  wrSubEl.style.color = p.subText;
-
-  // ── TRADE LIST ────────────────────────────────────────────────────
+  // ── TRADE LIST ───────────────────────────────────────────────────────
   const listEl = document.getElementById('share-trade-list');
-  if (tfTrades.length === 0) {
-    listEl.innerHTML = `<div style="text-align:center;padding:16px;color:${p.subText};font-size:12px;font-weight:600;letter-spacing:0.5px;">No trades for this period</div>`;
+  if(tfTrades.length===0){
+    listEl.innerHTML=`<div style="text-align:center;padding:14px;color:${p.subText};font-size:12px;font-weight:600;">No trades for this period</div>`;
   } else {
-    const displayTrades = tf === 'today'
-      ? tfTrades.slice(0, 5)
-      : [...tfTrades].sort((a,b) => Math.abs(getPnl(b)) - Math.abs(getPnl(a))).slice(0, 5);
-
-    listEl.innerHTML = displayTrades.map((t,i) => {
-      const tp      = getPnl(t);
-      const col     = tp >= 0 ? p.pos : p.neg;
-      const glow    = tp >= 0 ? p.posGlow : p.negGlow;
-      const dirBg   = t.dir === 'BUY' ? (theme==='light'?'rgba(5,150,105,0.1)':'rgba(0,255,178,0.1)') : (theme==='light'?'rgba(220,38,38,0.1)':'rgba(255,59,92,0.1)');
-      const dirCol  = t.dir === 'BUY' ? p.pos : p.neg;
-      const res     = getResult(t);
-      const resDot  = res === 'win' ? p.pos : res === 'loss' ? p.neg : '#f59e0b';
-      const accentBar = `3px solid ${col}`;
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px 8px 10px;background:${p.tradeRowBg};border-radius:10px;border:1px solid ${p.tradeRowBorder};border-left:${accentBar};overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-          <div style="width:5px;height:5px;border-radius:50%;background:${resDot};box-shadow:0 0 6px ${resDot};flex-shrink:0;"></div>
-          <span style="font-size:13px;font-weight:800;color:${p.text};letter-spacing:-0.3px;white-space:nowrap;">${t.symbol || '—'}</span>
-          <span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px;background:${dirBg};color:${dirCol};letter-spacing:1px;flex-shrink:0;">${t.dir || ''}</span>
+    const displayTrades = tf==='today'
+      ? tfTrades.slice(0,5)
+      : [...tfTrades].sort((a,b)=>Math.abs(getPnl(b))-Math.abs(getPnl(a))).slice(0,5);
+    listEl.innerHTML = displayTrades.map(t=>{
+      const tp=getPnl(t), col=tp>=0?p.pos:p.neg;
+      const dirBg=t.dir==='BUY'?'rgba(0,255,178,0.08)':'rgba(255,59,92,0.08)';
+      const dirCol=t.dir==='BUY'?p.pos:p.neg;
+      const res=getResult(t), dot=res==='win'?p.pos:res==='loss'?p.neg:'#f59e0b';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px 8px 10px;background:${p.tradeRowBg};border-radius:10px;border:1px solid ${p.tradeRowBorder};border-left:3px solid ${col};overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+          <div style="width:5px;height:5px;border-radius:50%;background:${dot};flex-shrink:0;"></div>
+          <span style="font-size:13px;font-weight:800;color:${p.text};white-space:nowrap;">${t.symbol||'—'}</span>
+          <span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px;background:${dirBg};color:${dirCol};letter-spacing:1px;flex-shrink:0;">${t.dir||''}</span>
         </div>
-        <span style="font-size:13px;font-weight:900;color:${col};filter:drop-shadow(0 0 6px ${glow});letter-spacing:-0.5px;flex-shrink:0;margin-left:8px;">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
+        <span style="font-size:13px;font-weight:900;color:${col};letter-spacing:-0.5px;flex-shrink:0;margin-left:8px;">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
       </div>`;
     }).join('');
-    if (tfTrades.length > 5) {
-      listEl.innerHTML += `<div style="text-align:center;font-size:10px;color:${p.subText};padding:5px 0 2px;font-weight:700;letter-spacing:1px;">+ ${tfTrades.length - 5} MORE TRADES</div>`;
-    }
+    if(tfTrades.length>5) listEl.innerHTML+=`<div style="text-align:center;font-size:10px;color:${p.subText};padding:5px 0 2px;font-weight:700;letter-spacing:1px;">+ ${tfTrades.length-5} MORE TRADES</div>`;
   }
+
+  // ── FOOTER: profile ───────────────────────────────────────────────────
+  document.getElementById('share-footer').style.borderTop = `1px solid ${p.footerBorder}`;
+  try {
+    const prof = JSON.parse(localStorage.getItem('tradelog_profile')||'{}');
+    const profName = prof.name || 'Trader';
+    const profAvatar = prof.avatar || null;
+    const profAv = document.getElementById('share-profile-avatar');
+    const profNm = document.getElementById('share-profile-name');
+    if(profAv){
+      if(profAvatar){profAv.innerHTML=`<img src="${profAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;}
+      else{profAv.textContent=profName.charAt(0).toUpperCase();}
+    }
+    if(profNm){profNm.textContent=profName;profNm.style.color=p.text;}
+  } catch(e){}
 }
 
 function openShareModal() {
