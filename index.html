@@ -4775,7 +4775,6 @@ window.switchPage = function(name) {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
           <div>
             <div id="share-pnl-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">THIS WEEK'S P&L</div>
-            <div id="share-trades-label" style="font-size:11px;font-weight:600;opacity:0.5;">0 trades</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <div style="width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(99,102,241,0.4);">
@@ -4797,8 +4796,8 @@ window.switchPage = function(name) {
           <div id="share-pnl" style="font-weight:900;letter-spacing:-3px;line-height:1;font-variant-numeric:tabular-nums;word-break:break-all;overflow:hidden;font-size:60px;">+$0.00</div>
         </div>
 
-        <!-- 4 STAT CHIPS — equal columns, left-aligned text -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:14px;">
+        <!-- 3 STAT CHIPS — equal columns, left-aligned text -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;">
           <div id="share-stat-1" style="border-radius:10px;padding:10px 10px 10px 10px;">
             <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:6px;white-space:nowrap;">TRADES</div>
             <div id="share-wr" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
@@ -4806,10 +4805,6 @@ window.switchPage = function(name) {
           <div id="share-stat-2" style="border-radius:10px;padding:10px 10px 10px 10px;">
             <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:6px;white-space:nowrap;">WIN RATE</div>
             <div id="share-winrate" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
-          </div>
-          <div id="share-stat-3" style="border-radius:10px;padding:10px 10px 10px 10px;">
-            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:6px;white-space:nowrap;">W / L</div>
-            <div id="share-wl" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
           </div>
           <div id="share-stat-4" style="border-radius:10px;padding:10px 10px 10px 10px;">
             <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:6px;white-space:nowrap;">BEST</div>
@@ -13207,7 +13202,7 @@ function _renderShareCard(tf) {
   });
 
   // ── 4 STAT CHIPS ──────────────────────────────────────────────────────
-  ['share-stat-1','share-stat-2','share-stat-3','share-stat-4'].forEach(id=>{
+  ['share-stat-1','share-stat-2','share-stat-4'].forEach(id=>{
     const el=document.getElementById(id);
     if(el){el.style.background=p.statBg;el.style.border=`1px solid ${p.statBorder}`;}
   });
