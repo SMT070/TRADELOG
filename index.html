@@ -13353,11 +13353,37 @@ function captureShareCard() {
     const card  = document.getElementById('share-card');
     const theme = localStorage.getItem('tradelog_theme') || 'dark';
     const bg    = theme === 'light' ? '#ffffff' : '#0b0f1a';
-    // Wait 2 rAFs + extra ms so PNL font-scale and all paint cycles complete
+
+    // Clone the card into a clean off-screen container so backdrop-filter
+    // on the modal overlay does NOT bleed into the capture.
+    // html2canvas cannot render backdrop-filter and outputs black/blurred.
+    const clone   = card.cloneNode(true);
+    const rect    = card.getBoundingClientRect();
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText =
+      'position:fixed;top:0;left:0;' +
+      'width:'  + rect.width  + 'px;' +
+      'height:' + rect.height + 'px;' +
+      'overflow:hidden;pointer-events:none;z-index:-9999;background:' + bg;
+    clone.style.position     = 'relative';
+    clone.style.borderRadius = card.style.borderRadius || '24px';
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
+    // Wait 2 rAFs so clone renders before capture
     requestAnimationFrame(() => requestAnimationFrame(() => {
       setTimeout(() => {
-        html2canvas(card, { backgroundColor: bg, scale: 3, useCORS: true, allowTaint: true, logging: false, imageTimeout: 0 })
-          .then(canvas => {
+        html2canvas(wrapper, {
+          backgroundColor: bg,
+          scale: 3,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          imageTimeout: 0,
+          width:  rect.width,
+          height: rect.height
+        }).then(canvas => {
+            try { document.body.removeChild(wrapper); } catch(_) {}
             canvas.toBlob(blob => {
               if (!blob) { _capturePromise = null; reject(new Error('blob failed')); return; }
               window._shareCanvas = canvas;
@@ -13365,7 +13391,11 @@ function captureShareCard() {
               _capturePromise     = null;
               resolve({ blob, canvas });
             }, 'image/png');
-          }).catch(e => { _capturePromise = null; reject(e); });
+          }).catch(e => {
+            try { document.body.removeChild(wrapper); } catch(_) {}
+            _capturePromise = null;
+            reject(e);
+          });
       }, 150);
     }));
   })).catch(e => { _capturePromise = null; return Promise.reject(e); });
