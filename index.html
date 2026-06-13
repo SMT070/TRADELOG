@@ -5981,11 +5981,15 @@ async function initApp(user) {
   loadTheme();
   updateGreeting();
 
-  // ── Sync Supabase first, then reveal app with data already populated ──
+  // ── Sync Supabase first, then reveal app ──
   setTimeout(async () => {
     try {
       window.setLoaderStatus && window.setLoaderStatus('Loading your trades…');
-      await loadAllFromSupabase();
+      // 8s timeout — show app regardless if Supabase is slow
+      await Promise.race([
+        loadAllFromSupabase(),
+        new Promise(r => setTimeout(r, 8000))
+      ]);
       window.setLoaderStatus && window.setLoaderStatus('Setting up your dashboard…');
     } catch(e) { console.warn('TradeLog: background sync failed', e); }
     try { refreshDashboard(); } catch(e) {}
@@ -5993,7 +5997,6 @@ async function initApp(user) {
     try { loadJournal(); } catch(e) {}
     try { _syncFeatureDropStates(); } catch(e) {}
     window.setLoaderStatus && window.setLoaderStatus('Ready!');
-    // Small pause so user sees "Ready!" before it disappears
     await new Promise(r => setTimeout(r, 350));
     showApp();
     window.hideTradelogLoader();
@@ -6008,7 +6011,9 @@ window.addEventListener('load', () => {
 
   sb.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user) {
-      if (!_appInitialized) await initApp(session.user);
+      // Only auto-init on INITIAL_SESSION (page reload with existing session)
+      // For SIGNED_IN triggered by handleAuth, initApp is called directly there
+      if (!_appInitialized && event === 'INITIAL_SESSION') await initApp(session.user);
     } else if (event === 'INITIAL_SESSION' && !session) {
       if (!_appInitialized) showAuthScreen();
     } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
