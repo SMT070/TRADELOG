@@ -5391,6 +5391,8 @@ function loadProfile() {
     }
   } catch(e) {}
 }
+
+function openProfileModal() {
   try {
     const p = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
     document.getElementById('profile-name-input').value = p.name || '';
@@ -5625,50 +5627,59 @@ async function handleAuth() {
   const password = document.getElementById('auth-password').value;
   const btn = document.getElementById('auth-btn');
   document.getElementById('auth-error').style.display = 'none';
+
   if (!email || !password) { showAuthError('Please enter email and password.'); return; }
 
-  // Disable button immediately
+  // Check Supabase is ready
+  if (!sb) {
+    showAuthError('Connection error — please refresh the page.');
+    return;
+  }
+
   btn.textContent = authMode === 'login' ? 'Logging in…' : 'Creating account…';
   btn.disabled = true;
   btn.style.opacity = '0.7';
 
   if (authMode === 'login') {
-    // Show loader RIGHT NOW — before the network call so user sees feedback instantly
-    window.showTradelogLoader('Connecting…');
-
+    window.showTradelogLoader && window.showTradelogLoader('Connecting…');
     try {
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      const result = await sb.auth.signInWithPassword({ email, password });
+      const data = result?.data;
+      const error = result?.error;
       if (error) {
-        // Auth failed — hide loader, reset button, show error
-        window.hideTradelogLoader();
+        window.hideTradelogLoader && window.hideTradelogLoader();
         showAuthError(error.message);
         btn.textContent = 'Log In'; btn.disabled = false; btn.style.opacity = '';
         return;
       }
-      if (data && data.user) {
-        window.setLoaderStatus('Loading your trades…');
-        setTimeout(() => window.setLoaderStatus('Setting up dashboard…'), 800);
-        setTimeout(() => window.setLoaderStatus('Almost ready…'), 2000);
+      if (data?.user) {
+        window.setLoaderStatus && window.setLoaderStatus('Loading your trades…');
+        setTimeout(() => window.setLoaderStatus && window.setLoaderStatus('Setting up dashboard…'), 800);
         await initApp(data.user);
+      } else {
+        window.hideTradelogLoader && window.hideTradelogLoader();
+        showAuthError('Login failed. Check your email and password.');
+        btn.textContent = 'Log In'; btn.disabled = false; btn.style.opacity = '';
       }
     } catch(e) {
-      window.hideTradelogLoader();
-      showAuthError('Something went wrong. Try again.');
+      console.error('Login error:', e);
+      window.hideTradelogLoader && window.hideTradelogLoader();
+      showAuthError('Something went wrong: ' + (e?.message || 'Please try again.'));
       btn.textContent = 'Log In'; btn.disabled = false; btn.style.opacity = '';
     }
   } else {
     try {
-      const name = document.getElementById('auth-name').value.trim();
-      const { error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
-      if (error) {
-        showAuthError(error.message);
+      const name = document.getElementById('auth-name')?.value?.trim() || '';
+      const result = await sb.auth.signUp({ email, password, options: { data: { name } } });
+      if (result?.error) {
+        showAuthError(result.error.message);
         btn.textContent = 'Create Account'; btn.disabled = false; btn.style.opacity = '';
         return;
       }
       showAuthError('✓ Check your email to confirm your account.');
       btn.textContent = 'Create Account'; btn.disabled = false; btn.style.opacity = '';
     } catch(e) {
-      showAuthError('Something went wrong. Try again.');
+      showAuthError('Something went wrong: ' + (e?.message || 'Please try again.'));
       btn.textContent = 'Create Account'; btn.disabled = false; btn.style.opacity = '';
     }
   }
