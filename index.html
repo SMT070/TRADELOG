@@ -4771,31 +4771,10 @@ window.switchPage = function(name) {
       <!-- ── INNER CONTENT ── -->
       <div style="position:relative;z-index:2;padding:22px 22px 18px;">
 
-        <!-- TOP BAR: date left, logo right -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <!-- HEADER: single logo top-right, label + trades top-left -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
           <div>
-            <div id="share-date-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;opacity:0.4;">TODAY</div>
-            <div id="share-trades-label" style="font-size:12px;font-weight:700;opacity:0.65;">0 trades</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:32px;height:32px;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(99,102,241,0.5),0 0 40px rgba(99,102,241,0.2);">
-              <svg width="18" height="18" viewBox="0 0 28 28">
-                <polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/>
-                <polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/>
-                <polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/>
-                <rect x="9" y="19" width="10" height="4" rx="2" fill="white" opacity="0.95"/>
-                <circle cx="10" cy="15" r="1.5" fill="white"/>
-                <circle cx="18" cy="15" r="1.5" fill="white"/>
-              </svg>
-            </div>
-            <div id="share-logo-text" style="font-size:14px;font-weight:900;letter-spacing:-0.5px;">TRADE<span style="color:#818cf8;">LOG</span></div>
-          </div>
-        </div>
-
-        <!-- HEADER: timeframe label + logo -->
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
-          <div>
-            <div id="share-pnl-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">TODAY'S P&L</div>
+            <div id="share-pnl-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">THIS WEEK'S P&L</div>
             <div id="share-trades-label" style="font-size:11px;font-weight:600;opacity:0.5;">0 trades</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
@@ -4818,34 +4797,34 @@ window.switchPage = function(name) {
           <div id="share-pnl" style="font-weight:900;letter-spacing:-3px;line-height:1;font-variant-numeric:tabular-nums;word-break:break-all;overflow:hidden;font-size:60px;">+$0.00</div>
         </div>
 
-        <!-- 4 STAT CHIPS in a row -->
+        <!-- 4 STAT CHIPS — equal columns, left-aligned text -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:14px;">
-          <div id="share-stat-1" style="border-radius:10px;padding:10px 8px;">
-            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">TRADES</div>
-            <div id="share-wr" style="font-size:18px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
+          <div id="share-stat-1" style="border-radius:10px;padding:10px 10px 10px 10px;">
+            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:6px;white-space:nowrap;">TRADES</div>
+            <div id="share-wr" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
           </div>
-          <div id="share-stat-2" style="border-radius:10px;padding:10px 8px;">
-            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">WIN RATE</div>
-            <div id="share-winrate" style="font-size:18px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
+          <div id="share-stat-2" style="border-radius:10px;padding:10px 10px 10px 10px;">
+            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:6px;white-space:nowrap;">WIN RATE</div>
+            <div id="share-winrate" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
           </div>
-          <div id="share-stat-3" style="border-radius:10px;padding:10px 8px;">
-            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">W / L</div>
-            <div id="share-wl" style="font-size:18px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
+          <div id="share-stat-3" style="border-radius:10px;padding:10px 10px 10px 10px;">
+            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:6px;white-space:nowrap;">W / L</div>
+            <div id="share-wl" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
           </div>
-          <div id="share-stat-4" style="border-radius:10px;padding:10px 8px;">
-            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:4px;">BEST</div>
-            <div id="share-best" style="font-size:18px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
+          <div id="share-stat-4" style="border-radius:10px;padding:10px 10px 10px 10px;">
+            <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:0.35;margin-bottom:6px;white-space:nowrap;">BEST</div>
+            <div id="share-best" style="font-size:20px;font-weight:900;line-height:1;letter-spacing:-0.5px;">—</div>
           </div>
         </div>
 
         <!-- TRADE LIST -->
         <div id="share-trade-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;"></div>
 
-        <!-- FOOTER: profile + branding -->
+        <!-- FOOTER: profile left, branding right -->
         <div id="share-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div id="share-profile-avatar" style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;overflow:hidden;flex-shrink:0;"></div>
-            <div id="share-profile-name" style="font-size:11px;font-weight:700;opacity:0.7;">Trader</div>
+          <div style="display:flex;align-items:center;gap:9px;">
+            <div id="share-profile-avatar" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;overflow:hidden;flex-shrink:0;"></div>
+            <div id="share-profile-name" style="font-size:12px;font-weight:700;opacity:0.75;">My Account</div>
           </div>
           <div style="font-size:9px;font-weight:600;opacity:0.25;letter-spacing:0.5px;">TRADELOG.APP</div>
         </div>
@@ -13272,14 +13251,14 @@ function _renderShareCard(tf) {
   // ── FOOTER: profile ───────────────────────────────────────────────────
   document.getElementById('share-footer').style.borderTop = `1px solid ${p.footerBorder}`;
   try {
-    const prof = JSON.parse(localStorage.getItem('tradelog_profile')||'{}');
-    const profName = prof.name || 'Trader';
+    const prof = JSON.parse(localStorage.getItem(PROFILE_KEY)||'{}');
+    const profName = prof.name || 'My Account';
     const profAvatar = prof.avatar || null;
     const profAv = document.getElementById('share-profile-avatar');
     const profNm = document.getElementById('share-profile-name');
     if(profAv){
       if(profAvatar){profAv.innerHTML=`<img src="${profAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;}
-      else{profAv.textContent=profName.charAt(0).toUpperCase();}
+      else{profAv.textContent=profName.charAt(0).toUpperCase();profAv.style.background='linear-gradient(135deg,#6366f1,#8b5cf6)';}
     }
     if(profNm){profNm.textContent=profName;profNm.style.color=p.text;}
   } catch(e){}
