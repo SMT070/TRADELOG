@@ -2641,8 +2641,9 @@
         <div class="dash-subtitle" id="dash-date-sub"></div>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="btn btn-primary" onclick="openShareModal()" style="font-size:11px;padding:8px 16px;gap:6px;display:flex;align-items:center;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        <button class="btn btn-primary" onclick="openShareModal()" style="font-size:11px;padding:6px 14px 6px 8px;gap:7px;display:flex;align-items:center;">
+          <span id="share-btn-avatar" style="width:22px;height:22px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:10px;font-weight:800;color:#fff;"></span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           Share P&L
         </button>
       </div>
@@ -5382,10 +5383,14 @@ function loadProfile() {
     const popupAv = document.getElementById('popup-avatar');
     if (avatar) { popupAv.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
     else { popupAv.textContent = initial; }
+    // Share P&L button avatar
+    const shareAv = document.getElementById('share-btn-avatar');
+    if (shareAv) {
+      if (avatar) { shareAv.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`; }
+      else { shareAv.textContent = initial; }
+    }
   } catch(e) {}
 }
-
-function openProfileModal() {
   try {
     const p = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
     document.getElementById('profile-name-input').value = p.name || '';
@@ -13194,7 +13199,7 @@ function _renderShareCard(tf) {
   const pnlEl = document.getElementById('share-pnl');
   pnlEl.textContent = (isPos ? '+' : '-') + sym + Math.abs(pnl).toFixed(2);
   // Gradient PNL text for cinematic effect
-  pnlEl.style.cssText = `font-weight:900;line-height:1;font-variant-numeric:tabular-nums;word-break:break-all;overflow:hidden;font-size:60px;letter-spacing:-3px;background:linear-gradient(135deg,${pnlColor} 0%,${pnlColor}cc 60%,${pnlColor}88 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 18px ${pnlGlow}) drop-shadow(0 0 40px ${pnlGlow});`;
+  pnlEl.style.cssText = `font-weight:900;line-height:1;font-variant-numeric:tabular-nums;word-break:break-all;overflow:hidden;font-size:60px;letter-spacing:-3px;color:${pnlColor};text-shadow:0 0 40px ${pnlGlow},0 0 80px ${pnlGlow};`;
   // Auto-scale font so big numbers never overflow
   requestAnimationFrame(() => {
     const availW = (card ? card.offsetWidth : 320) - 44;
@@ -13234,7 +13239,7 @@ function _renderShareCard(tf) {
   const bestSymEl = document.getElementById('share-best-sym');
   if (bestTrade) {
     bestEl.textContent = (best >= 0 ? '+' : '-') + sym + Math.abs(best).toFixed(2);
-    bestEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;background:linear-gradient(135deg,${best>=0?p.pos:p.neg},${best>=0?p.pos+'99':p.neg+'99'});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;`;
+    bestEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;color:${best>=0?p.pos:p.neg};`;
     bestSymEl.textContent = bestTrade.symbol || '—';
   } else {
     bestEl.textContent = '—';
@@ -13248,7 +13253,7 @@ function _renderShareCard(tf) {
   const wrEl = document.getElementById('share-winrate');
   const wrSubEl = document.getElementById('share-winrate-sub');
   if (decided) {
-    wrEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;background:linear-gradient(135deg,${wr>=50?p.pos:p.neg},${wr>=50?p.pos+'99':p.neg+'99'});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;`;
+    wrEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;color:${wr>=50?p.pos:p.neg};`;
   } else {
     wrEl.style.cssText = `font-size:20px;font-weight:900;line-height:1;letter-spacing:-1px;color:${p.text};`;
   }
