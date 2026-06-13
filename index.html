@@ -5075,7 +5075,7 @@ window.switchPage = function(name) {
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
 <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>');}</script>
 
@@ -13309,8 +13309,8 @@ function closeShareModal() {
   // Restore sidebar z-index
   const sidebar = document.getElementById('sidebar');
   if (sidebar) sidebar.style.zIndex = '';
-  // release any cached canvas to free memory
-  window._shareCanvas = null;
+  // Release cached canvas/blob and any in-flight capture promise
+  _invalidateShareCache();
 }
 
 function buildShareText() {
@@ -13327,69 +13327,105 @@ function buildShareText() {
 
 // ── Single shared capture function — caches result, runs off main thread via timeout ──
 let _capturePromise = null;
+
+function _waitForHtml2Canvas(maxWait) {
+  // Poll until html2canvas is available (handles async script loading)
+  return new Promise((resolve, reject) => {
+    if (typeof html2canvas !== 'undefined') { resolve(); return; }
+    const start = Date.now();
+    const check = () => {
+      if (typeof html2canvas !== 'undefined') { resolve(); return; }
+      if (Date.now() - start > maxWait) { reject(new Error('html2canvas not loaded')); return; }
+      setTimeout(check, 100);
+    };
+    setTimeout(check, 100);
+  });
+}
+
 function captureShareCard() {
-  // Return cached canvas if available (same session open)
-  if (window._shareCanvas) {
+  // Return cached result if available (same session open)
+  if (window._shareCanvas && window._shareBlob) {
     return Promise.resolve({ blob: window._shareBlob, canvas: window._shareCanvas });
   }
   if (_capturePromise) return _capturePromise;
 
-  _capturePromise = new Promise((resolve, reject) => {
-    if (typeof html2canvas === 'undefined') { reject(new Error('html2canvas not loaded')); return; }
+  _capturePromise = _waitForHtml2Canvas(8000).then(() => new Promise((resolve, reject) => {
     const card  = document.getElementById('share-card');
     const theme = localStorage.getItem('tradelog_theme') || 'dark';
     const bg    = theme === 'light' ? '#ffffff' : '#0b0f1a';
     // Wait 2 rAFs + extra ms so PNL font-scale and all paint cycles complete
     requestAnimationFrame(() => requestAnimationFrame(() => {
       setTimeout(() => {
-        html2canvas(card, { backgroundColor: bg, scale: 3, useCORS: true, logging: false, imageTimeout: 0 })
+        html2canvas(card, { backgroundColor: bg, scale: 3, useCORS: true, allowTaint: true, logging: false, imageTimeout: 0 })
           .then(canvas => {
             canvas.toBlob(blob => {
-              if (!blob) { reject(new Error('blob failed')); return; }
+              if (!blob) { _capturePromise = null; reject(new Error('blob failed')); return; }
               window._shareCanvas = canvas;
               window._shareBlob   = blob;
               _capturePromise     = null;
               resolve({ blob, canvas });
             }, 'image/png');
           }).catch(e => { _capturePromise = null; reject(e); });
-      }, 120);
+      }, 150);
     }));
-  });
+  })).catch(e => { _capturePromise = null; return Promise.reject(e); });
+
   return _capturePromise;
 }
 
 // Invalidate cache when modal closes or theme changes
-function _invalidateShareCache() { window._shareCanvas = null; window._shareBlob = null; }
+function _invalidateShareCache() {
+  window._shareCanvas = null;
+  window._shareBlob   = null;
+  _capturePromise     = null;
+}
 
 function shareCardDownload() {
   const btn = document.getElementById('share-dl-btn');
+  const SAVE_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save Image';
   if (btn) btn.innerHTML = '⏳ Saving…';
   captureShareCard().then(({ canvas }) => {
     const a = document.createElement('a');
     a.download = 'tradelog-' + new Date().toISOString().slice(0,10) + '.png';
     a.href = canvas.toDataURL('image/png');
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    if (btn) { btn.innerHTML = '✓ Saved!'; setTimeout(() => btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save Image', 2000); }
+    if (btn) { btn.innerHTML = '✓ Saved!'; setTimeout(() => { if (btn) btn.innerHTML = SAVE_ICON; }, 2500); }
     toast('Image saved!', 'success');
-  }).catch(() => {
-    if (btn) btn.innerHTML = 'Save Image';
-    toast('Save failed', 'error');
+  }).catch(err => {
+    console.error('[Share] Download failed:', err);
+    if (btn) btn.innerHTML = SAVE_ICON;
+    toast('Save failed — try again', 'error');
   });
 }
 
 function shareCardCopy() {
   const btn = document.getElementById('share-cp-btn');
+  const COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image';
+
+  // Check clipboard API support upfront
+  const canCopy = !!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
+
+  if (!canCopy) {
+    // No clipboard write support — fall straight to download with a clear message
+    toast('Clipboard not supported — saving instead', 'info');
+    shareCardDownload();
+    return;
+  }
+
   if (btn) btn.innerHTML = '⏳ Copying…';
   captureShareCard().then(({ blob }) => {
-    navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-      .then(() => {
-        if (btn) { btn.innerHTML = '✓ Copied!'; setTimeout(() => btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image', 2000); }
-        toast('Image copied!', 'success');
-      })
-      .catch(() => { if (btn) btn.innerHTML = 'Copy Image'; shareCardDownload(); });
-  }).catch(() => {
-    if (btn) btn.innerHTML = 'Copy Image';
-    toast('Could not capture card', 'error');
+    // Re-create the blob promise so ClipboardItem can consume it properly
+    const blobPromise = Promise.resolve(blob);
+    return navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })]);
+  }).then(() => {
+    if (btn) { btn.innerHTML = '✓ Copied!'; setTimeout(() => { if (btn) btn.innerHTML = COPY_ICON; }, 2500); }
+    toast('Card copied to clipboard!', 'success');
+  }).catch(err => {
+    console.error('[Share] Copy failed:', err);
+    if (btn) btn.innerHTML = COPY_ICON;
+    // Clipboard write can fail due to permissions — fall back to download
+    toast('Copy failed — saving instead', 'info');
+    shareCardDownload();
   });
 }
 
