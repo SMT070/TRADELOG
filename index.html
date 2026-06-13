@@ -5836,6 +5836,10 @@ function showAuthScreen() {
   const auth = document.getElementById('auth-screen');
   const app  = document.getElementById('app-root');
   if (auth) {
+    // Remove any pre-hide <style> that was injected to suppress auth on refresh
+    document.querySelectorAll('style').forEach(function(s) {
+      if (s.textContent.indexOf('#auth-screen{display:none!important;}') !== -1) s.remove();
+    });
     // Reset any fade-out transition left from showApp()
     auth.style.transition = 'none';
     auth.style.opacity    = '1';
@@ -15020,6 +15024,28 @@ window.addEventListener('resize', () => {
   }
 </style>
 
+<script>
+  // Hide auth-screen immediately if a cached Supabase session exists.
+  // This prevents the login screen from flashing on refresh when already logged in.
+  // The loader (#tradelog-loader, z-index:99999) stays on top while the session
+  // is verified — showAuthScreen() is only called if INITIAL_SESSION has no user.
+  (function() {
+    try {
+      var hasSession = false;
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && (k.indexOf('supabase') !== -1 || k.indexOf('sb-') !== -1) && k.indexOf('auth-token') !== -1) {
+          var v = localStorage.getItem(k);
+          if (v && v.indexOf('access_token') !== -1) { hasSession = true; break; }
+        }
+      }
+      if (hasSession) {
+        // Pre-hide the auth screen — the loader covers everything while session is confirmed
+        document.write('<style>#auth-screen{display:none!important;}<\/style>');
+      }
+    } catch(e) {}
+  })();
+</script>
 <div id="auth-screen" style="display:flex;position:fixed;inset:0;z-index:99998;background:#0a0b14;align-items:center;justify-content:center;overflow:hidden;">
 
   <!-- Ambient orbs -->
