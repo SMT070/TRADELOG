@@ -13192,7 +13192,7 @@ function _renderShareCard(tf) {
   const pnlEl = document.getElementById('share-pnl');
   pnlEl.textContent = (isPos?'+':'-') + sym + Math.abs(pnl).toFixed(2);
   pnlEl.style.color = pnlColor;
-  pnlEl.style.textShadow = `0 0 40px ${pnlGlow},0 0 80px ${pnlGlow}`;
+  pnlEl.style.textShadow = 'none';
   pnlEl.style.fontSize = '60px'; pnlEl.style.letterSpacing = '-3px';
   requestAnimationFrame(() => {
     const availW = (card?card.offsetWidth:320) - 44;
