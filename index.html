@@ -15318,7 +15318,23 @@ tr.pack-child-row td:first-child {
   transform: translateY(-50%);
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  z-index: 1;
+  cursor: pointer;
 }
+.date-chevron:hover {
+  background: rgba(99,102,241,0.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.12);
+}
+.date-chevron svg { flex-shrink:0; color:var(--text2); transition:color .15s; }
+.date-chevron:hover svg { color: var(--accent); }
 tr.pack-child-row:hover td { background: var(--surface3) !important; }
 tr.pack-child-row.hidden { display: none; }
 tr.pack-child-row[data-pack^="_auto_"] td:first-child { border-left: 3px solid var(--border) !important; }
@@ -15610,10 +15626,6 @@ function togglePackExpand(packId, e) {
   if (chevron) chevron.style.transform = isExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
   const headerRow = document.querySelector(`tr.pack-header-row[data-pack="${packId}"]`);
   if (headerRow) headerRow.classList.toggle('expanded', isExpanded);
-  // Load group detail (right side panel on desktop, bottom sheet on mobile)
-  if (isExpanded) {
-    openPackDetail(packId);
-  }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -17232,8 +17244,10 @@ function renderPackRows(packId, packTrades, sym) {
   const headerEntry  = firstTrade?.entry  != null && firstTrade.entry  !== '' ? firstTrade.entry  : '—';
   const headerExit   = firstTrade?.exit   != null && firstTrade.exit   !== '' ? firstTrade.exit   : '—';
 
-  let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" onclick="togglePackExpand('${packId}',event)" style="cursor:pointer;">
-    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;position:relative;"><div class="date-chevron">${chevron}</div><div style="line-height:1.4;">${dateHtml}</div></td>
+  const chevronBox = `<div class="date-chevron" onclick="togglePackExpand('${packId}',event)" title="Expand/collapse trades">${chevron}</div>`;
+
+  let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" onclick="openPackDetail('${packId}',event)" style="cursor:pointer;">
+    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;position:relative;">${chevronBox}<div style="line-height:1.4;">${dateHtml}</div></td>
     <td style="font-weight:600;">${symbols}</td>
     <td><div style="display:flex;align-items:center;">${dirBadge}${countPill}</div></td>
     <td style="color:var(--text);font-weight:500;">${totalLots.toFixed(2)}</td>
@@ -17698,8 +17712,10 @@ function renderAutoPackRows(key, packTrades, sym) {
   const safeKey = key.replace(/'/g,"\'");
   const actions = `<span onclick="event.stopPropagation();addTradeToAutoPack('${safeKey}',event)" title="Convert to saved group" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;color:var(--muted);cursor:pointer;transition:color .15s;font-size:11px;font-weight:800;" onmouseenter="this.style.color='var(--accent)'" onmouseleave="this.style.color='var(--muted)'">⚡</span>`;
 
-  let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${key}" onclick="togglePackExpand('${key}',event)" style="cursor:pointer;">
-    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;position:relative;"><div class="date-chevron">${chevron}</div><div style="line-height:1.4;">${dateHtml}</div></td>
+  const chevronBox2 = `<div class="date-chevron" onclick="togglePackExpand('${key}',event)" title="Expand/collapse trades">${chevron}</div>`;
+
+  let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${key}" onclick="openPackDetail('${key}',event)" style="cursor:pointer;">
+    <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;position:relative;">${chevronBox2}<div style="line-height:1.4;">${dateHtml}</div></td>
     <td style="font-weight:600;">${symbols}</td>
     <td><div style="display:flex;align-items:center;">${dirBadge}${countPill}</div></td>
     <td style="color:var(--text);font-weight:500;">${totalLots.toFixed(2)}</td>
