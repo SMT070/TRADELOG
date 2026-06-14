@@ -16949,7 +16949,10 @@ async function savePackField(packId, field, value) {
         const updated = trades.find(x => x.id === t.id);
         return updated ? guaranteedSaveToSupabase(updated) : Promise.resolve();
       }));
-    } catch(e) { console.warn('savePackField auto-convert sync failed', e); }
+    } catch(e) {
+      console.error('savePackField auto-convert sync failed', e);
+      toast('❌ Group save failed: ' + (e?.message || e?.error_description || JSON.stringify(e)), 'error');
+    }
     packTrades = trades.filter(t => t.packId === realPackId);
     // Re-render so the row now shows as a real pack
     renderTrades();
@@ -16977,7 +16980,10 @@ async function savePackField(packId, field, value) {
       const latest = trades.find(x => x.id === t.id);
       return latest ? guaranteedSaveToSupabase(latest) : Promise.resolve();
     }));
-  } catch(e) { console.warn('savePackField trade sync failed', e); }
+  } catch(e) {
+    console.error('savePackField trade sync failed', e);
+    toast('❌ Group save failed: ' + (e?.message || e?.error_description || JSON.stringify(e)), 'error');
+  }
   // Save pack metadata (notes, photo, mindset, tags) to user_data
   try {
     await saveUserDataToSupabase();
