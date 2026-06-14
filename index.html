@@ -8436,9 +8436,37 @@ function openMobileSheetEdit() {
   switchPage('add');
 }
 
+// ── Inline autosave for single-trade mood / confidence / notes (mirrors pack-detail autosave) ──
+async function saveTradeField(id, field, value) {
+  const idx = trades.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  trades[idx][field] = value;
+  save();
+  try {
+    await guaranteedSaveToSupabase(trades[idx]);
+    const indicator = document.getElementById('pack-save-indicator');
+    if (indicator) {
+      indicator.textContent = '✓ Saved';
+      indicator.style.opacity = '1';
+      clearTimeout(indicator._t);
+      indicator._t = setTimeout(() => { indicator.style.opacity = '0'; }, 1500);
+    }
+  } catch(e) {
+    console.warn('saveTradeField sync failed', e);
+    toast('❌ Sync failed — check connection', 'error');
+  }
+}
+
+const _tradeNotesTimers = {};
+function saveTradeNoteDebounced(id, value) {
+  clearTimeout(_tradeNotesTimers[id]);
+  _tradeNotesTimers[id] = setTimeout(() => { saveTradeField(id, 'notes', value); }, 600);
+}
+
 function showTradeDetail(id) {
   const t = trades.find(x => x.id === id);
   if (!t) return;
+  const safeId = t.id.replace(/[^a-zA-Z0-9_-]/g,'_');
 
   const sym      = getCurrencySymbol();
   const pnl      = getPnl(t);
@@ -8610,46 +8638,45 @@ function showTradeDetail(id) {
         <div id="detail-tag-editor">${renderDetailTagsHTML(t.id)}</div>
       </div>
 
-      <!-- Mood & Confidence: always both slots -->
+      <!-- Mood & Confidence — inline editable, live save (matches group style) -->
       <div style="display:flex;gap:12px;margin-bottom:14px;">
-        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
-          <div class="detail-label" style="margin-bottom:6px;">Mood</div>
-          <div style="font-size:22px;">${t.emotion || '—'}</div>
-        </div>
-        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;">
-          <div class="detail-label" style="margin-bottom:6px;">Confidence</div>
-          <div style="font-size:18px;font-weight:800;color:${t.confidence ? 'var(--accent)' : 'var(--muted)'};">
-            ${t.confidence ? `${t.confidence}<span style="font-size:11px;color:var(--muted);font-weight:600;">/10</span>` : '—'}
+        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
+          <div class="detail-label" style="margin-bottom:8px;">Mood</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;" id="td-emo-wrap-${safeId}">
+            ${['😤','😰','😊','😎','🤔','😴','😡','🥳','😬','🙏'].map(em => `<span
+              onclick="saveTradeField('${t.id}','emotion','${em}');document.querySelectorAll('.td-emo-${safeId}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
+              class="td-emo-${safeId}"
+              style="font-size:20px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${t.emotion===em?'2px solid var(--accent)':'none'};transform:${t.emotion===em?'scale(1.12)':'scale(1)'};">${em}</span>`).join('')}
           </div>
+        </div>
+        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
+          <div class="detail-label" style="margin-bottom:6px;">Confidence <span id="td-conf-val-${safeId}" style="color:var(--accent);font-weight:700;">${t.confidence?t.confidence+'/10':''}</span></div>
+          <input type="range" min="1" max="10" value="${t.confidence||5}" style="width:100%;accent-color:var(--accent);margin-bottom:4px;"
+            oninput="document.getElementById('td-conf-val-${safeId}').textContent=this.value+'/10';saveTradeField('${t.id}','confidence',parseInt(this.value))">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;"><span>Low</span><span>High</span></div>
         </div>
       </div>
 
-      <!-- Notes: always visible -->
+      <!-- Notes — inline editable textarea, live save (matches group style) -->
       <div style="margin-bottom:14px;">
         <div class="detail-label" style="margin-bottom:6px;">Notes</div>
-        <div class="notes-hover-wrap">
-          <div style="font-size:12px;line-height:1.7;color:${t.notes?'var(--text2)':'var(--muted)'};background:var(--surface2);padding:12px;border-radius:10px;${t.notes?'border-left:3px solid var(--accent);':'border-left:3px solid var(--border2);'}">
-            <div class="notes-clamp">${t.notes || 'No notes added.'}</div>
-          </div>
-          ${t.notes ? `<div class="notes-popup">${t.notes.replace(/</g,'&lt;')}</div>` : ''}
-        </div>
+        <textarea id="td-notes-${safeId}" placeholder="Setup idea, reasoning, confluences…"
+          style="width:100%;min-height:90px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+          oninput="saveTradeNoteDebounced('${t.id}',this.value)">${t.notes||''}</textarea>
       </div>
 
-      <!-- Chart Photo: always visible -->
+      <!-- Chart Photo — inline drop/paste/click, live save (matches group style) -->
       <div style="margin-bottom:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <div class="detail-label">Chart Photo</div>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;" onclick="document.getElementById('detail-photo-input').click()">
-              ${t.screenshot ? '🔄 Replace' : '📸 Add Photo'}
-            </button>
-            ${t.screenshot ? `<button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);" onclick="removeTradePhoto('${t.id}')">Remove</button>` : ''}
-          </div>
-        </div>
+        <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
         <input type="file" id="detail-photo-input" accept="image/*" style="display:none;" onchange="uploadTradePhoto(event,'${t.id}')">
         ${t.screenshot
-          ? `<div style="cursor:pointer;border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPhotoLightbox('${t.id}')">
-               <img src="${t.screenshot}" alt="chart" style="width:100%;display:block;border-radius:10px;">
+          ? `<div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoLightbox('${t.id}')">
+               <img src="${t.screenshot}" style="width:100%;display:block;border-radius:10px;">
+               <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
+                 <button onclick="event.stopPropagation();document.getElementById('detail-photo-input').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
+                 <button onclick="event.stopPropagation();removeTradePhoto('${t.id}')" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
+               </div>
                <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
              </div>`
           : `<div tabindex="0" data-photo-id="${t.id}"
@@ -8658,16 +8685,28 @@ function showTradeDetail(id) {
                ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
                ondragleave="this.style.borderColor='var(--border2)'"
                ondrop="handlePhotoZoneDrop(event,'${t.id}')"
-               style="border:2px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;outline:none;"
+               style="border:2px dashed var(--border2);border-radius:10px;padding:24px 16px;text-align:center;color:var(--muted);font-size:12px;cursor:pointer;transition:border-color .15s;outline:none;"
                onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
-               <div style="font-size:24px;margin-bottom:6px;">📸</div>
-               <div style="font-size:12px;color:var(--muted);">Click, drag & drop, or paste a screenshot</div>
+               <div style="font-size:22px;margin-bottom:6px;">📸</div>
+               Click, drag &amp; drop, or <b style="color:var(--text2);">Ctrl+V</b> to paste chart screenshot
              </div>`
         }
       </div>
 
     </div>
   `;
+
+  // Save indicator next to panel title (mirrors group detail)
+  const panelTitle = document.querySelector('#trade-detail-panel .panel-title');
+  if (panelTitle) {
+    panelTitle.textContent = 'Trade Detail';
+    if (!document.getElementById('pack-save-indicator')) {
+      const ind = document.createElement('span');
+      ind.id = 'pack-save-indicator';
+      ind.style.cssText = 'font-size:10px;color:var(--green);font-weight:600;margin-left:8px;opacity:0;transition:opacity .3s;';
+      panelTitle.appendChild(ind);
+    }
+  }
 }
 
 // ── DETAIL OVERLAY ────────────────────────────────────────────────────────────
