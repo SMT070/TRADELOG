@@ -16042,60 +16042,6 @@ function openPackDetail(packId, e, _autoTrades) {
         <div style="display:flex;flex-direction:column;gap:6px;">${positionsHtml}</div>
       </div>
 
-      <!-- Mood & Confidence — inline editable, live save -->
-      <div style="display:flex;gap:12px;margin-bottom:14px;">
-        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
-          <div class="detail-label" style="margin-bottom:8px;">Mood</div>
-          <div style="display:flex;flex-wrap:wrap;gap:5px;" id="pd-emo-wrap-${safeId}">
-            ${emotions.map(em => `<span
-              onclick="_packFieldSave('packEmotion','${em}');document.querySelectorAll('.pd-emo-${safeId}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
-              class="pd-emo-${safeId}"
-              style="font-size:20px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${packEmotion===em?'2px solid var(--accent)':'none'};transform:${packEmotion===em?'scale(1.12)':'scale(1)'};">${em}</span>`).join('')}
-          </div>
-        </div>
-        <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
-          <div class="detail-label" style="margin-bottom:6px;">Confidence <span id="pd-conf-val-${safeId}" style="color:var(--accent);font-weight:700;">${packConfidence?packConfidence+'/10':''}</span></div>
-          <input type="range" min="1" max="10" value="${packConfidence||5}" style="width:100%;accent-color:var(--accent);margin-bottom:4px;"
-            oninput="document.getElementById('pd-conf-val-${safeId}').textContent=this.value+'/10';_packFieldSave('packConfidence',parseInt(this.value))">
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;"><span>Low</span><span>High</span></div>
-        </div>
-      </div>
-
-      <!-- Notes — inline editable textarea, live save -->
-      <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:6px;">Group Notes</div>
-        <textarea id="pd-notes-${safeId}" placeholder="Setup idea, reasoning, confluences…"
-          style="width:100%;min-height:90px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;padding:12px;resize:vertical;outline:none;line-height:1.7;transition:border-color .2s;box-sizing:border-box;"
-          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
-          oninput="savePackNoteDebounced(window._currentPackId,this.value)">${packNotes}</textarea>
-      </div>
-
-      <!-- Chart Photo — inline drop/paste/click, live save -->
-      <div style="margin-bottom:14px;">
-        <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
-        <input type="file" id="pd-photo-input-${safeId}" accept="image/*" style="display:none;"
-          onchange="uploadPackPhotoAndRefresh(event,window._currentPackId)">
-        ${packPhoto
-          ? `<div style="position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);cursor:pointer;" onclick="openPackPhotoFullscreen(window._currentPackId)">
-               <img src="${packPhoto}" style="width:100%;display:block;border-radius:10px;">
-               <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
-                 <button onclick="event.stopPropagation();document.getElementById('pd-photo-input-${safeId}').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
-                 <button onclick="event.stopPropagation();_packFieldSave('packScreenshot',null).then(()=>openPackDetail(window._currentPackId))" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
-               </div>
-               <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
-             </div>`
-          : `<div onclick="document.getElementById('pd-photo-input-${safeId}').click()"
-               ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-               ondragleave="this.style.borderColor='var(--border2)'"
-               ondrop="event.preventDefault();uploadPackPhotoAndRefresh({target:{files:[event.dataTransfer.files[0]]}},window._currentPackId)"
-               style="border:2px dashed var(--border2);border-radius:10px;padding:24px 16px;text-align:center;color:var(--muted);font-size:12px;cursor:pointer;transition:border-color .15s;"
-               onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border2)'">
-               <div style="font-size:22px;margin-bottom:6px;">📸</div>
-               Click, drag &amp; drop, or <b style="color:var(--text2);">Ctrl+V</b> to paste chart screenshot
-             </div>`
-        }
-      </div>
-
     </div>`;
 
   // ── Render into right side panel (desktop) or bottom sheet (mobile) ──
@@ -16137,34 +16083,6 @@ function openPackDetail(packId, e, _autoTrades) {
           <div style="display:flex;flex-direction:column;gap:6px;">${positionsHtml}</div>
         </div>
 
-        <!-- Mood & Confidence — read-only summary -->
-        <div style="display:flex;gap:12px;margin-bottom:14px;">
-          <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
-            <div class="detail-label" style="margin-bottom:6px;">Mood</div>
-            <div style="font-size:24px;">${packEmotion || '—'}</div>
-          </div>
-          <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
-            <div class="detail-label" style="margin-bottom:6px;">Confidence</div>
-            <div style="font-size:18px;font-weight:800;color:var(--accent);">${packConfidence?packConfidence+'/10':'—'}</div>
-          </div>
-        </div>
-
-        <!-- Notes — read-only -->
-        <div style="margin-bottom:14px;">
-          <div class="detail-label" style="margin-bottom:6px;">Group Notes</div>
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;color:${packNotes?'var(--text2)':'var(--muted)'};line-height:1.6;min-height:40px;white-space:pre-wrap;">${packNotes || 'No notes yet — tap Edit to add.'}</div>
-        </div>
-
-        <!-- Chart Photo — read-only -->
-        ${packPhoto ? `
-        <div style="margin-bottom:14px;">
-          <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
-          <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPackPhotoFullscreen('${packId}')">
-            <img src="${packPhoto}" style="width:100%;display:block;">
-          </div>
-        </div>` : ''}
-
-        <div style="text-align:center;color:var(--muted);font-size:11px;margin-top:4px;">Tap Edit to update mood, confidence, notes, photo, or trade details.</div>
       </div>`;
 
     document.getElementById('mobile-sheet-title').innerHTML = `<span style="font-size:13px;">📦</span> ${packName}`;
