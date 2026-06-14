@@ -8218,10 +8218,19 @@ function selectTrade(id) {
   showTradeDetail(id);
 }
 
+function _mobileSheetDefaultActions() {
+  return `<button id="mobile-sheet-edit-btn" onclick="openMobileSheetEdit()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:rgba(99,102,241,.1);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Edit</button>
+    <button onclick="closeMobileTradeSheet()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>`;
+}
+
 function openMobileTradeSheet(id) {
   const t = trades.find(x => x.id === id);
   if (!t) return;
   selectedId = id;
+  // Reset header actions to default (in case a pack-edit session left Cancel/Save behind)
+  const actions = document.getElementById('mobile-sheet-actions');
+  if (actions) actions.innerHTML = _mobileSheetDefaultActions();
+  delete document.getElementById('mobile-trade-sheet').dataset.packId;
   const sym = getCurrencySymbol();
   const pnl = getPnl(t);
   const grossPnl = t.pnl || 0;
@@ -15124,8 +15133,8 @@ window.addEventListener('resize', () => {
   <div style="width:100%;max-height:90vh;background:var(--surface);border-radius:20px 20px 0 0;overflow-y:auto;padding:0 0 max(40px, env(safe-area-inset-bottom));">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;">
       <div style="font-size:16px;font-weight:800;color:var(--text);" id="mobile-sheet-title">Trade</div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="openMobileSheetEdit()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:rgba(99,102,241,.1);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Edit</button>
+      <div style="display:flex;gap:8px;" id="mobile-sheet-actions">
+        <button id="mobile-sheet-edit-btn" onclick="openMobileSheetEdit()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:rgba(99,102,241,.1);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Edit</button>
         <button onclick="closeMobileTradeSheet()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>
       </div>
     </div>
@@ -15553,8 +15562,8 @@ function togglePackExpand(packId, e) {
   if (chevron) chevron.style.transform = isExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
   const headerRow = document.querySelector(`tr.pack-header-row[data-pack="${packId}"]`);
   if (headerRow) headerRow.classList.toggle('expanded', isExpanded);
-  // On desktop: load group detail into right side panel
-  if (isExpanded && window.innerWidth > 768) {
+  // Load group detail (right side panel on desktop, bottom sheet on mobile)
+  if (isExpanded) {
     openPackDetail(packId);
   }
 }
@@ -15991,7 +16000,7 @@ function openPackDetail(packId, e, _autoTrades) {
           <div class="detail-label" style="margin-bottom:8px;">Mood</div>
           <div style="display:flex;flex-wrap:wrap;gap:5px;" id="pd-emo-wrap-${safeId}">
             ${emotions.map(em => `<span
-              onclick="savePackField(window._currentPackId,'packEmotion','${em}');document.querySelectorAll('.pd-emo-${safeId}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
+              onclick="_packFieldSave('packEmotion','${em}');document.querySelectorAll('.pd-emo-${safeId}').forEach(b=>{b.style.outline='none';b.style.transform='scale(1)'});this.style.outline='2px solid var(--accent)';this.style.transform='scale(1.18)'"
               class="pd-emo-${safeId}"
               style="font-size:20px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;background:var(--surface3);transition:all .15s;outline:${packEmotion===em?'2px solid var(--accent)':'none'};transform:${packEmotion===em?'scale(1.12)':'scale(1)'};">${em}</span>`).join('')}
           </div>
@@ -15999,7 +16008,7 @@ function openPackDetail(packId, e, _autoTrades) {
         <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
           <div class="detail-label" style="margin-bottom:6px;">Confidence <span id="pd-conf-val-${safeId}" style="color:var(--accent);font-weight:700;">${packConfidence?packConfidence+'/10':''}</span></div>
           <input type="range" min="1" max="10" value="${packConfidence||5}" style="width:100%;accent-color:var(--accent);margin-bottom:4px;"
-            oninput="document.getElementById('pd-conf-val-${safeId}').textContent=this.value+'/10';savePackField(window._currentPackId,'packConfidence',parseInt(this.value))">
+            oninput="document.getElementById('pd-conf-val-${safeId}').textContent=this.value+'/10';_packFieldSave('packConfidence',parseInt(this.value))">
           <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;"><span>Low</span><span>High</span></div>
         </div>
       </div>
@@ -16023,7 +16032,7 @@ function openPackDetail(packId, e, _autoTrades) {
                <img src="${packPhoto}" style="width:100%;display:block;border-radius:10px;">
                <div style="position:absolute;top:8px;right:8px;display:flex;gap:6px;">
                  <button onclick="event.stopPropagation();document.getElementById('pd-photo-input-${safeId}').click()" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Replace</button>
-                 <button onclick="event.stopPropagation();savePackField(window._currentPackId,'packScreenshot',null).then(()=>openPackDetail(window._currentPackId))" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
+                 <button onclick="event.stopPropagation();_packFieldSave('packScreenshot',null).then(()=>openPackDetail(window._currentPackId))" style="padding:4px 10px;border-radius:6px;border:none;background:rgba(255,59,92,.7);color:#fff;font-size:10px;font-weight:700;cursor:pointer;">Remove</button>
                </div>
                <div style="font-size:10px;color:var(--muted);text-align:center;padding:6px;">Click to expand</div>
              </div>`
@@ -16043,8 +16052,81 @@ function openPackDetail(packId, e, _autoTrades) {
 
   // ── Render into right side panel (desktop) or bottom sheet (mobile) ──
   if (window.innerWidth <= 768) {
+    const mobileHtml = `
+      <div style="padding:4px 0;display:flex;flex-direction:column;gap:0;">
+        <!-- Header: name + P&L -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+          <div>
+            <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">${packName}</div>
+            <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              ${dirBadge}
+              ${resultBadge}
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:26px;font-weight:800;color:${pnlColor};letter-spacing:-1px;">${pnlStr}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:2px;">${packTrades.length} positions</div>
+          </div>
+        </div>
+
+        <!-- Stats grid -->
+        <div style="background:var(--surface2);border-radius:10px;overflow:hidden;margin-bottom:14px;">
+          ${[
+            ['Symbol',        symbols,                                   ''],
+            ['Win Rate',      decided ? wr+'%' : '—',                   decided?(wr>=50?'color:var(--green);':'color:var(--red);'):'color:var(--muted);'],
+            ['Wins / Losses', `${wins}W · ${losses}L`,                   ''],
+            ['Duration',      durationStr,                               ''],
+          ].map(([label, val, valStyle], i, arr) => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;${i<arr.length-1?'border-bottom:1px solid var(--border);':''}">
+              <span style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">${label}</span>
+              <span style="font-size:13px;font-weight:700;${valStyle}">${val}</span>
+            </div>`).join('')}
+        </div>
+
+        <!-- Positions -->
+        <div style="margin-bottom:14px;">
+          <div class="detail-label" style="margin-bottom:8px;">Positions</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">${positionsHtml}</div>
+        </div>
+
+        <!-- Mood & Confidence — read-only summary -->
+        <div style="display:flex;gap:12px;margin-bottom:14px;">
+          <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
+            <div class="detail-label" style="margin-bottom:6px;">Mood</div>
+            <div style="font-size:24px;">${packEmotion || '—'}</div>
+          </div>
+          <div style="flex:1;background:var(--surface2);border-radius:10px;padding:10px 14px;border:1px solid var(--border);">
+            <div class="detail-label" style="margin-bottom:6px;">Confidence</div>
+            <div style="font-size:18px;font-weight:800;color:var(--accent);">${packConfidence?packConfidence+'/10':'—'}</div>
+          </div>
+        </div>
+
+        <!-- Notes — read-only -->
+        <div style="margin-bottom:14px;">
+          <div class="detail-label" style="margin-bottom:6px;">Group Notes</div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;color:${packNotes?'var(--text2)':'var(--muted)'};line-height:1.6;min-height:40px;white-space:pre-wrap;">${packNotes || 'No notes yet — tap Edit to add.'}</div>
+        </div>
+
+        <!-- Chart Photo — read-only -->
+        ${packPhoto ? `
+        <div style="margin-bottom:14px;">
+          <div class="detail-label" style="margin-bottom:8px;">Chart Photo</div>
+          <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border);" onclick="openPackPhotoFullscreen('${packId}')">
+            <img src="${packPhoto}" style="width:100%;display:block;">
+          </div>
+        </div>` : ''}
+
+        <div style="text-align:center;color:var(--muted);font-size:11px;margin-top:4px;">Tap Edit to update mood, confidence, notes, photo, or trade details.</div>
+      </div>`;
+
     document.getElementById('mobile-sheet-title').innerHTML = `<span style="font-size:13px;">📦</span> ${packName}`;
-    document.getElementById('mobile-sheet-body').innerHTML = html;
+    document.getElementById('mobile-sheet-body').innerHTML = mobileHtml;
+    const actions = document.getElementById('mobile-sheet-actions');
+    if (actions) actions.innerHTML = `
+      <button onclick="openPackEditMode('${packId}')" style="padding:6px 14px;border-radius:8px;border:1px solid var(--accent);background:rgba(99,102,241,.1);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Edit</button>
+      <button onclick="closeMobileTradeSheet()" style="background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;">×</button>`;
+    document.getElementById('mobile-trade-sheet').dataset.packId = packId;
+    window._currentPackId = packId;
     document.getElementById('mobile-trade-sheet').style.display = 'flex';
   } else {
     document.querySelector('#trade-detail-panel .panel-title').textContent = '📦 ' + packName;
@@ -16094,12 +16176,24 @@ function openPackEditMode(packId) {
   window._peConf     = packConfidence;
   window._peTradeResults = {}; // per-trade result overrides
 
+  const isMobile = window.innerWidth <= 768;
+
   // Update panel title & header buttons
-  document.querySelector('#trade-detail-panel .panel-title').textContent = 'Edit Group';
-  const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
-  if (headerBtns) headerBtns.innerHTML = `
-    <button onclick="cancelPackEdit(window._pePackId)" style="padding:5px 12px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Cancel</button>
-    <button onclick="savePackEdit(window._pePackId)" style="padding:5px 14px;height:30px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>`;
+  if (isMobile) {
+    document.getElementById('mobile-sheet-title').innerHTML = `<span style="font-size:13px;">✏️</span> Edit Group`;
+    const actions = document.getElementById('mobile-sheet-actions');
+    if (actions) actions.innerHTML = `
+      <button onclick="cancelPackEdit(window._pePackId)" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Cancel</button>
+      <button onclick="savePackEdit(window._pePackId)" style="padding:6px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>`;
+    document.getElementById('mobile-trade-sheet').dataset.packId = packId;
+    document.getElementById('mobile-trade-sheet').style.display = 'flex';
+  } else {
+    document.querySelector('#trade-detail-panel .panel-title').textContent = 'Edit Group';
+    const headerBtns = document.querySelector('#trade-detail-panel .panel-header > div:last-child');
+    if (headerBtns) headerBtns.innerHTML = `
+      <button onclick="cancelPackEdit(window._pePackId)" style="padding:5px 12px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Cancel</button>
+      <button onclick="savePackEdit(window._pePackId)" style="padding:5px 14px;height:30px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);">Save</button>`;
+  }
 
   // Confidence pills
   const confPills = Array.from({length:10},(_,i)=>i+1).map(n => {
@@ -16135,7 +16229,7 @@ function openPackEditMode(packId) {
   const symbol2     = packTrades[0]?.symbol || '';
   const dir2        = packTrades[0]?.dir || '';
 
-  document.getElementById('trade-detail-body').innerHTML = `
+  const _peBodyHtml = `
     <div style="padding:18px 20px 24px;display:flex;flex-direction:column;gap:0;">
 
       <!-- Group Summary Header -->
@@ -16269,6 +16363,12 @@ function openPackEditMode(packId) {
         }
       </div>
     </div>`;
+
+  if (isMobile) {
+    document.getElementById('mobile-sheet-body').innerHTML = _peBodyHtml;
+  } else {
+    document.getElementById('trade-detail-body').innerHTML = _peBodyHtml;
+  }
 }
 
 // Pack edit mode helpers
@@ -16338,6 +16438,7 @@ function _refreshPeTagsList() {
 }
 
 async function savePackEdit(packId) {
+  const oldPackId = packId;
   const notes   = (document.getElementById('pe-notes')?.value || '').trim();
   const emotion = window._peEmotion || '';
   const conf    = window._peConf || '';
@@ -16347,7 +16448,7 @@ async function savePackEdit(packId) {
   let packTrades = trades.filter(t => t.packId === packId);
   if (!packTrades.length && packId.startsWith('_auto_')) {
     const { autoGroups } = buildAutoPackGroups(trades);
-    const autoTrades = autoGroups[packId];
+    const autoTrades = _lastRenderedPackMap[packId] || autoGroups[packId];
     if (autoTrades && autoTrades.length) {
       const realPackId = uid();
       const sym = autoTrades[0].symbol;
@@ -16359,6 +16460,8 @@ async function savePackEdit(packId) {
       packId = realPackId;
       packTrades = trades.filter(t => t.packId === packId);
       renderTrades();
+      if (window._currentPackId === oldPackId) window._currentPackId = realPackId;
+      if (window._pePackId === oldPackId)      window._pePackId      = realPackId;
     }
   }
   if (!packTrades.length) return;
@@ -16765,13 +16868,24 @@ function _switchPackTab(safeId, tabName) {
 }
 
 // Save a pack-level field to all trades in the pack (stored on anchor = first trade)
+// ── Wrapper for inline pack-detail edits: keeps window._currentPackId pointed
+// at the (possibly newly-converted) real pack id so the NEXT edit also saves ──
+async function _packFieldSave(field, value) {
+  const newId = await savePackField(window._currentPackId, field, value);
+  if (newId) window._currentPackId = newId;
+  return newId;
+}
+
 async function savePackField(packId, field, value) {
+  const oldPackId = packId;
   let packTrades = trades.filter(t => t.packId === packId);
 
   // ── Auto-pack: no real packId yet — silently convert to a real pack first ──
   if (!packTrades.length && packId.startsWith('_auto_')) {
+    // Prefer the exact trades that were rendered for this group (always accurate),
+    // falling back to a fresh computation if the render map doesn't have it.
     const { autoGroups } = buildAutoPackGroups(trades);
-    const autoTrades = autoGroups[packId];
+    const autoTrades = _lastRenderedPackMap[packId] || autoGroups[packId];
     if (!autoTrades || !autoTrades.length) return;
     const realPackId = uid();
     const sym = autoTrades[0].symbol;
@@ -16793,8 +16907,9 @@ async function savePackField(packId, field, value) {
     renderTrades();
     // Update packId reference for the rest of this call AND for any live overlay/edit panel
     packId = realPackId;
-    if (window._packOvCurrentId) window._packOvCurrentId = realPackId;
-    if (window._pePackId)        window._pePackId        = realPackId;
+    if (window._currentPackId === oldPackId)  window._currentPackId  = realPackId;
+    if (window._packOvCurrentId === oldPackId) window._packOvCurrentId = realPackId;
+    if (window._pePackId === oldPackId)        window._pePackId        = realPackId;
   }
 
   if (!packTrades.length) return;
