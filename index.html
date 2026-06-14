@@ -15993,27 +15993,27 @@ function openPackDetail(packId, e, _autoTrades) {
     const rb  = res==='win'?'var(--green-bg)':res==='loss'?'var(--red-bg)':'rgba(245,158,11,.12)';
     const rc  = res==='win'?'var(--green)':res==='loss'?'var(--red)':'var(--yellow)';
     const rl  = res==='win'?'WIN':res==='loss'?'LOSS':'BE';
-    return `<div onclick="selectTrade('${t.id}')" style="background:var(--surface2);border-radius:10px;padding:10px 12px;cursor:pointer;border:1px solid var(--border);transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--border2)'" onmouseleave="this.style.borderColor='var(--border)'">
+    return `<div onclick="selectTrade('${t.id}')" style="background:var(--surface2);border-radius:10px;padding:13px 14px;cursor:pointer;border:1px solid var(--border);transition:border-color .15s;" onmouseenter="this.style.borderColor='var(--border2)'" onmouseleave="this.style.borderColor='var(--border)'">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
         <div style="display:flex;align-items:center;gap:6px;">
-          <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:9px;">${t.dir}</span>
-          <span style="font-size:11px;color:var(--muted);font-weight:600;">${t.lots||'—'} lots</span>
+          <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:10px;">${t.dir}</span>
+          <span style="font-size:12px;color:var(--muted);font-weight:600;">${t.lots||'—'} lots</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-          <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:${rb};color:${rc};">${rl}</span>
-          <span style="font-size:13px;font-weight:800;color:${pc};">${ps}</span>
+          <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:${rb};color:${rc};">${rl}</span>
+          <span style="font-size:14px;font-weight:800;color:${pc};">${ps}</span>
         </div>
       </div>
-      <div style="display:flex;gap:10px;font-size:11px;color:var(--muted);">
+      <div style="display:flex;gap:10px;font-size:12px;color:var(--muted);margin-top:5px;">
         <span>Entry <b style="color:var(--text);">${t.entry||'—'}</b></span>
         <span>Exit <b style="color:var(--text);">${t.exit||'—'}</b></span>
-        <span style="margin-left:auto;font-size:10px;">${(t.date||'').slice(0,10)}</span>
+        <span style="margin-left:auto;font-size:11px;">${(t.date||'').slice(0,10)}</span>
       </div>
     </div>`;
   }).join('');
 
   const html = `
-    <div style="padding:20px;display:flex;flex-direction:column;gap:0;">
+    <div style="padding:20px 20px 0 20px;display:flex;flex-direction:column;gap:0;">
 
       <!-- Header: name + P&L — identical to single trade -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
@@ -16049,7 +16049,7 @@ function openPackDetail(packId, e, _autoTrades) {
       </div>
 
       <!-- Positions — always visible, read-only -->
-      <div style="margin-bottom:14px;">
+      <div style="margin-bottom:0;padding-bottom:20px;">
         <div class="detail-label" style="margin-bottom:8px;">Positions</div>
         <div style="display:flex;flex-direction:column;gap:6px;">${positionsHtml}</div>
       </div>
