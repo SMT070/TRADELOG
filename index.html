@@ -6019,29 +6019,30 @@ async function loadProfileFromSupabase() { /* handled by loadAllFromSupabase */ 
 // ── SAVE USER DATA (journal, mindset, tags) ───────────────────────────────────
 async function saveUserDataToSupabase() {
   const uid = await getValidUid();
-  if (!uid) { console.warn('TradeLog: saveUserData — no session'); return; }
-  try {
-    // Build pack_meta: collect all pack-level fields from trades, keyed by packId
-    const packMeta = {};
-    trades.forEach(t => {
-      if (!t.packId) return;
-      if (!packMeta[t.packId]) packMeta[t.packId] = {};
-      if (t.packNotes      != null) packMeta[t.packId].packNotes      = t.packNotes;
-      if (t.packEmotion    != null) packMeta[t.packId].packEmotion    = t.packEmotion;
-      if (t.packConfidence != null) packMeta[t.packId].packConfidence = t.packConfidence;
-      if (t.packScreenshot != null) packMeta[t.packId].packScreenshot = t.packScreenshot;
-      if (t.packTags       != null) packMeta[t.packId].packTags       = t.packTags;
-    });
-    const { error } = await sb.from('user_data').upsert({
-      user_id: uid,
-      mindset:   getMindsetDataLocal(),
-      journal:   JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
-      tags:      JSON.parse(localStorage.getItem(TAGS_KEY) || '[]'),
-      pack_meta: packMeta,
-      notebooks: JSON.parse(localStorage.getItem(NOTEBOOKS_KEY) || '[]'),
-    });
-    if (error) console.warn('TradeLog: saveUserData error', error);
-  } catch(e) { console.warn('TradeLog: saveUserData failed', e); }
+  if (!uid) { console.warn('TradeLog: saveUserData — no session'); throw new Error('No active session'); }
+  // Build pack_meta: collect all pack-level fields from trades, keyed by packId
+  const packMeta = {};
+  trades.forEach(t => {
+    if (!t.packId) return;
+    if (!packMeta[t.packId]) packMeta[t.packId] = {};
+    if (t.packNotes      != null) packMeta[t.packId].packNotes      = t.packNotes;
+    if (t.packEmotion    != null) packMeta[t.packId].packEmotion    = t.packEmotion;
+    if (t.packConfidence != null) packMeta[t.packId].packConfidence = t.packConfidence;
+    if (t.packScreenshot != null) packMeta[t.packId].packScreenshot = t.packScreenshot;
+    if (t.packTags       != null) packMeta[t.packId].packTags       = t.packTags;
+  });
+  const { error } = await sb.from('user_data').upsert({
+    user_id: uid,
+    mindset:   getMindsetDataLocal(),
+    journal:   JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
+    tags:      JSON.parse(localStorage.getItem(TAGS_KEY) || '[]'),
+    pack_meta: packMeta,
+    notebooks: JSON.parse(localStorage.getItem(NOTEBOOKS_KEY) || '[]'),
+  }, { onConflict: 'user_id' });
+  if (error) {
+    console.error('TradeLog: saveUserData error', error.message || error, error.details || '', error.hint || '');
+    throw error;
+  }
 }
 
 // Alias for old callers
@@ -6614,13 +6615,12 @@ function getSavedTags() {
 }
 function saveCustomTag(tag) {
   const tags = getSavedTags();
-  if (!tags.includes(tag)) { tags.push(tag); localStorage.setItem(TAGS_KEY, JSON.stringify(tags)); saveUserDataToSupabase(); }
+  if (!tags.includes(tag)) { tags.push(tag); localStorage.setItem(TAGS_KEY, JSON.stringify(tags)); saveUserDataToSupabase().catch(e=>console.warn('TradeLog: tag sync failed',e)); }
 }
 function deleteCustomTag(tag) {
   const tags = getSavedTags().filter(t => t !== tag);
   localStorage.setItem(TAGS_KEY, JSON.stringify(tags));
-  saveUserDataToSupabase();
-  // Also remove from current active selection if present
+  saveUserDataToSupabase().catch(e=>console.warn('TradeLog: tag sync failed',e));
   strategyTags = strategyTags.filter(t => t !== tag);
   renderStrategyTags();
 }
@@ -12330,19 +12330,29 @@ function getTodayKey() {
   return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
 }
 
-// ── SUPABASE USER-DATA SYNC (mindset, journal, tags) ─────────────────────────
+// ── SUPABASE USER-DATA SYNC (mindset, journal, tags, pack_meta, notebooks) ───
 // Requires a `user_data` table in Supabase. Run this SQL once in your Supabase
 // SQL Editor (Dashboard → SQL Editor → New Query):
 //
 //   create table if not exists public.user_data (
-//     user_id uuid primary key references auth.users(id) on delete cascade,
-//     mindset jsonb default '{}'::jsonb,
-//     journal jsonb default '{}'::jsonb,
-//     tags    jsonb default '[]'::jsonb
+//     user_id   uuid primary key references auth.users(id) on delete cascade,
+//     mindset   jsonb default '{}'::jsonb,
+//     journal   jsonb default '{}'::jsonb,
+//     tags      jsonb default '[]'::jsonb,
+//     pack_meta jsonb default '{}'::jsonb,
+//     notebooks jsonb default '[]'::jsonb
 //   );
 //   alter table public.user_data enable row level security;
 //   create policy "Users manage own data" on public.user_data
 //     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+//
+// If the table already exists from an earlier version (without pack_meta /
+// notebooks), run this to add the missing columns — this is the #1 cause of
+// "group mood/confidence/notes/photo don't save" since the upsert used to
+// fail silently on the missing column:
+//
+//   alter table public.user_data add column if not exists pack_meta jsonb default '{}'::jsonb;
+//   alter table public.user_data add column if not exists notebooks jsonb default '[]'::jsonb;
 
 // (loadUserDataFromSupabase and saveUserDataToSupabase defined above in Supabase block)
 
@@ -12395,8 +12405,7 @@ function saveJournal() {
       localStorage.setItem(MINDSET_KEY, JSON.stringify(mData));
     } catch(e) {}
 
-    saveUserDataToSupabase();
-    loadJournal(); // re-load to confirm saved state
+    saveUserDataToSupabase().catch(e=>console.warn('TradeLog: journal sync failed',e));
     toast('Journal saved!', 'success');
   } catch { toast('Could not save journal', 'error'); }
 }
@@ -12408,7 +12417,7 @@ function getMindsetData() {
 }
 function saveMindsetData(data) {
   localStorage.setItem(MINDSET_KEY, JSON.stringify(data));
-  saveUserDataToSupabase();
+  saveUserDataToSupabase().catch(e=>console.warn('TradeLog: mindset sync failed',e));
 }
 
 function initMindsetPage() {
@@ -13787,7 +13796,7 @@ function loadData(key, def=[]) {
 function saveData(key, data) {
   localStorage.setItem(key, JSON.stringify(data));
   // Persist notebooks to Supabase whenever they change
-  if (key === NOTEBOOKS_KEY) { saveUserDataToSupabase(); }
+  if (key === NOTEBOOKS_KEY) { saveUserDataToSupabase().catch(e=>console.warn('TradeLog: notebooks sync failed',e)); }
 }
 
 // ══════════════════════════════════════════════════════════════════
