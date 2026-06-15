@@ -11801,10 +11801,16 @@ function renderCalendar() {
         else                   pnlStr = sign + sym + abs.toFixed(2);
         inner += '<div class="cal-pnl ' + pnlClass + '">' + pnlStr + '</div>';
         inner += '<div class="cal-trades">' + data.count + ' trade' + (data.count!==1?'s':'') + '</div>';
-        // Mood emoji from any trade on this day
-        const dayMoods = [...new Set((trades||[]).filter(t=>(t.date||'').slice(0,10)===dateStr && t.emotion).map(t=>t.emotion))];
-        if (dayMoods.length) {
-          inner += '<div style="font-size:9px;line-height:1;margin-top:1px;opacity:0.85;">' + dayMoods.slice(0,2).join('') + '</div>';
+        // Mindset indicator from daily mindset entry
+        const dayMindset = (() => { try { return (getMindsetData().entries||{})[dateStr]||null; } catch(e){return null;} })();
+        if (dayMindset && (dayMindset.emotion || dayMindset.confidence)) {
+          const emoStr = dayMindset.emotion ? dayMindset.emotion.split(' ')[0] : '';
+          const confVal = parseInt(dayMindset.confidence||0)||0;
+          const confColor = confVal>=7?'var(--green)':confVal>=4?'var(--yellow)':'var(--red)';
+          inner += '<div style="display:flex;align-items:center;gap:3px;margin-top:2px;">'
+            + (emoStr ? '<span style="font-size:9px;line-height:1;">' + emoStr + '</span>' : '')
+            + (confVal ? '<span style="font-size:8px;font-weight:800;color:' + confColor + ';line-height:1;">' + confVal + '</span>' : '')
+            + '</div>';
         }
         inner += '<div class="cal-cell-bar ' + pnlClass + '"></div>';
       } else if (hasBEevt) {
@@ -13005,7 +13011,6 @@ function selectCalDay(dateStr) {
                         ${sym2}
                         <span class="badge ${dir2==='BUY'?'buy':'sell'}" style="font-size:8px;padding:1px 6px;">${dir2}</span>
                         <span style="font-size:8px;font-weight:700;color:var(--accent);background:rgba(99,102,241,.15);padding:1px 6px;border-radius:4px;">${g.trades.length}× GROUP</span>
-                        ${emo ? `<span style="font-size:13px;">${emo}</span>` : ''}
                       </div>
                       <div style="font-size:10px;color:var(--muted);margin-top:2px;display:flex;gap:6px;">
                         <span>${lots.toFixed(2)} lots total</span>
@@ -13051,7 +13056,6 @@ function selectCalDay(dateStr) {
                       <div style="font-size:12px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:5px;">
                         ${t.symbol}
                         <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:8px;padding:1px 6px;">${t.dir}</span>
-                        ${emo ? `<span style="font-size:13px;">${emo}</span>` : ''}
                       </div>
                       <div style="font-size:10px;color:var(--muted);margin-top:1px;display:flex;gap:5px;">
                         <span>${timeStr}${timeStr&&t.lots?' · ':''}${t.lots?t.lots+' lots':''}${t.entry?' · @'+t.entry:''}</span>
