@@ -5377,6 +5377,7 @@ function setTheme(t) {
   updateThemeButtons(t);
   saveProfileToSupabase();
   if (equityChartInst) refreshDashboard();
+  _reloadFundWidgetsForTheme();
 }
 
 function updateThemeButtons(t) {
@@ -5421,10 +5422,43 @@ function _applyAutoTheme() {
     autoBtn.style.borderColor = 'var(--accent)';
   }
   if (equityChartInst) refreshDashboard();
+  _reloadFundWidgetsForTheme();
 }
 
 function _stopAutoTheme() {
   if (_autoThemeInterval) { clearInterval(_autoThemeInterval); _autoThemeInterval = null; }
+}
+
+// Reload all fundamentals TV widgets when theme changes
+function _reloadFundWidgetsForTheme() {
+  if (typeof _fundLoaded === 'undefined') return;
+  const theme = localStorage.getItem('tradelog_theme') || document.documentElement.getAttribute('data-theme') || 'dark';
+  const tvTheme = theme === 'light' ? 'light' : 'dark';
+  const bgMap = { dark:'#05080f', gray:'#1c1e26', black:'#000000', light:'#f0f4f8' };
+  const bgColor = bgMap[theme] || '#05080f';
+  window._fundColorTheme = tvTheme;
+  window._fundBgColor = bgColor;
+
+  // Reset loaded flags and clear widget containers
+  ['fund-ticker-wrap','fund-cal-wrap-all','fund-news-wrap-all'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el._loaded = false; el.innerHTML = ''; }
+  });
+
+  // Update panel backgrounds immediately
+  const calPanel  = document.getElementById('fund-panel-cal');
+  const newsPanel = document.getElementById('fund-panel-news');
+  if (calPanel)  calPanel.style.background = bgColor;
+  if (newsPanel) newsPanel.style.background = bgColor;
+
+  // Reset _fundLoaded so renderFundamentals will re-inject everything
+  _fundLoaded = { ticker: false, all: false };
+
+  // Re-render only if fundamentals page is currently visible
+  const fundPage = document.getElementById('page-fundamentals');
+  if (fundPage && fundPage.classList.contains('active')) {
+    renderFundamentals();
+  }
 }
 
 function toggleAutoTheme() {
