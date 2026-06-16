@@ -7748,8 +7748,13 @@ function refreshDashboard() {
 
 function renderRecentTable() {
   const tbody = document.getElementById('recent-tbody');
-  const s = calcStats();
-  const recent = s ? s.sorted.slice(-5).reverse() : [];
+  // Sort: trades with no date go to top (treated as most recent), others newest first
+  const recent = [...trades].sort((a,b) => {
+    if (!a.date && !b.date) return 0;
+    if (!a.date) return -1;
+    if (!b.date) return 1;
+    return new Date(b.date) - new Date(a.date);
+  }).slice(0, 5);
   if (!recent.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><h3>No trades yet</h3><p>Add your first trade or import from MT5</p></div></td></tr>'; return; }
   const sym = getCurrencySymbol();
   tbody.innerHTML = recent.map(t => {
@@ -7757,8 +7762,13 @@ function renderRecentTable() {
     const result = getResult(t);
     const pnlColor = result === 'be' ? 'var(--yellow)' : pnl >= 0 ? 'var(--green)' : 'var(--red)';
     const pnlStr = (pnl>=0?'+'+sym:'-'+sym)+Math.abs(pnl).toFixed(2);
+    const datePart = t.date ? t.date.slice(0,10) : '—';
+    const timePart = t.date && t.date.length > 10 ? t.date.slice(11,16) : '';
+    const dateDisplay = timePart
+      ? datePart + '<span style="color:var(--text2);margin:0 2px;">·</span>' + timePart
+      : datePart;
     return `<tr data-id="${t.id}" onclick="switchPage('trades');setTimeout(()=>selectTrade('${t.id}'),300)" style="cursor:pointer;">
-      <td style="color:var(--text);white-space:nowrap;font-size:12px;font-weight:600;">${t.date ? t.date.slice(0,10)+'<span style="color:var(--text2);margin:0 2px;">·</span>'+t.date.slice(11,16) : '—'}</td>
+      <td style="color:var(--text);white-space:nowrap;font-size:12px;font-weight:600;">${dateDisplay}</td>
       <td style="font-weight:700;">${t.symbol}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
       <td>${t.lots||'—'}</td>
