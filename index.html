@@ -8859,32 +8859,31 @@ function openDetailOverlay() {
 
         ${(() => {
           const packAnchor = t.packId ? trades.find(x => x.packId === t.packId && (x.packEmotion || x.packConfidence)) : null;
-          const dispEmo  = t.emotion  || packAnchor?.packEmotion  || '';
-          const dispConf = parseInt(t.confidence||0) || parseInt(packAnchor?.packConfidence||0) || 0;
+          const dispEmo  = t.emotion  || (packAnchor ? packAnchor.packEmotion  : '') || '';
+          const dispConf = parseInt(t.confidence||0) || parseInt(packAnchor ? packAnchor.packConfidence : 0)||0;
           const isPackFallback = !t.emotion && !t.confidence && !!packAnchor;
           const confLabels2 = ['','Terrible','Poor','Low','Okay','Moderate','Good','Confident','Strong','Excellent','Peak'];
           const confLabel2  = confLabels2[dispConf] || '';
           const confCol2    = dispConf>=7?'var(--green)':dispConf>=4?'var(--yellow)':'var(--red)';
           if (!dispEmo && !dispConf) return '';
-          return `
-        <!-- Divider -->
-        <div style="height:1px;background:var(--border);"></div>
-        <!-- Psychology -->
-        <div style="display:flex;align-items:center;gap:20px;">
-          ${dispEmo ? `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
-            <div style="font-size:40px;line-height:1;">${dispEmo}</div>
-            ${isPackFallback ? '<div style="font-size:8px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Pack mood</div>' : ''}
-          </div>` : ''}
-          ${dispConf ? `<div style="flex:1;">
-            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-              <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">${isPackFallback ? 'Pack confidence' : 'Confidence'}</span>
-              <span style="font-size:20px;font-weight:900;color:${confCol2};">${dispConf}<span style="font-size:12px;color:var(--muted);font-weight:600;">/10 ${confLabel2}</span></span>
-            </div>
-            <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
-              <div style="height:100%;width:${dispConf*10}%;background:${confCol2};border-radius:3px;"></div>
-            </div>
-          </div>` : ''}
-        </div>\`;
+          const emoHtml = dispEmo
+            ? '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">' +
+              '<div style="font-size:40px;line-height:1;">' + dispEmo + '</div>' +
+              (isPackFallback ? '<div style="font-size:8px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Pack mood</div>' : '') +
+              '</div>'
+            : '';
+          const confHtml = dispConf
+            ? '<div style="flex:1;">' +
+              '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">' +
+              '<span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">' + (isPackFallback ? 'Pack confidence' : 'Confidence') + '</span>' +
+              '<span style="font-size:20px;font-weight:900;color:' + confCol2 + '">' + dispConf + '<span style="font-size:12px;color:var(--muted);font-weight:600;">/10 ' + confLabel2 + '</span></span>' +
+              '</div>' +
+              '<div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">' +
+              '<div style="height:100%;width:' + (dispConf*10) + '%;background:' + confCol2 + ';border-radius:3px;"></div>' +
+              '</div></div>'
+            : '';
+          return '<div style="height:1px;background:var(--border);"></div>' +
+                 '<div style="display:flex;align-items:center;gap:20px;">' + emoHtml + confHtml + '</div>';
         })()}
 
         <!-- Divider -->
