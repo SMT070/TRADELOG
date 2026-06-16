@@ -15956,11 +15956,20 @@ function _buildPackChildRow(t, sym, packId, isExpanded, isAutoChildRow) {
     ? `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800;color:var(--green);background:var(--green-bg);">WIN</span>`
     : `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:800;color:var(--red);background:var(--red-bg);">LOSS</span>`;
   const isSelected = t.id === selectedId;
+  const isChecked  = packSelectedIds.has(t.id);
   const dateHtml   = t.date
     ? t.date.slice(0,10) + '<br><span style="font-size:11px;color:var(--text2);font-weight:500;">' + t.date.slice(11,19) + '</span>'
     : '—';
+  const onClickAttr = packSelectMode
+    ? `onclick="togglePackSelect('${t.id}',event)"`
+    : `onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()"`;
+  const cbCell = packSelectMode
+    ? `<td style="width:32px;padding-left:14px !important;"><div class="trade-checkbox${isChecked?' checked':''}" onclick="togglePackSelect('${t.id}',event)"></div></td>`
+    : '';
+  const rowBg = isChecked ? 'rgba(99,102,241,.08)' : '';
   return `<tr class="pack-child-row${isExpanded?'':' hidden'}${isSelected?' selected':''}" data-id="${t.id}" data-pack="${packId}"
-    onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;">
+    ${onClickAttr} style="cursor:pointer;${rowBg?'background:'+rowBg+';':''}">
+    ${cbCell}
     <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;"><div style="line-height:1.4;">${dateHtml}</div></td>
     <td style="font-weight:600;">${t.symbol}</td>
     <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
@@ -17296,7 +17305,18 @@ function renderPackRows(packId, packTrades, sym) {
 
   const chevronBox = `<div class="date-chevron" onclick="togglePackExpand('${packId}',event)" title="Expand/collapse trades">${chevron}</div>`;
 
-  let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" onclick="openPackDetail('${packId}',event)" style="cursor:pointer;">
+  const allPackIds = packTrades.map(t => t.id);
+  const anyChecked = allPackIds.some(id => packSelectedIds.has(id));
+  const allChecked = allPackIds.length > 0 && allPackIds.every(id => packSelectedIds.has(id));
+  const packCbCell = packSelectMode
+    ? `<td style="width:32px;padding-left:14px !important;" onclick="event.stopPropagation();allPackIds.forEach ? null : null;${allPackIds.map(id=>`togglePackSelect('${id}',event)`).join(';')}" onclick="_toggleAllPackTrades(${JSON.stringify(allPackIds)},event)"><div class="trade-checkbox${allChecked?' checked':anyChecked?' indeterminate':''}"></div></td>`
+    : '';
+  const packRowOnclick = packSelectMode
+    ? `onclick="_toggleAllPackTrades(${JSON.stringify(allPackIds)},event)"`
+    : `onclick="openPackDetail('${packId}',event)"`;
+
+  let html = `<tr class="pack-header-row${isExpanded?' expanded':''}" data-pack="${packId}" ${packRowOnclick} style="cursor:pointer;${anyChecked?'background:rgba(99,102,241,.08);':''}">
+    ${packCbCell}
     <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;position:relative;">${chevronBox}<div style="line-height:1.4;">${dateHtml}</div></td>
     <td style="font-weight:600;">${symbols}</td>
     <td><div style="display:flex;align-items:center;">${dirBadge}${countPill}</div></td>
