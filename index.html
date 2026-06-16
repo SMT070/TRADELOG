@@ -15544,6 +15544,20 @@ function updatePackSelectionBar() {
 }
 
 // ── Toggle an individual trade's selection ────────────────────────
+function _toggleAllPackTrades(ids, e) {
+  if (e) e.stopPropagation();
+  const allSelected = ids.every(id => packSelectedIds.has(id));
+  ids.forEach(id => allSelected ? packSelectedIds.delete(id) : packSelectedIds.add(id));
+  updatePackSelectionBar();
+  // Update each row visually
+  ids.forEach(id => {
+    const cb = document.querySelector(`tr[data-id="${id}"] .trade-checkbox`);
+    if (cb) cb.classList.toggle('checked', packSelectedIds.has(id));
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (row) row.style.background = packSelectedIds.has(id) ? 'rgba(99,102,241,.08)' : '';
+  });
+}
+
 function togglePackSelect(id, e) {
   if (e) e.stopPropagation();
   if (packSelectedIds.has(id)) packSelectedIds.delete(id);
