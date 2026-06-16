@@ -5575,6 +5575,7 @@ showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the c
     balanceEvents = [];
     _appInitialized = false;
     currentUser = null;
+    _autoBEActive = false;
     // CRITICAL: Wipe ALL user-specific data from localStorage on logout.
     // This ensures the next person who logs in on this device NEVER sees
     // data from the previous session.
@@ -5908,8 +5909,8 @@ async function loadAllFromSupabase() {
           }
           if (s.goals) localStorage.setItem(GOALS_KEY, typeof s.goals === 'string' ? s.goals : JSON.stringify(s.goals));
           if (typeof s.autopack !== 'undefined') { localStorage.setItem('tradelog_autopack', s.autopack ? 'true' : 'false'); }
-          // Load Auto BE state — Supabase wins over localStorage for cross-device sync
-          if (typeof s.autoBE !== 'undefined') {
+          // Load Auto BE state — localStorage wins (set immediately on toggle); Supabase is fallback for new devices only
+          if (typeof s.autoBE !== 'undefined' && localStorage.getItem(_AUTO_BE_KEY) === null) {
             _autoBEActive = !!s.autoBE;
             localStorage.setItem(_AUTO_BE_KEY, String(_autoBEActive));
           }
