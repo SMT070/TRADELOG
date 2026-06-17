@@ -480,7 +480,7 @@
   .trades-table tr:last-child td { border-bottom:none; }
   .trades-table tbody tr { transition:background .15s; cursor:pointer; }
   .trades-table tbody tr:hover { background:rgba(99,102,241,.04); }
-  .trades-table tbody tr.selected { background:rgba(99,102,241,.12); border-left: 3px solid var(--accent); }
+  .trades-table tbody tr.selected { background:rgba(99,102,241,.12) !important; border-left: 3px solid var(--accent) !important; }
   .trades-table tbody tr.selected td:first-child { padding-left: calc(12px - 3px); }
   .trades-table tbody tr.selected .trade-tag {
     background: var(--accent);
@@ -8268,6 +8268,14 @@ function selectTrade(id) {
   document.querySelectorAll('#all-tbody tr.selected').forEach(r => r.classList.remove('selected'));
   const row = document.querySelector(`#all-tbody tr[data-id="${id}"]`);
   if (row) row.classList.add('selected');
+  // Also highlight the parent pack header if this is a child trade
+  if (row && row.classList.contains('pack-child-row')) {
+    const packId = row.getAttribute('data-pack');
+    if (packId) {
+      const hdr = document.querySelector(`#all-tbody tr.pack-header-row[data-pack="${packId}"]`);
+      if (hdr) hdr.classList.add('selected');
+    }
+  }
   showTradeDetail(id);
 }
 
@@ -16014,6 +16022,10 @@ function _packSeparator(colspan) {
 // Opens a full group detail view — mirrors single trade panel exactly
 function openPackDetail(packId, e, _autoTrades) {
   if (e) e.stopPropagation();
+  // Highlight the header row
+  document.querySelectorAll('#all-tbody tr.selected').forEach(r => r.classList.remove('selected'));
+  const hdr = document.querySelector(`#all-tbody tr.pack-header-row[data-pack="${packId}"]`);
+  if (hdr) hdr.classList.add('selected');
 
   // Resolve pack trades
   let packTrades = _autoTrades
