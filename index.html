@@ -8258,42 +8258,21 @@ function selectTrade(id) {
     } else {
       _lastTap = now; _lastTapId = id;
       // Just toggle the selected class — no full re-render
-      document.querySelectorAll('#all-tbody tr.selected').forEach(r => {
-        r.classList.remove('selected');
-        r.style.background = '';
-        r.style.borderLeft = '';
-      });
+      document.querySelectorAll('#all-tbody tr.selected').forEach(r => r.classList.remove('selected'));
       const row = document.querySelector(`#all-tbody tr[data-id="${id}"]`);
-      if (row) {
-        row.classList.add('selected');
-        row.style.background = 'rgba(99,102,241,.15)';
-        row.style.borderLeft = '3px solid var(--accent)';
-      }
+      if (row) row.classList.add('selected');
     }
     return;
   }
   // Toggle selected row highlight without full re-render
-  document.querySelectorAll('#all-tbody tr.selected').forEach(r => {
-    r.classList.remove('selected');
-    r.style.background = '';
-    r.style.borderLeft = '';
-  });
+  document.querySelectorAll('#all-tbody tr.selected').forEach(r => r.classList.remove('selected'));
   const row = document.querySelector(`#all-tbody tr[data-id="${id}"]`);
   if (row) {
     row.classList.add('selected');
-    row.style.background = 'rgba(99,102,241,.15)';
-    row.style.borderLeft = '3px solid var(--accent)';
-  }
-  // Also highlight the parent pack header if this is a child trade
-  if (row && row.classList.contains('pack-child-row')) {
-    const packId = row.getAttribute('data-pack');
-    if (packId) {
+    if (row.classList.contains('pack-child-row')) {
+      const packId = row.getAttribute('data-pack');
       const hdr = document.querySelector(`#all-tbody tr.pack-header-row[data-pack="${packId}"]`);
-      if (hdr) {
-        hdr.classList.add('selected');
-        hdr.style.background = 'rgba(99,102,241,.10)';
-        hdr.style.borderLeft = '3px solid var(--accent)';
-      }
+      if (hdr) hdr.classList.add('selected');
     }
   }
   showTradeDetail(id);
@@ -15378,16 +15357,21 @@ tr.pack-header-row td:first-child {
 tr.pack-header-row:hover td { background: var(--surface2) !important; }
 tr.pack-header-row.expanded td { border-bottom: 1px solid var(--border) !important; }
 tr.pack-header-row:hover .pack-row-actions { opacity: 1 !important; }
+/* SELECTED STATE — must come after hover to win */
+#all-tbody tr.pack-header-row.selected td,
+#all-tbody tr.pack-child-row.selected td {
+  background: rgba(99,102,241,.18) !important;
+}
+#all-tbody tr.pack-header-row.selected td:first-child,
+#all-tbody tr.pack-child-row.selected td:first-child {
+  border-left: 3px solid var(--accent) !important;
+}
 
 /* ── Pack child rows — full opacity, subtle tinted bg, accent left border ── */
 tr.pack-child-row td {
   opacity: 1;
   background: var(--surface2) !important;
   border-bottom: none !important;
-}
-tr.pack-child-row td:first-child {
-  border-left: 3px solid var(--accent) !important;
-  padding-left: 30px !important;
 }
 /* ── Unified date column alignment: ALL rows same left pad ── */
 .trades-table td:first-child {
@@ -16042,18 +16026,9 @@ function _packSeparator(colspan) {
 // Opens a full group detail view — mirrors single trade panel exactly
 function openPackDetail(packId, e, _autoTrades) {
   if (e) e.stopPropagation();
-  // Highlight the header row
-  document.querySelectorAll('#all-tbody tr.selected').forEach(r => {
-    r.classList.remove('selected');
-    r.style.background = '';
-    r.style.borderLeft = '';
-  });
+  document.querySelectorAll('#all-tbody tr.selected').forEach(r => r.classList.remove('selected'));
   const hdr = document.querySelector(`#all-tbody tr.pack-header-row[data-pack="${packId}"]`);
-  if (hdr) {
-    hdr.classList.add('selected');
-    hdr.style.background = 'rgba(99,102,241,.15)';
-    hdr.style.borderLeft = '3px solid var(--accent)';
-  }
+  if (hdr) hdr.classList.add('selected');
 
   // Resolve pack trades
   let packTrades = _autoTrades
