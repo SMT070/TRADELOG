@@ -8185,7 +8185,15 @@ function renderTrades(skipTagRebuild) {
       ? `<span style="color:var(--green);font-size:10px;font-weight:700;background:var(--green-bg);padding:2px 8px;border-radius:4px;">WIN</span>`
       : `<span style="color:var(--red);font-size:10px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:4px;">LOSS</span>`;
     const isSelected = t.id===selectedId;
-    return `<tr data-id="${t.id}" onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()" style="cursor:pointer;"${isSelected?' class="selected"':''}>
+    const isChecked  = packSelectedIds.has(t.id);
+    const rowOnclick = packSelectMode
+      ? `onclick="togglePackSelect('${t.id}',event)"`
+      : `onclick="selectTrade('${t.id}')" ondblclick="selectedId='${t.id}';openEditSelected()"`;
+    const cbCell = packSelectMode
+      ? `<td style="width:32px;padding-left:14px !important;"><div class="trade-checkbox${isChecked?' checked':''}" onclick="togglePackSelect('${t.id}',event)"></div></td>`
+      : '';
+    return `<tr data-id="${t.id}" ${rowOnclick} style="cursor:pointer;${isChecked?'background:rgba(99,102,241,.08);':''}"${isSelected&&!packSelectMode?' class="selected"':''}>
+      ${cbCell}
       <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;"><div style="line-height:1.4;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,19)+'</span>' : '—'}</div></td>
       <td style="font-weight:600;">${t.symbol}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
