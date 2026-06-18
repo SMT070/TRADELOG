@@ -13359,7 +13359,8 @@ function _renderShareCard(tf) {
   const best = bestTrade ? getPnl(bestTrade) : 0;
 
   // ── CINEMATIC PALETTES ────────────────────────────────────────────
-  const rawTheme = localStorage.getItem('tradelog_theme') || 'dark';
+  // Read actual applied theme from DOM (handles 'auto' correctly)
+  const rawTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('tradelog_theme') || 'dark';
   const theme = rawTheme === 'light' ? 'light' : (rawTheme === 'black' ? 'black' : rawTheme === 'gray' ? 'gray' : 'dark');
 
   const palettes = {
@@ -13622,8 +13623,9 @@ function captureShareCard() {
 
   _capturePromise = _waitForHtml2Canvas(8000).then(() => new Promise((resolve, reject) => {
     const card  = document.getElementById('share-card');
-    const theme = localStorage.getItem('tradelog_theme') || 'dark';
-    const bg    = theme === 'light' ? '#ffffff' : '#0b0f1a';
+    // Read the ACTUAL applied theme from the DOM (handles 'auto' correctly)
+    const theme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('tradelog_theme') || 'dark';
+    const bg    = theme === 'light' ? '#ffffff' : theme === 'gray' ? '#1c1e26' : theme === 'black' ? '#000000' : '#05080f';
 
     // Clone the card into a clean off-screen container so backdrop-filter
     // on the modal overlay does NOT bleed into the capture.
