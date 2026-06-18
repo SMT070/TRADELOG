@@ -6035,7 +6035,7 @@ async function saveProfileToSupabase() {
   try {
     const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
     const goals = JSON.parse(localStorage.getItem(GOALS_KEY) || '{}');
-    const settings = { theme: localStorage.getItem(THEME_KEY) || 'dark', autoTheme: localStorage.getItem(AUTO_THEME_KEY) === 'true', goals, autopack: localStorage.getItem('tradelog_autopack') === 'true', autoBE: _autoBEActive };
+    const settings = { theme: localStorage.getItem(THEME_KEY) || 'dark', autoTheme: localStorage.getItem(AUTO_THEME_KEY) === 'true', goals, autopack: localStorage.getItem('tradelog_autopack') === 'true', autoBE: localStorage.getItem('tradelog_auto_be_active') === 'true' };
     const { error } = await sb.from('profiles').upsert({
       id: uid,
       name: p.name || '',
@@ -18080,15 +18080,8 @@ function _setFeatPill(pillId, btnId, on, onBg, onColor) {
 }
 
 function _syncFeatureDropStates() {
-  // Auto BE: pill is ON when no qualifying trades remain (rule fully applied)
-  const _beApplied = (() => {
-    const bal = getBalance();
-    if (bal <= 0) return _autoBEActive;
-    const threshold = bal * 0.0002;
-    const remaining = trades.filter(t => Math.abs(getPnl(t)) <= threshold && getResult(t) !== 'be');
-    return remaining.length === 0 && _autoBEActive;
-  })();
-  _setFeatPill('feat-be-pill',     'feat-auto-be-btn',  _beApplied,                              'rgba(245,158,11,0.25)', 'var(--yellow)');
+  // Auto BE pill: ON = the feature is enabled, simple as that
+  _setFeatPill('feat-be-pill',     'feat-auto-be-btn',  _autoBEActive,  'rgba(245,158,11,0.25)', 'var(--yellow)');
   const beLabel = document.getElementById('feat-be-label');
   if (beLabel) beLabel.textContent = 'Auto BE';
 
@@ -18132,6 +18125,9 @@ function featToggleSelect() {
 // Runs on toggle AND automatically on every save() call.
 const _AUTO_BE_KEY = 'tradelog_auto_be_active';
 let _autoBEActive = localStorage.getItem(_AUTO_BE_KEY) === 'true';
+// Sync with window so main script can access it
+window._autoBEActive_get = () => _autoBEActive;
+window._autoBEActive_set = (v) => { _autoBEActive = v; };
 
 function _persistAutoBEState() {
   localStorage.setItem(_AUTO_BE_KEY, String(_autoBEActive));
