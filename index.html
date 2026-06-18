@@ -6184,13 +6184,32 @@ let _midnightTimer = null;
 function scheduleMidnightRefresh() {
   if (_midnightTimer) { clearTimeout(_midnightTimer); _midnightTimer = null; }
   const now  = new Date();
+  // Next midnight in LOCAL time
   const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
   _midnightTimer = setTimeout(() => {
-    try { renderGoals(); }    catch(e) {}
-    try { renderDashRules(); } catch(e) {}
-    try { updateGreeting(); } catch(e) {}
-    try { loadJournal(); }    catch(e) {}
-    scheduleMidnightRefresh(); // re-arm for the next midnight
+    const resetDay = new Date(); // this IS the new day now
+
+    // ── DAILY RESET ──────────────────────────────────────────────────
+    try { refreshDashboard(); }  catch(e) {}
+    try { renderTrades(); }      catch(e) {}
+    try { renderGoals(); }       catch(e) {}
+    try { renderDashRules(); }   catch(e) {}
+    try { updateGreeting(); }    catch(e) {}
+    try { loadJournal(); }       catch(e) {}
+    try { renderCalendar(); }    catch(e) {}
+
+    // ── WEEKLY RESET (Sunday midnight) ───────────────────────────────
+    if (resetDay.getDay() === 0) { // 0 = Sunday
+      // Week just flipped — reset week offset so calendar shows new week
+      window.calWeekOffset = 0;
+      try { renderCalendar(); } catch(e) {}
+      // Show a subtle toast
+      try {
+        toast('📅 New week started — weekly stats reset', '');
+      } catch(e) {}
+    }
+
+    scheduleMidnightRefresh(); // re-arm for next midnight
   }, next - now);
 }
 
@@ -11009,10 +11028,10 @@ function renderCalEventsList() {
   const el = document.getElementById('cal-events-list');
   if (!el) return;
   const events = loadData(EVENTS_KEY);
-  const today = new Date().toISOString().slice(0,10);
+  const today = getTodayStr();
   // Show upcoming + recent (last 7 days)
   const since = new Date(); since.setDate(since.getDate() - 7);
-  const sinceStr = since.toISOString().slice(0,10);
+  const sinceStr = localDateStr(since);
   const filtered = events.filter(e => e.date >= sinceStr).sort((a,b) => a.date.localeCompare(b.date));
   if (!filtered.length) {
     el.innerHTML = `<div style="text-align:center;padding:40px 16px;color:var(--muted);">
@@ -12995,7 +13014,7 @@ function selectCalDay(dateStr) {
   if (!body) return;
 
   const d = new Date(dateStr + 'T12:00:00');
-  const todayStr = new Date().toISOString().slice(0,10);
+  const todayStr = getTodayStr();
   const isToday  = dateStr === todayStr;
 
   if (titleEl) titleEl.textContent = d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
