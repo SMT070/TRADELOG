@@ -5235,6 +5235,59 @@ function rc() { return cssVar('--red'); }    // red color
 function getPnlColor(v) { return v >= 0 ? gc() : rc(); }
 
 const KEY = 'tradelog_v1';
+
+// ── TIMEZONE-AWARE DATE UTILITIES ────────────────────────────────────────────
+// All boundaries use LOCAL device time (midnight-to-midnight, Sun–Sat weeks).
+// Never use .toISOString() for "today" — it returns UTC date which is wrong
+// for users in UTC-X timezones after 8pm local time.
+
+function _pad(n) { return String(n).padStart(2,'0'); }
+
+// Returns 'YYYY-MM-DD' in LOCAL time
+function localDateStr(d) {
+  const dt = d || new Date();
+  return dt.getFullYear() + '-' + _pad(dt.getMonth()+1) + '-' + _pad(dt.getDate());
+}
+
+// Returns the local date string for "today"
+function getTodayStr() { return localDateStr(new Date()); }
+
+// Returns Date objects for start of this week (Sunday) and end (Saturday)
+// Week = Sunday 00:00:00 → Saturday 23:59:59 local time
+function getLocalWeekBounds(offsetWeeks) {
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  const sun = new Date(now);
+  sun.setDate(now.getDate() - dow + (offsetWeeks || 0) * 7);
+  sun.setHours(0,0,0,0);
+  const sat = new Date(sun);
+  sat.setDate(sun.getDate() + 6);
+  sat.setHours(23,59,59,999);
+  return { start: sun, end: sat,
+    startStr: localDateStr(sun), endStr: localDateStr(sat) };
+}
+
+// Returns Date objects for start/end of current local month
+function getLocalMonthBounds() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end   = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  return { start, end, startStr: localDateStr(start), endStr: localDateStr(end) };
+}
+
+// Check if a trade's date string falls on today (local time)
+function isToday(dateStr) {
+  if (!dateStr) return false;
+  return dateStr.slice(0,10) === getTodayStr();
+}
+
+// Check if a trade's date string falls in the current local week (Sun–Sat)
+function isThisWeek(dateStr, offsetWeeks) {
+  if (!dateStr) return false;
+  const { startStr, endStr } = getLocalWeekBounds(offsetWeeks);
+  const d = dateStr.slice(0,10);
+  return d >= startStr && d <= endStr;
+}
 let balanceEvents = []; // deposits & withdrawals — never counted in stats
 
 // ── BACKGROUND SYNC ──────────────────────────────────────────────────────────
@@ -8091,23 +8144,19 @@ function renderTrades(skipTagRebuild) {
   const res = document.getElementById('filter-result').value;
   const tag = document.getElementById('filter-tag').value;
 
-  // Date range filter using string comparison (avoids UTC timezone issues)
-  const now = new Date();
-  const pad = n => String(n).padStart(2,'0');
-  const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  // Date range filter using local timezone (never UTC)
+  const todayStr = getTodayStr();
 
   let fromStr = '', toStr = '';
   if (tradesRange === 'today') {
     fromStr = todayStr; toStr = todayStr;
   } else if (tradesRange === 'week') {
-    // Monday of current week
-    const mon = new Date(now);
-    mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-    fromStr = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
-    toStr = todayStr;
+    // Sun–Sat week in local time
+    const wb = getLocalWeekBounds(0);
+    fromStr = wb.startStr; toStr = wb.endStr;
   } else if (tradesRange === 'month') {
-    fromStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-01`;
-    toStr = todayStr;
+    const mb = getLocalMonthBounds();
+    fromStr = mb.startStr; toStr = todayStr;
   } else if (tradesRange === 'custom') {
     fromStr = customFrom;
     toStr   = customTo;
@@ -9686,7 +9735,7 @@ function renderAnalytics() {
   }
 
   // ── TODAY STRIP ──
-  const today = new Date().toISOString().slice(0,10);
+  const today = getTodayStr();
   const todayTrades = trades.filter(t => (t.date||'').slice(0,10) === today);
   const todayPnl = todayTrades.reduce((sum,t) => sum+getPnl(t), 0);
   const tpEl = document.getElementById('sp-today-pnl');
@@ -11404,7 +11453,7 @@ function renderCalendar() {
   if (calView === 'week') {
     if (window.calWeekOffset === undefined) window.calWeekOffset = 0;
     const isMob = window.innerWidth <= 768;
-    const dow = (today.getDay() + 6) % 7;
+    const dow = today.getDay(); // 0=Sun, Sun-Sat week
     const weekStart = new Date(today);
     weekStart.setHours(0,0,0,0);
     weekStart.setDate(today.getDate() - dow + window.calWeekOffset * 7);
@@ -11424,7 +11473,7 @@ function renderCalendar() {
     }
     const weekPnlColor = weekPnl >= 0 ? 'var(--green)' : 'var(--red)';
     const maxPnl = Math.max(...Object.values(dayMap).map(d => Math.abs(d.pnl)), 1);
-    const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
     let html = '<div style="display:flex;flex-direction:column;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;">';
 
@@ -13300,23 +13349,19 @@ function setShareTimeframe(tf) {
 
 // Get trades for a given timeframe
 function _getShareTrades(tf) {
-  const now = new Date();
-  const pad = n => String(n).padStart(2,'0');
-  const todayStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-
+  const todayStr = getTodayStr();
   if (tf === 'today') {
     return trades.filter(t => (t.date||'').slice(0,10) === todayStr);
   }
   if (tf === 'week') {
-    const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7)); mon.setHours(0,0,0,0);
-    const monStr = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
-    return trades.filter(t => (t.date||'').slice(0,10) >= monStr && (t.date||'').slice(0,10) <= todayStr);
+    const { startStr, endStr } = getLocalWeekBounds(0);
+    return trades.filter(t => { const d=(t.date||'').slice(0,10); return d>=startStr && d<=endStr; });
   }
   if (tf === 'month') {
-    const mStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+    const now = new Date();
+    const mStr = `${now.getFullYear()}-${_pad(now.getMonth()+1)}`;
     return trades.filter(t => (t.date||'').startsWith(mStr));
   }
-  // alltime
   return [...trades];
 }
 
@@ -13324,14 +13369,12 @@ function _getShareLabel(tf) {
   const now = new Date();
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const pad    = n => String(n).padStart(2,'0');
   if (tf === 'today') {
     return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
   }
   if (tf === 'week') {
-    const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7));
-    const fri = new Date(mon); fri.setDate(mon.getDate() + 4);
-    return `Week of ${mon.getDate()} ${months[mon.getMonth()]}`;
+    const { start, end } = getLocalWeekBounds(0);
+    return `${start.getDate()} ${months[start.getMonth()]} – ${end.getDate()} ${months[end.getMonth()]}`;
   }
   if (tf === 'month') {
     return `${months[now.getMonth()]} ${now.getFullYear()}`;
