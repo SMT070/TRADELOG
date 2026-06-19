@@ -5662,7 +5662,6 @@ showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the c
     balanceEvents = [];
     _appInitialized = false;
     currentUser = null;
-    _autoBEActive = false;
     // CRITICAL: Wipe ALL user-specific data from localStorage on logout.
     // This ensures the next person who logs in on this device NEVER sees
     // data from the previous session.
@@ -5997,7 +5996,7 @@ async function loadAllFromSupabase() {
           if (s.goals) localStorage.setItem(GOALS_KEY, typeof s.goals === 'string' ? s.goals : JSON.stringify(s.goals));
           if (typeof s.autopack !== 'undefined') { localStorage.setItem('tradelog_autopack', s.autopack ? 'true' : 'false'); }
           // Load Auto BE state — localStorage wins (set immediately on toggle); Supabase is fallback for new devices only
-          if (typeof s.autoBE !== 'undefined' && localStorage.getItem(_AUTO_BE_KEY) === null) {
+          if (typeof s.autoBE !== 'undefined') {
             _autoBEActive = !!s.autoBE;
             localStorage.setItem(_AUTO_BE_KEY, String(_autoBEActive));
           }
@@ -6217,7 +6216,7 @@ function _clearAllUserLocalStorage() {
   ['tradelog_v1','tradelog_mindset_v2','tradelog_journal','tradelog_custom_tags',
    'tradelog_goals','tradelog_profile','tradelog_balance','tradelog_currency',
    'tradelog_notebooks','tradelog_events','tradelog_playbook',
-   'tradelog_checklist','tradelog_rules_v2','tradelog_auto_be_active',
+   'tradelog_checklist','tradelog_rules_v2',
    'tradelog_last_uid'
   ].forEach(function(k){ localStorage.removeItem(k); });
 }
@@ -13923,67 +13922,63 @@ const NOTEBOOKS_KEY = 'tradelog_notebooks';
 
 // ── NOTEBOOK REMINDER NOTIFICATIONS ─────────────────────────────────────────
 // Shows a browser notification every 3 days reminding the user to journal.
-const _NB_NOTIF_KEY      = 'tradelog_nb_notif_last';   // timestamp of last shown
-const _NB_NOTIF_INTERVAL = 3 * 24 * 60 * 60 * 1000;   // 3 days in ms
+const _NB_NOTIF_KEY      = 'tradelog_nb_notif_last';
+const _NB_NOTIF_INTERVAL = 3 * 24 * 60 * 60 * 1000; // 3 days
 
 async function _requestNotifPermission() {
   if (!('Notification' in window)) return false;
   if (Notification.permission === 'granted') return true;
   if (Notification.permission === 'denied') return false;
-  const result = await Notification.requestPermission();
-  return result === 'granted';
+  try {
+    const result = await Notification.requestPermission();
+    return result === 'granted';
+  } catch(e) { return false; }
 }
 
 function _showNotebookNotification() {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const notebooks = JSON.parse(localStorage.getItem(NOTEBOOKS_KEY) || '[]');
   const count = notebooks.length;
   const msg = count > 0
-    ? `You have ${count} notebook${count!==1?'s':''} — take a moment to reflect on your recent trades.`
-    : 'Start your trading journal — write down your thoughts, setups and lessons learned.';
+    ? `You have ${count} notebook${count!==1?'s':''} — reflect on your recent trades.`
+    : 'Start journaling — write your thoughts, setups and lessons.';
+
+  // Try browser notification first
+  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    try {
+      const n = new Notification('📓 TradeLog — Time to Journal', {
+        body: msg, tag: 'tradelog-notebook', requireInteraction: false
+      });
+      n.onclick = () => { window.focus(); try { switchPage('notebooks'); } catch(e) {} n.close(); };
+    } catch(e) {}
+  }
+
+  // Always show in-app toast as fallback / supplement
   try {
-    const n = new Notification('📓 TradeLog — Time to Journal', {
-      body: msg,
-      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="%236366f1"/><polygon points="14,4 24,20 4,20" fill="rgba(255,255,255,0.2)"/><polygon points="6,13 4,5 11,11" fill="white" opacity="0.9"/><polygon points="22,13 24,5 17,11" fill="white" opacity="0.9"/></svg>',
-      badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28"><rect width="28" height="28" rx="8" fill="%236366f1"/></svg>',
-      tag: 'tradelog-notebook',
-      requireInteraction: false,
-    });
-    n.onclick = () => {
-      window.focus();
-      try { switchPage('notebooks'); } catch(e) {}
-      n.close();
-    };
+    toast('📓 Time to journal — check your notebooks', '');
   } catch(e) {}
+
   localStorage.setItem(_NB_NOTIF_KEY, String(Date.now()));
+  // Re-arm for 3 days from now
+  setTimeout(_showNotebookNotification, _NB_NOTIF_INTERVAL);
 }
 
 function _scheduleNotebookReminder() {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const last = parseInt(localStorage.getItem(_NB_NOTIF_KEY) || '0', 10);
   const now  = Date.now();
-  const due  = last + _NB_NOTIF_INTERVAL;
-  if (now >= due) {
-    // Due now — show after a short delay so it doesn't fire on page load
-    setTimeout(_showNotebookNotification, 4000);
-  } else {
-    // Schedule for when it's due
-    const delay = Math.min(due - now, 2147483647); // max setTimeout value
-    setTimeout(_showNotebookNotification, delay);
-  }
+  const due  = last === 0 ? now + _NB_NOTIF_INTERVAL : last + _NB_NOTIF_INTERVAL;
+  const delay = Math.max(0, Math.min(due - now, 2147483647));
+  setTimeout(_showNotebookNotification, delay);
 }
 
 async function initNotebookReminders() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'granted') {
-    _scheduleNotebookReminder();
-  } else if (Notification.permission !== 'denied') {
-    // Ask permission only after user has been in the app a bit (30s delay)
-    setTimeout(async () => {
-      const granted = await _requestNotifPermission();
-      if (granted) _scheduleNotebookReminder();
-    }, 30000);
-  }
+  // Try to get browser notification permission after 30s
+  setTimeout(async () => {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      await _requestNotifPermission();
+    }
+  }, 30000);
+  // Schedule the first/next reminder
+  _scheduleNotebookReminder();
 }
 
 function loadData(key, def=[]) {
