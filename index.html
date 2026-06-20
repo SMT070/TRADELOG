@@ -16,6 +16,12 @@
     width: 100%;
     overflow: hidden;
     position: fixed;
+    /* iOS safe area */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    box-sizing: border-box;
   }
 </style>
 <title>TradeLog — Your Trading Journal</title>
@@ -2279,12 +2285,65 @@
 
     /* Sidebar stays icon-only, cannot be expanded */
     #sidebar {
-      width: 56px !important;
-      min-width: 56px !important;
+      position: fixed !important;
+      left: 0 !important;
+      top: 0 !important;
+      bottom: 0 !important;
+      width: 220px !important;
+      min-width: 220px !important;
+      z-index: 1000 !important;
+      transform: translateX(-100%) !important;
+      transition: transform .25s cubic-bezier(.16,1,.3,1) !important;
+      box-shadow: none !important;
+    }
+    #sidebar.mob-open {
+      transform: translateX(0) !important;
+      box-shadow: 4px 0 40px rgba(0,0,0,0.5) !important;
+    }
+    /* Show labels when sidebar opens on mobile */
+    #sidebar.mob-open .sidebar-label { display: block !important; }
+    #sidebar.mob-open .sidebar-logo-text { display: block !important; }
+    #sidebar.mob-open .account-card-text { display: block !important; }
+    #sidebar.mob-open #account-chevron { display: block !important; }
+    #sidebar.mob-open .sidebar-logo { justify-content: flex-start !important; padding: 12px 16px !important; }
+    #sidebar.mob-open .sidebar-item { justify-content: flex-start !important; padding: 12px 16px !important; }
+    #sidebar.mob-open #sidebar .account-card { justify-content: flex-start !important; padding: 10px 16px !important; }
+    /* Overlay behind sidebar */
+    #mob-sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+      backdrop-filter: blur(2px);
+    }
+    #mob-sidebar-overlay.active { display: block !important; }
+    /* Hamburger button */
+    #mob-hamburger {
+      display: flex !important;
+      position: fixed;
+      top: max(env(safe-area-inset-top, 0px), 12px);
+      left: 12px;
+      z-index: 998;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+    /* Main content takes full width on mobile */
+    #main-content {
+      margin-left: 0 !important;
+      width: 100% !important;
+      padding-top: max(env(safe-area-inset-top, 0px), 58px) !important;
     }
     #sidebar.collapsed {
-      width: 56px !important;
-      min-width: 56px !important;
+      width: 220px !important;
+      min-width: 220px !important;
     }
     /* Hide all text labels */
     .sidebar-label { display: none !important; }
@@ -2605,6 +2664,12 @@
 </script>
 <div id="app-root" style="display:none;width:100%;height:100%;position:fixed;inset:0;">
 
+<div id="mob-sidebar-overlay" onclick="closeMobSidebar()"></div>
+<button id="mob-hamburger" onclick="toggleMobSidebar()" style="display:none;">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
 <div id="app-shell">
 
 <!-- ── SIDEBAR ── -->
@@ -5759,6 +5824,26 @@ function setResult(r) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// ── MOBILE SIDEBAR ────────────────────────────────────────────────────────────
+function toggleMobSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.classList.contains('mob-open') ? closeMobSidebar() : openMobSidebar();
+}
+function openMobSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('mob-sidebar-overlay');
+  if (sb) sb.classList.add('mob-open');
+  if (ov) ov.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeMobSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('mob-sidebar-overlay');
+  if (sb) sb.classList.remove('mob-open');
+  if (ov) ov.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
 // SUPABASE — SINGLE SOURCE OF TRUTH
 // Load on boot → Supabase. Save anything → Supabase directly.
 // localStorage = cache only, never authoritative.
@@ -6313,6 +6398,8 @@ window.addEventListener('load', () => {
 
 // ── NAV / PAGE ───────────────────────────────────────────────────────────────
 function switchPage(name) {
+  // Auto-close mobile sidebar on page switch
+  if (window.innerWidth <= 768) try { closeMobSidebar(); } catch(e) {}
   try {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const nextPage = document.getElementById('page-' + name);
