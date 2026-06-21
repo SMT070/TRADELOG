@@ -1542,12 +1542,13 @@
     /* ══ CALENDAR PAGE ══ */
     /* ══ CALENDAR PAGE — MOBILE REDESIGN ══ */
     #page-calendar.active {
-      padding: 8px 8px 0 8px !important;
+      padding: 6px 8px 0 8px !important;
       height: 100% !important;
       display: flex !important;
       flex-direction: column !important;
       gap: 0 !important;
       overflow: hidden !important;
+      box-sizing: border-box !important;
     }
     #page-calendar > div:first-child {
       padding: 8px 10px !important;
@@ -2340,11 +2341,28 @@
       box-shadow: 0 2px 12px rgba(0,0,0,0.25);
       color: var(--text);
     }
-    /* Main content takes full width on mobile */
+    /* ── ALL PAGES: respect hamburger button space at top ── */
     #main-content {
       margin-left: 0 !important;
       width: 100% !important;
       padding-top: 58px !important;
+      box-sizing: border-box !important;
+    }
+    /* Every active page must NOT reset the top padding */
+    .page.active {
+      padding-top: 0 !important;
+    }
+    /* Pages that set their own padding — override to 0 since main-content handles it */
+    #page-dashboard.active,
+    #page-trades.active,
+    #page-analytics.active,
+    #page-mindset.active,
+    #page-notebooks.active,
+    #page-fundamentals.active,
+    #page-calendar.active,
+    #page-add.active,
+    #page-import.active {
+      padding-top: 0 !important;
     }
     #sidebar.collapsed {
       width: 220px !important;
@@ -5840,7 +5858,11 @@ function openMobSidebar() {
   const hb = document.getElementById('mob-hamburger');
   if (sb) sb.classList.add('mob-open');
   if (ov) ov.classList.add('active');
-  if (hb) hb.style.display = 'none';
+  if (hb) {
+    // Move hamburger into sidebar area and show X
+    hb.style.left = '178px';
+    hb.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  }
   document.body.style.overflow = 'hidden';
 }
 function closeMobSidebar() {
@@ -5849,7 +5871,10 @@ function closeMobSidebar() {
   const hb = document.getElementById('mob-hamburger');
   if (sb) sb.classList.remove('mob-open');
   if (ov) ov.classList.remove('active');
-  if (hb) hb.style.display = '';
+  if (hb) {
+    hb.style.left = '14px';
+    hb.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+  }
   document.body.style.overflow = '';
 }
 
