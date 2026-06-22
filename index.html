@@ -13528,6 +13528,17 @@ function _getPnlLabel(tf) {
   return "ALL TIME P&L";
 }
 
+function _fitSharePnl(pnlEl, card) {
+  // Synchronous fit-to-width: shrink font-size until the P&L text fits
+  // the card's available width. No rAF — must complete before this
+  // function returns so a clone taken immediately after is correct.
+  const availW = (card ? card.offsetWidth : 320) - 44;
+  let fs = 60;
+  pnlEl.style.fontSize = fs + 'px';
+  while (pnlEl.scrollWidth > availW && fs > 24) { fs -= 2; pnlEl.style.fontSize = fs + 'px'; }
+  pnlEl.style.letterSpacing = fs >= 48 ? '-3px' : fs >= 36 ? '-2px' : '-1px';
+}
+
 function _renderShareCard(tf) {
   const sym          = getCurrencySymbol();
   const tfTrades     = _getShareTrades(tf);
@@ -13650,12 +13661,11 @@ function _renderShareCard(tf) {
   pnlEl.style.color = pnlColor;
   pnlEl.style.textShadow = 'none';
   pnlEl.style.fontSize = '60px'; pnlEl.style.letterSpacing = '-3px';
-  requestAnimationFrame(() => {
-    const availW = (card?card.offsetWidth:320) - 44;
-    let fs = 60;
-    while(pnlEl.scrollWidth > availW && fs > 24){fs-=2;pnlEl.style.fontSize=fs+'px';}
-    pnlEl.style.letterSpacing = fs>=48?'-3px':fs>=36?'-2px':'-1px';
-  });
+  // Run the fit-to-width shrink synchronously (no rAF) so the correct
+  // font-size is baked into the element's inline style immediately —
+  // otherwise a clone taken (for html2canvas) before the rAF fires
+  // captures the unshrunk 60px size, causing overflow/misplacement.
+  _fitSharePnl(pnlEl, card);
 
   // ── 4 STAT CHIPS ──────────────────────────────────────────────────────
   ['share-stat-1','share-stat-2','share-stat-4'].forEach(id=>{
@@ -13824,6 +13834,13 @@ function captureShareCard() {
       'overflow:hidden;pointer-events:none;z-index:-9999;background:' + bg;
     clone.style.position     = 'relative';
     clone.style.borderRadius = card.style.borderRadius || '24px';
+    // Re-fit the P&L font-size on the clone itself, using the real
+    // on-screen card width. Guards against any case where the live
+    // card's width wasn't yet settled when _renderShareCard ran
+    // (e.g. modal still display:none at that point).
+    const clonePnlEl = clone.querySelector('#share-pnl');
+    if (clonePnlEl && rect.width) _fitSharePnl(clonePnlEl, { offsetWidth: rect.width });
+
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
 
