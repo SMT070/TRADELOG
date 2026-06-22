@@ -1652,7 +1652,7 @@
     #cal-grid.cal-view-month {
       display: grid !important;
       grid-template-columns: repeat(7, 1fr) !important;
-      grid-auto-rows: 1fr !important;
+      grid-auto-rows: minmax(64px, 1fr) !important;
       gap: 2px !important;
       background: var(--bg) !important;
       padding: 3px !important;
@@ -1689,26 +1689,29 @@
     }
     .cal-cell-mob-hide { display: none !important; }
     .cal-cell {
-      min-height: 54px !important;
-      padding: 4px 2px 3px !important;
+      min-height: 64px !important;
+      padding: 4px 2px 4px !important;
       border-radius: 7px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
-      justify-content: flex-start !important;
+      justify-content: center !important;
       text-align: center !important;
       cursor: pointer !important;
       position: relative !important;
+      gap: 2px !important;
     }
     .cal-day-num {
-      position: static !important;
-      font-size: 10px !important;
+      position: absolute !important;
+      top: 4px !important;
+      left: 4px !important;
+      font-size: 9px !important;
       font-weight: 700 !important;
       color: var(--muted) !important;
       line-height: 1 !important;
-      margin-bottom: 2px !important;
-      width: 18px !important;
-      height: 18px !important;
+      margin-bottom: 0 !important;
+      width: 16px !important;
+      height: 16px !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
@@ -1717,8 +1720,8 @@
     }
     .cal-cell.today .cal-day-num { background: var(--accent) !important; color: #fff !important; font-weight: 900 !important; }
     .cal-cell.has-win  .cal-day-num, .cal-cell.has-loss .cal-day-num { color: var(--text) !important; font-weight: 800 !important; }
-    .cal-pnl { font-size: 9px !important; font-weight: 900 !important; letter-spacing: -0.3px !important; line-height: 1.1 !important; text-align: center !important; }
-    .cal-trades { position: static !important; font-size: 9px !important; font-weight: 600 !important; margin-top: 2px !important; opacity: 0.75 !important; }
+    .cal-pnl { font-size: 13px !important; font-weight: 900 !important; letter-spacing: -0.3px !important; line-height: 1.15 !important; text-align: center !important; }
+    .cal-trades { position: static !important; font-size: 8px !important; font-weight: 600 !important; margin-top: 1px !important; opacity: 0.7 !important; }
     .cal-cell-bar { display: none !important; }
     .cal-cell.mob-tapped { outline: 2px solid var(--accent) !important; outline-offset: -2px !important; }
 
@@ -15644,6 +15647,11 @@ tr.pack-header-row td:first-child {
 }
 tr.pack-header-row:hover td { background: var(--surface2) !important; }
 tr.pack-header-row.expanded td { border-bottom: 1px solid var(--border) !important; }
+/* Whole group tinted purple while open, so it's obvious which group is expanded */
+tr.pack-header-row.expanded td { background: rgba(99,102,241,.13) !important; }
+tr.pack-header-row.expanded:hover td { background: rgba(99,102,241,.18) !important; }
+tr.pack-child-row:not(.hidden) td { background: rgba(99,102,241,.07) !important; }
+tr.pack-child-row:not(.hidden):hover td { background: rgba(99,102,241,.13) !important; }
 tr.pack-header-row:hover .pack-row-actions { opacity: 1 !important; }
 /* SELECTED STATE — must come after hover to win */
 #all-tbody tr.pack-header-row.selected td,
@@ -15664,14 +15672,14 @@ tr.pack-child-row td {
 /* ── Unified date column alignment: ALL rows same left pad ── */
 .trades-table td:first-child {
   position: relative;
-  padding-left: 26px !important;
+  padding-left: 32px !important;
 }
 .trades-table tr.pack-header-row td:first-child {
-  padding-left: 26px !important;
+  padding-left: 32px !important;
 }
 .date-chevron {
   position: absolute;
-  left: 4px;
+  left: 6px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
