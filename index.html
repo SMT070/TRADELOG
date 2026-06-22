@@ -2697,7 +2697,12 @@
 
 <!-- ── SIDEBAR ── -->
 <div id="sidebar">
-  <!-- Logo -->
+<script>
+  // Restore collapsed/expanded sidebar state instantly, before the rest of the sidebar renders, to prevent flash
+  if (localStorage.getItem('tradelog_sidebar_collapsed') === 'true') {
+    document.getElementById('sidebar').classList.add('collapsed');
+  }
+</script>  <!-- Logo -->
   <div class="sidebar-logo" onclick="switchPage('dashboard')" style="cursor:pointer;">
     <div class="sidebar-logo-icon">
       <svg width="20" height="20" viewBox="0 0 28 28">
@@ -2852,6 +2857,12 @@
   <div id="sidebar-collapse-tab" onclick="toggleSidebar()" title="Toggle sidebar">
     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline id="toggle-icon" points="15 18 9 12 15 6"/></svg>
   </div>
+  <script>
+    // Match chevron direction to restored sidebar state instantly (avoids wrong-direction flash)
+    if (localStorage.getItem('tradelog_sidebar_collapsed') === 'true') {
+      document.getElementById('toggle-icon').setAttribute('points', '9 18 15 12 9 6');
+    }
+  </script>
 </div>
 
 <!-- ── MAIN CONTENT ── -->
@@ -5642,10 +5653,11 @@ function toggleTheme() {
 }
 
 // ── SIDEBAR ──────────────────────────────────────────────────────────────────
-let sidebarCollapsed = false;
+let sidebarCollapsed = localStorage.getItem('tradelog_sidebar_collapsed') === 'true';
 function toggleSidebar() {
   if (window.innerWidth <= 768) return; // disabled on mobile
   sidebarCollapsed = !sidebarCollapsed;
+  localStorage.setItem('tradelog_sidebar_collapsed', String(sidebarCollapsed));
   const sb = document.getElementById('sidebar');
   const icon = document.getElementById('toggle-icon');
   sb.classList.toggle('collapsed', sidebarCollapsed);
