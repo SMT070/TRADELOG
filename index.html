@@ -13761,10 +13761,14 @@ function openShareModal() {
   const sidebar = document.getElementById('sidebar');
   if (sidebar) sidebar.style.zIndex = '0';
 
-  _invalidateShareCache();
-  _renderShareCard(window._shareTimeframe);
+  // Show modal BEFORE rendering the card — _renderShareCard measures
+  // card.offsetWidth synchronously to fit the P&L font size, which
+  // reads 0 while the modal is still display:none, collapsing the
+  // font to its smallest size on first open.
   const modal = document.getElementById('share-modal');
   modal.style.display = 'flex';
+  _invalidateShareCache();
+  _renderShareCard(window._shareTimeframe);
   // Animate the inner container in
   const inner = modal.querySelector('div[style*="z-index:1"]');
   if (inner) { inner.style.animation = 'none'; requestAnimationFrame(() => { inner.style.animation = 'shareModalIn .25s cubic-bezier(.16,1,.3,1) both'; }); }
