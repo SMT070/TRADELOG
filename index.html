@@ -1893,19 +1893,17 @@
       white-space: nowrap !important;
     }
 
-    /* Col 1: Date — compact, two lines */
+    /* Col 1: Date — compact, two lines. Same left padding on every row
+       (chevron or not) so date/time text always lines up, no zigzag. */
     #page-trades .trades-table th:nth-child(1),
     #page-trades .trades-table td:nth-child(1) {
       min-width: 78px !important;
-      padding-left: 10px !important;
+      padding-left: 32px !important;
       font-size: 10px !important;
       white-space: normal !important;
       line-height: 1.3 !important;
     }
-    /* Pack rows need extra left room for the chevron toggle box (6px-26px) */
-    #page-trades .trades-table tr.pack-header-row td:nth-child(1) {
-      padding-left: 32px !important;
-    }
+    #page-trades .trades-table th:nth-child(1) { padding-left: 10px !important; }
     /* Col 2: Symbol — bold, prominent */
     #page-trades .trades-table th:nth-child(2),
     #page-trades .trades-table td:nth-child(2) {
@@ -11550,7 +11548,7 @@ function setCalView(v) {
   const bodyGrid = document.getElementById('cal-body-grid');
   const statsStrip = document.getElementById('cal-month-stats');
   if (dayPanel) dayPanel.style.display = v === 'month' ? '' : 'none';
-  if (bodyGrid) bodyGrid.style.gridTemplateColumns = v === 'month' ? '1fr 300px' : '1fr';
+  if (bodyGrid && window.innerWidth > 768) bodyGrid.style.gridTemplateColumns = v === 'month' ? '1fr 300px' : '1fr';
   if (statsStrip) {
     // Show on desktop for month view, always show on mobile
     const isMob = window.innerWidth <= 768;
