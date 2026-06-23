@@ -14156,7 +14156,16 @@ function loadData(key, def=[]) {
 function saveData(key, data) {
   localStorage.setItem(key, JSON.stringify(data));
   // Persist notebooks to Supabase whenever they change
-  if (key === NOTEBOOKS_KEY) { saveUserDataToSupabase().catch(e=>console.warn('TradeLog: notebooks sync failed',e)); }
+  if (key === NOTEBOOKS_KEY) {
+    saveUserDataToSupabase().then(() => {
+      // Only touch the indicator if the editor is still open and currently mid-autosave-cycle
+      if (document.getElementById('note-entry-modal')?.style.display === 'flex') updateNbAutoSave('saved');
+    }).catch(e => {
+      console.warn('TradeLog: notebooks sync failed', e);
+      if (document.getElementById('note-entry-modal')?.style.display === 'flex') updateNbAutoSave('sync-error');
+      toast('Saved on this device, but cloud sync failed — check your connection', 'error');
+    });
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -14573,11 +14582,18 @@ function updateNbAutoSave(state) {
   const dot = document.getElementById('nb-autosave-dot');
   const lbl = document.getElementById('nb-autosave-label');
   if (!dot || !lbl) return;
+  dot.classList.remove('unsaved');
   if (state === 'saved') {
-    dot.classList.remove('unsaved');
     lbl.textContent = 'Saved';
+    dot.style.background = '';
+  } else if (state === 'sync-error') {
+    dot.classList.add('unsaved');
+    dot.style.background = 'var(--red)';
+    lbl.textContent = 'Saved locally — not synced';
+    lbl.title = 'This entry (including any photos) saved on this device but failed to sync to the cloud. It may not appear on your other devices yet.';
   } else {
     dot.classList.add('unsaved');
+    dot.style.background = '';
     lbl.textContent = 'Unsaved…';
   }
 }
