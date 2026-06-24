@@ -3405,6 +3405,12 @@
           </div>
         </div>
         <button class="btn btn-primary" onclick="switchPage('add')" style="flex-shrink:0;">+ Add Trade</button>
+        <!-- MT5 Live Sync indicator — only shown when connected -->
+        <div id="mt5-sync-badge" style="display:none;align-items:center;gap:6px;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;flex-shrink:0;">
+          <div id="mt5-sync-dot" style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0;"></div>
+          <span style="font-size:10px;font-weight:700;color:var(--muted);">MT5</span>
+          <span id="mt5-sync-timer" style="font-size:10px;font-weight:800;color:var(--text);min-width:28px;text-align:right;">—</span>
+        </div>
         <span id="mobile-tap-hint" style="font-size:10px;color:var(--muted);font-weight:600;display:none;">Double tap to view</span>
 
         <select id="filter-dir"    style="display:none;" onchange="renderTrades()"><option value="">All</option><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
@@ -6223,7 +6229,81 @@ async function loadAllFromSupabase() {
     }
   } catch(e) { console.warn('TradeLog: loadUserData failed', e); }
 
+  // ── MT5 last_sync: fetch and start countdown ─────────────────────
+  try {
+    const uid2 = await getValidUid();
+    if (uid2) {
+      const { data: mt5data } = await sb.from('mt5_connections')
+        .select('last_sync').eq('user_id', uid2).single();
+      if (mt5data && mt5data.last_sync) {
+        window._mt5LastSync = new Date(mt5data.last_sync);
+        _startMt5SyncTimer();
+      }
+    }
+  } catch(e) {}
+
   return true;
+}
+
+// ── MT5 SYNC COUNTDOWN TIMER ─────────────────────────────────────────────────
+// Shows "2m 34s ago" next to a green dot in the trades toolbar.
+// Also polls Supabase every 5 min to detect new syncs from MT5 EA.
+let _mt5SyncTimerInterval = null;
+let _mt5SyncPollInterval  = null;
+
+function _startMt5SyncTimer() {
+  const badge = document.getElementById('mt5-sync-badge');
+  if (badge) badge.style.display = 'flex';
+
+  // Update display every second
+  if (_mt5SyncTimerInterval) clearInterval(_mt5SyncTimerInterval);
+  _mt5SyncTimerInterval = setInterval(_updateMt5SyncDisplay, 1000);
+  _updateMt5SyncDisplay();
+
+  // Poll Supabase every 5 min for new syncs
+  if (_mt5SyncPollInterval) clearInterval(_mt5SyncPollInterval);
+  _mt5SyncPollInterval = setInterval(_pollMt5Sync, 5 * 60 * 1000);
+}
+
+function _updateMt5SyncDisplay() {
+  const el = document.getElementById('mt5-sync-timer');
+  const dot = document.getElementById('mt5-sync-dot');
+  if (!el || !window._mt5LastSync) return;
+
+  const secs = Math.floor((Date.now() - window._mt5LastSync.getTime()) / 1000);
+  let label;
+  if (secs < 60)        label = secs + 's ago';
+  else if (secs < 3600) label = Math.floor(secs/60) + 'm ' + (secs%60) + 's ago';
+  else                  label = Math.floor(secs/3600) + 'h ago';
+
+  el.textContent = label;
+
+  // Dot colour: green < 10min, yellow 10-30min, red > 30min
+  const mins = secs / 60;
+  const color = mins < 10 ? 'var(--green)' : mins < 30 ? 'var(--yellow)' : 'var(--red)';
+  dot.style.background  = color;
+  dot.style.boxShadow   = `0 0 6px ${color}`;
+}
+
+async function _pollMt5Sync() {
+  try {
+    const uid = await getValidUid();
+    if (!uid) return;
+    const { data } = await sb.from('mt5_connections')
+      .select('last_sync').eq('user_id', uid).single();
+    if (!data || !data.last_sync) return;
+    const newSync = new Date(data.last_sync);
+    // If newer than what we had → new trades arrived, reload
+    if (!window._mt5LastSync || newSync > window._mt5LastSync) {
+      window._mt5LastSync = newSync;
+      _updateMt5SyncDisplay();
+      // Reload trades silently
+      await loadAllFromSupabase();
+      try { refreshDashboard(); } catch(e) {}
+      try { renderTrades(); }     catch(e) {}
+      try { toast('🔄 MT5 synced — trades updated', 'success'); } catch(e) {}
+    }
+  } catch(e) {}
 }
 
 // ── SAVE PROFILE (name, avatar, currency, balance, theme, goals) ──────────────
