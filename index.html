@@ -10715,65 +10715,106 @@ function _doParseExcel(file) {
 }
 
 // ── REPLAY TRADING / TRADINGSIMULATOR PARSER ─────────────────────────────────
-// Format: Entry + Exit rows paired by "Trade #". Columns:
-// Trade #, Type (Entry long / Exit long / Entry short / Exit short),
-// Date and time, Signal, Price USD, Size (qty), Net P&L USD
+// Format: Entry + Exit rows paired by trade number. Real column names seen:
+//   "Trade #" or "Trade number", "Type" (Entry long / Exit long / Entry short / Exit short),
+//   "Date and time", "Signal", "Price USD", "Size (qty)", "Net P&L USD" or "Net PnL USD"
 function parseReplayTradingRows(data) {
   const rows = [];
-  // Group by Trade # — collect all rows per trade number
+
+  // Helper: pull a field off a row trying several real-world header spellings.
+  const pick = (row, keys) => {
+    for (const k of keys) {
+      if (row[k] !== undefined && row[k] !== '') return row[k];
+    }
+    return undefined;
+  };
+  const TRADE_NUM_KEYS = ['Trade #','Trade number','trade_#','trade #','trade_number','trade number'];
+  const TYPE_KEYS      = ['Type','type'];
+  const DATE_KEYS      = ['Date and time','date_and_time','date and time','Date'];
+  const PRICE_KEYS     = ['Price USD','price_usd','price usd','Price'];
+  const SIZE_KEYS      = ['Size (qty)','size__qty_','size (qty)','Qty','Volume'];
+  const PNL_KEYS       = ['Net P&L USD','net_p&l_usd','Net PnL USD','net pnl usd','net_pnl_usd','Net P&L','Net PnL','Profit'];
+  const SYMBOL_KEYS    = ['Symbol','Instrument','symbol'];
+
+  // Group by trade number — collect ALL rows per trade number (handles partial fills
+  // where more than one Entry or Exit row shares the same trade number).
   const tradeMap = {};
   data.forEach(row => {
-    const num = String(row['Trade #'] ?? row['trade_#'] ?? row['trade #'] ?? '').trim();
+    const num = String(pick(row, TRADE_NUM_KEYS) ?? '').trim();
     if (!num) return;
     if (!tradeMap[num]) tradeMap[num] = [];
     tradeMap[num].push(row);
   });
 
-  Object.keys(tradeMap).sort((a,b) => +a - +b).forEach(num => {
-    const group = tradeMap[num];
-    // Find entry and exit rows by Type field
-    const entryRow = group.find(r => {
-      const t = String(r['Type'] ?? r['type'] ?? '').toLowerCase();
-      return t.includes('entry');
-    });
-    const exitRow = group.find(r => {
-      const t = String(r['Type'] ?? r['type'] ?? '').toLowerCase();
-      return t.includes('exit');
-    });
-    if (!entryRow) return; // skip if no entry
+  // Date handling: may be a JS Date object (from XLSX cellDates) or string
+  const fmtDate = val => {
+    if (!val) return '';
+    if (val instanceof Date) {
+      const pad = n => String(n).padStart(2,'0');
+      return val.getFullYear() + '-' + pad(val.getMonth()+1) + '-' + pad(val.getDate())
+        + 'T' + pad(val.getHours()) + ':' + pad(val.getMinutes());
+    }
+    return String(val).replace(' ','T').slice(0,16);
+  };
+  const num = v => parseFloat(String(v ?? '').replace(/[^\d.\-]/g,'')) || 0;
 
-    const typeStr = String(entryRow['Type'] ?? entryRow['type'] ?? '').toLowerCase();
+  Object.keys(tradeMap).sort((a,b) => +a - +b).forEach(tradeNum => {
+    const group = tradeMap[tradeNum];
+
+    const entryRows = group.filter(r => String(pick(r, TYPE_KEYS) ?? '').toLowerCase().includes('entry'));
+    const exitRows  = group.filter(r => String(pick(r, TYPE_KEYS) ?? '').toLowerCase().includes('exit'));
+    if (!entryRows.length) return; // skip if no entry leg at all
+
+    const typeStr = String(pick(entryRows[0], TYPE_KEYS) ?? '').toLowerCase();
     const dir = typeStr.includes('short') ? 'SELL' : 'BUY';
 
-    // Date handling: may be a JS Date object (from XLSX cellDates) or string
-    const fmtDate = val => {
-      if (!val) return '';
-      if (val instanceof Date) {
-        const pad = n => String(n).padStart(2,'0');
-        return val.getFullYear() + '-' + pad(val.getMonth()+1) + '-' + pad(val.getDate())
-          + 'T' + pad(val.getHours()) + ':' + pad(val.getMinutes());
-      }
-      return String(val).replace(' ','T').slice(0,16);
-    };
+    // Earliest entry leg = actual open; latest exit leg = actual close.
+    const sortByDate = (a,b) => String(pick(a,DATE_KEYS)||'').localeCompare(String(pick(b,DATE_KEYS)||''));
+    const firstEntry = [...entryRows].sort(sortByDate)[0];
+    const lastExit    = exitRows.length ? [...exitRows].sort(sortByDate)[exitRows.length-1] : null;
 
-    const entryDate = fmtDate(entryRow['Date and time'] ?? entryRow['date_and_time'] ?? entryRow['Date']);
-    const exitDate  = exitRow  ? fmtDate(exitRow['Date and time']  ?? exitRow['date_and_time']  ?? exitRow['Date'])  : '';
-    const entryPrice = parseFloat(entryRow['Price USD'] ?? entryRow['price_usd'] ?? entryRow['Price'] ?? 0);
-    const exitPrice  = exitRow  ? parseFloat(exitRow['Price USD']  ?? exitRow['price_usd']  ?? exitRow['Price'] ?? 0) : 0;
-    const lots = parseFloat(entryRow['Size (qty)'] ?? entryRow['size__qty_'] ?? entryRow['Qty'] ?? entryRow['Volume'] ?? 1);
+    const entryDate = fmtDate(pick(firstEntry, DATE_KEYS));
+    const exitDate  = lastExit ? fmtDate(pick(lastExit, DATE_KEYS)) : '';
 
-    // P&L comes from exit row (it holds the realized P&L)
-    const pnlRaw = exitRow
-      ? (exitRow['Net P&L USD'] ?? exitRow['net_p&l_usd'] ?? exitRow['Net P&L'] ?? exitRow['Profit'] ?? 0)
-      : (entryRow['Net P&L USD'] ?? entryRow['net_p&l_usd'] ?? 0);
-    const pnl = parseFloat(String(pnlRaw).replace(/[^\d.\-]/g,'')) || 0;
+    // Size-weighted average entry price across all entry legs (handles scale-ins).
+    let totalEntryQty = 0, entryPriceWeighted = 0;
+    entryRows.forEach(r => {
+      const q = num(pick(r, SIZE_KEYS)) || 0;
+      const p = num(pick(r, PRICE_KEYS));
+      totalEntryQty += q;
+      entryPriceWeighted += p * q;
+    });
+    const entryPrice = totalEntryQty ? entryPriceWeighted / totalEntryQty : num(pick(firstEntry, PRICE_KEYS));
 
-    const symbol = String(entryRow['Symbol'] ?? entryRow['Instrument'] ?? entryRow['symbol'] ?? 'NDX100').toUpperCase();
+    // Size-weighted average exit price across all exit legs (handles scale-outs).
+    let totalExitQty = 0, exitPriceWeighted = 0;
+    exitRows.forEach(r => {
+      const q = num(pick(r, SIZE_KEYS)) || 0;
+      const p = num(pick(r, PRICE_KEYS));
+      totalExitQty += q;
+      exitPriceWeighted += p * q;
+    });
+    const exitPrice = totalExitQty ? exitPriceWeighted / totalExitQty : (lastExit ? num(pick(lastExit, PRICE_KEYS)) : 0);
+
+    const lots = totalEntryQty || num(pick(firstEntry, SIZE_KEYS)) || 1;
+
+    // P&L: sum across all exit legs (covers scale-outs where each exit row carries
+    // its own slice of P&L). Falls back to the entry row's own P&L field if there's
+    // no exit yet (still-open trade reported with running P&L).
+    let pnl;
+    if (exitRows.length) {
+      pnl = exitRows.reduce((sum, r) => sum + num(pick(r, PNL_KEYS)), 0);
+    } else {
+      pnl = num(pick(firstEntry, PNL_KEYS));
+    }
+
+    const symbolRaw = pick(entryRows[0], SYMBOL_KEYS);
+    const symbol = symbolRaw ? String(symbolRaw).toUpperCase() : 'NDX100';
 
     rows.push({
       id: uid(), date: entryDate, closeDate: exitDate,
-      ticket: String(num),
-      symbol: symbol || 'NDX100',
+      ticket: String(tradeNum),
+      symbol,
       dir, lots, entry: entryPrice, exit: exitPrice,
       sl: 0, tp: 0, pnl, commission: 0, swap: 0, netPnl: pnl, r: 0,
       strategies: [], emotion: '', confidence: 0, notes: '', screenshot: null,
@@ -10937,9 +10978,14 @@ function splitCSVLine(line, delim) {
 function sniffCSVFormat(lines) {
   if (!lines.length) return 'unknown';
   const header = lines[0].toLowerCase();
-  // Replay Trading / TradingSimulator: has "Trade #" and "Price USD"
-  if (header.includes('trade #') && header.includes('price usd')) return 'replaytrading';
-  // TradingView: has "trade #" and "signal" but no "price usd"
+  // Replay Trading / TradingSimulator export. Real headers seen in the wild:
+  // "Trade #,Type,...,Price USD,...,Net P&L USD,..."  (older export)
+  // "Trade number,Type,...,Price USD,...,Net PnL USD,..." (current export)
+  const hasTradeCol = header.includes('trade #') || header.includes('trade number');
+  const hasPriceUSD = header.includes('price usd');
+  const hasNetPnlUSD = header.includes('net p&l usd') || header.includes('net pnl usd');
+  if (hasTradeCol && (hasPriceUSD || hasNetPnlUSD)) return 'replaytrading';
+  // TradingView "List of Trades": has "trade #" and "signal" but no "price usd" column
   if (header.includes('trade #') || header.includes('signal')) return 'tradingview';
   if (header.includes('positionid') || header.includes('position id') || header.includes('closing direction')) return 'ctrader';
   // MT5 tab-CSV: no header, first field is a date like 2025.03.11
@@ -11037,7 +11083,10 @@ function parsePastedCSV() {
 }
 
 function parseCSVText(text) {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  // Strip UTF-8 BOM (\uFEFF) that Excel/TradingView/Replay Trading often prepend —
+  // without this, the first header (e.g. "Trade number") silently fails every match.
+  text = text.replace(/^\uFEFF/, '');
+  const lines = text.split('\n').map(l => l.replace(/\r$/, '').trim()).filter(Boolean);
   if (!lines.length) { toast('No data found', 'error'); return; }
 
   const format = sniffCSVFormat(lines);
