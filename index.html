@@ -67,6 +67,7 @@
 </script>
 <style>
   :root {
+    color-scheme: dark;
     --bg: #05080f;
     --surface: #0b0f1a;
     --surface2: #111827;
@@ -94,6 +95,7 @@
   }
 
   [data-theme="light"] {
+    color-scheme: light;
     --bg:#f0f4f8; --surface:#ffffff; --surface2:#f8fafc; --surface3:#edf2f7;
     --border:#e2e8f0; --border2:#cbd5e1;
     --accent:#6366f1; --text:#0f172a; --text2:#334155; --muted:#64748b;
@@ -5341,7 +5343,7 @@ window.switchPage = function(name) {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>if(!window.supabase){document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"><\/script>');}</script>
 
 <script>
@@ -5934,7 +5936,7 @@ const _safariSafeStorage = (() => {
   };
 })();
 
-const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
+let sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -5943,6 +5945,29 @@ const sb = _supa ? _supa.createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 }) : null;
 let currentUser = null;
+
+// ── SELF-HEALING SUPABASE CLIENT ────────────────────────────────────────────
+// Safety net: if the SDK script was unexpectedly still loading when the line
+// above ran (e.g. unusual network conditions on mobile), don't leave `sb`
+// permanently null for the rest of the page's life — retry briefly.
+if (!sb) {
+  let _sbRetries = 0;
+  const _sbRetryTimer = setInterval(() => {
+    _sbRetries++;
+    const _s = window.supabase || window.Supabase;
+    if (_s) {
+      clearInterval(_sbRetryTimer);
+      sb = _s.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: _safariSafeStorage }
+      });
+      console.log('TradeLog: Supabase client recovered after delayed SDK load');
+      if (typeof _attachAuthStateListener === 'function') _attachAuthStateListener();
+    } else if (_sbRetries >= 40) { // ~10s of retrying at 250ms
+      clearInterval(_sbRetryTimer);
+      console.warn('TradeLog: Supabase SDK failed to load — check network/CDN access');
+    }
+  }, 250);
+}
 
 // ── CENTRAL SESSION RESOLVER ──────────────────────────────────────────────────
 // Every Supabase operation calls this first.
@@ -5989,6 +6014,8 @@ function switchAuthTab(mode) {
   }
   document.getElementById('auth-name-field').style.display = mode==='signup' ? 'block' : 'none';
   document.getElementById('auth-btn').textContent          = mode==='login'  ? 'Log In' : 'Create Account';
+  const passInput = document.getElementById('auth-password');
+  if (passInput) passInput.setAttribute('autocomplete', mode==='login' ? 'current-password' : 'new-password');
   document.getElementById('auth-error').style.display = 'none';
 }
 function showAuthError(msg) {
@@ -5996,7 +6023,17 @@ function showAuthError(msg) {
   el.textContent = msg;
   el.style.display = 'block';
 }
+let _authInFlight = false;
 async function handleAuth() {
+  if (_authInFlight) return; // guard against rapid double-tap on mobile
+  _authInFlight = true;
+  try {
+    await _handleAuthInner();
+  } finally {
+    _authInFlight = false;
+  }
+}
+async function _handleAuthInner() {
   const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
   const btn = document.getElementById('auth-btn');
@@ -6004,10 +6041,21 @@ async function handleAuth() {
 
   if (!email || !password) { showAuthError('Please enter email and password.'); return; }
 
-  // Check Supabase is ready
+  // Check Supabase is ready — wait briefly if it's still finishing its initial
+  // load (common on slower mobile connections) before giving up.
   if (!sb) {
-    showAuthError('Connection error — please refresh the page.');
-    return;
+    btn.textContent = 'Connecting…';
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    for (let i = 0; i < 20 && !sb; i++) { // up to ~5s
+      await new Promise(r => setTimeout(r, 250));
+    }
+    if (!sb) {
+      showAuthError('Connection error — please check your internet connection and try again.');
+      btn.textContent = authMode === 'login' ? 'Log In' : 'Create Account';
+      btn.disabled = false; btn.style.opacity = '';
+      return;
+    }
   }
 
   btn.textContent = authMode === 'login' ? 'Logging in…' : 'Creating account…';
@@ -6492,8 +6540,10 @@ async function initApp(user) {
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────────────────────────────
-window.addEventListener('load', () => {
-  if (!sb) { showAuthScreen(); return; }
+let _authListenerAttached = false;
+function _attachAuthStateListener() {
+  if (_authListenerAttached || !sb) return;
+  _authListenerAttached = true;
 
   sb.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user) {
@@ -6525,6 +6575,11 @@ window.addEventListener('load', () => {
       showAuthScreen();
     }
   });
+}
+
+window.addEventListener('load', () => {
+  if (!sb) { showAuthScreen(); /* don't return — still set up extension-noise suppression below */ }
+  else { _attachAuthStateListener(); }
 
   // Suppress "Receiving end does not exist" noise from browser extensions
   if (typeof chrome !== 'undefined' && chrome.runtime) {
@@ -15543,6 +15598,7 @@ window.addEventListener('resize', () => {
   @keyframes authOrb1    { 0%,100% { transform:translate(0,0) scale(1); } 50% { transform:translate(30px,-20px) scale(1.08); } }
   @keyframes authOrb2    { 0%,100% { transform:translate(0,0) scale(1); } 50% { transform:translate(-20px,25px) scale(1.05); } }
   @keyframes authOrb3    { 0%,100% { transform:translate(0,0) scale(1); } 50% { transform:translate(15px,15px) scale(1.1); } }
+  #auth-screen { color-scheme: dark; }
   #auth-screen input:-webkit-autofill,
   #auth-screen input:-webkit-autofill:hover,
   #auth-screen input:-webkit-autofill:focus {
@@ -15556,7 +15612,7 @@ window.addEventListener('resize', () => {
     background:rgba(255,255,255,0.055);
     border:1px solid rgba(255,255,255,0.1);
     border-radius:12px; color:#f1f5f9;
-    font-size:14px; font-family:var(--sans);
+    font-size:16px; font-family:var(--sans);
     box-sizing:border-box; outline:none;
     transition:border-color .2s, background .2s, box-shadow .2s;
   }
@@ -15608,7 +15664,7 @@ window.addEventListener('resize', () => {
     } catch(e) {}
   })();
 </script>
-<div id="auth-screen" style="display:flex;position:fixed;inset:0;z-index:99998;background:#0a0b14;align-items:center;justify-content:center;overflow:hidden;">
+<div id="auth-screen" style="display:flex;position:fixed;inset:0;z-index:99998;background:#0a0b14;align-items:flex-start;justify-content:center;overflow-y:auto;-webkit-overflow-scrolling:touch;">
 
   <!-- Ambient orbs -->
   <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
@@ -15618,7 +15674,7 @@ window.addEventListener('resize', () => {
   </div>
 
   <!-- Card -->
-  <div id="auth-card" style="position:relative;z-index:1;width:100%;max-width:400px;padding:0 20px;">
+  <div id="auth-card" style="position:relative;z-index:1;width:100%;max-width:400px;padding:max(40px,env(safe-area-inset-top)) 20px max(40px,env(safe-area-inset-bottom));margin:auto 0;box-sizing:border-box;">
     <div style="background:rgba(255,255,255,0.04);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.09);border-radius:24px;padding:36px 32px;box-shadow:0 32px 80px rgba(0,0,0,0.6);">
 
       <!-- Logo -->
@@ -15647,15 +15703,15 @@ window.addEventListener('resize', () => {
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div id="auth-name-field" style="display:none;">
           <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Name</label>
-          <input id="auth-name" class="auth-input" type="text" placeholder="Your name">
+          <input id="auth-name" name="name" class="auth-input" type="text" placeholder="Your name" autocomplete="name" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('auth-email').focus();}">
         </div>
         <div>
           <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Email</label>
-          <input id="auth-email" class="auth-input" type="email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')handleAuth()">
+          <input id="auth-email" name="email" class="auth-input" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')handleAuth()">
         </div>
         <div>
           <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Password</label>
-          <input id="auth-password" class="auth-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAuth()">
+          <input id="auth-password" name="password" class="auth-input" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAuth()">
         </div>
 
         <div id="auth-error" style="display:none;padding:10px 14px;background:rgba(255,59,92,0.1);border:1px solid rgba(255,59,92,0.3);border-radius:10px;font-size:12px;color:#ff3b5c;line-height:1.5;"></div>
