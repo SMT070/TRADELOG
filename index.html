@@ -5601,6 +5601,24 @@ function _applyAutoTheme() {
   }
   if (equityChartInst) refreshDashboard();
   _reloadFundWidgetsForTheme();
+  // Also reload dashboard TradingView widgets (economic calendar / news) so
+  // they match the new auto-theme — without this, only the Fundamentals page
+  // widgets refreshed on a time-based theme switch, leaving the dashboard's
+  // own calendar/news panels showing the old theme until a manual click.
+  if (typeof _tvWidgetLoaded !== 'undefined' && _tvWidgetLoaded) {
+    _tvWidgetLoaded = false;
+    const wrap = document.getElementById('cal-tv-widget-wrap');
+    if (wrap) wrap.innerHTML = '';
+    if (typeof calNewsOpen !== 'undefined' && calNewsOpen) loadTVWidget();
+  }
+  if (typeof _dashTvLoaded !== 'undefined' && _dashTvLoaded) {
+    _dashTvLoaded = false;
+    const dwrap = document.getElementById('dash-tv-widget-wrap');
+    if (dwrap) { dwrap.innerHTML = ''; dwrap._loaded = false; }
+    const nwrap = document.getElementById('dash-news-timeline-wrap');
+    if (nwrap) { nwrap.innerHTML = ''; nwrap._loaded = false; }
+    if (typeof _dashNewsOpen !== 'undefined' && _dashNewsOpen) loadDashTvWidget();
+  }
 }
 
 function _stopAutoTheme() {
@@ -5610,7 +5628,7 @@ function _stopAutoTheme() {
 // Reload all fundamentals TV widgets when theme changes
 function _reloadFundWidgetsForTheme() {
   if (typeof _fundLoaded === 'undefined') return;
-  const theme = localStorage.getItem('tradelog_theme') || document.documentElement.getAttribute('data-theme') || 'dark';
+  const theme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('tradelog_theme') || 'dark';
   const tvTheme = theme === 'light' ? 'light' : 'dark';
   const bgMap = { dark:'#05080f', gray:'#1c1e26', black:'#000000', light:'#f0f4f8' };
   const bgColor = bgMap[theme] || '#05080f';
@@ -11542,7 +11560,7 @@ function loadTVWidget() {
   const wrap = document.getElementById('cal-tv-widget-wrap');
   if (!wrap || _tvWidgetLoaded) return;
   _tvWidgetLoaded = true;
-  const theme = localStorage.getItem('tradelog_theme') || 'dark';
+  const theme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('tradelog_theme') || 'dark';
   const colorTheme = theme === 'light' ? 'light' : 'dark';
 
   // Show both Economic Calendar and News Timeline side by side
@@ -11666,7 +11684,7 @@ function toggleDashNews() {
 
 function loadDashTvWidget() {
   _dashTvLoaded = true;
-  const theme = localStorage.getItem('tradelog_theme') || 'dark';
+  const theme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('tradelog_theme') || 'dark';
   const colorTheme = theme === 'light' ? 'light' : 'dark';
 
   // ── Economic Calendar ──
@@ -14011,7 +14029,7 @@ function openShareModal() {
   });
 
   // ── Apply theme to action buttons ──
-  const rawTheme = localStorage.getItem('tradelog_theme') || 'dark';
+  const rawTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('tradelog_theme') || 'dark';
   const isLight = rawTheme === 'light';
   // Social buttons
   const socialStyle = isLight
@@ -15416,7 +15434,13 @@ handleNotebooksMobile();
 let _fundLoaded = { ticker: false, all: false };
 
 function renderFundamentals() {
-  const theme = localStorage.getItem('tradelog_theme') || 'dark';
+  // Read the ACTUAL currently-applied theme, not just the manually-saved one.
+  // Auto-theme intentionally does NOT write to localStorage (so it doesn't
+  // overwrite the user's manual preference), so localStorage alone can be
+  // stale while auto-theme has the real <html data-theme> set to something
+  // different. The data-theme attribute is always correct regardless of
+  // whether the current theme came from a manual click or auto-theme.
+  const theme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('tradelog_theme') || 'dark';
   // TradingView only supports 'dark' or 'light'
   window._fundColorTheme = (theme === 'light') ? 'light' : 'dark';
   // Map each app theme to its exact --bg color so widgets blend seamlessly
