@@ -2525,8 +2525,11 @@
   .tl-orb {
     position:absolute;
     border-radius:50%;
-    filter:blur(70px);
+    filter:blur(40px);
     pointer-events:none;
+    will-change:transform;
+    transform:translateZ(0);
+    backface-visibility:hidden;
   }
 
   /* Logo container */
@@ -2631,9 +2634,9 @@
 
 <div id="tradelog-loader">
   <!-- Ambient orbs -->
-  <div class="tl-orb" style="width:500px;height:500px;background:rgba(99,102,241,0.12);top:-180px;left:-120px;animation:tl-orb-a 7s ease-in-out infinite;"></div>
-  <div class="tl-orb" style="width:400px;height:400px;background:rgba(99,102,241,0.08);bottom:-150px;right:-100px;animation:tl-orb-b 9s ease-in-out infinite;"></div>
-  <div class="tl-orb" style="width:300px;height:300px;background:rgba(165,180,252,0.06);top:40%;left:60%;animation:tl-orb-c 11s ease-in-out infinite;"></div>
+  <div class="tl-orb" style="width:600px;height:600px;background:radial-gradient(circle,rgba(99,102,241,0.16) 0%,rgba(99,102,241,0.08) 45%,transparent 75%);top:-200px;left:-150px;animation:tl-orb-a 7s ease-in-out infinite;"></div>
+  <div class="tl-orb" style="width:480px;height:480px;background:radial-gradient(circle,rgba(99,102,241,0.11) 0%,rgba(99,102,241,0.05) 45%,transparent 75%);bottom:-170px;right:-130px;animation:tl-orb-b 9s ease-in-out infinite;"></div>
+  <div class="tl-orb" style="width:360px;height:360px;background:radial-gradient(circle,rgba(165,180,252,0.09) 0%,rgba(165,180,252,0.04) 45%,transparent 75%);top:40%;left:60%;animation:tl-orb-c 11s ease-in-out infinite;"></div>
 
   <!-- Logo -->
   <div class="tl-logo-wrap">
@@ -6169,6 +6172,7 @@ async function loadAllFromSupabase() {
   localStorage.removeItem(PROFILE_KEY);
   localStorage.removeItem(BAL_KEY);
   localStorage.removeItem(CUR_KEY);
+  localStorage.removeItem(NOTEBOOKS_KEY);
   if (themeToKeep) localStorage.setItem(THEME_KEY, themeToKeep);
 
   // 1. Profile (name, avatar, currency, balance, theme, goals)
@@ -6354,14 +6358,44 @@ async function _pollMt5Sync() {
   } catch(e) {}
 }
 
+// ── PENDING-SAVE TRACKER ────────────────────────────────────────────────────
+// Tracks in-flight writes to Supabase that read from shared localStorage
+// (profile, user_data/notebooks/mindset/journal/tags). Since localStorage is
+// shared across accounts on the same device, a save that's still in-flight
+// when the user switches accounts could otherwise write the OLD account's
+// data into the NEW account's row. initApp() awaits this draining to zero
+// before clearing/loading the new account's data, which removes the race
+// entirely rather than trying to detect it after it's already happened.
+let _pendingSupabaseSaves = 0;
+function _waitForPendingSaves(maxWaitMs = 4000) {
+  return new Promise(resolve => {
+    if (_pendingSupabaseSaves <= 0) return resolve();
+    const start = Date.now();
+    const check = () => {
+      if (_pendingSupabaseSaves <= 0 || Date.now() - start > maxWaitMs) return resolve();
+      setTimeout(check, 50);
+    };
+    check();
+  });
+}
+
 // ── SAVE PROFILE (name, avatar, currency, balance, theme, goals) ──────────────
 async function saveProfileToSupabase() {
   const uid = await getValidUid();
   if (!uid) { console.warn('TradeLog: saveProfile — no session'); return; }
+  _pendingSupabaseSaves++;
   try {
     const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
     const goals = JSON.parse(localStorage.getItem(GOALS_KEY) || '{}');
     const settings = { theme: localStorage.getItem(THEME_KEY) || 'dark', autoTheme: localStorage.getItem(AUTO_THEME_KEY) === 'true', goals, autopack: localStorage.getItem('tradelog_autopack') === 'true', autoBE: localStorage.getItem('tradelog_auto_be_active') === 'true' };
+    // Safety check: if the account changed between reading localStorage above
+    // and writing below (e.g. user switched accounts while this save was still
+    // in flight), abort — otherwise we'd write the OLD account's data into the
+    // NEW account's row, since both share the same localStorage on this device.
+    if (!currentUser || currentUser.id !== uid) {
+      console.warn('TradeLog: saveProfile aborted — account changed mid-save');
+      return;
+    }
     const { error } = await sb.from('profiles').upsert({
       id: uid,
       name: p.name || '',
@@ -6372,6 +6406,7 @@ async function saveProfileToSupabase() {
     });
     if (error) console.warn('TradeLog: saveProfile error', error);
   } catch(e) { console.warn('TradeLog: saveProfile failed', e); }
+  finally { _pendingSupabaseSaves--; }
 }
 
 // Alias used by loadProfileFromSupabase callers
@@ -6381,6 +6416,8 @@ async function loadProfileFromSupabase() { /* handled by loadAllFromSupabase */ 
 async function saveUserDataToSupabase() {
   const uid = await getValidUid();
   if (!uid) { console.warn('TradeLog: saveUserData — no session'); throw new Error('No active session'); }
+  _pendingSupabaseSaves++;
+  try {
   // Build pack_meta: collect all pack-level fields from trades, keyed by packId
   const packMeta = {};
   trades.forEach(t => {
@@ -6392,17 +6429,32 @@ async function saveUserDataToSupabase() {
     if (t.packScreenshot != null) packMeta[t.packId].packScreenshot = t.packScreenshot;
     if (t.packTags       != null) packMeta[t.packId].packTags       = t.packTags;
   });
-  const { error } = await sb.from('user_data').upsert({
+  const payload = {
     user_id: uid,
     mindset:   getMindsetDataLocal(),
     journal:   JSON.parse(localStorage.getItem(JOURNAL_KEY) || '{}'),
     tags:      JSON.parse(localStorage.getItem(TAGS_KEY) || '[]'),
     pack_meta: packMeta,
     notebooks: JSON.parse(localStorage.getItem(NOTEBOOKS_KEY) || '[]'),
-  }, { onConflict: 'user_id' });
+  };
+  // Safety check: if the logged-in account changed between reading the uid
+  // above and writing below (e.g. user switched accounts while a notebook
+  // autosave was still in flight), abort the write. localStorage is shared
+  // across accounts on this device, so writing here with a stale snapshot
+  // would otherwise copy the OLD account's notebooks/mindset/journal/tags
+  // straight into the NEW account's row — this is the exact bug that caused
+  // notebooks to "leak" between accounts.
+  if (!currentUser || currentUser.id !== uid) {
+    console.warn('TradeLog: saveUserData aborted — account changed mid-save, refusing to write stale data to a different account');
+    throw new Error('Account changed during save — aborted to prevent cross-account data leak');
+  }
+  const { error } = await sb.from('user_data').upsert(payload, { onConflict: 'user_id' });
   if (error) {
     console.error('TradeLog: saveUserData error', error.message || error, error.details || '', error.hint || '');
     throw error;
+  }
+  } finally {
+    _pendingSupabaseSaves--;
   }
 }
 
@@ -6496,6 +6548,14 @@ function _clearAllUserLocalStorage() {
 }
 
 async function initApp(user) {
+  // If a save from a PREVIOUS account is still in flight, wait for it to finish
+  // (or time out) before switching currentUser. This closes the race where a
+  // notebook/profile autosave started under the old account could otherwise
+  // land mid-flight after the switch and write stale data into the new
+  // account's row — capped at 4s so a stuck save can never block login.
+  if (currentUser && currentUser.id !== user.id) {
+    await _waitForPendingSaves();
+  }
   currentUser = user;
   _appInitialized = true;
   // Clear data if different user logs in on same browser
@@ -15672,9 +15732,9 @@ window.addEventListener('resize', () => {
 
   <!-- Ambient orbs -->
   <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
-    <div style="position:absolute;top:-120px;left:-80px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.18),transparent 65%);animation:authOrb1 8s ease-in-out infinite;"></div>
-    <div style="position:absolute;bottom:-100px;right:-60px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,0.14),transparent 65%);animation:authOrb2 10s ease-in-out infinite;"></div>
-    <div style="position:absolute;top:40%;right:15%;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.08),transparent 65%);animation:authOrb3 7s ease-in-out infinite;"></div>
+    <div style="position:absolute;top:-120px;left:-80px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.18) 0%,rgba(99,102,241,0.09) 45%,transparent 75%);animation:authOrb1 8s ease-in-out infinite;will-change:transform;transform:translateZ(0);"></div>
+    <div style="position:absolute;bottom:-100px;right:-60px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,0.14) 0%,rgba(139,92,246,0.07) 45%,transparent 75%);animation:authOrb2 10s ease-in-out infinite;will-change:transform;transform:translateZ(0);"></div>
+    <div style="position:absolute;top:40%;right:15%;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.08) 0%,rgba(99,102,241,0.04) 45%,transparent 75%);animation:authOrb3 7s ease-in-out infinite;will-change:transform;transform:translateZ(0);"></div>
   </div>
 
   <!-- Card -->
