@@ -7579,6 +7579,8 @@ function openPhotoLightbox(id) {
 async function saveTrade() {
   const sym = document.getElementById('f-symbol').value.trim().toUpperCase();
   if (!sym) { toast('Symbol is required','error'); return; }
+  const dateVal = document.getElementById('f-date').value;
+  if (!dateVal) { toast('Please pick a date for this trade','error'); return; }
   let pnl = parseFloat(document.getElementById('f-pnl').value) || 0;
   // Auto-sign: if user selected LOSS force negative, if WIN force positive, BE unchanged
   if (selectedResult === 'loss' && pnl > 0) pnl = -pnl;
@@ -7600,7 +7602,7 @@ async function saveTrade() {
   const trade = {
     id: editId || uid(),
     symbol: sym,
-    date: document.getElementById('f-date').value,
+    date: dateVal,
     closeDate: document.getElementById('f-close-date').value || null,
     dir,
     lots: parseFloat(document.getElementById('f-lots').value) || 0,
@@ -8327,9 +8329,9 @@ function renderRecentTable() {
       <td style="color:var(--text);white-space:nowrap;font-size:12px;font-weight:600;">${dateDisplay}</td>
       <td style="font-weight:700;">${t.symbol}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
-      <td>${t.lots||'—'}</td>
-      <td>${t.entry||'—'}</td>
-      <td>${t.exit||'—'}</td>
+      <td>${t.lots != null && t.lots !== '' ? t.lots : '—'}</td>
+      <td>${t.entry != null && t.entry !== '' ? t.entry : '—'}</td>
+      <td>${t.exit != null && t.exit !== '' ? t.exit : '—'}</td>
       <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
     </tr>`;
   }).join('');
@@ -8347,9 +8349,9 @@ function tradeRow(t) {
     <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;"><div style="line-height:1.4;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,19)+'</span>' : '—'}</div></td>
     <td style="font-weight:700;">${t.symbol}</td>
     <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
-    <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
-    <td style="color:var(--text);font-weight:500;">${t.entry||'—'}</td>
-    <td style="color:var(--text);font-weight:500;">${t.exit||'—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.lots != null && t.lots !== '' ? t.lots : '—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.entry != null && t.entry !== '' ? t.entry : '—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.exit != null && t.exit !== '' ? t.exit : '—'}</td>
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
     <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-weight:600;font-family:var(--mono);">${t.commission ? getCurrencySymbol()+parseFloat(t.commission).toFixed(2) : '—'}</td>
     <td style="text-align:center;">${resultBadge}</td>
@@ -8714,9 +8716,9 @@ function renderTrades(skipTagRebuild) {
       <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;"><div style="line-height:1.4;">${t.date ? t.date.slice(0,10)+'<br><span style="font-size:11px;color:var(--text2);font-weight:500;">'+t.date.slice(11,19)+'</span>' : '—'}</div></td>
       <td style="font-weight:600;">${t.symbol}</td>
       <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
-      <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
-      <td style="color:var(--text);font-weight:500;">${t.entry||'—'}</td>
-      <td style="color:var(--text);font-weight:500;">${t.exit||'—'}</td>
+      <td style="color:var(--text);font-weight:500;">${t.lots != null && t.lots !== '' ? t.lots : '—'}</td>
+      <td style="color:var(--text);font-weight:500;">${t.entry != null && t.entry !== '' ? t.entry : '—'}</td>
+      <td style="color:var(--text);font-weight:500;">${t.exit != null && t.exit !== '' ? t.exit : '—'}</td>
       <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
       <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-family:var(--mono);font-weight:600;">${t.commission ? '-'+sym+Math.abs(parseFloat(t.commission)).toFixed(2) : '—'}</td>
       <td>${badge}</td>
@@ -16622,9 +16624,9 @@ function renderSingleTradeRow(t, sym) {
     ${dateCell}
     <td style="font-weight:600;">${t.symbol}</td>
     <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
-    <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
-    <td style="color:var(--text);font-weight:500;">${t.entry||'—'}</td>
-    <td style="color:var(--text);font-weight:500;">${t.exit||'—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.lots != null && t.lots !== '' ? t.lots : '—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.entry != null && t.entry !== '' ? t.entry : '—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.exit != null && t.exit !== '' ? t.exit : '—'}</td>
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
     <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-family:var(--mono);font-weight:600;">${t.commission ? sym+parseFloat(t.commission).toFixed(2) : '—'}</td>
     <td>${badge}</td>
@@ -16709,9 +16711,9 @@ function _buildPackChildRow(t, sym, packId, isExpanded, isAutoChildRow) {
     <td style="color:var(--text);font-size:12px;font-weight:600;vertical-align:middle;"><div style="line-height:1.4;">${dateHtml}</div></td>
     <td style="font-weight:600;">${t.symbol}</td>
     <td><span class="badge ${t.dir==='BUY'?'buy':'sell'}">${t.dir}</span></td>
-    <td style="color:var(--text);font-weight:500;">${t.lots||'—'}</td>
-    <td style="color:var(--text);font-weight:500;">${t.entry||'—'}</td>
-    <td style="color:var(--text);font-weight:500;">${t.exit||'—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.lots != null && t.lots !== '' ? t.lots : '—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.entry != null && t.entry !== '' ? t.entry : '—'}</td>
+    <td style="color:var(--text);font-weight:500;">${t.exit != null && t.exit !== '' ? t.exit : '—'}</td>
     <td style="color:${pnlColor};font-weight:700;">${pnlStr}</td>
     <td style="color:${t.commission?'var(--red)':'var(--text2)'};font-family:var(--mono);font-weight:600;">${t.commission ? sym+parseFloat(t.commission).toFixed(2) : '—'}</td>
     <td>${badge}</td>
@@ -16795,7 +16797,7 @@ function openPackDetail(packId, e, _autoTrades) {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
         <div style="display:flex;align-items:center;gap:6px;">
           <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:10px;">${t.dir}</span>
-          <span style="font-size:12px;color:var(--muted);font-weight:600;">${t.lots||'—'} lots</span>
+          <span style="font-size:12px;color:var(--muted);font-weight:600;">${t.lots != null && t.lots !== '' ? t.lots : '—'} lots</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:${rb};color:${rc};">${rl}</span>
@@ -16803,8 +16805,8 @@ function openPackDetail(packId, e, _autoTrades) {
         </div>
       </div>
       <div style="display:flex;gap:10px;font-size:12px;color:var(--muted);margin-top:5px;">
-        <span>Entry <b style="color:var(--text);">${t.entry||'—'}</b></span>
-        <span>Exit <b style="color:var(--text);">${t.exit||'—'}</b></span>
+        <span>Entry <b style="color:var(--text);">${t.entry != null && t.entry !== '' ? t.entry : '—'}</b></span>
+        <span>Exit <b style="color:var(--text);">${t.exit != null && t.exit !== '' ? t.exit : '—'}</b></span>
         <span style="margin-left:auto;font-size:11px;">${(t.date||'').slice(0,10)}</span>
       </div>
     </div>`;
@@ -17845,14 +17847,14 @@ function openPackOverlay(packId) {
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
                   <div style="display:flex;align-items:center;gap:6px;">
                     <span class="badge ${t.dir==='BUY'?'buy':'sell'}" style="font-size:10px;">${t.dir}</span>
-                    <span style="font-size:12px;color:var(--muted);font-weight:600;">${t.lots||'—'} lots</span>
+                    <span style="font-size:12px;color:var(--muted);font-weight:600;">${t.lots != null && t.lots !== '' ? t.lots : '—'} lots</span>
                     ${res ? `<span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;border:1px solid ${resColor};background:${resBg};color:${resColor};">${res.toUpperCase()}</span>` : ''}
                   </div>
                   <span style="font-size:14px;font-weight:900;color:${pc};">${ps}</span>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;font-size:12px;">
-                  <div style="color:var(--muted);">Entry <b style="color:var(--text);">${t.entry||'—'}</b></div>
-                  <div style="color:var(--muted);">Exit <b style="color:var(--text);">${t.exit||'—'}</b></div>
+                  <div style="color:var(--muted);">Entry <b style="color:var(--text);">${t.entry != null && t.entry !== '' ? t.entry : '—'}</b></div>
+                  <div style="color:var(--muted);">Exit <b style="color:var(--text);">${t.exit != null && t.exit !== '' ? t.exit : '—'}</b></div>
                   ${t.sl ? `<div style="color:var(--muted);">SL <b style="color:var(--red);">${t.sl}</b></div>` : ''}
                   ${t.tp ? `<div style="color:var(--muted);">TP <b style="color:var(--green);">${t.tp}</b></div>` : ''}
                   ${dur ? `<div style="color:var(--muted);">Duration <b style="color:var(--text2);">${dur}</b></div>` : ''}
