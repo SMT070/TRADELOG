@@ -4632,8 +4632,19 @@ void DoSync()
 {
    Print("TradeLog: Sync started.");
 
-   // Use the earlier of the two cursors so HistorySelect covers both
-   datetime fromTime = g_firstRun ? 0 : MathMin(g_lastTradeSync, g_lastBalSync);
+   // IMPORTANT: the history window queried here must be wide enough to
+   // capture the OPENING deal of any position that might still be open,
+   // even if that position was opened long before the last sync cursor.
+   // Using MathMin(g_lastTradeSync, g_lastBalSync) here was the bug: once
+   // the cursor advances past a trade's open time (because other trades
+   // closed in between), the next sync's HistorySelect would no longer
+   // include that trade's entry deal at all — Pass 1 would never see it,
+   // leaving open_time/open_price as 0, which gets sent as an empty date.
+   // A fixed wide lookback (5 years) fixes this: Pass 1 always has full
+   // visibility into entry deals, while the incremental cursors (used
+   // below, per-deal) still correctly decide which CLOSED trades are new
+   // enough to actually send, so already-synced trades are never resent.
+   datetime fromTime = g_firstRun ? 0 : TimeCurrent() - 157680000; // ~5 years back
    HistorySelect(fromTime, TimeCurrent());
    int totalDeals = HistoryDealsTotal();
    if(totalDeals == 0) { SendHeartbeat(); return; }
