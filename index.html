@@ -6134,6 +6134,14 @@ async function _handleAuthInner() {
   if (authMode === 'login') {
     window.showTradelogLoader && window.showTradelogLoader('Connecting…');
     try {
+      // If there's already a session for a DIFFERENT account, sign out of it
+      // first. signInWithPassword doesn't implicitly replace an existing
+      // session — leaving stale session state around while attempting to log
+      // into a different account is unnecessary risk, especially valuable
+      // when switching between multiple accounts in the same browser session.
+      if (currentUser && currentUser.email && currentUser.email.toLowerCase() !== email.toLowerCase()) {
+        try { await sb.auth.signOut(); } catch(e) {}
+      }
       const result = await _withTimeout(
         sb.auth.signInWithPassword({ email, password }),
         15000,
@@ -6145,7 +6153,9 @@ async function _handleAuthInner() {
         window.hideTradelogLoader && window.hideTradelogLoader();
         let msg = error.message;
         if (/invalid login credentials/i.test(msg)) {
-          msg += ' If this looks right, your phone may have autofilled an old saved password — tap the password field, clear it, and type it manually to check.';
+          const atIdx = email.indexOf('@');
+          const maskedEmail = atIdx > 1 ? email[0] + '***' + email.slice(atIdx - 1) : email;
+          msg += ` (tried: ${maskedEmail}) If this email looks wrong, your phone autofilled a different saved account — clear both fields and type them manually.`;
         }
         showAuthError(msg);
         btn.textContent = 'Log In'; btn.disabled = false; btn.style.opacity = '';
