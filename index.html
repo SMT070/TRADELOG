@@ -6128,7 +6128,11 @@ async function _handleAuthInner() {
       const error = result?.error;
       if (error) {
         window.hideTradelogLoader && window.hideTradelogLoader();
-        showAuthError(error.message);
+        let msg = error.message;
+        if (/invalid login credentials/i.test(msg)) {
+          msg += ' If this looks right, your phone may have autofilled an old saved password — tap the password field, clear it, and type it manually to check.';
+        }
+        showAuthError(msg);
         btn.textContent = 'Log In'; btn.disabled = false; btn.style.opacity = '';
         return;
       }
@@ -15778,9 +15782,13 @@ window.addEventListener('resize', () => {
   #auth-screen { color-scheme: dark; }
   #auth-screen input:-webkit-autofill,
   #auth-screen input:-webkit-autofill:hover,
-  #auth-screen input:-webkit-autofill:focus {
+  #auth-screen input:-webkit-autofill:focus,
+  #auth-screen input:-internal-autofill-selected,
+  #auth-screen input:-internal-autofill-previewed {
     -webkit-box-shadow: 0 0 0px 1000px #1e1e2e inset !important;
+    box-shadow: 0 0 0px 1000px #1e1e2e inset !important;
     -webkit-text-fill-color: #f1f5f9 !important;
+    caret-color: #f1f5f9;
     transition: background-color 5000s ease-in-out 0s;
   }
   #auth-card { animation: authFadeIn .5s cubic-bezier(.16,1,.3,1) both; }
@@ -15891,16 +15899,16 @@ window.addEventListener('resize', () => {
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div id="auth-name-field" style="display:none;">
           <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Name</label>
-          <input id="auth-name" name="name" class="auth-input" type="text" placeholder="Your name" autocomplete="name" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('auth-email').focus();}">
+          <input id="auth-name" name="name" class="auth-input" type="text" placeholder="Your name" autocomplete="name" autocapitalize="words" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('auth-email').focus();}">
         </div>
         <div>
           <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Email</label>
-          <input id="auth-email" name="email" class="auth-input" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')handleAuth()">
+          <input id="auth-email" name="email" class="auth-input" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="you@example.com" onkeydown="if(event.key==='Enter')handleAuth()">
         </div>
         <div>
           <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Password</label>
           <div style="position:relative;">
-            <input id="auth-password" name="password" class="auth-input" type="password" autocomplete="current-password" placeholder="••••••••" style="padding-right:44px;" onkeydown="if(event.key==='Enter')handleAuth()">
+            <input id="auth-password" name="password" class="auth-input" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="••••••••" style="padding-right:44px;" onkeydown="if(event.key==='Enter')handleAuth()">
             <button type="button" id="auth-password-toggle" onclick="togglePasswordVisibility()" aria-label="Show password" style="position:absolute;top:0;right:0;height:100%;width:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.35);padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
               <svg id="auth-password-eye-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
