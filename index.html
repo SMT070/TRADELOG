@@ -6073,6 +6073,20 @@ async function handleAuth() {
     _authInFlight = false;
   }
 }
+// Wraps a promise with a hard timeout. Some embedded in-app browsers (e.g. the
+// Meta/Instagram/Facebook webview) have been known to silently throttle or
+// drop background network requests rather than cleanly failing them — without
+// this, a hung signIn/signUp call would leave the button stuck on "Logging
+// in…" forever with no error and no way to recover except force-quitting.
+function _withTimeout(promise, ms, timeoutMessage) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(timeoutMessage)), ms);
+    promise.then(
+      (val) => { clearTimeout(timer); resolve(val); },
+      (err) => { clearTimeout(timer); reject(err); }
+    );
+  });
+}
 async function _handleAuthInner() {
   const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
@@ -6105,7 +6119,11 @@ async function _handleAuthInner() {
   if (authMode === 'login') {
     window.showTradelogLoader && window.showTradelogLoader('Connecting…');
     try {
-      const result = await sb.auth.signInWithPassword({ email, password });
+      const result = await _withTimeout(
+        sb.auth.signInWithPassword({ email, password }),
+        15000,
+        'Login is taking too long. If you\'re using this inside Instagram or Facebook, try opening the link in your regular browser instead (tap the "···" menu and choose "Open in Browser").'
+      );
       const data = result?.data;
       const error = result?.error;
       if (error) {
@@ -6132,7 +6150,11 @@ async function _handleAuthInner() {
   } else {
     try {
       const name = document.getElementById('auth-name')?.value?.trim() || '';
-      const result = await sb.auth.signUp({ email, password, options: { data: { name } } });
+      const result = await _withTimeout(
+        sb.auth.signUp({ email, password, options: { data: { name } } }),
+        15000,
+        'Sign up is taking too long. If you\'re using this inside Instagram or Facebook, try opening the link in your regular browser instead (tap the "···" menu and choose "Open in Browser").'
+      );
       if (result?.error) {
         showAuthError(result.error.message);
         btn.textContent = 'Create Account'; btn.disabled = false; btn.style.opacity = '';
@@ -6157,6 +6179,44 @@ function showApp() {
   }
   if (app) app.style.display = 'block';
   try { switchPage('dashboard'); } catch(e) {}
+}
+// Detects Meta's in-app browser (Facebook, Instagram, Messenger webviews).
+// These run a sandboxed WebView that's known to throttle/restrict background
+// network requests and storage in ways regular mobile Safari/Chrome don't,
+// which is the most common root cause of "can't log in" reports that are
+// specific to opening the app from inside Instagram/Facebook.
+function _isMetaInAppBrowser() {
+  const ua = navigator.userAgent || '';
+  return /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Messenger/i.test(ua);
+}
+function _copyAuthPageLink(btn) {
+  const url = window.location.href;
+  const done = (ok) => {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = ok ? '✓ Copied!' : 'Could not copy — long-press the address bar instead';
+    setTimeout(() => { btn.textContent = original; }, 2500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => done(true)).catch(() => _copyAuthPageLinkFallback(url, done));
+  } else {
+    _copyAuthPageLinkFallback(url, done);
+  }
+}
+function _copyAuthPageLinkFallback(url, done) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    done(ok);
+  } catch(e) {
+    done(false);
+  }
 }
 function showAuthScreen() {
   const auth = document.getElementById('auth-screen');
@@ -6187,6 +6247,10 @@ function showAuthScreen() {
     if (errEl)   errEl.style.display = 'none';
     if (btn)     { btn.textContent = 'Log In'; btn.disabled = false; btn.style.opacity = '1'; }
     switchAuthTab('login');
+    // Show a banner steering Instagram/Facebook in-app browser users to open
+    // the page in their real browser, where login reliably works.
+    const metaBanner = document.getElementById('auth-meta-warning');
+    if (metaBanner) metaBanner.style.display = _isMetaInAppBrowser() ? 'block' : 'none';
   }
   if (app) app.style.display = 'none';
   window.hideTradelogLoader && window.hideTradelogLoader();
@@ -15107,6 +15171,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modal) modal.addEventListener('click', e => {
     if (e.target === modal) closeNoteEntryModal();
   });
+  // Show the Meta in-app browser warning immediately on first paint, rather
+  // than waiting for the async auth-state check to call showAuthScreen().
+  if (typeof _isMetaInAppBrowser === 'function' && _isMetaInAppBrowser()) {
+    const metaBanner = document.getElementById('auth-meta-warning');
+    if (metaBanner) metaBanner.style.display = 'block';
+  }
 });
 
 // Mobile: notebooks stacks vertically
@@ -15798,6 +15868,17 @@ window.addEventListener('resize', () => {
         </div>
         <div style="font-size:26px;font-weight:900;color:#f1f5f9;letter-spacing:-1px;line-height:1;">Trade<span style="color:#818cf8;">Log</span></div>
         <div style="font-size:13px;color:rgba(255,255,255,0.35);margin-top:5px;font-weight:500;">Your professional trading journal</div>
+      </div>
+
+      <div id="auth-meta-warning" style="display:none;margin-bottom:18px;padding:14px 16px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:12px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="font-size:18px;line-height:1;flex-shrink:0;">⚠️</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:4px;">Login may not work in this app</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.5;">Instagram/Facebook's built-in browser can block login. Tap the <strong>···</strong> menu above and choose <strong>"Open in Browser"</strong> for the most reliable experience.</div>
+            <button type="button" onclick="_copyAuthPageLink(this)" style="margin-top:10px;padding:7px 12px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);border-radius:8px;color:#fbbf24;font-size:11px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;">Copy Link Instead</button>
+          </div>
+        </div>
       </div>
 
       <!-- Tabs -->
