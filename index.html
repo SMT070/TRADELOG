@@ -6038,7 +6038,25 @@ function switchAuthTab(mode) {
   document.getElementById('auth-btn').textContent          = mode==='login'  ? 'Log In' : 'Create Account';
   const passInput = document.getElementById('auth-password');
   if (passInput) passInput.setAttribute('autocomplete', mode==='login' ? 'current-password' : 'new-password');
+  _setPasswordVisibility(false); // reset to hidden when switching tabs
   document.getElementById('auth-error').style.display = 'none';
+}
+function _setPasswordVisibility(show) {
+  const input = document.getElementById('auth-password');
+  const icon  = document.getElementById('auth-password-eye-icon');
+  const btn   = document.getElementById('auth-password-toggle');
+  if (!input || !icon) return;
+  input.setAttribute('type', show ? 'text' : 'password');
+  icon.innerHTML = show
+    ? '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.6 18.6 0 0 1 4.22-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/>';
+  if (btn) btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+}
+function togglePasswordVisibility() {
+  const input = document.getElementById('auth-password');
+  if (!input) return;
+  _setPasswordVisibility(input.getAttribute('type') === 'password');
+  input.focus();
 }
 function showAuthError(msg) {
   const el = document.getElementById('auth-error');
@@ -15800,7 +15818,12 @@ window.addEventListener('resize', () => {
         </div>
         <div>
           <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Password</label>
-          <input id="auth-password" name="password" class="auth-input" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAuth()">
+          <div style="position:relative;">
+            <input id="auth-password" name="password" class="auth-input" type="password" autocomplete="current-password" placeholder="••••••••" style="padding-right:44px;" onkeydown="if(event.key==='Enter')handleAuth()">
+            <button type="button" id="auth-password-toggle" onclick="togglePasswordVisibility()" aria-label="Show password" style="position:absolute;top:0;right:0;height:100%;width:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.35);padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;">
+              <svg id="auth-password-eye-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
         </div>
 
         <div id="auth-error" style="display:none;padding:10px 14px;background:rgba(255,59,92,0.1);border:1px solid rgba(255,59,92,0.3);border-radius:10px;font-size:12px;color:#ff3b5c;line-height:1.5;"></div>
