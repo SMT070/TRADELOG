@@ -13933,6 +13933,43 @@ function _getPnlLabel(tf) {
   return "ALL TIME P&L";
 }
 
+// Collapses any trades belonging to the same pack/group into a single
+// combined row (same aggregation logic as renderPackRows on the Trades
+// page) so the share card shows one entry per group instead of every
+// individual trade inside it. Solo (non-grouped) trades pass through
+// unchanged. Only trades actually in `tfTrades` are summed into each
+// group's totals, so the row matches what's really included in this
+// timeframe even if other pack siblings fall outside it.
+function _collapsePacksForShare(tfTrades) {
+  const solo = tfTrades.filter(t => !t.packId);
+  const packIds = [...new Set(tfTrades.filter(t => t.packId).map(t => t.packId))];
+  const groupRows = packIds.map(pid => {
+    const members = tfTrades.filter(t => t.packId === pid);
+    const totalPnl = members.reduce((s, t) => s + getPnl(t), 0);
+    const dirs = [...new Set(members.map(t => t.dir))];
+    const dir = dirs.length === 1 ? dirs[0] : 'MIXED';
+    const symbols = [...new Set(members.map(t => t.symbol))].join(', ');
+    const results = members.map(t => getResult(t));
+    const allBe   = results.every(r => r === 'be');
+    const anyWin  = results.some(r => r === 'win');
+    const anyLoss = results.some(r => r === 'loss');
+    const result  = allBe ? 'be' : (anyWin && !anyLoss) ? 'win' : (anyLoss && !anyWin) ? 'loss' : (totalPnl >= 0 ? 'win' : 'loss');
+    // Newest date among members, so sorting/recency behaves like a normal trade
+    const date = members.reduce((latest, t) => (t.date || '') > latest ? (t.date || '') : latest, members[0]?.date || '');
+    return {
+      packId: pid,
+      symbol: symbols,
+      dir,
+      date,
+      netPnl: totalPnl,
+      result,
+      _isPackRow: true,
+      _packCount: members.length
+    };
+  });
+  return [...solo, ...groupRows];
+}
+
 function _fitSharePnl(pnlEl, card) {
   // Synchronous fit-to-width: shrink font-size until the P&L text fits
   // the card's available width. No rAF — must complete before this
@@ -14094,24 +14131,30 @@ function _renderShareCard(tf) {
   if(tfTrades.length===0){
     listEl.innerHTML=`<div style="text-align:center;padding:14px;color:${p.subText};font-size:12px;font-weight:600;">No trades for this period</div>`;
   } else {
+    const collapsedTrades = _collapsePacksForShare(tfTrades);
     const displayTrades = tf==='today'
-      ? tfTrades.slice(0,5)
-      : [...tfTrades].sort((a,b)=>Math.abs(getPnl(b))-Math.abs(getPnl(a))).slice(0,5);
+      ? [...collapsedTrades].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,5)
+      : [...collapsedTrades].sort((a,b)=>Math.abs(getPnl(b))-Math.abs(getPnl(a))).slice(0,5);
     listEl.innerHTML = displayTrades.map(t=>{
       const tp=getPnl(t), col=tp>=0?p.pos:p.neg;
-      const dirBg=t.dir==='BUY'?'rgba(0,255,178,0.08)':'rgba(255,59,92,0.08)';
-      const dirCol=t.dir==='BUY'?p.pos:p.neg;
+      const isMixedDir = t.dir==='MIXED';
+      const dirBg=isMixedDir?'rgba(255,255,255,0.08)':t.dir==='BUY'?'rgba(0,255,178,0.08)':'rgba(255,59,92,0.08)';
+      const dirCol=isMixedDir?p.subText:t.dir==='BUY'?p.pos:p.neg;
       const res=getResult(t), dot=res==='win'?p.pos:res==='loss'?p.neg:'#f59e0b';
+      const countBadge = t._isPackRow
+        ? `<span style="font-size:9px;font-weight:800;color:${p.subText};opacity:0.8;flex-shrink:0;">${t._packCount}x</span>`
+        : '';
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px 8px 10px;background:${p.tradeRowBg};border-radius:10px;border:1px solid ${p.tradeRowBorder};border-left:3px solid ${col};overflow:hidden;">
         <div style="display:flex;align-items:center;gap:9px;min-width:0;">
           <div style="width:5px;height:5px;border-radius:50%;background:${dot};flex-shrink:0;"></div>
-          <span style="font-size:13px;font-weight:800;color:${p.text};white-space:nowrap;">${t.symbol||'—'}</span>
+          <span style="font-size:13px;font-weight:800;color:${p.text};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.symbol||'—'}</span>
           <span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px;background:${dirBg};color:${dirCol};letter-spacing:1px;flex-shrink:0;">${t.dir||''}</span>
+          ${countBadge}
         </div>
         <span style="font-size:13px;font-weight:900;color:${col};letter-spacing:-0.5px;flex-shrink:0;margin-left:8px;">${(tp>=0?'+':'-')+sym+Math.abs(tp).toFixed(2)}</span>
       </div>`;
     }).join('');
-    if(tfTrades.length>5) listEl.innerHTML+=`<div style="text-align:center;font-size:10px;color:${p.subText};padding:5px 0 2px;font-weight:700;letter-spacing:1px;">+ ${tfTrades.length-5} MORE TRADES</div>`;
+    if(collapsedTrades.length>5) listEl.innerHTML+=`<div style="text-align:center;font-size:10px;color:${p.subText};padding:5px 0 2px;font-weight:700;letter-spacing:1px;">+ ${collapsedTrades.length-5} MORE TRADES</div>`;
   }
 
   // ── FOOTER: profile ───────────────────────────────────────────────────
