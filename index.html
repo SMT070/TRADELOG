@@ -14127,7 +14127,7 @@ function _renderShareCard(tf) {
     // keeps text legible over whatever colors/content the media has.
     // Card grows taller (vertical) so the media has room to breathe above
     // the stats/list instead of being cropped into the compact card shape.
-    card.style.cssText = `border-radius:24px;padding:0;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 32px 80px rgba(0,0,0,0.9),0 0 0 1px rgba(255,255,255,0.12);background:#000;color:#fff;min-height:640px;display:flex;flex-direction:column;`;
+    card.style.cssText = `border-radius:24px;padding:0;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 32px 80px rgba(0,0,0,0.9),0 0 0 1px rgba(255,255,255,0.12);background:#000;color:#fff;min-height:640px;display:flex;flex-direction:column;justify-content:flex-end;`;
     if (bgMedia.type === 'video') {
       if (videoLayer.dataset.srcId !== bgMedia.id) {
         videoLayer.src = bgMedia.dataUri;
@@ -14143,7 +14143,7 @@ function _renderShareCard(tf) {
       videoLayer.pause();
     }
     gifOverlay.style.display = 'block';
-    if (innerContent) { innerContent.style.cssText = 'position:relative;z-index:2;padding:22px 22px 18px;margin-top:auto;'; }
+    if (innerContent) { innerContent.style.cssText = 'position:relative;z-index:2;padding:22px 22px 18px;'; }
   } else {
     card.style.cssText = `border-radius:24px;padding:0;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 32px 80px rgba(0,0,0,0.9),0 0 0 1px ${p.cardBorder};background:${p.bg};color:${p.text};`;
     gifLayer.style.display = 'none';
@@ -14454,8 +14454,7 @@ function captureShareCard() {
     wrapper.style.cssText =
       'position:fixed;top:0;left:0;' +
       'width:'  + rect.width  + 'px;' +
-      'height:' + rect.height + 'px;' +
-      'overflow:hidden;pointer-events:none;z-index:-9999;background:' + bg;
+      'height:auto;overflow:visible;pointer-events:none;z-index:-9999;background:' + bg;
     clone.style.position     = 'relative';
     clone.style.borderRadius = radius;
     // Re-fit the P&L font-size on the clone itself, using the real
@@ -14471,6 +14470,14 @@ function captureShareCard() {
     // Wait 2 rAFs so clone renders before capture
     requestAnimationFrame(() => requestAnimationFrame(() => {
       setTimeout(() => {
+        // Measure the CLONE's own real rendered height — not the pre-clone
+        // live-card rect. Different backgrounds/trade counts can need more
+        // room than the card's 640px minimum; capturing at a stale/shorter
+        // height clipped the footer off the bottom of the saved image.
+        const captureHeight = Math.max(rect.height, clone.getBoundingClientRect().height, clone.scrollHeight);
+        wrapper.style.height   = captureHeight + 'px';
+        wrapper.style.overflow = 'hidden';
+
         html2canvas(wrapper, {
           backgroundColor: bg,
           scale: 3,
@@ -14479,7 +14486,7 @@ function captureShareCard() {
           logging: false,
           imageTimeout: 0,
           width:  rect.width,
-          height: rect.height
+          height: captureHeight
         }).then(canvas => {
             try { document.body.removeChild(wrapper); } catch(_) {}
             canvas._cssWidth = rect.width;
