@@ -14726,7 +14726,8 @@ function _captureAnimatedShareGif() {
     wrapper.style.cssText =
       'position:fixed;top:0;left:0;' +
       'width:'  + rect.width  + 'px;' +
-      'height:auto;overflow:visible;pointer-events:none;z-index:-9999;background:transparent';
+      'height:' + rect.height + 'px;' +
+      'overflow:hidden;pointer-events:none;z-index:-9999;background:transparent';
     clone.style.position     = 'relative';
     clone.style.borderRadius = radius;
     const clonePnlEl = clone.querySelector('#share-pnl');
@@ -14750,14 +14751,19 @@ function _captureAnimatedShareGif() {
 
     cloneImgsReady.then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
       setTimeout(() => {
-        // Measure the clone's own real rendered height (same reasoning as
-        // the static PNG capture) instead of trusting the pre-clone rect —
-        // a taller-than-expected card was getting clipped/compressed into
-        // the fixed rect.height box above, which also threw off where the
-        // pfp/footer landed relative to the rest of the frame.
-        const captureHeight = Math.max(rect.height, clone.getBoundingClientRect().height, clone.scrollHeight);
-        wrapper.style.height   = captureHeight + 'px';
-        wrapper.style.overflow = 'hidden';
+        // Deliberately the card's OWN measured height (rect.height) and
+        // nothing taller. This used to also take the max against the
+        // clone's post-append getBoundingClientRect/scrollHeight (mirroring
+        // the static PNG path, which needs that for cards with lots of
+        // trades) — but for the animated path that let the capture region
+        // grow past the card's real rounded edge, and since the background
+        // gif/video frames get composited to fully *cover* whatever height
+        // we hand them, that extra height showed up as background bleeding
+        // out past the bottom of the card instead of the card just being
+        // taller. Animated backgrounds should always render at exactly the
+        // card's normal on-screen size — same fixed size for every theme —
+        // so we pin it to rect.height here, full stop.
+        const captureHeight = rect.height;
 
         html2canvas(wrapper, {
           backgroundColor: null, // transparent — only the gradient overlay/text/stats get captured
