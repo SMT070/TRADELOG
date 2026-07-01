@@ -5058,13 +5058,13 @@ window.switchPage = function(name) {
       <div id="share-inner-content" style="position:relative;z-index:2;padding:22px 22px 18px;">
 
         <!-- HEADER: single logo top-right, label + trades top-left -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div id="share-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
           <div>
             <div id="share-pnl-label" style="font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;opacity:0.35;">THIS WEEK'S P&L</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(99,102,241,0.4);">
-              <svg width="17" height="17" viewBox="0 0 28 28">
+            <div id="share-logo-icon" style="width:30px;height:30px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(99,102,241,0.4);">
+              <svg id="share-logo-svg" width="17" height="17" viewBox="0 0 28 28">
                 <polygon points="14,3 26,22 2,22" fill="rgba(255,255,255,0.15)"/>
                 <polygon points="5,14 2,4 10,12" fill="white" opacity="0.9"/>
                 <polygon points="23,14 26,4 18,12" fill="white" opacity="0.9"/>
@@ -5076,6 +5076,12 @@ window.switchPage = function(name) {
             <div id="share-logo-text" style="font-size:13px;font-weight:900;letter-spacing:-0.3px;">TRADE<span style="color:#818cf8;">LOG</span></div>
           </div>
         </div>
+
+        <!-- CENTER CONTENT: P&L + stats + trade list. In GIF/media mode this -->
+        <!-- block is flexed to sit vertically centered between the pinned -->
+        <!-- header above and pinned footer below; in theme mode it's left -->
+        <!-- as plain block flow (untouched default behavior). -->
+        <div id="share-center">
 
         <!-- HERO P&L -->
         <div style="margin-bottom:16px;">
@@ -5100,6 +5106,8 @@ window.switchPage = function(name) {
 
         <!-- TRADE LIST -->
         <div id="share-trade-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;"></div>
+
+        </div><!-- /share-center -->
 
         <!-- FOOTER: profile left, branding right -->
         <div id="share-footer" style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;">
@@ -14143,7 +14151,7 @@ function _renderShareCard(tf) {
       videoLayer.pause();
     }
     gifOverlay.style.display = 'block';
-    if (innerContent) { innerContent.style.cssText = 'position:relative;z-index:2;padding:22px 22px 18px;'; }
+    if (innerContent) { innerContent.style.cssText = 'position:relative;z-index:2;padding:26px 22px 20px;display:flex;flex-direction:column;flex:1;min-height:0;'; }
   } else {
     card.style.cssText = `border-radius:24px;padding:0;position:relative;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;box-shadow:0 32px 80px rgba(0,0,0,0.9),0 0 0 1px ${p.cardBorder};background:${p.bg};color:${p.text};`;
     gifLayer.style.display = 'none';
@@ -14151,6 +14159,31 @@ function _renderShareCard(tf) {
     videoLayer.pause();
     gifOverlay.style.display = 'none';
     if (innerContent) { innerContent.style.cssText = 'position:relative;z-index:2;padding:22px 22px 18px;'; }
+  }
+  // Center block (P&L + stats + trade list): in media mode it flex-grows to
+  // fill the gap between the pinned header and pinned footer, and is
+  // vertically centered within that gap. Theme mode keeps normal block flow.
+  const centerEl = document.getElementById('share-center');
+  if (centerEl) {
+    centerEl.style.cssText = bgMedia
+      ? 'flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;'
+      : '';
+  }
+  // Header: pinned at top always; slightly larger in media mode only.
+  const logoIconEl = document.getElementById('share-logo-icon');
+  const logoSvgEl  = document.getElementById('share-logo-svg');
+  const logoTextEl = document.getElementById('share-logo-text');
+  const pnlLabelSizeEl = document.getElementById('share-pnl-label');
+  if (bgMedia) {
+    if (logoIconEl) { logoIconEl.style.width = '36px'; logoIconEl.style.height = '36px'; }
+    if (logoSvgEl)  { logoSvgEl.setAttribute('width', '20'); logoSvgEl.setAttribute('height', '20'); }
+    if (logoTextEl) { logoTextEl.style.fontSize = '15px'; }
+    if (pnlLabelSizeEl) { pnlLabelSizeEl.style.fontSize = '10px'; pnlLabelSizeEl.style.letterSpacing = '3.2px'; }
+  } else {
+    if (logoIconEl) { logoIconEl.style.width = '30px'; logoIconEl.style.height = '30px'; }
+    if (logoSvgEl)  { logoSvgEl.setAttribute('width', '17'); logoSvgEl.setAttribute('height', '17'); }
+    if (logoTextEl) { logoTextEl.style.fontSize = '13px'; }
+    if (pnlLabelSizeEl) { pnlLabelSizeEl.style.fontSize = '9px'; pnlLabelSizeEl.style.letterSpacing = '3px'; }
   }
   const textColor = bgMedia ? '#fff' : p.text;
   const subTextColor = bgMedia ? 'rgba(255,255,255,0.55)' : p.subText;
