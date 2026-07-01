@@ -14561,7 +14561,7 @@ function shareCardDownload() {
   // that's the only way the saved file itself keeps moving.
   const bgMode    = _getShareBgMode();
   const bgMedia   = bgMode !== 'theme' ? SHARE_BG_MEDIA.find(g => g.id === bgMode) : null;
-  let   isGifSave = !!(bgMedia && bgMedia.type === 'gif');
+  let   isGifSave = !!(bgMedia && (bgMedia.type === 'gif' || bgMedia.type === 'video'));
 
   const isMob = _isMobile();
 
@@ -14661,8 +14661,8 @@ function _loadGifDecoder() {
 function _captureAnimatedShareGif() {
   const bgMode  = _getShareBgMode();
   const bgMedia = bgMode !== 'theme' ? SHARE_BG_MEDIA.find(g => g.id === bgMode) : null;
-  if (!bgMedia || bgMedia.type !== 'gif') {
-    return Promise.reject(new Error('Active background is not a GIF'));
+  if (!bgMedia || (bgMedia.type !== 'gif' && bgMedia.type !== 'video')) {
+    return Promise.reject(new Error('Active background is not animated (GIF or video)'));
   }
 
   return Promise.all([
@@ -14714,6 +14714,13 @@ function _captureAnimatedShareGif() {
           try { document.body.removeChild(wrapper); } catch(_) {}
           overlayCanvas._cssWidth = rect.width;
           _roundCanvasCorners(overlayCanvas, radius);
+
+          if (bgMedia.type === 'video') {
+            _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl)
+              .then(resolve)
+              .catch(reject);
+            return;
+          }
 
           fetch(bgMedia.dataUri)
             .then(r => r.arrayBuffer())
@@ -14807,6 +14814,72 @@ function _captureAnimatedShareGif() {
     }));
   }));
 }
+// ── Animated GIF export from a VIDEO background ─────────────────────────
+// Samples evenly-spaced frames from the source video (via a hidden,
+// detached <video> element so it doesn't disturb the live playing
+// background), composites each one under the card's overlay the same
+// way the GIF-source path does, and encodes them into an animated GIF.
+function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl) {
+  return new Promise((resolve, reject) => {
+    const outW = overlayCanvas.width, outH = overlayCanvas.height;
+    const MAX_FRAMES = 24; // fewer than GIF-source frames — seeking video is slower to sample
+
+    const vid = document.createElement('video');
+    vid.muted = true;
+    vid.playsInline = true;
+    vid.preload = 'auto';
+    vid.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+
+    let settled = false;
+    const fail = (err) => { if (!settled) { settled = true; cleanup(); reject(err); } };
+    function cleanup() { try { document.body.removeChild(vid); } catch (_) {} }
+
+    vid.addEventListener('error', () => fail(new Error('Failed to load video for GIF export')));
+    document.body.appendChild(vid);
+    vid.src = bgMedia.dataUri;
+
+    vid.addEventListener('loadedmetadata', () => {
+      const duration = (vid.duration && isFinite(vid.duration) && vid.duration > 0) ? vid.duration : 3;
+      const vw = vid.videoWidth || outW, vh = vid.videoHeight || outH;
+      const coverScale = Math.max(outW / vw, outH / vh);
+      const drawW = vw * coverScale, drawH = vh * coverScale;
+      const offX  = (outW - drawW) / 2, offY = (outH - drawH) / 2;
+      const frameDelayMs = Math.max(Math.round((duration * 1000) / MAX_FRAMES), 40);
+
+      const gif = new GIF({ workers: 2, quality: 10, width: outW, height: outH, workerScript: workerUrl });
+
+      let frameIndex = 0;
+      const captureNextFrame = () => {
+        if (settled) return;
+        if (frameIndex >= MAX_FRAMES) {
+          gif.on('finished', blob => { cleanup(); if (!settled) { settled = true; resolve({ blob, canvas: null }); } });
+          gif.on('abort', () => fail(new Error('GIF render aborted')));
+          gif.render();
+          return;
+        }
+        // Stay slightly inside the duration so the last frame doesn't hit EOF/black
+        const t = Math.min(duration * 0.98, (duration * frameIndex) / MAX_FRAMES);
+        vid.currentTime = t;
+      };
+
+      vid.addEventListener('seeked', () => {
+        const composeCanvas = document.createElement('canvas');
+        composeCanvas.width = outW; composeCanvas.height = outH;
+        const cctx = composeCanvas.getContext('2d');
+        try {
+          cctx.drawImage(vid, offX, offY, drawW, drawH);
+        } catch (e) { fail(e); return; }
+        cctx.drawImage(overlayCanvas, 0, 0, outW, outH);
+        gif.addFrame(composeCanvas, { delay: frameDelayMs, copy: true });
+        frameIndex++;
+        captureNextFrame();
+      });
+
+      captureNextFrame();
+    });
+  });
+}
+
 function shareCardCopy() {
   const btn = document.getElementById('share-cp-btn');
   const COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Image';
