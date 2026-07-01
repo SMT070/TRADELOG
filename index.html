@@ -14680,6 +14680,13 @@ function _captureAnimatedShareGif() {
     // needs to grab the *unchanging* parts (text, stats, gradient overlay).
     const clone = card.cloneNode(true);
     clone.style.boxShadow = 'none';
+    // _renderShareCard sets an explicit opaque `background:#000` (or the
+    // theme color) inline on the live card for gif/video mode — cloneNode
+    // carries that inline style over verbatim, so without clearing it here
+    // this "unchanging overlay" capture comes back as a solid opaque black
+    // rectangle instead of transparent. That opaque black then gets drawn
+    // on top of every decoded GIF/video frame below, blacking out the export.
+    clone.style.background = 'transparent';
     const cloneGifLayer = clone.querySelector('#share-bg-gif');
     if (cloneGifLayer) cloneGifLayer.style.backgroundImage = 'none';
     const cloneVideo = clone.querySelector('#share-bg-video');
