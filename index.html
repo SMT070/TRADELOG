@@ -14397,6 +14397,22 @@ function _waitForHtml2Canvas(maxWait) {
   });
 }
 
+function _roundedRectPath(ctx, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  if (r <= 0) { ctx.beginPath(); ctx.rect(0, 0, w, h); return; }
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(w - r, 0);
+  ctx.arc(w - r, r, r, -Math.PI / 2, 0);
+  ctx.lineTo(w, h - r);
+  ctx.arc(w - r, h - r, r, 0, Math.PI / 2);
+  ctx.lineTo(r, h);
+  ctx.arc(r, h - r, r, Math.PI / 2, Math.PI);
+  ctx.lineTo(0, r);
+  ctx.arc(r, r, r, Math.PI, 1.5 * Math.PI);
+  ctx.closePath();
+}
+
 function _roundCanvasCorners(canvas, radiusCss) {
   // Masks the canvas to rounded corners using destination-in compositing.
   // This is pure canvas math — independent of html2canvas's CSS rendering —
@@ -14749,7 +14765,7 @@ function _captureAnimatedShareGif() {
           _roundCanvasCorners(overlayCanvas, radius);
 
           if (bgMedia.type === 'video') {
-            _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl)
+            _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl, radius)
               .then(resolve)
               .catch(reject);
             return;
@@ -14778,6 +14794,18 @@ function _captureAnimatedShareGif() {
               const coverScale = Math.max(outW / srcW, outH / srcH);
               const drawW = srcW * coverScale, drawH = srcH * coverScale;
               const offX  = (outW - drawW) / 2, offY = (outH - drawH) / 2;
+
+              // The background GIF frames are drawn as a plain full-bleed
+              // rectangle — nothing about them naturally respects the
+              // card's rounded corners. Previously only overlayCanvas (the
+              // text/pfp layer) was rounded, so the square background
+              // poked out past the rounded edges wherever the overlay was
+              // transparent (most visibly along the bottom, under the
+              // footer). Clipping every composed frame to the same rounded
+              // rect the card uses fixes this for any background, i.e. it
+              // applies uniformly across all theme/background choices.
+              const cornerScale = outW / (overlayCanvas._cssWidth || outW);
+              const cornerR     = (parseFloat(radius) || 0) * cornerScale;
 
               // Running canvas that accumulates GIF frame patches per the
               // GIF spec's disposal rules (standard gifuct-js compositing pattern)
@@ -14827,8 +14855,12 @@ function _captureAnimatedShareGif() {
                   const composeCanvas = document.createElement('canvas');
                   composeCanvas.width = outW; composeCanvas.height = outH;
                   const cctx = composeCanvas.getContext('2d');
+                  cctx.save();
+                  _roundedRectPath(cctx, outW, outH, cornerR);
+                  cctx.clip();
                   cctx.drawImage(gifCanvas, offX, offY, drawW, drawH);
                   cctx.drawImage(overlayCanvas, 0, 0, outW, outH);
+                  cctx.restore();
                   gif.addFrame(composeCanvas, { delay: Math.max(pendingDelay, 20), copy: true });
                   pendingDelay = 0;
                 }
@@ -14858,7 +14890,7 @@ function _captureAnimatedShareGif() {
 // detached <video> element so it doesn't disturb the live playing
 // background), composites each one under the card's overlay the same
 // way the GIF-source path does, and encodes them into an animated GIF.
-function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl) {
+function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl, radius) {
   return new Promise((resolve, reject) => {
     const outW = overlayCanvas.width, outH = overlayCanvas.height;
 
@@ -14882,6 +14914,12 @@ function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl) {
       const coverScale = Math.max(outW / vw, outH / vh);
       const drawW = vw * coverScale, drawH = vh * coverScale;
       const offX  = (outW - drawW) / 2, offY = (outH - drawH) / 2;
+      // Same rounded-corner fix as the GIF-source path — clip every
+      // composed frame to the card's rounded rect so the video background
+      // doesn't poke out past the bottom (or any) corner. Applies to
+      // whichever background theme/video is selected, not just this one.
+      const cornerScale = outW / (overlayCanvas._cssWidth || outW);
+      const cornerR     = (parseFloat(radius) || 0) * cornerScale;
       // A fixed 24-frame budget looked fine on a short ~2s clip but got
       // visibly choppy on longer backgrounds (24 frames stretched over,
       // say, a 6s video is only ~4fps). Target a steadier ~12fps instead,
@@ -14911,10 +14949,14 @@ function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl) {
         const composeCanvas = document.createElement('canvas');
         composeCanvas.width = outW; composeCanvas.height = outH;
         const cctx = composeCanvas.getContext('2d');
+        cctx.save();
+        _roundedRectPath(cctx, outW, outH, cornerR);
+        cctx.clip();
         try {
           cctx.drawImage(vid, offX, offY, drawW, drawH);
-        } catch (e) { fail(e); return; }
+        } catch (e) { cctx.restore(); fail(e); return; }
         cctx.drawImage(overlayCanvas, 0, 0, outW, outH);
+        cctx.restore();
         gif.addFrame(composeCanvas, { delay: frameDelayMs, copy: true });
         frameIndex++;
         captureNextFrame();
