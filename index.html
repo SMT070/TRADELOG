@@ -14397,6 +14397,15 @@ function _waitForHtml2Canvas(maxWait) {
   });
 }
 
+function _gifWorkerCount() {
+  // gif.js was hardcoded to 2 workers regardless of device — on any modern
+  // multi-core machine/phone that leaves cores idle while the user waits.
+  // Use up to 4 (diminishing returns past that, and more workers means more
+  // memory/frame-copy overhead) but never fewer than 2.
+  const cores = (navigator.hardwareConcurrency || 2);
+  return Math.max(2, Math.min(4, cores));
+}
+
 function _roundedRectPath(ctx, w, h, r) {
   r = Math.min(r, w / 2, h / 2);
   if (r <= 0) { ctx.beginPath(); ctx.rect(0, 0, w, h); return; }
@@ -14815,7 +14824,7 @@ function _captureAnimatedShareGif() {
               let frameImageData = null;
 
               const gif = new GIF({
-                workers: 2,
+                workers: _gifWorkerCount(),
                 quality: 8, // was 10 — slightly better color quality for a similar encode-time cost
                 width: outW,
                 height: outH,
@@ -14872,6 +14881,11 @@ function _captureAnimatedShareGif() {
                 }
               });
 
+              // Encoding can take a while on a big/high-quality export with
+              // no feedback at all it just looks stuck — surface real
+              // progress on the Save button instead of a static "Saving…".
+              const _dlBtn = document.getElementById('share-dl-btn');
+              gif.on('progress', p => { if (_dlBtn) _dlBtn.innerHTML = '⏳ Saving… ' + Math.round(p * 100) + '%'; });
               gif.on('finished', blob => resolve({ blob, canvas: null }));
               gif.on('abort', () => reject(new Error('GIF render aborted')));
               gif.render();
@@ -14929,13 +14943,15 @@ function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl, ra
       const MAX_FRAMES  = Math.max(16, Math.min(60, Math.round(duration * TARGET_FPS)));
       const frameDelayMs = Math.max(Math.round((duration * 1000) / MAX_FRAMES), 40);
 
-      const gif = new GIF({ workers: 2, quality: 8, width: outW, height: outH, workerScript: workerUrl });
+      const gif = new GIF({ workers: _gifWorkerCount(), quality: 8, width: outW, height: outH, workerScript: workerUrl });
 
       let frameIndex = 0;
       const captureNextFrame = () => {
         if (settled) return;
         if (frameIndex >= MAX_FRAMES) {
-          gif.on('finished', blob => { cleanup(); if (!settled) { settled = true; resolve({ blob, canvas: null }); } });
+          const _dlBtn = document.getElementById('share-dl-btn');
+      gif.on('progress', p => { if (_dlBtn) _dlBtn.innerHTML = '⏳ Saving… ' + Math.round(p * 100) + '%'; });
+      gif.on('finished', blob => { cleanup(); if (!settled) { settled = true; resolve({ blob, canvas: null }); } });
           gif.on('abort', () => fail(new Error('GIF render aborted')));
           gif.render();
           return;
