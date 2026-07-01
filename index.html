@@ -14568,9 +14568,11 @@ function shareCardDownload() {
   const capturePromise = isGifSave
     ? _captureAnimatedShareGif().catch(err => {
         // Decoding/encoding an animated GIF can fail on odd/corrupt files —
-        // fall back to the normal static PNG capture rather than erroring out.
+        // fall back to the normal static PNG capture rather than erroring out,
+        // but tell the user so a silent format-swap doesn't look like a bug.
         console.error('[Share] Animated GIF export failed, falling back to PNG:', err);
         isGifSave = false;
+        toast('Animated export failed — saved as PNG instead', 'error');
         return captureShareCard();
       })
     : captureShareCard();
@@ -14716,8 +14718,17 @@ function _captureAnimatedShareGif() {
           fetch(bgMedia.dataUri)
             .then(r => r.arrayBuffer())
             .then(buf => {
-              const gifData = gifuct.parseGIF(buf);
-              let frames = gifuct.decompressFrames(gifData, true);
+              // The jsdelivr +esm bundle for gifuct-js can expose its exports
+              // either directly on the module namespace or nested under
+              // `.default`, depending on how that build was packaged. Handle
+              // both shapes so this doesn't silently throw and fall back to PNG.
+              const parseGIF         = gifuct.parseGIF        || (gifuct.default && gifuct.default.parseGIF);
+              const decompressFrames = gifuct.decompressFrames || (gifuct.default && gifuct.default.decompressFrames);
+              if (typeof parseGIF !== 'function' || typeof decompressFrames !== 'function') {
+                throw new Error('GIF decoder library failed to load correctly');
+              }
+              const gifData = parseGIF(buf);
+              let frames = decompressFrames(gifData, true);
               if (!frames || !frames.length) throw new Error('No GIF frames decoded');
 
               // Cap frame count so encoding stays fast and the file stays small —
