@@ -14828,6 +14828,11 @@ function _captureAnimatedShareGif() {
               gifCanvas.width = srcW; gifCanvas.height = srcH;
               const gifCtx = gifCanvas.getContext('2d');
               let frameImageData = null;
+              // Patches get written into this small isolated canvas first,
+              // then drawn onto the accumulator with drawImage — see note
+              // below on why (alpha blending).
+              const patchCanvas = document.createElement('canvas');
+              const patchCtx    = patchCanvas.getContext('2d');
 
               const gif = new GIF({
                 workers: _gifWorkerCount(),
@@ -14860,9 +14865,22 @@ function _captureAnimatedShareGif() {
                 }
                 if (!frameImageData || dims.width !== frameImageData.width || dims.height !== frameImageData.height) {
                   frameImageData = gifCtx.createImageData(dims.width, dims.height);
+                  patchCanvas.width  = dims.width;
+                  patchCanvas.height = dims.height;
                 }
                 frameImageData.data.set(frame.patch);
-                gifCtx.putImageData(frameImageData, dims.left, dims.top);
+                // putImageData onto the ISOLATED patchCanvas is fine (nothing
+                // underneath it to blend with). Then drawImage that patch
+                // onto the real accumulator so the browser alpha-composites
+                // it properly — a direct putImageData straight onto gifCtx
+                // here would overwrite pixels verbatim, alpha included,
+                // which let any semi-transparent pixel in the patch (grain,
+                // dithered edges, etc.) erase opacity from whatever frame
+                // came before it. That's what was making textured/grainy
+                // backgrounds fade out into a washed-out, "vanishing" mess
+                // over the course of the animation.
+                patchCtx.putImageData(frameImageData, 0, 0);
+                gifCtx.drawImage(patchCanvas, dims.left, dims.top);
 
                 pendingDelay += frame.delay || 100;
                 const isLastFrame = i === allFrames.length - 1;
