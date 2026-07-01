@@ -14749,7 +14749,7 @@ function _captureAnimatedShareGif() {
           _roundCanvasCorners(overlayCanvas, radius);
 
           if (bgMedia.type === 'video') {
-            _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl)
+            _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl, radius)
               .then(resolve)
               .catch(reject);
             return;
@@ -14829,6 +14829,13 @@ function _captureAnimatedShareGif() {
                   const cctx = composeCanvas.getContext('2d');
                   cctx.drawImage(gifCanvas, offX, offY, drawW, drawH);
                   cctx.drawImage(overlayCanvas, 0, 0, outW, outH);
+                  // The overlay layer above is already corner-masked (transparent
+                  // outside the card's rounded rect), but the GIF background frame
+                  // drawn underneath it is a plain full rectangle — without masking
+                  // the composed frame too, that square background peeks out past
+                  // the card's rounded corners/edges in the exported GIF.
+                  composeCanvas._cssWidth = overlayCanvas._cssWidth;
+                  _roundCanvasCorners(composeCanvas, radius);
                   gif.addFrame(composeCanvas, { delay: Math.max(pendingDelay, 20), copy: true });
                   pendingDelay = 0;
                 }
@@ -14858,7 +14865,7 @@ function _captureAnimatedShareGif() {
 // detached <video> element so it doesn't disturb the live playing
 // background), composites each one under the card's overlay the same
 // way the GIF-source path does, and encodes them into an animated GIF.
-function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl) {
+function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl, radius) {
   return new Promise((resolve, reject) => {
     const outW = overlayCanvas.width, outH = overlayCanvas.height;
 
@@ -14915,6 +14922,12 @@ function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl) {
           cctx.drawImage(vid, offX, offY, drawW, drawH);
         } catch (e) { fail(e); return; }
         cctx.drawImage(overlayCanvas, 0, 0, outW, outH);
+        // Same reasoning as the GIF-source export: the overlay is already
+        // corner-masked, but the raw video frame underneath it is a plain
+        // rectangle — mask the composed frame too so the video can't bleed
+        // past the card's rounded corners/edges in the exported GIF.
+        composeCanvas._cssWidth = overlayCanvas._cssWidth;
+        _roundCanvasCorners(composeCanvas, radius);
         gif.addFrame(composeCanvas, { delay: frameDelayMs, copy: true });
         frameIndex++;
         captureNextFrame();
