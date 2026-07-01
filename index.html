@@ -14692,13 +14692,16 @@ function _captureAnimatedShareGif() {
     const cloneVideo = clone.querySelector('#share-bg-video');
     if (cloneVideo) cloneVideo.remove();
 
-    const ANIM_GIF_SCALE = 1.5; // lower than the 3x static capture — keeps file size/encode time sane
+    // Was 1.5 — noticeably softer than the 3x static capture, which made the
+    // profile photo in particular look muddy/pixelated in exported GIFs.
+    // 2.25 keeps encode time/file size reasonable while closing most of that
+    // quality gap (gif.js's own color quantization is the remaining limiter).
+    const ANIM_GIF_SCALE = 2.25;
     const wrapper = document.createElement('div');
     wrapper.style.cssText =
       'position:fixed;top:0;left:0;' +
       'width:'  + rect.width  + 'px;' +
-      'height:' + rect.height + 'px;' +
-      'overflow:hidden;pointer-events:none;z-index:-9999;background:transparent';
+      'height:auto;overflow:visible;pointer-events:none;z-index:-9999;background:transparent';
     clone.style.position     = 'relative';
     clone.style.borderRadius = radius;
     const clonePnlEl = clone.querySelector('#share-pnl');
@@ -14706,8 +14709,31 @@ function _captureAnimatedShareGif() {
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
 
-    requestAnimationFrame(() => requestAnimationFrame(() => {
+    // Wait for every <img> in the clone (profile photo, etc.) to finish
+    // decoding before handing off to html2canvas. Without this, a
+    // still-decoding avatar image (large uploaded photos in particular)
+    // gets captured mid-load — sometimes as blank, sometimes as a
+    // differently-sized broken-image box — which is why the pfp looked
+    // corrupted and shifted position between exports. img.decode() on an
+    // already-loaded image resolves immediately, so this is a no-op cost
+    // in the common case.
+    const cloneImgsReady = Promise.all(
+      Array.from(clone.querySelectorAll('img')).map(img =>
+        (img.decode ? img.decode() : Promise.resolve()).catch(() => {})
+      )
+    );
+
+    cloneImgsReady.then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
       setTimeout(() => {
+        // Measure the clone's own real rendered height (same reasoning as
+        // the static PNG capture) instead of trusting the pre-clone rect —
+        // a taller-than-expected card was getting clipped/compressed into
+        // the fixed rect.height box above, which also threw off where the
+        // pfp/footer landed relative to the rest of the frame.
+        const captureHeight = Math.max(rect.height, clone.getBoundingClientRect().height, clone.scrollHeight);
+        wrapper.style.height   = captureHeight + 'px';
+        wrapper.style.overflow = 'hidden';
+
         html2canvas(wrapper, {
           backgroundColor: null, // transparent — only the gradient overlay/text/stats get captured
           scale: ANIM_GIF_SCALE,
@@ -14716,7 +14742,7 @@ function _captureAnimatedShareGif() {
           logging: false,
           imageTimeout: 0,
           width:  rect.width,
-          height: rect.height
+          height: captureHeight
         }).then(overlayCanvas => {
           try { document.body.removeChild(wrapper); } catch(_) {}
           overlayCanvas._cssWidth = rect.width;
@@ -14741,21 +14767,9 @@ function _captureAnimatedShareGif() {
               if (typeof parseGIF !== 'function' || typeof decompressFrames !== 'function') {
                 throw new Error('GIF decoder library failed to load correctly');
               }
-              const gifData = parseGIF(buf);
-              let frames = decompressFrames(gifData, true);
-              if (!frames || !frames.length) throw new Error('No GIF frames decoded');
-
-              // Cap frame count so encoding stays fast and the file stays small —
-              // sample evenly across the animation rather than just truncating it.
-              const MAX_FRAMES = 50;
-              if (frames.length > MAX_FRAMES) {
-                const step = frames.length / MAX_FRAMES;
-                const sampled = [];
-                for (let i = 0; i < MAX_FRAMES; i++) {
-                  sampled.push(frames[Math.min(frames.length - 1, Math.floor(i * step))]);
-                }
-                frames = sampled;
-              }
+              const gifData   = parseGIF(buf);
+              const allFrames = decompressFrames(gifData, true);
+              if (!allFrames || !allFrames.length) throw new Error('No GIF frames decoded');
 
               const srcW = gifData.lsd.width, srcH = gifData.lsd.height;
               const outW = overlayCanvas.width, outH = overlayCanvas.height;
@@ -14774,13 +14788,28 @@ function _captureAnimatedShareGif() {
 
               const gif = new GIF({
                 workers: 2,
-                quality: 10,
+                quality: 8, // was 10 — slightly better color quality for a similar encode-time cost
                 width: outW,
                 height: outH,
                 workerScript: workerUrl
               });
 
-              frames.forEach(frame => {
+              // Cap how many frames we EMIT into the output GIF (encoding is
+              // the slow/heavy part), but composite/accumulate EVERY decoded
+              // frame per the disposal spec — GIF frames are often just a
+              // small "patch" of what changed, so skipping frames at the
+              // accumulation step (the previous approach) could leave parts
+              // of the picture never drawn. We also fold each dropped
+              // frame's delay into the kept frame that replaces it, so the
+              // exported GIF still plays back at the source's real speed
+              // instead of racing through at 1 frame's worth of delay per
+              // several frames' worth of visual change — that speed-up is
+              // what was making the export look jerky/laggy.
+              const MAX_FRAMES = 50;
+              const keepEvery  = Math.max(1, Math.ceil(allFrames.length / MAX_FRAMES));
+              let pendingDelay = 0;
+
+              allFrames.forEach((frame, i) => {
                 const dims = frame.dims;
                 let restoreSnapshot = null;
                 if (frame.disposalType === 3) {
@@ -14792,14 +14821,17 @@ function _captureAnimatedShareGif() {
                 frameImageData.data.set(frame.patch);
                 gifCtx.putImageData(frameImageData, dims.left, dims.top);
 
-                const composeCanvas = document.createElement('canvas');
-                composeCanvas.width = outW; composeCanvas.height = outH;
-                const cctx = composeCanvas.getContext('2d');
-                cctx.drawImage(gifCanvas, offX, offY, drawW, drawH);
-                cctx.drawImage(overlayCanvas, 0, 0, outW, outH);
-
-                const delayMs = Math.max(frame.delay || 100, 20);
-                gif.addFrame(composeCanvas, { delay: delayMs, copy: true });
+                pendingDelay += frame.delay || 100;
+                const isLastFrame = i === allFrames.length - 1;
+                if (i % keepEvery === 0 || isLastFrame) {
+                  const composeCanvas = document.createElement('canvas');
+                  composeCanvas.width = outW; composeCanvas.height = outH;
+                  const cctx = composeCanvas.getContext('2d');
+                  cctx.drawImage(gifCanvas, offX, offY, drawW, drawH);
+                  cctx.drawImage(overlayCanvas, 0, 0, outW, outH);
+                  gif.addFrame(composeCanvas, { delay: Math.max(pendingDelay, 20), copy: true });
+                  pendingDelay = 0;
+                }
 
                 if (frame.disposalType === 2) {
                   gifCtx.clearRect(dims.left, dims.top, dims.width, dims.height);
@@ -14818,7 +14850,7 @@ function _captureAnimatedShareGif() {
           reject(e);
         });
       }, 150);
-    }));
+    })));
   }));
 }
 // ── Animated GIF export from a VIDEO background ─────────────────────────
@@ -14829,7 +14861,6 @@ function _captureAnimatedShareGif() {
 function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl) {
   return new Promise((resolve, reject) => {
     const outW = overlayCanvas.width, outH = overlayCanvas.height;
-    const MAX_FRAMES = 24; // fewer than GIF-source frames — seeking video is slower to sample
 
     const vid = document.createElement('video');
     vid.muted = true;
@@ -14851,9 +14882,16 @@ function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl) {
       const coverScale = Math.max(outW / vw, outH / vh);
       const drawW = vw * coverScale, drawH = vh * coverScale;
       const offX  = (outW - drawW) / 2, offY = (outH - drawH) / 2;
+      // A fixed 24-frame budget looked fine on a short ~2s clip but got
+      // visibly choppy on longer backgrounds (24 frames stretched over,
+      // say, a 6s video is only ~4fps). Target a steadier ~12fps instead,
+      // within a sane min/max so very short or very long clips don't sample
+      // ridiculously few or ridiculously many frames.
+      const TARGET_FPS  = 12;
+      const MAX_FRAMES  = Math.max(16, Math.min(60, Math.round(duration * TARGET_FPS)));
       const frameDelayMs = Math.max(Math.round((duration * 1000) / MAX_FRAMES), 40);
 
-      const gif = new GIF({ workers: 2, quality: 10, width: outW, height: outH, workerScript: workerUrl });
+      const gif = new GIF({ workers: 2, quality: 8, width: outW, height: outH, workerScript: workerUrl });
 
       let frameIndex = 0;
       const captureNextFrame = () => {
