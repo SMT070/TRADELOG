@@ -5044,7 +5044,7 @@ window.switchPage = function(name) {
       <!-- ── GIF/IMAGE BACKGROUND (hidden unless that bg mode is active) ── -->
       <div id="share-bg-gif" style="position:absolute;inset:0;background-position:center;background-size:cover;background-repeat:no-repeat;z-index:0;display:none;"></div>
       <!-- ── VIDEO BACKGROUND (hidden unless a video bg mode is active) ── -->
-      <video id="share-bg-video" muted loop autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;display:none;"></video>
+      <video id="share-bg-video" muted loop autoplay playsinline crossorigin="anonymous" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;display:none;"></video>
       <!-- Darkens/evens out the media so white & green text stay legible regardless of its own colors -->
       <div id="share-bg-gif-overlay" style="position:absolute;inset:0;z-index:0;display:none;background:linear-gradient(180deg,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0.35) 35%,rgba(0,0,0,0.55) 75%,rgba(0,0,0,0.78) 100%);"></div>
 
@@ -5123,6 +5123,20 @@ window.switchPage = function(name) {
 
     <!-- BACKGROUND MODE PICKER -->
     <div id="share-bg-picker" style="display:flex;gap:8px;align-items:center;margin-top:14px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;"></div>
+
+    <!-- GIF SEARCH PANEL (GIPHY) -->
+    <div id="share-gif-search-panel" style="display:none;margin-top:10px;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.25);">
+      <div style="display:flex;gap:6px;">
+        <input id="share-gif-search-input" type="text" placeholder="Search GIPHY…" autocomplete="off"
+          style="flex:1;min-width:0;padding:9px 10px;border-radius:9px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#f1f5f9;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();_giphySearch();}" />
+        <button onclick="_giphySearch()" style="flex-shrink:0;padding:9px 14px;border-radius:9px;border:none;background:rgba(99,102,241,1);color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;">Search</button>
+      </div>
+      <div id="share-gif-search-results" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;max-height:220px;overflow-y:auto;"></div>
+      <div style="margin-top:6px;text-align:right;">
+        <span style="font-size:10px;color:rgba(255,255,255,0.35);">Powered by GIPHY</span>
+      </div>
+    </div>
 
     <!-- TIMEFRAME SWITCHER -->
     <div id="share-tf-bar" style="display:flex;gap:5px;border-radius:12px;padding:4px;border:1px solid rgba(255,255,255,0.08);margin-top:10px;background:rgba(0,0,0,0.25);">
@@ -14291,6 +14305,7 @@ function _renderShareBgPicker() {
   const activeMode = _getShareBgMode();
   const swatchBase = 'flex-shrink:0;width:46px;height:46px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;letter-spacing:0.5px;transition:all .15s;box-sizing:border-box;';
   let html = `<div onclick="_selectShareBg('theme')" title="Theme color" style="${swatchBase}background:rgba(99,102,241,0.18);color:#a5b4fc;border:2px solid ${activeMode==='theme'?'#818cf8':'rgba(255,255,255,0.12)'};">THEME</div>`;
+  html += `<div onclick="_toggleGiphySearch()" title="Search GIPHY" style="${swatchBase}background:rgba(255,255,255,0.06);color:#a5b4fc;border:2px dashed rgba(255,255,255,0.25);font-size:16px;">🔍</div>`;
   SHARE_BG_MEDIA.forEach(g => {
     const thumb = g.type === 'video' ? (g.thumbDataUri || g.dataUri) : g.dataUri;
     const playIcon = g.type === 'video'
@@ -14307,6 +14322,91 @@ function _selectShareBg(mode) {
   // Re-render at the current timeframe so the card picks up the new background
   _renderShareCard(window._shareTimeframe || 'today');
   _invalidateShareCache();
+}
+
+// ── GIPHY search integration ────────────────────────────────────────────
+// Free "API" (not SDK) beta key from developers.giphy.com. 100 req/hour on
+// the beta tier — plenty for personal use. If you outgrow it, swap this for
+// your own production key once GIPHY approves your app.
+const GIPHY_API_KEY = 'dNkWWgiS31wx6YOrCCyYA9Ao1eHvS7LV';
+let _giphySearchToken = 0; // guards against a slow older search overwriting a newer one
+
+function _toggleGiphySearch() {
+  const panel = document.getElementById('share-gif-search-panel');
+  if (!panel) return;
+  const showing = panel.style.display !== 'none';
+  panel.style.display = showing ? 'none' : 'block';
+  if (!showing) {
+    const input = document.getElementById('share-gif-search-input');
+    if (input) { input.value = ''; input.focus(); }
+    document.getElementById('share-gif-search-results').innerHTML = '';
+    _giphySearch('trending'); // show something immediately rather than a blank box
+  }
+}
+
+function _giphySearch(seedQuery) {
+  const input   = document.getElementById('share-gif-search-input');
+  const results = document.getElementById('share-gif-search-results');
+  if (!results) return;
+  const query = seedQuery === 'trending' ? '' : (input ? input.value.trim() : '');
+  const isTrending = !query;
+
+  const myToken = ++_giphySearchToken;
+  results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:14px 0;color:rgba(255,255,255,0.4);font-size:12px;">Loading…</div>';
+
+  const url = isTrending
+    ? `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=16&rating=pg-13`
+    : `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(query)}&limit=16&rating=pg-13`;
+
+  fetch(url)
+    .then(r => {
+      if (!r.ok) throw new Error('GIPHY request failed (' + r.status + ')');
+      return r.json();
+    })
+    .then(data => {
+      if (myToken !== _giphySearchToken) return; // a newer search already started
+      const items = (data && data.data) || [];
+      if (!items.length) {
+        results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:14px 0;color:rgba(255,255,255,0.4);font-size:12px;">No results</div>';
+        return;
+      }
+      results.innerHTML = items.map(g => {
+        const thumb = (g.images.fixed_width_small || g.images.fixed_width).url;
+        return `<div onclick='_giphyPick(${JSON.stringify(g.id)})' data-giphy-id="${g.id}"
+          style="aspect-ratio:1;border-radius:8px;cursor:pointer;background-image:url('${thumb}');background-size:cover;background-position:center;border:2px solid transparent;"></div>`;
+      }).join('');
+      // Stash full-res URLs keyed by id so the click handler doesn't need to re-fetch
+      _giphyResultCache = {};
+      items.forEach(g => { _giphyResultCache[g.id] = g; });
+    })
+    .catch(err => {
+      if (myToken !== _giphySearchToken) return;
+      results.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:14px 0;color:#f87171;font-size:11px;">Couldn\'t load GIFs — check your connection or API key.</div>';
+      console.error('GIPHY search error:', err);
+    });
+}
+
+let _giphyResultCache = {};
+
+function _giphyPick(giphyId) {
+  const g = _giphyResultCache[giphyId];
+  if (!g) return;
+  // "original" is the real animated GIF; downsized_large is a safer fallback
+  // if a particular GIF's original render is huge.
+  const full = (g.images.original || g.images.downsized_large).url;
+
+  const id = 'giphy-' + giphyId;
+  if (!SHARE_BG_MEDIA.some(m => m.id === id)) {
+    SHARE_BG_MEDIA.push({
+      id,
+      type: 'gif',
+      label: g.title || 'GIPHY GIF',
+      dataUri: full
+    });
+  }
+  document.getElementById('share-gif-search-panel').style.display = 'none';
+  _renderShareBgPicker();
+  _selectShareBg(id);
 }
 
 function openShareModal() {
@@ -14836,7 +14936,7 @@ function _captureAnimatedShareGif() {
 
               const gif = new GIF({
                 workers: _gifWorkerCount(),
-                quality: 8, // was 10 — slightly better color quality for a similar encode-time cost
+                quality: 6, // was 10 → 8 → 6 — parallel workers absorb the extra cost
                 width: outW,
                 height: outH,
                 workerScript: workerUrl
@@ -14853,7 +14953,7 @@ function _captureAnimatedShareGif() {
               // instead of racing through at 1 frame's worth of delay per
               // several frames' worth of visual change — that speed-up is
               // what was making the export look jerky/laggy.
-              const MAX_FRAMES = 50;
+              const MAX_FRAMES = 80; // was 50 — more headroom for smoother source loops
               const keepEvery  = Math.max(1, Math.ceil(allFrames.length / MAX_FRAMES));
               let pendingDelay = 0;
 
@@ -14963,11 +15063,11 @@ function _captureAnimatedShareGifFromVideo(overlayCanvas, bgMedia, workerUrl, ra
       // say, a 6s video is only ~4fps). Target a steadier ~12fps instead,
       // within a sane min/max so very short or very long clips don't sample
       // ridiculously few or ridiculously many frames.
-      const TARGET_FPS  = 12;
-      const MAX_FRAMES  = Math.max(16, Math.min(60, Math.round(duration * TARGET_FPS)));
+      const TARGET_FPS  = 15; // was 12
+      const MAX_FRAMES  = Math.max(16, Math.min(90, Math.round(duration * TARGET_FPS))); // ceiling was 60
       const frameDelayMs = Math.max(Math.round((duration * 1000) / MAX_FRAMES), 40);
 
-      const gif = new GIF({ workers: _gifWorkerCount(), quality: 8, width: outW, height: outH, workerScript: workerUrl });
+      const gif = new GIF({ workers: _gifWorkerCount(), quality: 6, width: outW, height: outH, workerScript: workerUrl });
 
       let frameIndex = 0;
       const captureNextFrame = () => {
