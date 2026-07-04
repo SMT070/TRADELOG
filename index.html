@@ -792,9 +792,10 @@
     padding:14px 22px; border-radius:var(--r);
     background:var(--surface2); border:1px solid var(--border2);
     font-size:13px; font-weight:600; color:var(--text);
-    z-index:999; transform:translateY(80px); opacity:0;
+    z-index:999999; transform:translateY(80px); opacity:0;
     transition:all .3s cubic-bezier(.4,0,.2,1);
     pointer-events:none; box-shadow:0 8px 32px rgba(0,0,0,.3);
+    max-width:calc(100vw - 40px);
   }
   .toast.show { transform:translateY(0); opacity:1; }
   .toast.success { border-color:var(--green-glow); color:var(--green); }
@@ -5032,9 +5033,9 @@ window.switchPage = function(name) {
 
 <!-- SHARE MODAL -->
 <!-- ── SHARE MODAL ── -->
-<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);">
+<div id="share-modal" onclick="if(event.target===this)closeShareModal()" style="display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 0;box-sizing:border-box;">
   <div id="share-modal-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.88);z-index:0;" onclick="closeShareModal()"></div>
-  <div style="position:relative;z-index:1;width:100%;max-width:420px;padding:12px;box-sizing:border-box;margin:auto;max-height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+  <div style="position:relative;z-index:1;width:100%;max-width:420px;padding:12px;box-sizing:border-box;margin:auto;max-height:100vh;max-height:100dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
 
     <!-- ═══════════════════════════════════════════════════ -->
     <!-- SHARE CARD — canvas capture target                  -->
@@ -10204,7 +10205,7 @@ function renderAnalytics() {
 
   // ── TOP STRIP STATS ──
   const netEl = document.getElementById('sp-net-pnl');
-  if (netEl) { netEl.textContent = fmt(s.totalPnl); netEl.style.color = s.totalPnl >= 0 ? 'var(--green)' : 'var(--red)'; }
+  if (netEl) { netEl.textContent = (s.totalPnl>=0?'+':'')+fmt(s.totalPnl); netEl.style.color = s.totalPnl >= 0 ? 'var(--green)' : 'var(--red)'; }
   const grossPnl = trades.reduce((sum,t) => sum + (t.pnl || 0), 0);
   const totalComm = trades.reduce((sum,t)=>sum+(t.commission||0)+(t.swap||0),0);
   const grossEl = document.getElementById('sp-gross'); if(grossEl) grossEl.textContent = fmt(grossPnl);
@@ -10260,7 +10261,15 @@ function renderAnalytics() {
   const bestDowMap = {};
   trades.forEach(t => {
     const d = (t.date||'').slice(0,10); if(!d) return;
-    const dow = new Date(d).getDay();
+    // IMPORTANT: `d` is date-only ("2026-02-05"), and per the ISO-8601 spec
+    // `new Date('2026-02-05')` parses as UTC MIDNIGHT, not local midnight.
+    // .getDay() then reads that UTC instant back in the browser's local
+    // timezone — for anyone west of UTC (all of the Americas, for example)
+    // that instant is still the *previous* local day, so every single trade
+    // silently got attributed to the wrong weekday. Anchoring to local noon
+    // sidesteps this (and any DST edge case) since no real timezone is
+    // offset by more than 12 hours from UTC.
+    const dow = new Date(d + 'T12:00:00').getDay();
     if(!bestDowMap[dow]) bestDowMap[dow] = { wins:0, total:0 };
     bestDowMap[dow].total++;
     if(getPnl(t) > 0) bestDowMap[dow].wins++;
@@ -10623,14 +10632,24 @@ function renderAnalyticsSymbols() {
   const symbolMap = {};
   trades.forEach(t => {
     const s = (t.symbol || 'Unknown').toUpperCase();
-    if (!symbolMap[s]) symbolMap[s] = { pnl:0, count:0, wins:0 };
+    if (!symbolMap[s]) symbolMap[s] = { pnl:0, count:0, wins:0, losses:0 };
     symbolMap[s].pnl += getPnl(t);
     symbolMap[s].count++;
-    if (getResult(t)==='win') symbolMap[s].wins++;
+    const res = getResult(t);
+    if (res==='win') symbolMap[s].wins++;
+    else if (res==='loss') symbolMap[s].losses++;
   });
 
   const symbols = Object.entries(symbolMap)
-    .map(([s, d]) => ({ symbol: s, pnl: d.pnl, count: d.count, wr: d.count ? d.wins/d.count*100 : 0 }))
+    .map(([s, d]) => {
+      // Match the app-wide WR definition used on the dashboard/top strip:
+      // wins / (wins + losses), excluding break-even trades from the
+      // denominator. This panel used to divide by total trade count
+      // (including BEs), which understated win rate for any symbol with
+      // break-even trades and didn't match the headline number.
+      const decided = d.wins + d.losses;
+      return { symbol: s, pnl: d.pnl, count: d.count, wr: decided ? d.wins/decided*100 : 0 };
+    })
     .sort((a, b) => b.pnl - a.pnl);
 
   const container = document.getElementById('an-symbol-rows');
@@ -14615,15 +14634,18 @@ function captureShareCard() {
       'height:auto;overflow:visible;pointer-events:none;z-index:-9999;background:' + bg;
     clone.style.position     = 'relative';
     clone.style.borderRadius = radius;
-    // Re-fit the P&L font-size on the clone itself, using the real
-    // on-screen card width. Guards against any case where the live
-    // card's width wasn't yet settled when _renderShareCard ran
-    // (e.g. modal still display:none at that point).
-    const clonePnlEl = clone.querySelector('#share-pnl');
-    if (clonePnlEl && rect.width) _fitSharePnl(clonePnlEl, { offsetWidth: rect.width });
 
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
+
+    // Re-fit the P&L font-size on the clone itself, using the real
+    // on-screen card width. Guards against any case where the live
+    // card's width wasn't yet settled when _renderShareCard ran
+    // (e.g. modal still display:none at that point). Must happen AFTER
+    // the clone is attached above — scrollWidth on a detached node is
+    // always 0, which silently skipped the shrink-to-fit loop entirely.
+    const clonePnlEl = clone.querySelector('#share-pnl');
+    if (clonePnlEl && rect.width) _fitSharePnl(clonePnlEl, { offsetWidth: rect.width });
 
     // Wait 2 rAFs so clone renders before capture
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -14676,6 +14698,17 @@ function _invalidateShareCache() {
 }
 
 function shareCardDownload() {
+  // Guard against double-taps / mashing Save while an export is already
+  // running — without this, two overlapping html2canvas + GIF-encode runs
+  // could both be scribbling into the same #share-dl-btn text and both pop
+  // a share sheet, which looked like a glitchy/buggy export on fast phones
+  // more than a slow network.
+  if (window._shareExportInProgress) {
+    toast('Still exporting the previous one — one sec…', '');
+    return;
+  }
+  window._shareExportInProgress = true;
+
   const btn = document.getElementById('share-dl-btn');
   const SAVE_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save Image';
   if (btn) btn.innerHTML = '⏳ Saving…';
@@ -14737,7 +14770,7 @@ function shareCardDownload() {
     console.error('[Share] Download failed:', err);
     if (btn) btn.innerHTML = SAVE_ICON;
     toast('Save failed — try again', 'error');
-  });
+  }).finally(() => { window._shareExportInProgress = false; });
 }
 
 // ── Animated GIF export ──────────────────────────────────────────────
@@ -14830,10 +14863,18 @@ function _captureAnimatedShareGif() {
       'overflow:hidden;pointer-events:none;z-index:-9999;background:transparent';
     clone.style.position     = 'relative';
     clone.style.borderRadius = radius;
-    const clonePnlEl = clone.querySelector('#share-pnl');
-    if (clonePnlEl && rect.width) _fitSharePnl(clonePnlEl, { offsetWidth: rect.width });
     wrapper.appendChild(clone);
     document.body.appendChild(wrapper);
+    // Re-fit the P&L font-size on the clone AFTER it's attached to the
+    // document, not before. scrollWidth on a detached node is always 0, so
+    // running this pre-append (as it used to) meant the shrink-to-fit loop
+    // never actually ran — it just reset the font-size to its max (60px)
+    // and left it there, which is why larger P&L values overflowed/got
+    // squished-looking specifically on the clone-based export paths
+    // (GIF/video/media backgrounds) while the plain-theme path — which
+    // doesn't need this clone-and-swap dance — looked fine.
+    const clonePnlEl = clone.querySelector('#share-pnl');
+    if (clonePnlEl && rect.width) _fitSharePnl(clonePnlEl, { offsetWidth: rect.width });
 
     // Wait for every <img> in the clone (profile photo, etc.) to finish
     // decoding before handing off to html2canvas. Without this, a
@@ -15148,20 +15189,60 @@ function _isMobile() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAge
 function shareToApp(app) {
   const isMob = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   if (!isMob) return; // desktop never reaches here — buttons are hidden
-  captureShareCard().then(({ blob }) => {
-    const file = new File([blob], 'tradelog-summary.png', { type: 'image/png' });
+
+  // Shares the same lock as Save Image — one export at a time, whichever
+  // button triggered it, so a fast double-tap can't fire two overlapping
+  // captures against the same card.
+  if (window._shareExportInProgress) {
+    toast('Still exporting the previous one — one sec…', '');
+    return;
+  }
+  window._shareExportInProgress = true;
+
+  const btnId = app === 'x' ? 'share-btn-x' : app === 'whatsapp' ? 'share-btn-wa' : app === 'telegram' ? 'share-btn-tg' : null;
+  const btn = btnId ? document.getElementById(btnId) : null;
+  const originalHTML = btn ? btn.innerHTML : null;
+  if (btn) btn.innerHTML = '⏳';
+
+  // Same animated-vs-static decision shareCardDownload() uses — if the
+  // active background is a GIF/video, share the real moving file instead
+  // of a flat single-frame snapshot. Previously this always called
+  // captureShareCard() (PNG only), so "Post to X/WhatsApp/Telegram" would
+  // silently drop the animation even when Save Image kept it.
+  const bgMode    = _getShareBgMode();
+  const bgMedia   = bgMode !== 'theme' ? SHARE_BG_MEDIA.find(g => g.id === bgMode) : null;
+  let   isGifSave = !!(bgMedia && (bgMedia.type === 'gif' || bgMedia.type === 'video'));
+
+  const capturePromise = isGifSave
+    ? _captureAnimatedShareGif().catch(err => {
+        console.error('[Share] Animated GIF export failed, falling back to PNG:', err);
+        isGifSave = false;
+        return captureShareCard();
+      })
+    : captureShareCard();
+
+  capturePromise.then(({ blob }) => {
+    const filename = 'tradelog-' + new Date().toISOString().slice(0,10) + (isGifSave ? '.gif' : '.png');
+    const mime     = isGifSave ? 'image/gif' : 'image/png';
+    const file = new File([blob], filename, { type: mime });
+
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file], title: "TradeLog — Today's Summary" }).catch(() => {});
-      return;
+      return navigator.share({ files: [file], title: "TradeLog — Today's Summary" }).catch(() => {});
     }
-    // Fallback: open the specific app with text
+    // Fallback for the rare browser that can't share files at all: at least
+    // open that specific app with the caption text pre-filled (no file —
+    // this is a platform limitation of the intent-link approach, not
+    // something we can attach a file through).
     const text = encodeURIComponent(buildShareText());
     let url = '';
     if (app === 'x')             url = 'https://twitter.com/intent/tweet?text=' + text;
     else if (app === 'whatsapp') url = 'https://wa.me/?text=' + text;
     else if (app === 'telegram') url = 'https://t.me/share/url?url=https://tradelog.app&text=' + text;
     if (url) window.open(url, '_blank');
-  }).catch(() => {});
+  }).catch(() => {}).finally(() => {
+    if (btn) btn.innerHTML = originalHTML;
+    window._shareExportInProgress = false;
+  });
 }
 
 document.getElementById('share-modal').addEventListener('click', function(e) {
