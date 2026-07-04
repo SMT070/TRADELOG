@@ -2302,6 +2302,10 @@
       border: none !important;
       outline: none !important;
     }
+    /* Defensive fallback: if the ticker iframe's own document hasn't
+       painted its themed background yet, don't let it flash white against
+       the dark UI while it loads. */
+    #fund-ticker-wrap iframe { background: transparent !important; }
 
     .new-page-header { flex-wrap:wrap; gap:8px; margin-bottom:14px !important; }
     .new-page-title { font-size:18px !important; }
@@ -16506,7 +16510,17 @@ function loadFundTicker() {
       { proName: "BITSTAMP:ETHUSD",  title: "Ethereum" }
     ],
     showSymbolLogo: true,
-    isTransparent: true,
+    // isTransparent used to be true here, relying on the widget's internal
+    // page having a fully transparent body so our own dark background
+    // showed through. That mode is known to be inconsistent across
+    // TradingView's embed versions — when it doesn't fully apply, you get
+    // exactly the stray white bar reported (readable-looking chips sitting
+    // on a plain white strip instead of blending into the dark UI).
+    // colorTheme + a SOLID (non-transparent) background is the reliable
+    // option: TradingView renders its own dark/light background matching
+    // colorTheme directly, so there's no cross-origin transparency
+    // handshake to depend on.
+    isTransparent: false,
     displayMode: "adaptive",
     colorTheme: theme,
     locale: "en",
