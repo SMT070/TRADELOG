@@ -14051,7 +14051,18 @@ function _fitSharePnl(pnlEl, card) {
   // function returns so a clone taken immediately after is correct.
   const availW = (card ? card.offsetWidth : 320) - 44;
   let fs = 60;
+  pnlEl.style.letterSpacing = 'normal'; // reset BEFORE measuring — see below
   pnlEl.style.fontSize = fs + 'px';
+  // Must measure scrollWidth from a neutral letter-spacing baseline every
+  // time. If the element already had tight tracking left over from a
+  // previous fit (very likely — this runs on the same live element
+  // repeatedly as the user switches timeframe/background, and a cloned
+  // copy of that already-tightened element inherits whatever state it was
+  // in at clone time), the text measures narrower than it really is at
+  // default spacing, the loop stops shrinking too early, and the result
+  // silently depends on how many times this has run before instead of
+  // being deterministic. That's what let the live preview and the
+  // exported file land on two different font sizes for the same number.
   while (pnlEl.scrollWidth > availW && fs > 24) { fs -= 2; pnlEl.style.fontSize = fs + 'px'; }
   pnlEl.style.letterSpacing = fs >= 48 ? '-3px' : fs >= 36 ? '-2px' : '-1px';
 }
