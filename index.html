@@ -10663,25 +10663,41 @@ function renderAnalyticsSessions() {
     if (worstHour === null || v < hourAvg[worstHour]) worstHour = i;
   });
 
+  // If only ONE day (or hour) has enough trades (>=2) to qualify at all,
+  // that single group is trivially both the "best" and "worst" of a set of
+  // one — mathematically not wrong, but showing e.g. "Best Day: Tuesday" and
+  // "Worst Day: Tuesday" side by side reads as a bug, because it implies a
+  // real comparison happened when there's actually nothing to compare yet.
+  // Only treat worst as a genuine, distinct result once there are 2+
+  // qualifying groups.
+  const qualifyingDows  = dowAvg.filter(v => v !== null).length;
+  const qualifyingHours = hourAvg.filter(v => v !== null).length;
+  const showWorstDow  = qualifyingDows  >= 2;
+  const showWorstHour = qualifyingHours >= 2;
+
   const bd = document.getElementById('an-best-day');
   const wd = document.getElementById('an-worst-day');
   const bh = document.getElementById('an-best-hour');
   const wh = document.getElementById('an-worst-hour');
-  if (bd) bd.textContent = bestDow  !== null ? DAYS[bestDow]  : '—';
-  if (wd) wd.textContent = worstDow !== null ? DAYS[worstDow] : '—';
-  if (bh) bh.textContent = _anFmt12h(bestHour);
-  if (wh) wh.textContent = _anFmt12h(worstHour);
+  if (bd) bd.textContent = bestDow !== null ? DAYS[bestDow] : '—';
+  if (wd) wd.textContent = showWorstDow ? DAYS[worstDow] : '—';
+  if (bh) bh.textContent = bestHour !== null ? _anFmt12h(bestHour) : '—';
+  if (wh) wh.textContent = showWorstHour ? _anFmt12h(worstHour) : '—';
 
   const tipEl = document.getElementById('an-session-tip');
   if (!tipEl) return;
   const sym = getCurrencySymbol();
-  if (bestDow !== null && worstDow !== null) {
+  if (bestDow !== null && showWorstDow) {
     const ba = dowAvg[bestDow].toFixed(0);
     const wa = dowAvg[worstDow].toFixed(0);
     let tip = `Best day: ${DAYS[bestDow]} (avg ${dowAvg[bestDow]>=0?'+':''}${sym}${ba}/trade). Worst: ${DAYS[worstDow]} (avg ${dowAvg[worstDow]>=0?'+':'-'}${sym}${Math.abs(wa)}/trade).`;
     if (dowAvg[worstDow] < 0) tip += ` Consider reducing size or skipping ${DAYS[worstDow]} entirely.`;
     if (bestHour !== null) tip += ` Your edge peaks around ${_anFmt12h(bestHour)}.`;
     tipEl.textContent = tip;
+  } else if (bestDow !== null) {
+    // Only one day (or hour) has enough trades yet — say so honestly
+    // instead of implying a best-vs-worst comparison that hasn't happened.
+    tipEl.textContent = `${DAYS[bestDow]} is the only day with enough trades (2+) to measure yet — avg ${sym}${dowAvg[bestDow].toFixed(0)}/trade. Trade a few more days to unlock a real best-vs-worst comparison.`;
   } else {
     tipEl.textContent = 'Trade across more days and hours to unlock session pattern analysis.';
   }
