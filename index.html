@@ -2874,6 +2874,10 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           Help & Support
         </div>
+        <div class="menu-item" onclick="openSwitchAccountModal();closeSidebarSettings();">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          Switch Account
+        </div>
 
         <div style="height:1px;background:var(--border);margin:4px 0;"></div>
 
@@ -5419,6 +5423,44 @@ window.switchPage = function(name) {
   </div>
 </div>
 
+<div id="switch-account-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:0;width:420px;max-width:95vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">
+
+    <!-- Header -->
+    <div style="padding:24px 28px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div>
+        <div style="font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.3px;">Switch Account</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;font-weight:500;">Quickly switch between your saved logins</div>
+      </div>
+      <button onclick="closeSwitchAccountModal()" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">&#x2715;</button>
+    </div>
+
+    <!-- Scrollable list -->
+    <div id="switch-account-list" style="overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;"></div>
+
+    <!-- Add another account -->
+    <div style="padding:14px 20px 20px;border-top:1px solid var(--border);flex-shrink:0;">
+      <button id="switch-account-add-btn" onclick="_toggleAddAccountForm(true)"
+        style="width:100%;padding:10px;border-radius:10px;border:1px dashed var(--border2);background:transparent;color:var(--text2);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--sans);">
+        + Add Another Account
+      </button>
+      <div id="switch-account-add-form" style="display:none;flex-direction:column;gap:8px;">
+        <input id="switch-account-email" type="email" placeholder="Email" autocomplete="off"
+          style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:13px;font-family:var(--sans);outline:none;">
+        <input id="switch-account-password" type="password" placeholder="Password" autocomplete="off"
+          style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:13px;font-family:var(--sans);outline:none;"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();_switchAccountAddLogin();}">
+        <div id="switch-account-add-error" style="display:none;font-size:11px;color:var(--red);"></div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="_toggleAddAccountForm(false)" style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--sans);">Cancel</button>
+          <button id="switch-account-add-submit" onclick="_switchAccountAddLogin()" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:var(--sans);">Log In</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <div id="balance-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;">
   <div style="background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:32px;width:400px;max-width:95vw;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
@@ -5604,6 +5646,69 @@ function updateCurrencyButtons() {
 }
 const THEME_KEY = 'tradelog_theme';
 let trades = [];
+
+// ── SAVED LOGINS (quick switch between different real accounts) ───────────
+// Stores each logged-in account's SESSION (access + refresh token), never
+// the password — Supabase has no API to "log in" from a stored password
+// anyway, and storing raw passwords client-side would be a serious security
+// mistake. A refresh token lets us silently restore that account's session
+// via sb.auth.setSession() without asking for the password again.
+//
+// This is intentionally NOT synced to Supabase — it's a per-device
+// convenience list, the same way "remember me" / staying logged in on a
+// specific browser already is. It also intentionally is NOT wiped when a
+// different user logs in on this device (see _clearAllUserLocalStorage) —
+// the whole point is that it survives switching between accounts.
+//
+// Real security tradeoff worth knowing: anyone with access to this browser
+// profile can use these stored tokens to get into any saved account without
+// its password, for as long as that token stays valid. Same general risk
+// as staying logged in normally, just for multiple accounts at once. Use
+// "Forget" (the × next to an account below) to remove one you don't want
+// quick-access to anymore.
+const SAVED_LOGINS_KEY = 'tradelog_saved_logins';
+
+function getSavedLogins() {
+  try { return JSON.parse(localStorage.getItem(SAVED_LOGINS_KEY) || '[]'); } catch(_) { return []; }
+}
+function _setSavedLogins(list) {
+  localStorage.setItem(SAVED_LOGINS_KEY, JSON.stringify(list));
+}
+
+// Call after any successful login/signup to remember this session for quick-switching.
+function _saveLoginForQuickSwitch(user, session) {
+  if (!user || !session) return;
+  const list = getSavedLogins();
+  const idx  = list.findIndex(a => a.user_id === user.id);
+  const entry = {
+    user_id: user.id,
+    email: user.email || '',
+    name: user.user_metadata?.name || (user.email || '').split('@')[0],
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  };
+  if (idx > -1) list[idx] = entry; else list.push(entry);
+  _setSavedLogins(list);
+}
+
+// Keep a saved entry's tokens fresh — Supabase rotates the refresh token
+// every time it's used, so without this, switching to an account a second
+// time would fail with a stale/invalidated token.
+function _updateSavedLoginTokens(user, session) {
+  if (!user || !session) return;
+  const list = getSavedLogins();
+  const idx = list.findIndex(a => a.user_id === user.id);
+  if (idx > -1) {
+    list[idx].access_token = session.access_token;
+    list[idx].refresh_token = session.refresh_token;
+    _setSavedLogins(list);
+  }
+}
+
+function removeSavedLogin(userId) {
+  _setSavedLogins(getSavedLogins().filter(a => a.user_id !== userId));
+}
+
 
 // ── SHARE CARD: GIF BACKGROUND OPTIONS ──────────────────────────────────
 // Small curated set of background GIFs the user can pick for the share
@@ -5924,10 +6029,150 @@ localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, avatar }));
 function openSupportModal()  { document.getElementById('support-modal').style.display = 'flex'; }
 function closeSupportModal() { document.getElementById('support-modal').style.display = 'none'; }
 
+// ── Switch Account (saved logins) ───────────────────────────────────────────
+function openSwitchAccountModal() {
+  document.getElementById('switch-account-modal').style.display = 'flex';
+  _toggleAddAccountForm(false);
+  _renderSwitchAccountList();
+}
+function closeSwitchAccountModal() {
+  document.getElementById('switch-account-modal').style.display = 'none';
+}
+
+function _toggleAddAccountForm(show) {
+  const form = document.getElementById('switch-account-add-form');
+  const btn  = document.getElementById('switch-account-add-btn');
+  const err  = document.getElementById('switch-account-add-error');
+  if (form) form.style.display = show ? 'flex' : 'none';
+  if (btn)  btn.style.display  = show ? 'none'  : 'block';
+  if (err)  err.style.display  = 'none';
+  const email = document.getElementById('switch-account-email');
+  const pass  = document.getElementById('switch-account-password');
+  if (email) email.value = '';
+  if (pass)  pass.value  = '';
+  if (show && email) email.focus();
+}
+
+function _renderSwitchAccountList() {
+  const el = document.getElementById('switch-account-list');
+  if (!el) return;
+  const saved = getSavedLogins();
+  if (!saved.length) {
+    el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:20px 0;">No other saved accounts yet.</div>`;
+    return;
+  }
+  el.innerHTML = saved.map(a => {
+    const active = currentUser && currentUser.id === a.user_id;
+    const initial = (a.name || a.email || '?').charAt(0).toUpperCase();
+    return `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1.5px solid ${active ? 'var(--accent)' : 'var(--border)'};background:${active ? 'rgba(99,102,241,0.08)' : 'var(--surface2)'};cursor:${active ? 'default' : 'pointer'};transition:all .15s;"
+      ${active ? '' : `onclick="switchToSavedLogin('${a.user_id}')"`}>
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;">${initial}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;">
+          ${(a.name || 'Account').replace(/</g,'&lt;')}
+          ${active ? '<span style="font-size:9px;font-weight:800;color:var(--accent);background:rgba(99,102,241,0.15);padding:2px 7px;border-radius:20px;letter-spacing:.4px;">ACTIVE</span>' : ''}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(a.email||'').replace(/</g,'&lt;')}</div>
+      </div>
+      <button onclick="event.stopPropagation();_removeSavedLoginClick('${a.user_id}','${(a.name||a.email||'this account').replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" title="Forget this account"
+        style="width:26px;height:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:none;border:none;border-radius:7px;color:var(--muted);cursor:pointer;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function _removeSavedLoginClick(userId, label) {
+  const isActive = currentUser && currentUser.id === userId;
+  const msg = isActive
+    ? `Forget "${label}"? You'll need your password to log back into it. (You'll stay logged in right now — this only removes quick-switch access.)`
+    : `Forget "${label}"? You'll need your password to log back into it.`;
+  if (!confirm(msg)) return;
+  removeSavedLogin(userId);
+  _renderSwitchAccountList();
+}
+
+// Logging into a NEW account from inside the switcher — same signInWithPassword
+// flow as the main login screen, just saves the session for quick-switching
+// afterward and reuses initApp() to fully load that account.
+async function _switchAccountAddLogin() {
+  const email = document.getElementById('switch-account-email')?.value?.trim();
+  const pass  = document.getElementById('switch-account-password')?.value;
+  const err   = document.getElementById('switch-account-add-error');
+  const btn   = document.getElementById('switch-account-add-submit');
+  if (!email || !pass) {
+    if (err) { err.textContent = 'Enter both email and password.'; err.style.display = 'block'; }
+    return;
+  }
+  if (btn) { btn.textContent = 'Logging in…'; btn.disabled = true; }
+  if (err) err.style.display = 'none';
+  try {
+    if (currentUser && currentUser.email && currentUser.email.toLowerCase() !== email.toLowerCase()) {
+      try { await sb.auth.signOut({ scope: 'local' }); } catch(e) {}
+    }
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) {
+      if (err) { err.textContent = error.message; err.style.display = 'block'; }
+      if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
+      return;
+    }
+    if (data?.user && data?.session) {
+      _saveLoginForQuickSwitch(data.user, data.session);
+      closeSwitchAccountModal();
+      toast('⏳ Logging in…', '');
+      await initApp(data.user);
+    }
+  } catch(e) {
+    if (err) { err.textContent = 'Something went wrong: ' + (e?.message || 'try again.'); err.style.display = 'block'; }
+    if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
+  }
+}
+
+// Switching to an already-saved account: restore its session from the stored
+// tokens (no password needed) via setSession, then run it through the exact
+// same initApp() flow a normal login uses.
+async function switchToSavedLogin(userId) {
+  const saved = getSavedLogins().find(a => a.user_id === userId);
+  if (!saved) return;
+  closeSwitchAccountModal();
+  toast('⏳ Switching account…', '');
+  try {
+    const { data, error } = await sb.auth.setSession({
+      access_token: saved.access_token,
+      refresh_token: saved.refresh_token,
+    });
+    if (error || !data?.session || !data?.user) {
+      // Stored token is stale/expired/revoked — the only way back into this
+      // account now is the password, so drop it from the quick-switch list
+      // rather than leaving a saved entry that will never work.
+      removeSavedLogin(userId);
+      toast('That saved login expired — please log in again with your password.', 'error');
+      openSwitchAccountModal();
+      _toggleAddAccountForm(true);
+      const emailInput = document.getElementById('switch-account-email');
+      if (emailInput) emailInput.value = saved.email || '';
+      return;
+    }
+    _updateSavedLoginTokens(data.user, data.session);
+    await initApp(data.user);
+  } catch(e) {
+    console.error('TradeLog: switchToSavedLogin failed', e);
+    toast('Could not switch accounts — try again.', 'error');
+  }
+}
+
+
+
 // ── LOGOUT ────────────────────────────────────────────────────────────────────
 function handleLogout() {
 showConfirm({ icon:'🚪', title:'Log Out', message:'Your data is saved to the cloud. You can log back in anytime.', okText:'Log Out', okColor:'var(--accent)', onOk: async () => {
-    await sb.auth.signOut();
+    // scope:'local' only clears THIS tab's session — the default ('global')
+    // revokes the refresh token server-side, which would immediately break
+    // this account's saved quick-switch entry. The whole point of "Log Out"
+    // here is to sign out of view while still being able to one-click back
+    // in via the switcher, so it must not invalidate that token.
+    await sb.auth.signOut({ scope: 'local' });
     trades = [];
     balanceEvents = [];
     _appInitialized = false;
@@ -6252,7 +6497,7 @@ async function _handleAuthInner() {
       // into a different account is unnecessary risk, especially valuable
       // when switching between multiple accounts in the same browser session.
       if (currentUser && currentUser.email && currentUser.email.toLowerCase() !== email.toLowerCase()) {
-        try { await sb.auth.signOut(); } catch(e) {}
+        try { await sb.auth.signOut({ scope: 'local' }); } catch(e) {}
       }
       const result = await _withTimeout(
         sb.auth.signInWithPassword({ email, password }),
@@ -6274,6 +6519,7 @@ async function _handleAuthInner() {
         return;
       }
       if (data?.user) {
+        if (data.session) _saveLoginForQuickSwitch(data.user, data.session);
         window.setLoaderStatus && window.setLoaderStatus('Loading your trades…');
         setTimeout(() => window.setLoaderStatus && window.setLoaderStatus('Setting up dashboard…'), 800);
         await initApp(data.user);
@@ -6849,6 +7095,7 @@ function _attachAuthStateListener() {
 
   sb.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user) {
+      _saveLoginForQuickSwitch(session.user, session);
       // Only auto-init on INITIAL_SESSION (page reload with existing session)
       // For SIGNED_IN triggered by handleAuth, initApp is called directly there
       if (!_appInitialized && event === 'INITIAL_SESSION') await initApp(session.user);
@@ -6856,6 +7103,7 @@ function _attachAuthStateListener() {
       if (!_appInitialized) showAuthScreen();
     } else if (event === 'TOKEN_REFRESHED' && session && session.user) {
       currentUser = session.user;
+      _updateSavedLoginTokens(session.user, session);
     } else if (event === 'TOKEN_REFRESH_FAILED' || (event === 'SIGNED_OUT' && !session)) {
       // Stale/invalid refresh token — clear local session and show login
       _appInitialized = false;
