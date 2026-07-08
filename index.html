@@ -6109,10 +6109,12 @@ async function _switchAccountAddLogin() {
   if (err) err.style.display = 'none';
   try {
     if (currentUser && currentUser.email && currentUser.email.toLowerCase() !== email.toLowerCase()) {
+      window._switchingAccounts = true;
       try { await sb.auth.signOut({ scope: 'local' }); } catch(e) {}
     }
     const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) {
+      window._switchingAccounts = false;
       if (err) { err.textContent = error.message; err.style.display = 'block'; }
       if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
       return;
@@ -6123,7 +6125,9 @@ async function _switchAccountAddLogin() {
       toast('⏳ Logging in…', '');
       await initApp(data.user);
     }
+    window._switchingAccounts = false;
   } catch(e) {
+    window._switchingAccounts = false;
     if (err) { err.textContent = 'Something went wrong: ' + (e?.message || 'try again.'); err.style.display = 'block'; }
     if (btn) { btn.textContent = 'Log In'; btn.disabled = false; }
   }
@@ -6137,6 +6141,7 @@ async function switchToSavedLogin(userId) {
   if (!saved) return;
   closeSwitchAccountModal();
   toast('⏳ Switching account…', '');
+  window._switchingAccounts = true;
   try {
     const { data, error } = await sb.auth.setSession({
       access_token: saved.access_token,
@@ -6146,6 +6151,7 @@ async function switchToSavedLogin(userId) {
       // Stored token is stale/expired/revoked — the only way back into this
       // account now is the password, so drop it from the quick-switch list
       // rather than leaving a saved entry that will never work.
+      window._switchingAccounts = false;
       removeSavedLogin(userId);
       toast('That saved login expired — please log in again with your password.', 'error');
       openSwitchAccountModal();
@@ -6156,7 +6162,9 @@ async function switchToSavedLogin(userId) {
     }
     _updateSavedLoginTokens(data.user, data.session);
     await initApp(data.user);
+    window._switchingAccounts = false;
   } catch(e) {
+    window._switchingAccounts = false;
     console.error('TradeLog: switchToSavedLogin failed', e);
     toast('Could not switch accounts — try again.', 'error');
   }
@@ -6497,6 +6505,7 @@ async function _handleAuthInner() {
       // into a different account is unnecessary risk, especially valuable
       // when switching between multiple accounts in the same browser session.
       if (currentUser && currentUser.email && currentUser.email.toLowerCase() !== email.toLowerCase()) {
+        window._switchingAccounts = true;
         try { await sb.auth.signOut({ scope: 'local' }); } catch(e) {}
       }
       const result = await _withTimeout(
@@ -6507,6 +6516,7 @@ async function _handleAuthInner() {
       const data = result?.data;
       const error = result?.error;
       if (error) {
+        window._switchingAccounts = false;
         window.hideTradelogLoader && window.hideTradelogLoader();
         let msg = error.message;
         if (/invalid login credentials/i.test(msg)) {
@@ -6523,12 +6533,15 @@ async function _handleAuthInner() {
         window.setLoaderStatus && window.setLoaderStatus('Loading your trades…');
         setTimeout(() => window.setLoaderStatus && window.setLoaderStatus('Setting up dashboard…'), 800);
         await initApp(data.user);
+        window._switchingAccounts = false;
       } else {
+        window._switchingAccounts = false;
         window.hideTradelogLoader && window.hideTradelogLoader();
         showAuthError('Login failed. Check your email and password.');
         btn.textContent = 'Log In'; btn.disabled = false; btn.style.opacity = '';
       }
     } catch(e) {
+      window._switchingAccounts = false;
       console.error('Login error:', e);
       window.hideTradelogLoader && window.hideTradelogLoader();
       showAuthError('Something went wrong: ' + (e?.message || 'Please try again.'));
@@ -7076,6 +7089,20 @@ async function initApp(user) {
     try { renderTrades(); } catch(e) {}
     try { loadJournal(); } catch(e) {}
     try { _syncFeatureDropStates(); } catch(e) {}
+    // initApp used to only ever run once, right after a fresh page load —
+    // always landing on the Dashboard, so refreshing just Dashboard+Trades
+    // above was enough. Now that account-switching also calls initApp
+    // mid-session, the user could be sitting on ANY page when the switch
+    // happens — without this, that page would keep showing the PREVIOUS
+    // account's data until manually navigated away and back.
+    try {
+      const activePage = document.querySelector('.page.active');
+      const activeId = activePage ? activePage.id : '';
+      if (activeId === 'page-analytics')  renderAnalytics();
+      else if (activeId === 'page-calendar')  renderCalendar();
+      else if (activeId === 'page-mindset')   initMindsetPage();
+      else if (activeId === 'page-notebooks') renderNotebooks();
+    } catch(e) { console.warn('TradeLog: active-page refresh failed', e); }
     window.setLoaderStatus && window.setLoaderStatus('Ready!');
     await new Promise(r => setTimeout(r, 350));
     showApp();
@@ -7105,6 +7132,12 @@ function _attachAuthStateListener() {
       currentUser = session.user;
       _updateSavedLoginTokens(session.user, session);
     } else if (event === 'TOKEN_REFRESH_FAILED' || (event === 'SIGNED_OUT' && !session)) {
+      // Skip the full teardown if this SIGNED_OUT was fired by a deliberate,
+      // momentary sign-out we did ourselves right before signing into a
+      // DIFFERENT account (see _switchAccountAddLogin) — otherwise this
+      // flashes the login screen and wipes state for a split second in the
+      // middle of what should be one smooth switch.
+      if (window._switchingAccounts && event === 'SIGNED_OUT') return;
       // Stale/invalid refresh token — clear local session and show login
       _appInitialized = false;
       currentUser = null;
@@ -7115,6 +7148,7 @@ function _attachAuthStateListener() {
       if (_t) localStorage.setItem('tradelog_theme', _t);
       showAuthScreen();
     } else if (event === 'SIGNED_OUT') {
+      if (window._switchingAccounts) return;
       _appInitialized = false;
       currentUser = null;
       trades = [];
