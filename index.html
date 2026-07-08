@@ -6560,6 +6560,34 @@ async function _handleAuthInner() {
         btn.textContent = 'Create Account'; btn.disabled = false; btn.style.opacity = '';
         return;
       }
+      const suUser    = result?.data?.user;
+      const suSession = result?.data?.session;
+      // Supabase's signUp() quietly returns a user with NO error and an
+      // empty identities array when the email is already registered and
+      // confirmed — it does this on purpose (so signup can't be used to
+      // probe which emails exist), but left as-is it would show the exact
+      // same "check your email" success message as a real new signup,
+      // which is actively misleading for someone re-trying an existing email.
+      if (suUser && Array.isArray(suUser.identities) && suUser.identities.length === 0) {
+        showAuthError('An account with this email already exists. Try logging in instead.');
+        btn.textContent = 'Create Account'; btn.disabled = false; btn.style.opacity = '';
+        return;
+      }
+      if (suUser && suSession) {
+        // A session came back immediately — this Supabase project doesn't
+        // require email confirmation (or it's been disabled), so the
+        // account is already fully usable right now. The old code always
+        // showed "check your email" here regardless, leaving a working,
+        // logged-in-capable account stuck on the signup screen for no
+        // reason — this is that exact bug, fixed.
+        _saveLoginForQuickSwitch(suUser, suSession);
+        window.setLoaderStatus && window.setLoaderStatus('Setting up your account…');
+        await initApp(suUser);
+        return;
+      }
+      // No session came back — email confirmation genuinely is required on
+      // this Supabase project, so this message is now only shown when it's
+      // actually true.
       showAuthError('✓ Check your email to confirm your account.');
       btn.textContent = 'Create Account'; btn.disabled = false; btn.style.opacity = '';
     } catch(e) {
@@ -6640,10 +6668,12 @@ function showAuthScreen() {
     // Reset form
     const emailEl = document.getElementById('auth-email');
     const passEl  = document.getElementById('auth-password');
+    const nameEl  = document.getElementById('auth-name');
     const errEl   = document.getElementById('auth-error');
     const btn     = document.getElementById('auth-btn');
     if (emailEl) emailEl.value = '';
     if (passEl)  passEl.value  = '';
+    if (nameEl)  nameEl.value  = '';
     if (errEl)   errEl.style.display = 'none';
     if (btn)     { btn.textContent = 'Log In'; btn.disabled = false; btn.style.opacity = '1'; }
     switchAuthTab('login');
@@ -17179,11 +17209,14 @@ window.addEventListener('resize', () => {
   #auth-screen input:-webkit-autofill,
   #auth-screen input:-webkit-autofill:hover,
   #auth-screen input:-webkit-autofill:focus,
+  #auth-screen input:-webkit-autofill:active,
   #auth-screen input:-internal-autofill-selected,
-  #auth-screen input:-internal-autofill-previewed {
+  #auth-screen input:-internal-autofill-previewed,
+  #auth-screen input:autofill {
     -webkit-box-shadow: 0 0 0px 1000px #1e1e2e inset !important;
     box-shadow: 0 0 0px 1000px #1e1e2e inset !important;
     -webkit-text-fill-color: #f1f5f9 !important;
+    color: #f1f5f9 !important;
     caret-color: #f1f5f9;
     transition: background-color 5000s ease-in-out 0s;
   }
@@ -17299,7 +17332,7 @@ window.addEventListener('resize', () => {
         </div>
         <div>
           <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Email</label>
-          <input id="auth-email" name="email" class="auth-input" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="you@example.com" onkeydown="if(event.key==='Enter')handleAuth()">
+          <input id="auth-email" name="email" class="auth-input" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="you@example.com" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('auth-password').focus();}">
         </div>
         <div>
           <label style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:7px;">Password</label>
